@@ -1,0 +1,27 @@
+@font-face {
+    font-family: 'Space Grotesk Regular';
+    src: local("SpaceGrotesk-Regular.woff") format('woff');
+    src: local("SpaceGrotesk-Regular.ttf") format('truetype');
+}
+
+body {
+    margin: 0;
+}
+
+.container {
+    padding: 0 50px;
+    height: 100vh;
+    background-color: #fdf6e3;
+}
+
+.header {
+    background-color: #d9d2c2;
+    padding: 2px;
+}
+
+h1.chatName {
+    font-family: 'Garamond';
+    color: #ac892f;
+}
+
+  

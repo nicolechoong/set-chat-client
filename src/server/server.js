@@ -4,7 +4,6 @@ const uuidv4 = require("uuid");
 const fs = require('fs');
 
 const express = require('express');
-const { group } = require('console');
 const app = express();
 
 const key = fs.readFileSync("./cert/CA/localhost/localhost.decrypted.key");
