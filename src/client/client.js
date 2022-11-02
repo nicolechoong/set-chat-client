@@ -11,7 +11,14 @@ var connectedUser, localConnection, sendChannel;
 var localUsername;
 
 const configuration = { 
-   "iceServers": [{ "url": "stun:stun.12connect.com:3478" }] 
+   "iceServers": [
+    { "urls": "stun:stun.12connect.com:3478" },
+    {
+        "urls": "turn:openrelay.metered.ca:443?transport=tcp",
+        "username": "openrelayproject",
+        "credential": "openrelayproject",
+    }
+    ] 
 }; 
 
 var chatroomID;
