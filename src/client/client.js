@@ -10,6 +10,9 @@ var messageInput = document.getElementById('messageInput');
 var connectedUser, localConnection, sendChannel;
 var localUsername;
 
+// connection to peerName
+var connectionNames = new Map();
+
 const configuration = { 
    "iceServers": [
         { "urls": "stun:stun.12connect.com:3478" },
@@ -34,16 +37,18 @@ const configuration = {
 
 var chatroomID;
 var members = new Map();
-var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
+
+// var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
+var connection = new WebSocket('wss://localhost:3000');
 
 connection.onopen = function () { 
     console.log("Connected to server"); 
 };
   
 connection.onerror = function (err) { 
-    console.log("Error: ", err); 
+    console.log("Error: ", err);
+    alert("Please authorise https://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/ on your device before refreshing! ")
 };
-
 
 function sendToServer(message) {
     console.log(JSON.stringify(message));
@@ -130,9 +135,30 @@ function initPeerConnection () {
             }
         }
         connection.onconnectionstatechange = function (event) {
+            console.log(event);
             if (connection.connectionState === "failed") {
                 console.log("Restarting ICE");
                 connection.restartIce();
+            }
+        }
+        connection.onnegotiationneeded = function (event) {
+            console.log("On negotiation needed")
+            if (connection.connectionState === "failed" ||
+                connection.iceConnectionState === "failed") {
+                connection.createOffer(function (offer) { 
+                    sendToServer({
+                        to: connectionNames.get(connection),
+                        type: "offer",
+                        offer: offer 
+                    });
+                    connection.setLocalDescription(offer);
+                }, function (error) { 
+                    alert("An error has occurred."); 
+                }, function () {
+                    console.log("Create Offer failed");
+                }, {
+                    iceRestart: true
+                });
             }
         }
         console.log("Local RTCPeerConnection object was created");
@@ -146,7 +172,8 @@ function initPeerConnection () {
 function initChannel (channel) {
     channel.onopen = (event) => { 
         console.log(event);
-        console.log(`Channel ${event.target.label} opened`); }
+        console.log(`Channel ${event.target.label} opened`);
+    }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
         updateChatWindow(JSON.parse(event.data));
@@ -159,6 +186,7 @@ function receiveChannelCallback (event) {
     const peerConnection = members.get(peerName);
     peerConnection.sendChannel = event.channel;
     initChannel (peerConnection.sendChannel);
+    updateChatWindow({from: "SET", message: `${peerName} has joined`});
 }
 
 function updateChatWindow (data) {
@@ -196,8 +224,10 @@ joinChatroomBtn.addEventListener("click", function () {
 function sendOffer(peerName) {
     
     if (peerName !== null) { 
-        members.set(peerName, {connection: initPeerConnection(), sendChannel: null});
-        const peerConnection = members.get(peerName);
+        const newConnection = initPeerConnection(peerName);
+        members.set(peerName, {connection: newConnection, sendChannel: null});
+        connectionNames.set(newConnection, peerName);
+        peerConnection = members.get(peerName);
 
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(`${localUsername}->${peerName}`);
         initChannel(peerConnection.sendChannel);

@@ -20,6 +20,8 @@ server.listen(port, () => {
   console.log(`Server is listening on https://localhost:${port}`);
 });
 
+// stores all connections
+const connections = [];
 // (username: String, {connection: WebSocket, chatrooms: Array of String})
 const connectedUsers = new Map();
 // (chatroomID: String, members: Array of username)
@@ -33,6 +35,7 @@ if (!wsServer) {
 
 wsServer.on('connection', function(connection) {
   console.log("User connected");
+  connections.push(connection);
   sendTo(connection, {
     type: "usernames",
     usernames: Array.from(connectedUsers.keys())
@@ -220,8 +223,13 @@ function sendTo(connection, message) {
 }
 
 function broadcast(message, id = null) {
-  const recipients = id ? chatrooms.get(id) : Array.from(connectedUsers.keys());
-  for (username of recipients) {
-    sendTo(connectedUsers.get(username).connection, message);
+  if (id) {
+    for (username of chatrooms.get(id)) {
+      sendTo(connectedUsers.get(username).connection, message);
+    }
+  } else {
+    for (connection of connections) {
+      sendTo(connection, message);
+    }
   }
 }
