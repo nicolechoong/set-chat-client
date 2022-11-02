@@ -7,7 +7,7 @@ var loginInput;
 var chatnameInput = document.getElementById('chatnameInput');
 var messageInput = document.getElementById('messageInput');
 
-var connectedUser, localConnection, sendChannel, receiveChannel;
+var connectedUser, localConnection, sendChannel;
 var localUsername;
 
 const configuration = { 
@@ -121,6 +121,7 @@ function initChannel (channel) {
 
 function receiveChannelCallback (event) {
     peerName = (event.channel.label).split("->", 1)[0];
+    console.log(`Received channel ${event.channel.label} from ${peerName}`);
     const peerConnection = members.get(peerName);
     peerConnection.sendChannel = event.channel;
     initChannel (peerConnection.sendChannel);
@@ -161,7 +162,7 @@ joinChatroomBtn.addEventListener("click", function () {
 function sendOffer(peerName) {
     
     if (peerName !== null) { 
-        members.set(peerName, {connection: initPeerConnection(), sendChannel: null, receiveChannel: null});
+        members.set(peerName, {connection: initPeerConnection(), sendChannel: null});
         const peerConnection = members.get(peerName);
 
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(`${localUsername}->${peerName}`);
@@ -185,7 +186,7 @@ function sendOffer(peerName) {
 
 // Receiving Offer + Sending Answer to Peer
 function onOffer(offer, peerName) { 
-    members.set(peerName, {connection: initPeerConnection(), sendChannel: null, receiveChannel: null});
+    members.set(peerName, {connection: initPeerConnection(), sendChannel: null});
     const peerConnection = members.get(peerName);
 
     peerConnection.connection.setRemoteDescription(offer);
@@ -205,13 +206,11 @@ function onOffer(offer, peerName) {
   
 // Receiving Answer from Peer
 function onAnswer(answer, peerName) {
-    console.log(members.get(peerName));
     members.get(peerName).connection.setRemoteDescription(answer);
 } 
  
 // Receiving ICE Candidate from Server
 function onCandidate(candidate, peerName) {
-    console.log(peerName);
     if (members.has(peerName)) {
         members.get(peerName).connection.addIceCandidate(new RTCIceCandidate(candidate)); 
     }
