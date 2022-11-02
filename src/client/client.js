@@ -112,6 +112,18 @@ function initPeerConnection () {
                 });
             }
         };
+        connection.oniceconnectionstatechange = function (event) {
+            if (connection.iceConnectionState === "failed") {
+                console.log("Restarting ICE");
+                connection.restartIce();
+            }
+        }
+        connection.onconnectionstatechange = function (event) {
+            if (connection.connectionState === "failed") {
+                console.log("Restarting ICE");
+                connection.restartIce();
+            }
+        }
         console.log("Local RTCPeerConnection object was created");
         return connection;
     } catch (e) {
