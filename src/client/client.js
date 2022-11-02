@@ -41,7 +41,11 @@ function sendToServer(message) {
 
 function broadcastToMembers(data) {
     for (username of members.keys()) {
-        members.get(username).sendChannel.send(JSON.stringify(data));
+        try {
+            members.get(username).sendChannel.send(JSON.stringify(data));
+        } catch {
+            continue;
+        }
     }
 }
 
