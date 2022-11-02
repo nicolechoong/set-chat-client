@@ -16,7 +16,7 @@ const configuration = {
 
 var chatroomID;
 var members = new Map();
-var connection = new WebSocket('wss://localhost:3000'); 
+var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
 
 connection.onopen = function () { 
     console.log("Connected to server"); 
