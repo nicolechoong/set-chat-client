@@ -146,8 +146,7 @@ function initPeerConnection () {
         }
         connection.onnegotiationneeded = function (event) {
             console.log("On negotiation needed")
-            if (connection.connectionState === "failed" ||
-                connection.iceConnectionState === "failed") {
+            if (connection.connectionState === "failed") {
                 connection.createOffer(function (offer) { 
                     sendToServer({
                         to: connectionNames.get(connection),
@@ -197,7 +196,7 @@ function updateChatWindow (data) {
     chatWindow.innerHTML = msg;
 }
 
-sendMessageBtn.addEventListener("click", function () {
+function sendMessage () {
     const data = {
         from: localUsername,
         message: messageInput.value
@@ -207,6 +206,16 @@ sendMessageBtn.addEventListener("click", function () {
         updateChatWindow(data);
         messageInput.value = "";
     }
+}
+
+messageInput.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+})
+
+sendMessageBtn.addEventListener("click", function () {
+    sendMessage();
 })
 
 joinChatroomBtn.addEventListener("click", function () {
@@ -300,6 +309,7 @@ function onJoin(usernames) {
 function onLeave(peerName) {
     connectionNames.delete(members.get(peerName).connection);
     members.get(peerName).sendChannel.close();
+    members.get(peerName).connection.close();
     updateChatWindow({from: "SET", message: `${peerName} has left the room`});
     members.delete(peerName);
 }
