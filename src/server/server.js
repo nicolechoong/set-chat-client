@@ -92,12 +92,13 @@ wsServer.on('connection', function(connection) {
         console.log(`User [${connection.name}] disconnected`);
         const removeFrom = connectedUsers.get(connection.name).groups;
         connectedUsers.delete(connection.name);
+        connections.splice(connections.indexOf(connection), 1);
 
         broadcastActiveUsernames()
 
         for (chatroomID of removeFrom) {
           chatrooms.get(chatroomID).splice(chatrooms.get(chatroomID).indexOf(connection.name), 1);
-          console.log(`Leaving group ${chatroomID}`);
+          console.log(`${connection.name} has left ${chatroomID}`);
           broadcast({
             type: "leave",
             from: connection.name
