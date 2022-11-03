@@ -210,7 +210,8 @@ function sendMessage () {
 
 messageInput.addEventListener("keypress", function (event) {
     if (event.key === "Enter") {
-        sendMessage();
+        event.preventDefault();
+        sendMessageBtn.click();
     }
 })
 
