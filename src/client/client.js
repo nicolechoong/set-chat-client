@@ -36,6 +36,7 @@ const configuration = {
 }; 
 
 var chatroomID;
+// map from peerName:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var members = new Map();
 
 var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
@@ -98,6 +99,8 @@ connection.onmessage = function (message) {
         case "join":
             onJoin(data.usernames);
             break;
+        case "leave":
+            onLeave(data.from);
         default: 
             break; 
    } 
@@ -292,4 +295,11 @@ function onJoin(usernames) {
             sendOffer(peerName);
         }
     }
+}
+
+function onLeave(peerName) {
+    connectionNames.delete(members.get(peerName).connection);
+    members.get(peerName).sendChannel.close();
+    updateChatWindow({from: "SET", message: `${peerName} has left the room`});
+    members.delete(peerName);
 }
