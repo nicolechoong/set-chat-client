@@ -39,6 +39,10 @@ var chatroomID;
 // map from peerName:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var members = new Map();
 
+/////////////////////////
+// WebSocket to Server //
+/////////////////////////
+
 var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
 // var connection = new WebSocket('wss://localhost:3000');
 
@@ -55,25 +59,6 @@ function sendToServer(message) {
     console.log(JSON.stringify(message));
     connection.send(JSON.stringify(message)); 
 };
-
-function broadcastToMembers(data) {
-    for (username of members.keys()) {
-        try {
-            members.get(username).sendChannel.send(JSON.stringify(data));
-        } catch {
-            continue;
-        }
-    }
-}
-
-// Send Login attempt
-loginBtn.addEventListener("click", function(event){ 
-    loginInput = document.getElementById('loginInput').value;
-    sendToServer({ 
-        type: "login", 
-        name: loginInput.length > 0 ? loginInput : "anon"
-    });
-});
   
 // Handle messages from the server 
 connection.onmessage = function (message) { 
@@ -115,119 +100,6 @@ function onLogin(success) {
         localUsername = loginInput;
     } 
 };
-
-function initPeerConnection () {
-    try {
-        const connection = new RTCPeerConnection(configuration);
-        connection.ondatachannel = receiveChannelCallback;
-        connection.onicecandidate = function (event) {
-            console.log("New candidate");
-            if (event.candidate) {
-                sendToServer({ 
-                    type: "candidate", 
-                    candidate: event.candidate,
-                    name: localUsername,
-                    chatroomID: chatroomID
-                });
-            }
-        };
-        connection.oniceconnectionstatechange = function (event) {
-            if (connection.iceConnectionState === "failed") {
-                console.log("Restarting ICE");
-                connection.restartIce();
-            }
-        }
-        connection.onconnectionstatechange = function (event) {
-            console.log(event);
-            if (connection.connectionState === "failed") {
-                console.log("Restarting ICE");
-                connection.restartIce();
-            }
-        }
-        connection.onnegotiationneeded = function (event) {
-            console.log("On negotiation needed")
-            if (connection.connectionState === "failed") {
-                connection.createOffer(function (offer) { 
-                    sendToServer({
-                        to: connectionNames.get(connection),
-                        type: "offer",
-                        offer: offer 
-                    });
-                    connection.setLocalDescription(offer);
-                }, function (error) { 
-                    alert("An error has occurred."); 
-                }, function () {
-                    console.log("Create Offer failed");
-                }, {
-                    iceRestart: true
-                });
-            }
-        }
-        console.log("Local RTCPeerConnection object was created");
-        return connection;
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
-}
-
-function initChannel (channel) {
-    channel.onopen = (event) => { 
-        console.log(event);
-        console.log(`Channel ${event.target.label} opened`);
-    }
-    channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
-    channel.onmessage = (event) => {
-        updateChatWindow(JSON.parse(event.data));
-    }
-}
-
-function receiveChannelCallback (event) {
-    peerName = (event.channel.label).split("->", 1)[0];
-    console.log(`Received channel ${event.channel.label} from ${peerName}`);
-    const peerConnection = members.get(peerName);
-    peerConnection.sendChannel = event.channel;
-    initChannel (peerConnection.sendChannel);
-    updateChatWindow({from: "SET", message: `${peerName} has joined`});
-}
-
-function updateChatWindow (data) {
-    const msg = `${chatWindow.innerHTML}<br />${data.from}: ${data.message}`;
-    chatWindow.innerHTML = msg;
-}
-
-messageInput.addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        sendMessageBtn.click();
-    }
-})
-
-sendMessageBtn.addEventListener("click", function () {
-    const data = {
-        from: localUsername,
-        message: messageInput.value
-    };
-    if (messageInput.value.length > 0) {
-        broadcastToMembers(data);
-        updateChatWindow(data);
-        messageInput.value = "";
-    }
-})
-
-joinChatroomBtn.addEventListener("click", function () {
-    if (chatnameInput.value.length > 0) {
-        chatroomID = chatnameInput.value;
-
-        sendToServer({
-            type: "join",
-            id: chatnameInput.value,
-            name: localUsername
-        });
-    } else {
-        alert("Please enter a valid chatname");
-    }
-})
 
 // Sending Offer to Peer
 function sendOffer(peerName) {
@@ -310,3 +182,144 @@ function onLeave(peerName) {
     updateChatWindow({from: "SET", message: `${peerName} has left the room`});
     members.delete(peerName);
 }
+
+////////////////////////////
+// Peer to Peer Functions //
+////////////////////////////
+
+
+function initPeerConnection () {
+    try {
+        const connection = new RTCPeerConnection(configuration);
+        connection.ondatachannel = receiveChannelCallback;
+        connection.onicecandidate = function (event) {
+            console.log("New candidate");
+            if (event.candidate) {
+                sendToServer({ 
+                    type: "candidate", 
+                    candidate: event.candidate,
+                    name: localUsername,
+                    chatroomID: chatroomID
+                });
+            }
+        };
+        connection.oniceconnectionstatechange = function (event) {
+            if (connection.iceConnectionState === "failed") {
+                console.log("Restarting ICE");
+                connection.restartIce();
+            }
+        }
+        connection.onconnectionstatechange = function (event) {
+            console.log(event);
+            if (connection.connectionState === "failed") {
+                console.log("Restarting ICE");
+                connection.restartIce();
+            }
+        }
+        connection.onnegotiationneeded = function (event) {
+            console.log("On negotiation needed")
+            if (connection.connectionState === "failed") {
+                connection.createOffer(function (offer) { 
+                    sendToServer({
+                        to: connectionNames.get(connection),
+                        type: "offer",
+                        offer: offer 
+                    });
+                    connection.setLocalDescription(offer);
+                }, function (error) { 
+                    alert("An error has occurred."); 
+                }, function () {
+                    console.log("Create Offer failed");
+                }, {
+                    iceRestart: true
+                });
+            }
+        }
+        console.log("Local RTCPeerConnection object was created");
+        return connection;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+function initChannel (channel) {
+    channel.onopen = (event) => { 
+        console.log(event);
+        console.log(`Channel ${event.target.label} opened`);
+    }
+    channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
+    channel.onmessage = (event) => {
+        updateChatWindow(JSON.parse(event.data));
+    }
+}
+
+function receiveChannelCallback (event) {
+    peerName = (event.channel.label).split("->", 1)[0];
+    console.log(`Received channel ${event.channel.label} from ${peerName}`);
+    const peerConnection = members.get(peerName);
+    peerConnection.sendChannel = event.channel;
+    initChannel (peerConnection.sendChannel);
+    updateChatWindow({from: "SET", message: `${peerName} has joined`});
+}
+
+function updateChatWindow (data) {
+    const msg = `${chatWindow.innerHTML}<br />${data.from}: ${data.message}`;
+    chatWindow.innerHTML = msg;
+}
+
+function broadcastToMembers(data) {
+    for (username of members.keys()) {
+        try {
+            members.get(username).sendChannel.send(JSON.stringify(data));
+        } catch {
+            continue;
+        }
+    }
+}
+
+/////////////////////
+// Event Listeners //
+/////////////////////
+
+// Send Login attempt
+loginBtn.addEventListener("click", function(event){ 
+    loginInput = document.getElementById('loginInput').value;
+    sendToServer({ 
+        type: "login", 
+        name: loginInput.length > 0 ? loginInput : "anon"
+    });
+});
+
+messageInput.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendMessageBtn.click();
+    }
+})
+
+sendMessageBtn.addEventListener("click", function () {
+    const data = {
+        from: localUsername,
+        message: messageInput.value
+    };
+    if (messageInput.value.length > 0) {
+        broadcastToMembers(data);
+        updateChatWindow(data);
+        messageInput.value = "";
+    }
+})
+
+joinChatroomBtn.addEventListener("click", function () {
+    if (chatnameInput.value.length > 0) {
+        chatroomID = chatnameInput.value;
+
+        sendToServer({
+            type: "join",
+            id: chatnameInput.value,
+            name: localUsername
+        });
+    } else {
+        alert("Please enter a valid chatname");
+    }
+})
