@@ -22,8 +22,14 @@ server.listen(port, () => {
 
 // stores all connections
 const connections = [];
+
+// (username: String, {msgQueue: Array of String})
+// TODO: Extend with passwords, keys etc...
+const allUsers = new Map();
+
 // (username: String, {connection: WebSocket, chatrooms: Array of String})
 const connectedUsers = new Map();
+
 // (chatroomID: String, members: Array of username)
 const chatrooms = new Map();
 
@@ -110,6 +116,11 @@ wsServer.on('connection', function(connection) {
 
 function onLogin (connection, name) {
   console.log(`User [${name}] online`);
+  // TODO: Need some username password stuff here later on
+  if (allUsers.has(name)) {
+    onReconnect(connection, name);
+    return;
+  }
 
   if(connectedUsers.has(name)) { 
     sendTo(connection, { 
@@ -119,6 +130,7 @@ function onLogin (connection, name) {
   } else { 
     connectedUsers.set(name, {connection: connection, groups: []}); 
     connection.name = name; 
+    allUsers.set(name, {msgQueue: []})
 
     sendTo(connection, { 
       type: "login", 
@@ -233,4 +245,23 @@ function broadcast(message, id = null) {
       sendTo(connection, message);
     }
   }
+}
+
+function onReconnect (connection, name) {
+  // expecting same data as onLogin
+  // we want to read through the message queue and send
+  msgQueue = allUsers.get(name).msgQueue;
+  connectedUsers.set(name, {connection: connection, groups: []}); 
+  connection.name = name;
+
+  sendTo(connection, { 
+    type: "login", 
+    success: true
+  });
+
+  while (msgQueue.length > 0) {
+    sendTo(connection, msgQueue);
+    msgQueue.shift();
+  }
+
 }

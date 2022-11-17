@@ -291,7 +291,7 @@ function redirectToChat(chatName) {
         name: localUsername
     });
 
-    const url = `${window.location.protocol}${window.location.hostname}/chat?=${chatName}`;
+    const url = `${window.location.protocol}${window.location.hostname}/chat?id=${chatName}`;
     window.location.replace(url);
 }
 
@@ -336,3 +336,9 @@ joinChatroomBtn.addEventListener("click", function () {
         alert("Please enter a valid chatname");
     }
 })
+
+function chatPageLoaded() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.get('chat')
+    chatName.innerText = 
+}
