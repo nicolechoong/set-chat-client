@@ -196,7 +196,14 @@ function updateChatWindow (data) {
     chatWindow.innerHTML = msg;
 }
 
-function sendMessage () {
+messageInput.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendMessageBtn.click();
+    }
+})
+
+sendMessageBtn.addEventListener("click", function () {
     const data = {
         from: localUsername,
         message: messageInput.value
@@ -206,17 +213,6 @@ function sendMessage () {
         updateChatWindow(data);
         messageInput.value = "";
     }
-}
-
-messageInput.addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        sendMessageBtn.click();
-    }
-})
-
-sendMessageBtn.addEventListener("click", function () {
-    sendMessage();
 })
 
 joinChatroomBtn.addEventListener("click", function () {
