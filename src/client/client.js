@@ -339,6 +339,5 @@ joinChatroomBtn.addEventListener("click", function () {
 
 function chatPageLoaded() {
     const urlParams = new URLSearchParams(window.location.search);
-    urlParams.get('chat')
-    chatName.innerText = 
+    chatName.innerText = urlParams.get('chat');
 }
