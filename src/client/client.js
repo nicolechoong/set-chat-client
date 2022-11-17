@@ -278,6 +278,24 @@ function broadcastToMembers(data) {
     }
 }
 
+////////////////////
+// Joining a Chat //
+////////////////////
+
+
+// TODO: is chatName valid message to server
+function redirectToChat(chatName) {
+    sendToServer({
+        type: "join",
+        id: chatnameInput.value,
+        name: localUsername
+    });
+
+    const url = `${window.location.protocol}${window.location.hostname}/chat?=${chatName}`;
+    window.location.replace(url);
+}
+
+
 /////////////////////
 // Event Listeners //
 /////////////////////
@@ -313,12 +331,7 @@ sendMessageBtn.addEventListener("click", function () {
 joinChatroomBtn.addEventListener("click", function () {
     if (chatnameInput.value.length > 0) {
         chatroomID = chatnameInput.value;
-
-        sendToServer({
-            type: "join",
-            id: chatnameInput.value,
-            name: localUsername
-        });
+        redirectToChat(chatnameInput.value);
     } else {
         alert("Please enter a valid chatname");
     }
