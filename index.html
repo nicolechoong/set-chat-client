@@ -6,23 +6,33 @@
         
     <body>
         <main>
-            <h1>I know this is ugly</h1>
+            <h1 id="heading">I know this is ugly</h1>
 
             <p id="usernames"></p>
+            <p id="availableChats"></p>
 
             <div> 
+                <h2>Login</h2>
                 <input type = "text" id = "loginInput" /> 
                 <button id = "loginBtn">Login</button> 
             </div> 
 
+            <div>
+                <h2>Create Chat</h2>
+                <input type = "text" id = "newChatName" /> 
+                <input type = "text" id = "member1" /> 
+                <input type = "text" id = "member2" /> 
+            </div>
+
             <div> 
+                <h2>Join Chat</h2>
                 <input type = "text" id = "chatnameInput"/>
                 <button id = "joinChatroomBtn">Join</button> 
             </div>
 
-            <p id="chatWindow"></p>
-
-            <div> 
+            <div>
+                <h2>Chat</h2>
+                <p id="chatWindow"></p>
                 <input type = "text" id = "messageInput" style="width:75%"/>
                 <button id = "sendMessageBtn">Send</button> 
             </div>
