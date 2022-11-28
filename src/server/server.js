@@ -30,8 +30,12 @@ const allUsers = new Map();
 // (username: String, {connection: WebSocket, chatrooms: Array of String})
 const connectedUsers = new Map();
 
+// UNUSED FOR NOW
 // (chatroomID: String, members: Array of username)
 const chatrooms = new Map();
+
+// (chatID: String, {chatName: String, members: Array of String})
+const chats = new Map();
 
 var wsServer = new WebSocketServer({server});
 
@@ -47,11 +51,11 @@ wsServer.on('connection', function(connection) {
     usernames: Array.from(connectedUsers.keys())
   });
 
-  connection.on('message', function(message) {
+  connection.onmessage = function(message) {
     var data;
 
     try {
-      data = JSON.parse(message);
+      data = JSON.parse(message.data);
     } catch (e) {
       console.log("Invalid JSON");
       data = {};
@@ -79,6 +83,14 @@ wsServer.on('connection', function(connection) {
         onJoin(connection, data);
         break;
 
+      case "createChat":
+        onCreateChat(connection, data);
+        break;
+
+      case "add":
+        onAdd(connection, data);
+        break;
+
       case "leave":
         onLeave(data);
         break;
@@ -91,9 +103,9 @@ wsServer.on('connection', function(connection) {
 
         break;
     }
-  })
+  };
 
-    connection.on("close", function() {
+    connection.onclose = function() {
       if (connection.name) {
         console.log(`User [${connection.name}] disconnected`);
         const removeFrom = connectedUsers.get(connection.name).groups;
@@ -111,12 +123,13 @@ wsServer.on('connection', function(connection) {
           }, chatroomID);
         }
       }
-    });
+    };
 })
 
 function onLogin (connection, name) {
   console.log(`User [${name}] online`);
   // TODO: Need some username password stuff here later on
+
   if (allUsers.has(name)) {
     onReconnect(connection, name);
     return;
@@ -125,7 +138,8 @@ function onLogin (connection, name) {
   if(connectedUsers.has(name)) { 
     sendTo(connection, { 
         type: "login", 
-        success: false 
+        success: false, 
+        joinedChats: JSON.stringify([])
     }); 
   } else { 
     connectedUsers.set(name, {connection: connection, groups: []}); 
@@ -134,7 +148,8 @@ function onLogin (connection, name) {
 
     sendTo(connection, { 
       type: "login", 
-      success: true
+      success: true,
+      joinedChats: JSON.stringify([])
     });
 
     broadcastActiveUsernames();
@@ -142,39 +157,48 @@ function onLogin (connection, name) {
 }
 
 function onOffer (connection, data) {
-  console.log(`Sending offer to: ${data.to}`);
+  const offerMessage = {
+    type: "offer",
+    offer: data.offer,
+    from: connection.name
+  };
 
-  var conn = connectedUsers.get(data.to).connection;
+  if (connectedUsers.has(data.to)) {
+    console.log(`Sending offer to: ${data.to}`);
 
-  if (conn != null) {
-    connection.otherNames = connection.otherNames || [];
-    connection.otherNames.push(data.to);
+    const conn = connectedUsers.get(data.to).connection;
 
-    sendTo(conn, {
-      type: "offer",
-      offer: data.offer,
-      from: connection.name
-    });
+    if (conn != null) {
+      connection.otherNames = connection.otherNames || [];
+      connection.otherNames.push(data.to);
+
+      sendTo(conn, offerMessage);
+    }
   }
 }
 
 function onAnswer (connection, data) {
-  console.log(`Sending answer to: ${data.to}`);
+  const answerMessage = {
+    type: "answer",
+    answer: data.answer,
+    from: connection.name
+  };
 
-  var conn = connectedUsers.get(data.to).connection;
+  if (connectedUsers.has(data.to)) {
+    console.log(`Sending answer to: ${data.to}`);
+    
+    const conn = connectedUsers.get(data.to).connection;
 
-  if (conn != null) {
-    connection.otherNames = connection.otherNames || [];
-    connection.otherNames.push(data.to);
+    if (conn != null) {
+      connection.otherNames = connection.otherNames || [];
+      connection.otherNames.push(data.to);
 
-    sendTo(conn, {
-      type: "answer",
-      answer: data.answer,
-      from: connection.name
-    });
+      sendTo(conn, answerMessage);
+    }
   }
 }
 
+// note that this doesn't use message queue, simply bc the candidates will probs expire by then lolsies
 function onCandidate (connection, data) {
   console.log(`Sending candidate to: ${data.name}`);
 
@@ -184,6 +208,7 @@ function onCandidate (connection, data) {
     from: connection.name
   }, data.chatroomID);
 }
+
 
 function onLeave (data) {
   console.log(`Disconnecting from ${data.name}`);
@@ -202,6 +227,7 @@ function onLeave (data) {
   }
 }
 
+// Depreciated: For joining public chatrooms (maybe revive later!!)
 function onJoin (connection, data) {
   const chatroomID = data.id;
 
@@ -222,8 +248,65 @@ function onJoin (connection, data) {
   });
 }
 
+function generateUID () {
+  let id;
+  do {
+    id = Math.floor((Math.random() * 1000) + 1).toString();
+  } while (chats.has(id));
+  return id;
+}
+
+function onCreateChat (connection, data) {
+  // data = {type: 'createChat', chatName: chat title, members: [list of users]}
+  chatID = generateUID();
+  validMembers = data.members.filter(mem => allUsers.has(mem));
+  validMembers.push(connection.name);
+  invalidMembers = data.members.filter(mem => !allUsers.has(mem));
+
+  // add to list of chats
+  chats.set(chatID, {chatName: data.chatName, members: validMembers});
+  console.log(`created chat ${data.chatName} with id ${chatID}`);
+
+  const createChatMessage = {
+    type: "createChat",
+    chatID: chatID,
+    chatName: data.chatName,
+    validMembers: validMembers,
+    invalidMembers: invalidMembers
+  };
+
+  const addMessage = {
+    type: "add",
+    chatID: chatID,
+    chatName: data.chatName,
+    members: validMembers,
+    from: connection.name
+  };
+
+  sendTo(connection, createChatMessage);
+  for (member of validMembers) {
+    if (member !== connection.name) {
+      sendTo(connectedUsers.get(member).connection, addMessage, member);
+    }
+  }
+}
+
+function onAdd (connection, data) {
+  // data = {type: 'add', to: username of invited user, chatName: chat title, chatID: chat id, members: [list of users]}
+  const addMessage = {
+    type: "add",
+    chatID: data.chatID,
+    chatName: data.chatName,
+    members: data.members,
+    from: connection.name
+  };
+
+  sendTo(connectedUsers.get(data.to).connection, addMessage);
+}
+
 function broadcastActiveUsernames () {
   console.log(`Broadcasting active users: ${Array.from(connectedUsers.keys())}`);
+  console.log(`All existing users: ${Array.from(allUsers.keys())}`)
   broadcast({
     type: "usernames",
     usernames: Array.from(connectedUsers.keys())
@@ -231,20 +314,42 @@ function broadcastActiveUsernames () {
 }
 
 // Helper function to stringify outgoing messages
-function sendTo(connection, message) {
-  connection.send(JSON.stringify(message));
+// Sends the message of the user is online, else adds it to its queue (if it doesn't expire)
+// TODO: If the user doesn't exist it should send an error
+function sendTo(connection, message, name = "") {
+  if (connection != null) {
+    connection.send(JSON.stringify(message));
+    return;
+  }
+
+  if (allUsers.has(name)) {
+    allUsers.get(name).msgQueue.push(message);
+  }
 }
 
-function broadcast(message, id = null) {
+function broadcast(message, id = 0) {
   if (id) {
-    for (username of chatrooms.get(id)) {
-      sendTo(connectedUsers.get(username).connection, message);
+    console.log(chats.get(id))
+    for (username of chats.get(id).members) {
+      if (connectedUsers.has(username)) {
+        sendTo(connectedUsers.get(username).connection, message);
+      }
     }
   } else {
     for (connection of connections) {
       sendTo(connection, message);
     }
   }
+}
+
+function getJoinedChats(name) {
+  var joined = new Map();
+  for (chatID of chats.keys()) {
+    if (chats.get(chatID).members.includes(name)) {
+      joined.set(chatID, chats.get(chatID));
+    }
+  }
+  return joined;
 }
 
 function onReconnect (connection, name) {
@@ -254,14 +359,24 @@ function onReconnect (connection, name) {
   connectedUsers.set(name, {connection: connection, groups: []}); 
   connection.name = name;
 
+  console.log(`User ${name} has rejoined`);
+  
   sendTo(connection, { 
     type: "login", 
-    success: true
+    success: true,
+    joinedChats: JSON.stringify(Array.from(getJoinedChats(name)))
   });
+
+  console.log(JSON.stringify({ 
+    type: "login", 
+    success: true,
+    joinedChats: JSON.stringify(Array.from(getJoinedChats(name)))
+  }))
 
   while (msgQueue.length > 0) {
     sendTo(connection, msgQueue);
     msgQueue.shift();
   }
 
+  broadcastActiveUsernames();
 }

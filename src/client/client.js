@@ -10,6 +10,8 @@ var messageInput = document.getElementById('messageInput');
 var connectedUser, localConnection, sendChannel;
 var localUsername;
 
+// TODO: massive fucking techdebt of modularising
+
 // connection to peerName
 var connectionNames = new Map();
 
@@ -35,16 +37,19 @@ const configuration = {
     ] 
 }; 
 
-var chatroomID;
+var currentChatID;
 // map from peerName:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var members = new Map();
+
+// (chatID: String, {chatName: String, members: Array of String})
+var joinedChats = new Map();
 
 /////////////////////////
 // WebSocket to Server //
 /////////////////////////
 
-var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
-// var connection = new WebSocket('wss://localhost:3000');
+// var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
+var connection = new WebSocket('wss://localhost:3000');
 
 connection.onopen = function () { 
     console.log("Connected to server"); 
@@ -52,7 +57,7 @@ connection.onopen = function () {
   
 connection.onerror = function (err) { 
     console.log("Error: ", err);
-    alert("Please authorise https://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/ on your device before refreshing! ")
+    // alert("Please authorise https://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/ on your device before refreshing! ")
 };
 
 function sendToServer(message) {
@@ -67,7 +72,7 @@ connection.onmessage = function (message) {
 	
     switch(data.type) { 
         case "login": 
-            onLogin(data.success); 
+            onLogin(data.success, new Map(JSON.parse(data.joinedChats))); 
             break; 
         case "offer": 
             onOffer(data.offer, data.from); 
@@ -86,18 +91,27 @@ connection.onmessage = function (message) {
             break;
         case "leave":
             onLeave(data.from);
+            break;
+        case "createChat":
+            onCreateChat(data.chatID, data.chatName, data.validMembers, data.invalidMembers);
+            break;
+        case "add":
+            onAdd(data.chatID, data.chatName, data.members, data.from);
+            break;
         default: 
             break; 
    } 
 };
   
 // Server approves Login
-function onLogin(success) { 
+function onLogin(success, chats) { 
 
     if (success === false) { 
         alert("oops...try a different username"); 
     } else {
         localUsername = loginInput;
+        joinedChats = chats;
+        updateHeading();
     } 
 };
 
@@ -167,7 +181,8 @@ function onUsernames(usernames) {
     }
 }
 
-function onJoin(usernames) {
+// Depreciated: For now
+function onJoin (usernames) {
     for (peerName of usernames) {
         if (!members.has(peerName) && peerName !== localUsername) {
             sendOffer(peerName);
@@ -175,7 +190,7 @@ function onJoin(usernames) {
     }
 }
 
-function onLeave(peerName) {
+function onLeave (peerName) {
     connectionNames.delete(members.get(peerName).connection);
     members.get(peerName).sendChannel.close();
     members.get(peerName).connection.close();
@@ -183,9 +198,33 @@ function onLeave(peerName) {
     members.delete(peerName);
 }
 
+function onCreateChat (chatID, chatName, validMembers, invalidMembers) {
+    console.log(`successfully created ${chatName}`);
+    joinedChats.set(chatID, {chatName: chatName, members: validMembers});
+    updateHeading();
+    if (invalidMembers.size > 0) {
+        alert(`The following users do not exist ${invalidMembers}`);
+    }
+}
+
+// (chatID: String, {chatName: String, members: Array of String})
+function onAdd (chatID, chatName, members, from) {
+    console.log(`you've been added to ${chatName} by ${from}`);
+    joinedChats.set(chatID, {chatName: chatName, members: members});
+    updateHeading();
+}
+
 ////////////////////////////
 // Peer to Peer Functions //
 ////////////////////////////
+
+function joinChat (chatID) {
+    for (peerName of joinedChats.get(chatID).members) {
+        if (peerName !== localUsername) {
+            sendOffer(peerName);
+        }
+    }
+}
 
 
 function initPeerConnection () {
@@ -199,7 +238,7 @@ function initPeerConnection () {
                     type: "candidate", 
                     candidate: event.candidate,
                     name: localUsername,
-                    chatroomID: chatroomID
+                    chatroomID: currentChatID
                 });
             }
         };
@@ -268,8 +307,8 @@ function updateChatWindow (data) {
     chatWindow.innerHTML = msg;
 }
 
-function broadcastToMembers(data) {
-    for (username of members.keys()) {
+function broadcastToMembers(data, chatID) {
+    for (username of joinedChats.get(chatID).members) {
         try {
             members.get(username).sendChannel.send(JSON.stringify(data));
         } catch {
@@ -279,21 +318,10 @@ function broadcastToMembers(data) {
 }
 
 ////////////////////
-// Joining a Chat //
+//  //
 ////////////////////
 
 
-// TODO: is chatName valid message to server
-function redirectToChat(chatName) {
-    sendToServer({
-        type: "join",
-        id: chatnameInput.value,
-        name: localUsername
-    });
-
-    const url = `${window.location.protocol}${window.location.hostname}/chat?id=${chatName}`;
-    window.location.replace(url);
-}
 
 
 /////////////////////
@@ -329,15 +357,58 @@ sendMessageBtn.addEventListener("click", function () {
 })
 
 joinChatroomBtn.addEventListener("click", function () {
-    if (chatnameInput.value.length > 0) {
-        chatroomID = chatnameInput.value;
-        redirectToChat(chatnameInput.value);
+    const chatname = chatnameInput.value;
+    console.log(getChatNames());
+    if (chatname.length > 0 && getChatNames().includes(chatname)) {
+        currentChatID = getChatID(chatname);
+        console.log(`trying to join chatID ${currentChatID}`);
+        joinChat(currentChatID);
+        // sendToServer({
+        //     type: "join",
+        //     id: currentChatID,
+        //     name: localUsername
+        // });
     } else {
         alert("Please enter a valid chatname");
     }
 })
 
-function chatPageLoaded() {
-    const urlParams = new URLSearchParams(window.location.search);
-    chatName.innerText = urlParams.get('chat');
+newChatBtn.addEventListener("click", createNewChat);
+
+function getChatNames() {
+    var chatnames = []
+    for (chatID of joinedChats.keys()) {
+        chatnames.push(joinedChats.get(chatID).chatName)
+    }
+    return chatnames;
+}
+
+function getChatID(chatName) {
+    for (chatID of joinedChats.keys()) {
+        if (chatName === joinedChats.get(chatID).chatName) {
+            return chatID;
+        }
+    }
+    return -1;
+}
+
+function updateHeading() {
+    title = document.getElementById('heading');
+    title.innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
+    if (joinedChats.size > 0) {
+        availableChats = document.getElementById('availableChats');
+        availableChats.innerHTML = `Chats: ${getChatNames().join(", ")}`;
+    }
+}
+
+function createNewChat() {
+    let newChatName = document.getElementById('newChatName').value;
+    let member1 = document.getElementById('member1').value;
+    let member2 = document.getElementById('member2').value;
+
+    sendToServer({ 
+        type: "createChat", 
+        chatName: newChatName,
+        members: [member1, member2]
+    });
 }
