@@ -1,4 +1,4 @@
-import localforage from "localforage";
+import localforage from "../../node_modules/localforage/src/localforage.js";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
