@@ -1,3 +1,4 @@
+import localforage from "localforage";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
