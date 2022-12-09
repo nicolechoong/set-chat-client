@@ -1,3 +1,4 @@
+
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
 var joinChatroomBtn = document.getElementById('joinChatroomBtn');
@@ -11,6 +12,10 @@ var connectedUser, localConnection, sendChannel;
 var localUsername;
 
 // TODO: massive fucking techdebt of modularising
+
+//////////////////////
+// GLOBAL VARIABLES //
+//////////////////////
 
 // connection to peerName
 var connectionNames = new Map();
@@ -38,11 +43,16 @@ const configuration = {
 }; 
 
 var currentChatID;
+
 // map from peerName:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
-var members = new Map();
+var connections = new Map();
 
 // (chatID: String, {chatName: String, members: Array of String})
 var joinedChats = new Map();
+
+// local cache : localForage instance
+var store;
+
 
 /////////////////////////
 // WebSocket to Server //
@@ -93,7 +103,7 @@ connection.onmessage = function (message) {
             onLeave(data.from);
             break;
         case "createChat":
-            onCreateChat(data.chatID, data.chatName, data.validMembers, data.invalidMembers);
+            onCreateChat(data.chatID, data.chatName, data.invalidMembers);
             break;
         case "add":
             onAdd(data.chatID, data.chatName, data.members, data.from);
@@ -112,6 +122,13 @@ function onLogin(success, chats) {
         localUsername = loginInput;
         joinedChats = chats;
         updateHeading();
+
+        // new user: creates new store
+        // returning user: will just point to the same instance
+        store = localforage.createInstance({
+            name: localUsername
+        });
+        store.setItem("joinedChats", joinedChats);
     } 
 };
 
@@ -120,9 +137,9 @@ function sendOffer(peerName) {
     
     if (peerName !== null) { 
         const newConnection = initPeerConnection(peerName);
-        members.set(peerName, {connection: newConnection, sendChannel: null});
+        connections.set(peerName, {connection: newConnection, sendChannel: null});
         connectionNames.set(newConnection, peerName);
-        peerConnection = members.get(peerName);
+        peerConnection = connections.get(peerName);
 
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(`${localUsername}->${peerName}`);
         initChannel(peerConnection.sendChannel);
@@ -145,8 +162,8 @@ function sendOffer(peerName) {
 
 // Receiving Offer + Sending Answer to Peer
 function onOffer(offer, peerName) { 
-    members.set(peerName, {connection: initPeerConnection(), sendChannel: null});
-    const peerConnection = members.get(peerName);
+    connections.set(peerName, {connection: initPeerConnection(), sendChannel: null});
+    const peerConnection = connections.get(peerName);
 
     peerConnection.connection.setRemoteDescription(offer);
 
@@ -165,13 +182,13 @@ function onOffer(offer, peerName) {
   
 // Receiving Answer from Peer
 function onAnswer(answer, peerName) {
-    members.get(peerName).connection.setRemoteDescription(answer);
+    connections.get(peerName).connection.setRemoteDescription(answer);
 } 
  
 // Receiving ICE Candidate from Server
 function onCandidate(candidate, peerName) {
-    if (members.has(peerName)) {
-        members.get(peerName).connection.addIceCandidate(new RTCIceCandidate(candidate)); 
+    if (connections.has(peerName)) {
+        connections.get(peerName).connection.addIceCandidate(new RTCIceCandidate(candidate)); 
     }
 }
 
@@ -184,25 +201,24 @@ function onUsernames(usernames) {
 // Depreciated: For now
 function onJoin (usernames) {
     for (peerName of usernames) {
-        if (!members.has(peerName) && peerName !== localUsername) {
+        if (!connections.has(peerName) && peerName !== localUsername) {
             sendOffer(peerName);
         }
     }
 }
 
 function onLeave (peerName) {
-    connectionNames.delete(members.get(peerName).connection);
-    members.get(peerName).sendChannel.close();
-    members.get(peerName).connection.close();
+    connectionNames.delete(connections.get(peerName).connection);
+    connections.get(peerName).sendChannel.close();
+    connections.get(peerName).connection.close();
     updateChatWindow({from: "SET", message: `${peerName} has left the room`});
-    members.delete(peerName);
+    connections.delete(peerName);
 }
 
-function onCreateChat (chatID, chatName, validMembers, invalidMembers) {
-    console.log(`successfully created ${chatName}`);
-    joinedChats.set(chatID, {chatName: chatName, members: validMembers});
-    updateHeading();
-    if (invalidMembers.size > 0) {
+function onCreateChat (chatID, chatName, invalidMembers) {
+    console.log(`successfully created ${chatName} with id ${chatID}`);
+    console.log(`invalid members ${invalidMembers}`);
+    if (invalidMembers.length > 0) {
         alert(`The following users do not exist ${invalidMembers}`);
     }
 }
@@ -211,6 +227,8 @@ function onCreateChat (chatID, chatName, validMembers, invalidMembers) {
 function onAdd (chatID, chatName, members, from) {
     console.log(`you've been added to ${chatName} by ${from}`);
     joinedChats.set(chatID, {chatName: chatName, members: members});
+
+    updateChatOptions("add", chatID);
     updateHeading();
 }
 
@@ -219,9 +237,12 @@ function onAdd (chatID, chatName, members, from) {
 ////////////////////////////
 
 function joinChat (chatID) {
-    for (peerName of joinedChats.get(chatID).members) {
-        if (peerName !== localUsername) {
-            sendOffer(peerName);
+    if (currentChatID !== chatID) {
+        currentChatID = chatID;
+        for (peerName of joinedChats.get(chatID).members) {
+            if (peerName !== localUsername) {
+                sendOffer(peerName);
+            }
         }
     }
 }
@@ -296,7 +317,7 @@ function initChannel (channel) {
 function receiveChannelCallback (event) {
     peerName = (event.channel.label).split("->", 1)[0];
     console.log(`Received channel ${event.channel.label} from ${peerName}`);
-    const peerConnection = members.get(peerName);
+    const peerConnection = connections.get(peerName);
     peerConnection.sendChannel = event.channel;
     initChannel (peerConnection.sendChannel);
     updateChatWindow({from: "SET", message: `${peerName} has joined`});
@@ -307,10 +328,11 @@ function updateChatWindow (data) {
     chatWindow.innerHTML = msg;
 }
 
-function broadcastToMembers(data, chatID) {
-    for (username of joinedChats.get(chatID).members) {
+function broadcastToMembers(data) {
+    for (username of joinedChats.get(currentChatID).members) {
         try {
-            members.get(username).sendChannel.send(JSON.stringify(data));
+            console.log(`sending ${data} to ${username}`);
+            connections.get(username).sendChannel.send(JSON.stringify(data));
         } catch {
             continue;
         }
@@ -331,10 +353,12 @@ function broadcastToMembers(data, chatID) {
 // Send Login attempt
 loginBtn.addEventListener("click", function(event){ 
     loginInput = document.getElementById('loginInput').value;
-    sendToServer({ 
-        type: "login", 
-        name: loginInput.length > 0 ? loginInput : "anon"
-    });
+    if (loginInput.length > 0 && isAlphanumeric(loginInput)) {
+        sendToServer({ 
+            type: "login", 
+            name: loginInput.length > 0 ? loginInput : "anon"
+        });
+    }
 });
 
 messageInput.addEventListener("keypress", function (event) {
@@ -356,22 +380,7 @@ sendMessageBtn.addEventListener("click", function () {
     }
 })
 
-joinChatroomBtn.addEventListener("click", function () {
-    const chatname = chatnameInput.value;
-    console.log(getChatNames());
-    if (chatname.length > 0 && getChatNames().includes(chatname)) {
-        currentChatID = getChatID(chatname);
-        console.log(`trying to join chatID ${currentChatID}`);
-        joinChat(currentChatID);
-        // sendToServer({
-        //     type: "join",
-        //     id: currentChatID,
-        //     name: localUsername
-        // });
-    } else {
-        alert("Please enter a valid chatname");
-    }
-})
+chatNameInput.addEventListener("change", selectChat);
 
 newChatBtn.addEventListener("click", createNewChat);
 
@@ -401,6 +410,34 @@ function updateHeading() {
     }
 }
 
+function selectChat() {
+    const dropdown = document.getElementById("chatNameInput");
+    const index = dropdown.selectedIndex;
+
+    if (index > 0) {
+        const chatName = dropdown.options.item(index).text;
+        chatID = getChatID(chatName);
+        console.log(`trying to join chatID ${chatID}`);
+
+        chatTitle = document.getElementById('chatHeading');
+        chatTitle.innerHTML = `Chat: ${chatName}`;
+        joinChat(chatID);
+    }
+}
+
+// TODO: distinguish between same name different chat
+function updateChatOptions(operation, chatID) {
+    var dropdown = document.getElementById("chatNameInput");
+
+    if (operation === "add") {
+        var option = document.createElement("option");
+        option.text = joinedChats.get(chatID).chatName;
+        dropdown.options.add(option);
+    } else {
+        
+    }
+}
+
 function createNewChat() {
     let newChatName = document.getElementById('newChatName').value;
     let member1 = document.getElementById('member1').value;
@@ -411,4 +448,8 @@ function createNewChat() {
         chatName: newChatName,
         members: [member1, member2]
     });
+}
+
+function isAlphanumeric(str) {
+    return str === str.replace(/[^a-z0-9]/gi,'');
 }

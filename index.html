@@ -19,26 +19,31 @@
 
             <div>
                 <h2>Create Chat</h2>
+                <label>Chat name:</label>
                 <input type = "text" id = "newChatName" /> 
-                <input type = "text" id = "member1" /> 
+                <label><br />Add member 1:</label>
+                <input type = "text" id = "member1" />
+                <label><br />Add member 2:</label>
                 <input type = "text" id = "member2" /> 
-                <button id = "newChatBtn">Login</button> 
+                <button id = "newChatBtn">Create</button> 
             </div>
 
             <div> 
                 <h2>Join Chat</h2>
-                <input type = "text" id = "chatnameInput"/>
-                <button id = "joinChatroomBtn">Join</button> 
+                <select name="chatName" id="chatNameInput" style="width:200px">
+                    <option>Select a chat!</option>
+                </select>
             </div>
 
             <div>
-                <h2>Chat</h2>
+                <h2 id="chatHeading">Chat</h2>
                 <p id="chatWindow"></p>
                 <input type = "text" id = "messageInput" style="width:75%"/>
                 <button id = "sendMessageBtn">Send</button> 
             </div>
-                
-            <script src = "src/client/client.js"></script>
+               
+            <script type="module" src="node_modules/localforage/src/localforage.js"></script>
+            <script src="src/client/client.js"></script>
         </main>
     </body>
 	

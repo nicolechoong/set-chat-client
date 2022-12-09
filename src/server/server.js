@@ -261,7 +261,7 @@ function onCreateChat (connection, data) {
   chatID = generateUID();
   validMembers = data.members.filter(mem => allUsers.has(mem));
   validMembers.push(connection.name);
-  invalidMembers = data.members.filter(mem => !allUsers.has(mem));
+  invalidMembers = data.members.filter(mem => !allUsers.has(mem) && mem !== "");
 
   // add to list of chats
   chats.set(chatID, {chatName: data.chatName, members: validMembers});
@@ -271,7 +271,6 @@ function onCreateChat (connection, data) {
     type: "createChat",
     chatID: chatID,
     chatName: data.chatName,
-    validMembers: validMembers,
     invalidMembers: invalidMembers
   };
 
@@ -285,9 +284,7 @@ function onCreateChat (connection, data) {
 
   sendTo(connection, createChatMessage);
   for (member of validMembers) {
-    if (member !== connection.name) {
       sendTo(connectedUsers.get(member).connection, addMessage, member);
-    }
   }
 }
 
