@@ -1,5 +1,5 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import uuidv4 from "/node_modules/uuid/dist/index.js";
+import uuidv4 from "../../node_modules/uuid/dist/index.js";
 import nacl from "/node_modules/tweetnacl/nacl.js";
 
 var loginBtn = document.getElementById('loginBtn'); 
