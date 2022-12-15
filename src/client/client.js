@@ -1,6 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import { v4 as uuidv4 } from "../../node_modules/uuid";
-import nacl from "../../node_modules/nacl";
+import { v4 as uuidv4 } from "/node_modules/uuid";
+import nacl from "/node_modules/nacl";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
