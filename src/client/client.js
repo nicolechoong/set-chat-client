@@ -1,6 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import { v4 as uuidv4 } from "/node_modules/uuid";
-import nacl from "/node_modules/nacl";
+import { v4 as uuidv4 } from "/nicolechoong.github.io/node_modules/uuid";
+import nacl from "/nicolechoong.github.io/node_modules/nacl";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -333,6 +333,16 @@ function receiveChannelCallback (event) {
 function updateChatWindow (data) {
     const msg = `${chatWindow.innerHTML}<br />${data.from}: ${data.message}`;
     chatWindow.innerHTML = msg;
+}
+
+function loadChatHistory () {
+    chatWindow.innerHTML = "";
+    const msg = "";
+    store.getItem(currentChatID).then((chatInfo) => {
+        for (mid of chatInfo.history.keys()) {
+            msg = `${msg}<br />${data.from}: ${data.message}`
+        }
+    });
 }
 
 function updateChatStore (chatID, messageData) {
