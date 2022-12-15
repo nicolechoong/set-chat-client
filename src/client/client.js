@@ -1,6 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import { fromString } from "uuid";
-import nacl from "nacl";
+import { v4 as uuidv4 } from "../../node_modules/uuid";
+import nacl from "../../node_modules/nacl";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -352,7 +352,7 @@ function broadcastToMembers (data) {
 
 function sendChatMessage (messageInput) {
     const data = {
-        id: fromString(`${localUsername}:${sentTime}`),
+        id: uuidv4.fromString(`${localUsername}:${sentTime}`),
         from: localUsername,
         message: messageInput,
         sentTime: Date.now()
