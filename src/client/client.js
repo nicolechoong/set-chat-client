@@ -335,8 +335,11 @@ function updateChatWindow (data) {
     chatWindow.innerHTML = msg;
 }
 
-function updateChatStore (data) {
-    
+function updateChatStore (chatID, messageData) {
+    store.getItem(chatID).then((chatInfo) => {
+        chatInfo.history.set(messageData.id, messageData);
+        store.setItem(chatID, chatInfo);
+    });
 }
 
 function broadcastToMembers (data) {
@@ -359,6 +362,7 @@ function sendChatMessage (messageInput) {
     };
 
     broadcastToMembers(data);
+    updateChatStore(currentChatID, data);
     updateChatWindow(data);
 }
 
