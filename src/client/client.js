@@ -4,7 +4,7 @@ import nacl from "/nicolechoong.github.io/node_modules/tweetnacl/nacl.js";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
-var chatWindow = document.getElementById('chatWindow');
+var chatMessages = document.getElementById('chatMessages');
 
 var loginInput;
 var chatNameInput = document.getElementById('chatNameInput');
@@ -331,8 +331,8 @@ function receiveChannelCallback (event) {
 }
 
 function updateChatWindow (data) {
-    const msg = `${chatWindow.innerHTML}<br />${data.from}: ${data.message}`;
-    chatWindow.innerHTML = msg;
+    const msg = `${chatMessages.innerHTML}<br />${data.from}: ${data.message}`;
+    chatMessages.innerHTML = msg;
 }
 
 function updateChatStore (chatID, messageData) {
@@ -447,13 +447,13 @@ function selectChat() {
 
         chatTitle = document.getElementById('chatHeading');
         chatTitle.innerHTML = `Chat: ${chatName}`;
-        chatWindow.innerHTML = "";
+        chatMessages.innerHTML = "";
         const msg = "";
         store.getItem(currentChatID).then((chatInfo) => {
             for (mid of chatInfo.history.keys()) {
                 msg = `${msg}<br />${data.from}: ${data.message}`
             }
-            chatWindow.innerHTML = msg;
+            chatMessages.innerHTML = msg;
         });
         joinChat(chatID);
     }
