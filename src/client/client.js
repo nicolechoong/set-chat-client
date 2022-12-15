@@ -335,16 +335,6 @@ function updateChatWindow (data) {
     chatWindow.innerHTML = msg;
 }
 
-function loadChatHistory () {
-    chatWindow.innerHTML = "";
-    const msg = "";
-    store.getItem(currentChatID).then((chatInfo) => {
-        for (mid of chatInfo.history.keys()) {
-            msg = `${msg}<br />${data.from}: ${data.message}`
-        }
-    });
-}
-
 function updateChatStore (chatID, messageData) {
     store.getItem(chatID).then((chatInfo) => {
         chatInfo.history.set(messageData.id, messageData);
@@ -457,6 +447,14 @@ function selectChat() {
 
         chatTitle = document.getElementById('chatHeading');
         chatTitle.innerHTML = `Chat: ${chatName}`;
+        chatWindow.innerHTML = "";
+        const msg = "";
+        store.getItem(currentChatID).then((chatInfo) => {
+            for (mid of chatInfo.history.keys()) {
+                msg = `${msg}<br />${data.from}: ${data.message}`
+            }
+            chatWindow.innerHTML = msg;
+        });
         joinChat(chatID);
     }
 }
