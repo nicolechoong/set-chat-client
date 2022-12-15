@@ -129,6 +129,8 @@ function onLogin(success, chats) {
             name: localUsername
         });
         store.setItem("joinedChats", joinedChats);
+        store.setItem("test", "abcd");
+        console.log(`Retrieved from localforage ${store.getItem("test")}`);
     } 
 };
 
