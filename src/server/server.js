@@ -1,6 +1,5 @@
 const https = require('https');
 const WebSocketServer = require('ws').Server;
-const uuidv4 = require("uuid");
 const fs = require('fs');
 
 const express = require('express');
@@ -23,7 +22,7 @@ server.listen(port, () => {
 // stores all connections
 const connections = [];
 
-// (username: String, {msgQueue: Array of String})
+// (username: String, {msgQueue: Array of String, pubKey: Uint8Array})
 // TODO: Extend with passwords, keys etc...
 const allUsers = new Map();
 
@@ -64,7 +63,7 @@ wsServer.on('connection', function(connection) {
     switch (data.type) {
             
       case "login":
-        onLogin(connection, data.name);
+        onLogin(connection, data.name, data.pubKey);
         break;
                 
       case "offer":
@@ -126,7 +125,7 @@ wsServer.on('connection', function(connection) {
     };
 })
 
-function onLogin (connection, name) {
+function onLogin (connection, name, pubKey) {
   console.log(`User [${name}] online`);
   // TODO: Need some username password stuff here later on
 
@@ -144,7 +143,7 @@ function onLogin (connection, name) {
   } else { 
     connectedUsers.set(name, {connection: connection, groups: []}); 
     connection.name = name; 
-    allUsers.set(name, {msgQueue: []})
+    allUsers.set(name, {msgQueue: [], pubKey: pubKey})
 
     sendTo(connection, { 
       type: "login", 

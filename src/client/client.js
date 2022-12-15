@@ -1,12 +1,13 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
+import { fromString } from "uuid";
+import nacl from "nacl";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
-var joinChatroomBtn = document.getElementById('joinChatroomBtn');
 var chatWindow = document.getElementById('chatWindow');
 
 var loginInput;
-var chatnameInput = document.getElementById('chatnameInput');
+var chatNameInput = document.getElementById('chatNameInput');
 var messageInput = document.getElementById('messageInput');
 
 var connectedUser, localConnection, sendChannel;
@@ -17,6 +18,9 @@ var localUsername;
 //////////////////////
 // GLOBAL VARIABLES //
 //////////////////////
+
+// private keypair for the client
+var keyPair;
 
 // connection to peerName
 var connectionNames = new Map();
@@ -129,9 +133,9 @@ function onLogin(success, chats) {
         store = localforage.createInstance({
             name: localUsername
         });
+        store.setItem("keyPair", keyPair);
         store.setItem("joinedChats", joinedChats);
-        store.setItem("test", "abcd");
-        console.log(`Retrieved from localforage ${store.getItem("test")}`);
+        store.setItem("test", "abcd").then(() => {console.log(`Retrieved from localforage ${store.getItem("test")}`);});
     } 
 };
 
@@ -244,12 +248,12 @@ function joinChat (chatID) {
         currentChatID = chatID;
         for (peerName of joinedChats.get(chatID).members) {
             if (peerName !== localUsername) {
+                // Insert Key Exchange Protocol
                 sendOffer(peerName);
             }
         }
     }
 }
-
 
 function initPeerConnection () {
     try {
@@ -331,7 +335,11 @@ function updateChatWindow (data) {
     chatWindow.innerHTML = msg;
 }
 
-function broadcastToMembers(data) {
+function updateChatStore (data) {
+    
+}
+
+function broadcastToMembers (data) {
     for (username of joinedChats.get(currentChatID).members) {
         try {
             console.log(`sending ${data} to ${username}`);
@@ -340,6 +348,18 @@ function broadcastToMembers(data) {
             continue;
         }
     }
+}
+
+function sendChatMessage (messageInput) {
+    const data = {
+        id: fromString(`${localUsername}:${sentTime}`),
+        from: localUsername,
+        message: messageInput,
+        sentTime: Date.now()
+    };
+
+    broadcastToMembers(data);
+    updateChatWindow(data);
 }
 
 ////////////////////
@@ -354,12 +374,17 @@ function broadcastToMembers(data) {
 /////////////////////
 
 // Send Login attempt
-loginBtn.addEventListener("click", function(event){ 
-    loginInput = document.getElementById('loginInput').value;
+loginBtn.addEventListener("click", function (event) { 
+    const loginInput = document.getElementById('loginInput').value;
+
+    keyPair = nacl.box.keyPair();
+    console.log("keyPair generated");
+
     if (loginInput.length > 0 && isAlphanumeric(loginInput)) {
         sendToServer({ 
             type: "login", 
-            name: loginInput.length > 0 ? loginInput : "anon"
+            name: loginInput,
+            pubkey: keyPair.publicKey
         });
     }
 });
@@ -372,13 +397,8 @@ messageInput.addEventListener("keypress", function (event) {
 })
 
 sendMessageBtn.addEventListener("click", function () {
-    const data = {
-        from: localUsername,
-        message: messageInput.value
-    };
-    if (messageInput.value.length > 0) {
-        broadcastToMembers(data);
-        updateChatWindow(data);
+    if (messageInput.length > 0) {
+        sendChatMessage(messageInput.value);
         messageInput.value = "";
     }
 })
@@ -414,11 +434,10 @@ function updateHeading() {
 }
 
 function selectChat() {
-    const dropdown = document.getElementById("chatNameInput");
-    const index = dropdown.selectedIndex;
+    const index = chatNameInput.selectedIndex;
 
     if (index > 0) {
-        const chatName = dropdown.options.item(index).text;
+        const chatName = chatNameInput.options.item(index).text;
         chatID = getChatID(chatName);
         console.log(`trying to join chatID ${chatID}`);
 
@@ -430,12 +449,11 @@ function selectChat() {
 
 // TODO: distinguish between same name different chat
 function updateChatOptions(operation, chatID) {
-    var dropdown = document.getElementById("chatNameInput");
 
     if (operation === "add") {
         var option = document.createElement("option");
         option.text = joinedChats.get(chatID).chatName;
-        dropdown.options.add(option);
+        chatNameInput.options.add(option);
     } else {
         
     }
