@@ -18,6 +18,7 @@ var localUsername;
 //////////////////////
 
 var enc = new TextEncoder();
+var dec = new TextDecoder();
 
 // private keypair for the client
 var keyPair;
@@ -236,7 +237,10 @@ function onLeave (peerName) {
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
     console.log(`validmpk ${validMemberPubKeys}`);
-    keyMap = new Map([...keyMap, ...validMemberPubKeys]);
+    for (mem of validMemberPubKeys) {
+        keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
+    }
+    
     if (invalidMembers.length > 0) {
         alert(`The following users do not exist ${invalidMembers}`);
     }
@@ -456,7 +460,7 @@ loginBtn.addEventListener("click", function (event) {
         sendToServer({ 
             type: "login", 
             name: loginInput,
-            pubkey: keyPair.publicKey
+            pubkey: dec.decode(keyPair.publicKey)
         });
     }
 });
