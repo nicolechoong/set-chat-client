@@ -428,7 +428,7 @@ function broadcastToMembers (data) {
 
 function sendChatMessage (messageInput) {
     const data = {
-        id: uuidv4.fromString(`${localUsername}:${sentTime}`),
+        id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
         from: localUsername,
         message: messageInput,
         sentTime: Date.now()
