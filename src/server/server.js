@@ -126,7 +126,7 @@ wsServer.on('connection', function(connection) {
 })
 
 function onLogin (connection, name, pubKey) {
-  console.log(`User [${name}] online`);
+  console.log(`User [${name}] with pubKey [${pubKey}] online`);
   // TODO: Need some username password stuff here later on
 
   if (allUsers.has(name)) {

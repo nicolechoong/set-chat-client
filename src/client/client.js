@@ -1,6 +1,4 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-// const uuidv4 = require("https://unpkg.com/uuidv4@4.0.0/lib/uuidv4.js");
-// import nacl from './tweetnacl-es6.js';
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -72,7 +70,7 @@ connection.onopen = function () {
   
 connection.onerror = function (err) { 
     console.log("Error: ", err);
-    // alert("Please authorise https://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/ on your device before refreshing! ")
+    alert("Please authorise https://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/ on your device before refreshing! ")
 };
 
 function sendToServer(message) {
@@ -135,7 +133,11 @@ function onLogin(success, chats) {
         });
         store.setItem("keyPair", keyPair);
         store.setItem("joinedChats", joinedChats);
-        store.setItem("test", "abcd").then(() => {console.log(`Retrieved from localforage ${store.getItem("test")}`);});
+        store.setItem("test", "abcd").then(() => {
+            store.getItem("test").then((test) => {
+                console.log(`Retrieved from localforage ${test}`);
+            })
+        });
     } 
 };
 
