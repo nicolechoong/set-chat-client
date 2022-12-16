@@ -236,7 +236,8 @@ function onLeave (peerName) {
 }
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
-    console.log(`validmpk ${validMemberPubKeys}`);
+    console.log(`validmpk`);
+    console.log([...validMemberPubKeys.entries()]);
     for (mem of validMemberPubKeys) {
         keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
     }
