@@ -235,6 +235,7 @@ function onLeave (peerName) {
 }
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
+    console.log(`validmpk ${validMemberPubKeys}`);
     keyMap = new Map([...keyMap, ...validMemberPubKeys]);
     if (invalidMembers.length > 0) {
         alert(`The following users do not exist ${invalidMembers}`);
