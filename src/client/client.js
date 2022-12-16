@@ -323,7 +323,7 @@ async function addToChat(members, chatID) {
                     from: localUsername,
                     name: mem,
                     sentTime: sentTime
-                })
+                }, chatID);
                 console.log(`added ${mem}`);
             }
             resolve(chatInfo);
@@ -452,8 +452,9 @@ function updateChatStore (chatID, messageData) {
     });
 }
 
-function broadcastToMembers (data) {
-    for (username of joinedChats.get(currentChatID).members) {
+function broadcastToMembers (data, chatID = null) {
+    chatID = chatID === null ? currentChatID : chatID;
+    for (const username of joinedChats.get(chatID).members) {
         try {
             console.log(`sending ${data} to ${username}`);
             connections.get(username).sendChannel.send(JSON.stringify(data));
