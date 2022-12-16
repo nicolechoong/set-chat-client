@@ -1,6 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import uuidv4 from "https://unpkg.com/uuidv4@4.0.0/lib/uuidv4.js";
-import "https://unpkg.com/tweetnacl@1.0.3/nacl-fast.js";
+import uuidv4 = require("https://unpkg.com/uuidv4@4.0.0/lib/uuidv4.js");
+import nacl = require("https://unpkg.com/tweetnacl@1.0.3/nacl-fast.js");
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
