@@ -1,4 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
+import { resolve } from "path";
+import { text } from "stream/consumers";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -246,13 +248,8 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         alert(`The following users do not exist ${invalidMembers}`);
     }
 
-    var op = {
-        action: 'create', 
-        pk: keyPair.publicKey,
-        nonce: nacl.randomBytes(length)
-    };
-    op["sig"] = nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey);
-    const operations = new Set([op]);
+    const createOp = await generateOp("create", chatID);
+    const operations = new Set([createOp]);
 
     store.setItem(chatID, {
         metadata: {
@@ -261,24 +258,14 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
             ignored: new Set()
         },
         history: new Map(),
-    }).then(async () => {
-        for (const mem of validMemberPubKeys.keys()) {
-            await addRemOp("add", keyMap.get(mem), chatID);
-            sendToServer({
-                type: 'add',
-                to: mem,
-                chatID: chatID
-            });
-            console.log(`added ${mem}`);
-        }
-
-        console.log(`successfully created ${chatName} with id ${chatID}`);
+    }).then(() => {
+        addToChat(Array.from(validMemberPubKeys.keys()), chatID);
     });
 }
 
 function getDeps (operations) {
     var deps = new Set();
-    for (op of operations) {
+    for (const op of operations) {
         const hOp = nacl.hash(enc.encode(JSON.stringify(op)));
         if (op.action !== "create" && !op.deps.has(hOp)) {
             deps.add(hOp);
@@ -288,19 +275,28 @@ function getDeps (operations) {
     return deps;
 }
 
-async function addRemOp (action, pk2, chatID) {
+async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
+
     return new Promise(function(resolve) {
-        store.getItem(chatID).then((chatInfo) => {
-            console.log(`adding operation ${keyPair.publicKey} adds ${pk2}`);
+        if (action === "create") {
+            var op = {
+                action: 'create', 
+                pk: keyPair.publicKey,
+                nonce: nacl.randomBytes(length)
+            };
+            op["sig"] = dec.decode(nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey));
+            resolve(op);
+        } else {
+            console.log(`adding operation ${dec.decode(keyPair.publicKey)} adds ${dec.decode(pk2)}`);
             var op = {
                 action: 'add', 
                 pk1: keyPair.publicKey,
                 pk2: pk2,
-                deps: getDeps(chatInfo.metadata.operations)
+                deps: getDeps(ops)
             };
-            op["sig"] = nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey);
+            op["sig"] = dec.decode(nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey));
             resolve(op);
-        })
+        }
     });
 }
 
@@ -313,6 +309,31 @@ function onAdd (chatID, chatName, from) {
 
     updateChatOptions("add", chatID);
     updateHeading();
+}
+
+async function addToChat(members, chatID) {
+    store.getItem(chatID).then(async (chatInfo) => {
+        return new Promise(async (resolve) => {
+            for (const mem of members) {
+                const op = await generateOp("add", chatID, keyMap.get(mem), chatInfo.metadata.operations);
+                chatInfo.metadata.operations.add(op);
+
+                const sentTime = Date.now();
+                broadcastToMembers({
+                    id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
+                    type: "add",
+                    op: op,
+                    from: localUsername,
+                    name: mem,
+                    sentTime: sentTime
+                })
+                console.log(`added ${mem}`);
+            }
+            resolve(chatInfo);
+        });
+    }).then((chatInfo) => {
+        store.setItem(chatID, chatInfo).then(console.log(`${members} have been added to ${chatID}`));
+    });
 }
 
 
@@ -408,7 +429,22 @@ function receiveChannelCallback (event) {
 }
 
 function updateChatWindow (data) {
-    const msg = `${chatMessages.innerHTML}<br />${data.from}: ${data.message}`;
+    var message;
+    switch (data.type) {
+        case "text":
+            message = `${data.from}: ${data.message}`;
+            break;
+        case "add":
+            message = `${data.from} added ${data.name}`;
+            break;
+        case "rem":
+            message = `${data.from} removed ${data.name}`;
+            break;
+        default:
+            message = "";
+            break;
+    }
+    const msg = `${chatMessages.innerHTML}<br />${message}`;
     chatMessages.innerHTML = msg;
 }
 
@@ -431,11 +467,13 @@ function broadcastToMembers (data) {
 }
 
 function sendChatMessage (messageInput) {
+    const sentTime = Date.now();
     const data = {
         id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
+        type: "text",
         from: localUsername,
         message: messageInput,
-        sentTime: Date.now()
+        sentTime: sentTime
     };
 
     broadcastToMembers(data);
