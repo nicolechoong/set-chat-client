@@ -13,6 +13,10 @@ app.get('/', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', '..', 'index.html'));
 });
 
+app.get('/src/client/client.js', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'client.js'));
+});
+
 const server = https.createServer({ key, cert }, app);
 
 const port = 3000;
