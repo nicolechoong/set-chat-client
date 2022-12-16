@@ -237,6 +237,8 @@ function onLeave (peerName) {
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
 
+    joinedChats.set(chatID, {chatName: chatName, members: []});
+    
     for (const mem of validMemberPubKeys.keys()) {
         console.log(mem);
         keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
