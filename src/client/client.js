@@ -1,6 +1,4 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import { resolve } from "path";
-import { text } from "stream/consumers";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -276,27 +274,26 @@ function getDeps (operations) {
 }
 
 async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
-
+    
     return new Promise(function(resolve) {
+        var op;
         if (action === "create") {
-            var op = {
+            op = {
                 action: 'create', 
                 pk: keyPair.publicKey,
                 nonce: nacl.randomBytes(length)
             };
-            op["sig"] = dec.decode(nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey));
-            resolve(op);
         } else {
             console.log(`adding operation ${dec.decode(keyPair.publicKey)} adds ${dec.decode(pk2)}`);
-            var op = {
+            op = {
                 action: 'add', 
                 pk1: keyPair.publicKey,
                 pk2: pk2,
                 deps: getDeps(ops)
             };
-            op["sig"] = dec.decode(nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey));
-            resolve(op);
         }
+        op["sig"] = dec.decode(nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey));
+            resolve(op);
     });
 }
 
