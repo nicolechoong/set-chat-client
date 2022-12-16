@@ -284,7 +284,7 @@ function onCreateChat (connection, data) {
     type: "createChat",
     chatID: chatID,
     chatName: data.chatName,
-    validMemberPubKeys: validMemberPubKeys,
+    validMemberPubKeys: JSON.stringify(Array.from(validMemberPubKeys)),
     invalidMembers: invalidMembers
   };
 

@@ -112,7 +112,7 @@ connection.onmessage = function (message) {
             onLeave(data.from);
             break;
         case "createChat":
-            onCreateChat(data.chatID, data.chatName, data.validMemberPubKeys, data.invalidMembers);
+            onCreateChat(data.chatID, data.chatName, new Map(JSON.parse(data.validMemberPubKeys)), data.invalidMembers);
             break;
         case "add":
             onAdd(data.chatID, data.chatName, data.members, data.from);
