@@ -239,7 +239,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     console.log(`validmpk`);
     console.log([...validMemberPubKeys.entries()]);
     console.log([...validMemberPubKeys.keys()]);
-    for (mem of validMemberPubKeys.keys()) {
+    for (const mem of validMemberPubKeys.keys()) {
         console.log(mem);
         keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
     }
@@ -264,7 +264,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         },
         history: new Map(),
     }).then(async () => {
-        for (mem of validMemberPubKeys.keys()) {
+        for (const mem of validMemberPubKeys.keys()) {
             await addOp(keyMap.get(mem), chatID);
             addToChat(chatID, mem);
             console.log(`added ${mem}`);
