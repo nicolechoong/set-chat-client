@@ -128,7 +128,7 @@ function onLogin(success, chats) {
     if (success === false) { 
         alert("oops...try a different username"); 
     } else {
-        localUsername = loginInput;
+        localUsername = loginInput.value;
         joinedChats = chats;
         updateHeading();
 
@@ -460,7 +460,7 @@ loginBtn.addEventListener("click", function (event) {
         sendToServer({ 
             type: "login", 
             name: loginInput,
-            pubkey: dec.decode(keyPair.publicKey)
+            pubKey: dec.decode(keyPair.publicKey)
         });
     }
 });
