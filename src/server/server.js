@@ -264,7 +264,7 @@ function onCreateChat (connection, data) {
   const chatID = generateUID();
   const validMembers = data.members.filter(mem => allUsers.has(mem));
 
-  var validMemberPubKeys = new Map();
+  const validMemberPubKeys = new Map();
   for (mem of data.members) {
     if (allUsers.has(mem)) {
       validMemberPubKeys.set(mem, allUsers.get(mem).pubKey);
@@ -279,7 +279,7 @@ function onCreateChat (connection, data) {
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
   console.log(`validMemberPKs ${validMemberPubKeys}`);
-  console.log(`validMemberPKs ${JSON.stringify(validMemberPubKeys)}`);
+  console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
   const createChatMessage = {
     type: "createChat",
     chatID: chatID,
