@@ -236,9 +236,7 @@ function onLeave (peerName) {
 }
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
-    console.log(`validmpk`);
-    console.log([...validMemberPubKeys.entries()]);
-    console.log([...validMemberPubKeys.keys()]);
+
     for (const mem of validMemberPubKeys.keys()) {
         console.log(mem);
         keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
@@ -265,8 +263,12 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         history: new Map(),
     }).then(async () => {
         for (const mem of validMemberPubKeys.keys()) {
-            await addOp(keyMap.get(mem), chatID);
-            addToChat(chatID, mem);
+            await addRemOp("add", keyMap.get(mem), chatID);
+            sendToServer({
+                type: 'add',
+                to: mem,
+                chatID: chatID
+            });
             console.log(`added ${mem}`);
         }
 
@@ -286,7 +288,7 @@ function getDeps (operations) {
     return deps;
 }
 
-async function addOp (pk2, chatID) {
+async function addRemOp (action, pk2, chatID) {
     return new Promise(function(resolve) {
         store.getItem(chatID).then((chatInfo) => {
             console.log(`adding operation ${keyPair.publicKey} adds ${pk2}`);
@@ -302,6 +304,7 @@ async function addOp (pk2, chatID) {
     });
 }
 
+// When being added to a new chat
 // (chatID: String, {chatName: String, members: Array of String})
 function onAdd (chatID, chatName, from) {
     console.log(`you've been added to ${chatName} by ${from}`);
@@ -312,13 +315,6 @@ function onAdd (chatID, chatName, from) {
     updateHeading();
 }
 
-function addToChat(chatID, name) {
-    sendToServer({
-        type: 'add',
-        to: name,
-        chatID: chatID
-    });
-}
 
 ////////////////////////////
 // Peer to Peer Functions //
@@ -456,7 +452,7 @@ function sendChatMessage (messageInput) {
 loginBtn.addEventListener("click", function (event) { 
     const loginInput = document.getElementById('loginInput').value;
 
-    keyPair = nacl.box.keyPair();
+    keyPair = nacl.sign.keyPair();
     console.log("keyPair generated");
 
     if (loginInput.length > 0 && isAlphanumeric(loginInput)) {
