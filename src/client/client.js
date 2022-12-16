@@ -56,6 +56,9 @@ var joinedChats = new Map();
 // local cache : localForage instance
 var store;
 
+// map from name to public key
+var keyMap = new Map();
+
 
 /////////////////////////
 // WebSocket to Server //
@@ -106,7 +109,7 @@ connection.onmessage = function (message) {
             onLeave(data.from);
             break;
         case "createChat":
-            onCreateChat(data.chatID, data.chatName, data.invalidMembers);
+            onCreateChat(data.chatID, data.chatName, new Map(JSON.parse(data.validMemberPubKeys)), data.invalidMembers);
             break;
         case "add":
             onAdd(data.chatID, data.chatName, data.members, data.from);
@@ -126,20 +129,25 @@ function onLogin(success, chats) {
         joinedChats = chats;
         updateHeading();
 
-        // new user: creates new store
-        // returning user: will just point to the same instance
-        store = localforage.createInstance({
-            name: localUsername
-        });
-        store.setItem("keyPair", keyPair);
-        store.setItem("joinedChats", joinedChats);
-        store.setItem("test", "abcd").then(() => {
-            store.getItem("test").then((test) => {
-                console.log(`Retrieved from localforage ${test}`);
-            })
-        });
+        initialiseStore();
     } 
 };
+
+function initialiseStore () {
+    // new user: creates new store
+    // returning user: will just point to the same instance
+    store = localforage.createInstance({
+        name: localUsername
+    });
+
+    store.setItem("keyPair", keyPair);
+    store.setItem("joinedChats", joinedChats);
+    store.setItem("test", "abcd").then(() => {
+        store.getItem("test").then((test) => {
+            console.log(`Retrieved from localforage ${test}`);
+        })
+    });
+}
 
 // Sending Offer to Peer
 function sendOffer(peerName) {
@@ -224,21 +232,83 @@ function onLeave (peerName) {
     connections.delete(peerName);
 }
 
-function onCreateChat (chatID, chatName, invalidMembers) {
-    console.log(`successfully created ${chatName} with id ${chatID}`);
-    console.log(`invalid members ${invalidMembers}`);
+async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
+    keyMap = new Map([...keyMap, ...validMemberPubKeys]);
     if (invalidMembers.length > 0) {
         alert(`The following users do not exist ${invalidMembers}`);
     }
+
+    const operations = new Set();
+    var op = {
+        action: 'create', 
+        pk: keyPair.publicKey,
+        nonce: nacl.randomBytes(length)
+    };
+    op["sig"] = nacl.sign(JSON.stringify(op), keyPair.secretKey);
+    operations.add(op);
+
+    store.setItem(chatID, {
+        metadata: {
+            chatName: chatName,
+            operations: operations,
+            ignored: new Set()
+        },
+        history: new Map(),
+    }).then(async () => {
+        for (mem of validMemberPubKeys) {
+            await addOp(keyMap.get(mem), chatID);
+            addToChat(chatID, mem);
+            console.log(`added ${mem}`);
+        }
+
+        console.log(`successfully created ${chatName} with id ${chatID}`);
+    });
+}
+
+function getDeps (operations) {
+    var deps = new Set();
+    for (op of operations) {
+        const hOp = nacl.hash(op);
+        if (op.action !== "create" && !op.deps.has(hOp)) {
+            deps.add(hOp);
+            console.log(`dependency ${op.pk1} ${op.action} ${op.pk2}`);
+        }
+    }
+    return deps;
+}
+
+async function addOp (pk2, chatID) {
+    return new Promise(function(resolve) {
+        store.getItem(chatID).then((chatInfo) => {
+            console.log(`adding operation ${keyPair.publicKey} adds ${pk2}`);
+            var op = {
+                action: 'add', 
+                pk1: keyPair.publicKey,
+                pk2: pk2,
+                deps: getDeps(chatInfo.metadata.operations)
+            };
+            op["sig"] = nacl.sign(JSON.stringify(op), keyPair.secretKey);
+            resolve(op);
+        })
+    });
 }
 
 // (chatID: String, {chatName: String, members: Array of String})
-function onAdd (chatID, chatName, members, from) {
+function onAdd (chatID, chatName, from) {
     console.log(`you've been added to ${chatName} by ${from}`);
-    joinedChats.set(chatID, {chatName: chatName, members: members});
+    joinedChats.set(chatID, {chatName: chatName, members: []});
+    // now we have to do syncing to get members
 
     updateChatOptions("add", chatID);
     updateHeading();
+}
+
+function addToChat(chatID, name) {
+    sendToServer({
+        type: 'add',
+        to: name,
+        chatID: chatID
+    });
 }
 
 ////////////////////////////
@@ -367,12 +437,6 @@ function sendChatMessage (messageInput) {
     updateChatStore(currentChatID, data);
     updateChatWindow(data);
 }
-
-////////////////////
-//  //
-////////////////////
-
-
 
 
 /////////////////////

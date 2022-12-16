@@ -86,6 +86,10 @@ wsServer.on('connection', function(connection) {
         onCreateChat(connection, data);
         break;
 
+      case "getPK":
+        onGetPK(connection, data);
+        break;
+
       case "add":
         onAdd(connection, data);
         break;
@@ -257,10 +261,17 @@ function generateUID () {
 
 function onCreateChat (connection, data) {
   // data = {type: 'createChat', chatName: chat title, members: [list of users]}
-  chatID = generateUID();
-  validMembers = data.members.filter(mem => allUsers.has(mem));
-  validMembers.push(connection.name);
-  invalidMembers = data.members.filter(mem => !allUsers.has(mem) && mem !== "");
+  const chatID = generateUID();
+  const validMembers = data.members.filter(mem => allUsers.has(mem));
+  
+  var validMemberPubKeys = new Map();
+  for (mem of data.members) {
+    if (allUsers.has(mem)) {
+      validMemberPubKeys.set(mem, allUsers.get(mem).pubKey);
+    }
+  }
+
+  const invalidMembers = data.members.filter(mem => !allUsers.has(mem) && mem !== "");
 
   // add to list of chats
   chats.set(chatID, {chatName: data.chatName, members: validMembers});
@@ -270,21 +281,29 @@ function onCreateChat (connection, data) {
     type: "createChat",
     chatID: chatID,
     chatName: data.chatName,
+    validMemberPubKeys: JSON.stringify(Array.from(validMemberPubKeys)),
     invalidMembers: invalidMembers
   };
 
-  const addMessage = {
-    type: "add",
-    chatID: chatID,
-    chatName: data.chatName,
-    members: validMembers,
-    from: connection.name
-  };
-
   sendTo(connection, createChatMessage);
-  for (member of validMembers) {
-      sendTo(connectedUsers.get(member).connection, addMessage, member);
+}
+
+function getPK (connection, data) {
+  if (!allUsers.has(data.name)) {
+    sendTo(connection, {
+      type: "getPK",
+      name: data.name,
+      success: false,
+      pubKey: []
+    })
   }
+
+  sendTo(connection, {
+    type: "getPK",
+    name: data.name,
+    success: true,
+    pubKey: allUsers.get(username).pubKey
+  });
 }
 
 function onAdd (connection, data) {
