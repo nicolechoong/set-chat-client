@@ -17,6 +17,8 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
+var enc = new TextEncoder();
+
 // private keypair for the client
 var keyPair;
 
@@ -109,7 +111,7 @@ connection.onmessage = function (message) {
             onLeave(data.from);
             break;
         case "createChat":
-            onCreateChat(data.chatID, data.chatName, new Map(JSON.parse(data.validMemberPubKeys)), data.invalidMembers);
+            onCreateChat(data.chatID, data.chatName, data.validMemberPubKeys, data.invalidMembers);
             break;
         case "add":
             onAdd(data.chatID, data.chatName, data.members, data.from);
@@ -238,14 +240,13 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         alert(`The following users do not exist ${invalidMembers}`);
     }
 
-    const operations = new Set();
     var op = {
         action: 'create', 
         pk: keyPair.publicKey,
         nonce: nacl.randomBytes(length)
     };
-    op["sig"] = nacl.sign(JSON.stringify(op), keyPair.secretKey);
-    operations.add(op);
+    op["sig"] = nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey);
+    const operations = new Set([op]);
 
     store.setItem(chatID, {
         metadata: {
@@ -268,7 +269,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 function getDeps (operations) {
     var deps = new Set();
     for (op of operations) {
-        const hOp = nacl.hash(op);
+        const hOp = nacl.hash(enc.encode(JSON.stringify(op)));
         if (op.action !== "create" && !op.deps.has(hOp)) {
             deps.add(hOp);
             console.log(`dependency ${op.pk1} ${op.action} ${op.pk2}`);
@@ -287,7 +288,7 @@ async function addOp (pk2, chatID) {
                 pk2: pk2,
                 deps: getDeps(chatInfo.metadata.operations)
             };
-            op["sig"] = nacl.sign(JSON.stringify(op), keyPair.secretKey);
+            op["sig"] = nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey);
             resolve(op);
         })
     });
