@@ -9,7 +9,7 @@ const key = fs.readFileSync("./cert/CA/localhost/localhost.decrypted.key");
 const cert = fs.readFileSync("./cert/CA/localhost/localhost.crt");
 
 app.get('/', (req, res, next) => {
-  res.status(200).send('Hello world!');
+  res.status(200).sendFile('/index.html');
 });
 
 const server = https.createServer({ key, cert }, app);

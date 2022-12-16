@@ -539,7 +539,7 @@ function updateHeading() {
     const title = document.getElementById('heading');
     title.innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
     if (joinedChats.size > 0) {
-        availableChats = document.getElementById('availableChats');
+        const availableChats = document.getElementById('availableChats');
         availableChats.innerHTML = `Chats: ${getChatNames().join(", ")}`;
     }
 }
