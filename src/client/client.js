@@ -159,7 +159,6 @@ function sendOffer(peerName) {
         const newConnection = initPeerConnection(peerName);
         connections.set(peerName, {connection: newConnection, sendChannel: null});
         connectionNames.set(newConnection, peerName);
-        console.log(connections);
         const peerConnection = connections.get(peerName);
 
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(`${localUsername}->${peerName}`);
@@ -286,10 +285,10 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 pk: keyPair.publicKey,
                 nonce: nacl.randomBytes(length)
             };
-        } else {
-            console.log(`adding operation ${dec.decode(keyPair.publicKey)} adds ${dec.decode(pk2)}`);
+        } else if (action === "add" || action === "remove") {
+            console.log(`adding operation ${dec.decode(keyPair.publicKey)} ${action}s ${dec.decode(pk2)}`);
             op = {
-                action: 'add', 
+                action: action, 
                 pk1: keyPair.publicKey,
                 pk2: pk2,
                 deps: getDeps(ops)
@@ -427,7 +426,7 @@ function initChannel (channel) {
 }
 
 function receiveChannelCallback (event) {
-    peerName = (event.channel.label).split("->", 1)[0];
+    const peerName = (event.channel.label).split("->", 1)[0];
     console.log(`Received channel ${event.channel.label} from ${peerName}`);
     const peerConnection = connections.get(peerName);
     peerConnection.sendChannel = event.channel;
@@ -462,12 +461,16 @@ function updateChatStore (chatID, messageData) {
     });
 }
 
+function sendToMember (data, username) {
+    connections.get(username).sendChannel.send(JSON.stringify(data));
+}
+
 function broadcastToMembers (data, chatID = null) {
     chatID = chatID === null ? currentChatID : chatID;
     for (const username of joinedChats.get(chatID).members) {
         try {
             console.log(`sending ${data} to ${username}`);
-            connections.get(username).sendChannel.send(JSON.stringify(data));
+            sendToMember(data, username);
         } catch {
             continue;
         }
@@ -487,6 +490,26 @@ function sendChatMessage (messageInput) {
     broadcastToMembers(data);
     updateChatStore(currentChatID, data);
     updateChatWindow(data);
+}
+
+function sendOperations (chatID, username) {
+    store.getItem(chatID).then((chatInfo) => {
+        sendToMember(Array.from(chatInfo.metadata.operations), username);
+    });
+}
+
+function verifyOperations (ops, chatID, username) {
+    peerOps = new Set(ops);
+    store.getItem(chatID).then((chatInfo) => {
+        chatInfo.metadata.operations = new Set([...chatInfo.metadata.operations, ...peerOps]);
+        store.setItem(chatID, chatInfo);
+    });
+    // only one create
+    
+    // valid signature
+
+    // non-empty deps and all hashes in deps resolve to an operation in o
+
 }
 
 
