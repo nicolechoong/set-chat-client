@@ -130,7 +130,6 @@ function onLogin(success, chats) {
     } else {
         localUsername = loginInput.value;
         joinedChats = chats;
-        store.setItem("joinedChats", chats);
         updateHeading();
 
         initialiseStore();
