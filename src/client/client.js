@@ -130,6 +130,7 @@ function onLogin(success, chats) {
     } else {
         localUsername = loginInput.value;
         joinedChats = chats;
+        store.setItem("joinedChats", chats);
         updateHeading();
 
         initialiseStore();
@@ -238,6 +239,7 @@ function onLeave (peerName) {
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
 
     joinedChats.set(chatID, {chatName: chatName, members: []});
+    store.setItem("joinedChats", joinedChats);
     
     for (const mem of validMemberPubKeys.keys()) {
         console.log(mem);
@@ -586,13 +588,13 @@ function selectChat() {
 
     if (index > 0) {
         const chatName = chatNameInput.options.item(index).text;
-        chatID = getChatID(chatName);
+        const chatID = getChatID(chatName);
         console.log(`trying to join chatID ${chatID}`);
 
-        chatTitle = document.getElementById('chatHeading');
+        const chatTitle = document.getElementById('chatHeading');
         chatTitle.innerHTML = `Chat: ${chatName}`;
         chatMessages.innerHTML = "";
-        const msg = "";
+        var msg = "";
         store.getItem(currentChatID).then((chatInfo) => {
             for (mid of chatInfo.history.keys()) {
                 msg = `${msg}<br />${data.from}: ${data.message}`
