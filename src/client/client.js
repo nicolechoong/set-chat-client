@@ -115,7 +115,7 @@ connection.onmessage = function (message) {
             onCreateChat(data.chatID, data.chatName, new Map(JSON.parse(data.validMemberPubKeys)), data.invalidMembers);
             break;
         case "add":
-            onAdd(data.chatID, data.chatName, data.members, data.from);
+            onAdd(data.chatID, data.from);
             break;
         default: 
             break; 

@@ -321,7 +321,7 @@ function onAdd (connection, data) {
     chatID: data.chatID,
     from: connection.name
   };
-
+  console.log(`sending add message for chat ${chatID} to ${to}`);
   sendTo(connectedUsers.get(data.to).connection, addMessage);
 }
 
