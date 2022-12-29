@@ -159,7 +159,8 @@ function sendOffer(peerName) {
         const newConnection = initPeerConnection(peerName);
         connections.set(peerName, {connection: newConnection, sendChannel: null});
         connectionNames.set(newConnection, peerName);
-        peerConnection = connections.get(peerName);
+        console.log(connections);
+        const peerConnection = connections.get(peerName);
 
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(`${localUsername}->${peerName}`);
         initChannel(peerConnection.sendChannel);
