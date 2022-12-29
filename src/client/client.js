@@ -115,7 +115,7 @@ connection.onmessage = function (message) {
             onCreateChat(data.chatID, data.chatName, new Map(JSON.parse(data.validMemberPubKeys)), data.invalidMembers);
             break;
         case "add":
-            onAdd(data.chatID, data.from);
+            onAdd(data.chatID, data.chatName, data.from);
             break;
         default: 
             break; 
@@ -261,6 +261,9 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     }).then(() => {
         addToChat(Array.from(validMemberPubKeys.keys()), chatID);
     });
+
+    updateChatOptions("add", chatID);
+    updateHeading();
 }
 
 function getDeps (operations) {
@@ -301,9 +304,9 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 
 // When being added to a new chat
 // (chatID: String, {chatName: String, members: Array of String})
-function onAdd (chatID, from) {
-    console.log(`you've been added to chat with ID ${chatID} by ${from}`);
-    joinedChats.set(chatID, {chatName: "", members: []});
+function onAdd (chatID, chatName, from) {
+    console.log(`you've been added to chat ${chatName} by ${from}`);
+    joinedChats.set(chatID, {chatName: chatName, members: []});
     // now we have to do syncing to get members
     sendOffer(from);
     
@@ -331,7 +334,8 @@ async function addToChat(members, chatID) {
                 sendToServer({
                     to: mem,
                     type: "add",
-                    chatID: chatID
+                    chatID: chatID,
+                    chatName: chatInfo.metadata.chatName
                 });
                 console.log(`added ${mem}`);
             }
@@ -505,7 +509,7 @@ function verifyOperations (ops, chatID, username) {
         store.setItem(chatID, chatInfo);
     });
     // only one create
-    
+
     // valid signature
 
     // non-empty deps and all hashes in deps resolve to an operation in o

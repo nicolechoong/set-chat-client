@@ -319,6 +319,7 @@ function onAdd (connection, data) {
   const addMessage = {
     type: "add",
     chatID: data.chatID,
+    chatName: data.chatName,
     from: connection.name
   };
   console.log(`sending add message for chat ${data.chatID} to ${data.to}`);
