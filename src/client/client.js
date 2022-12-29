@@ -565,7 +565,9 @@ function getChatNames() {
 }
 
 function getChatID(chatName) {
+    console.log(Array.from(joinedChats.keys()));
     for (chatID of joinedChats.keys()) {
+        console.log(joinedChats);
         if (chatName === joinedChats.get(chatID).chatName) {
             return chatID;
         }
