@@ -315,12 +315,10 @@ function getPK (connection, data) {
 }
 
 function onAdd (connection, data) {
-  // data = {type: 'add', to: username of invited user, chatName: chat title, chatID: chat id, members: [list of users]}
+  // data = {type: 'add', to: username of invited user, chatID: chat id}
   const addMessage = {
     type: "add",
     chatID: data.chatID,
-    chatName: data.chatName,
-    members: data.members,
     from: connection.name
   };
 

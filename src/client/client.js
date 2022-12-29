@@ -301,16 +301,18 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 
 // When being added to a new chat
 // (chatID: String, {chatName: String, members: Array of String})
-function onAdd (chatID, chatName, from) {
-    console.log(`you've been added to ${chatName} by ${from}`);
-    joinedChats.set(chatID, {chatName: chatName, members: []});
+function onAdd (chatID, from) {
+    console.log(`you've been added to chat with ID ${chatID} by ${from}`);
+    joinedChats.set(chatID, {chatName: "", members: []});
     // now we have to do syncing to get members
-
+    sendOffer(from);
+    
     updateChatOptions("add", chatID);
     updateHeading();
 }
 
 async function addToChat(members, chatID) {
+    // members is the list of members to add to the chat
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             for (const mem of members) {
@@ -326,6 +328,11 @@ async function addToChat(members, chatID) {
                     name: mem,
                     sentTime: sentTime
                 }, chatID);
+                sendToServer({
+                    to: mem,
+                    type: "add",
+                    chatID: chatID
+                });
                 console.log(`added ${mem}`);
             }
             resolve(chatInfo);
