@@ -557,8 +557,8 @@ chatNameInput.addEventListener("change", selectChat);
 newChatBtn.addEventListener("click", createNewChat);
 
 function getChatNames() {
-    var chatnames = []
-    for (chatID of joinedChats.keys()) {
+    var chatnames = [];
+    for (const chatID of joinedChats.keys()) {
         chatnames.push(joinedChats.get(chatID).chatName)
     }
     return chatnames;
@@ -566,8 +566,8 @@ function getChatNames() {
 
 function getChatID(chatName) {
     console.log(Array.from(joinedChats.keys()));
-    for (chatID of joinedChats.keys()) {
-        console.log(joinedChats);
+    for (const chatID of joinedChats.keys()) {
+        console.log(chatID);
         if (chatName === joinedChats.get(chatID).chatName) {
             return chatID;
         }
