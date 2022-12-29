@@ -589,8 +589,8 @@ function selectChat() {
 
     if (index > 0) {
         const chatName = chatNameInput.options.item(index).text;
-        const chatID = getChatID(chatName);
-        console.log(`trying to join chatID ${chatID}`);
+        currentChatID = getChatID(chatName);
+        console.log(`trying to join chatID ${currentChatID}`);
 
         const chatTitle = document.getElementById('chatHeading');
         chatTitle.innerHTML = `Chat: ${chatName}`;
@@ -602,7 +602,7 @@ function selectChat() {
             }
             chatMessages.innerHTML = msg;
         });
-        joinChat(chatID);
+        joinChat(currentChatID);
     }
 }
 
