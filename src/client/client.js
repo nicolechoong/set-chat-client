@@ -48,7 +48,7 @@ const configuration = {
     ] 
 }; 
 
-var currentChatID;
+var currentChatID = 0;
 
 // map from peerName:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
@@ -426,7 +426,9 @@ function initChannel (channel) {
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
-        updateChatWindow(JSON.parse(event.data));
+        const messageData = JSON.parse(event.data);
+        updateChatStore(messageData);
+        updateChatWindow(messageData);
     }
 }
 
@@ -436,33 +438,36 @@ function receiveChannelCallback (event) {
     const peerConnection = connections.get(peerName);
     peerConnection.sendChannel = event.channel;
     initChannel (peerConnection.sendChannel);
-    updateChatWindow({from: "SET", message: `${peerName} has joined`});
 }
 
 function updateChatWindow (data) {
-    var message;
-    switch (data.type) {
-        case "text":
-            message = `${data.from}: ${data.message}`;
-            break;
-        case "add":
-            message = `${data.from} added ${data.name}`;
-            break;
-        case "rem":
-            message = `${data.from} removed ${data.name}`;
-            break;
-        default:
-            message = "";
-            break;
+    if (data.chatID === currentChatID) {
+        var message;
+        switch (data.type) {
+            case "text":
+                message = `[${data.sentTime}] ${data.from}: ${data.message}`;
+                break;
+            case "add":
+                message = `[${data.sentTime}] ${data.from} added ${data.name}`;
+                break;
+            case "remove":
+                message = `[${data.sentTime}] ${data.from} removed ${data.name}`;
+                break;
+            default:
+                message = "";
+                break;
+        }
+        const msg = `${chatMessages.innerHTML}<br />${message}`;
+        chatMessages.innerHTML = msg;
     }
-    const msg = `${chatMessages.innerHTML}<br />${message}`;
-    chatMessages.innerHTML = msg;
 }
 
-function updateChatStore (chatID, messageData) {
-    store.getItem(chatID).then((chatInfo) => {
+function updateChatStore (messageData) {
+    store.getItem(messageData.chatID).then((chatInfo) => {
         chatInfo.history.set(messageData.id, messageData);
         store.setItem(chatID, chatInfo);
+    }).then(() => {
+        console.log("updated chat store");
     });
 }
 
@@ -489,7 +494,8 @@ function sendChatMessage (messageInput) {
         type: "text",
         from: localUsername,
         message: messageInput,
-        sentTime: sentTime
+        sentTime: sentTime,
+        chatID: currentChatID
     };
 
     broadcastToMembers(data);
@@ -597,8 +603,9 @@ function selectChat() {
         chatMessages.innerHTML = "";
         var msg = "";
         store.getItem(currentChatID).then((chatInfo) => {
-            for (mid of chatInfo.history.keys()) {
-                msg = `${msg}<br />${data.from}: ${data.message}`
+            for (const mid of chatInfo.history.keys()) {
+                const data = chatInfo.history.get(mid);
+                msg = `${msg}<br />[${data.setTime}] ${data.from}: ${data.message}`
             }
             chatMessages.innerHTML = msg;
         });
