@@ -499,8 +499,7 @@ function verifyOperations (ops) {
     console.log(createOp.sig);
     console.log(`${typeof createOp.sig}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
     console.log(`sig length ${createOp.sig.length}`);
-    createOp.sig = createOp.sig instanceof Uint8Array ? createOp.sig : enc.encode(createOp.sig);
-    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
+    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig instanceof Uint8Array ? createOp.sig : enc.encode(createOp.sig), createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
     const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
