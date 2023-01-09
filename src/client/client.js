@@ -325,7 +325,7 @@ async function addToChat(validMemberPubKeys, chatID) {
             resolve(chatInfo);
         });
     }).then((chatInfo) => {
-        store.setItem(chatID, chatInfo).then(console.log(`${members} have been added to ${chatID}`));
+        store.setItem(chatID, chatInfo).then(console.log(`${validMemberPubKeys.keys()} have been added to ${chatID}`));
     });
 }
 
@@ -391,6 +391,7 @@ async function receivedOperations (ops, chatID, username) {
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
+        console.log(`verified ${verifyOperations(ops)}    is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
         if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
             chatInfo.metadata.operations = ops;
             store.setItem(chatID, chatInfo);
@@ -491,7 +492,7 @@ function verifyOperations (ops) {
     // only one create
     ops = [...ops];
     const createOps = ops.filter((op) => op.action === "create");
-    console.log(createOps.length);
+    console.log(ops.length);
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
     console.log(`${createOp.sig instanceof Uint8Array}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
@@ -645,7 +646,7 @@ function updateChatStore (messageData) {
 }
 
 function sendToMember (data, username) {
-    console.log(`${data}    ${username}`);
+    console.log(`sending ${JSON.stringify(data)}   to ${username}`);
     connections.get(username).sendChannel.send(JSON.stringify(data));
 }
 
