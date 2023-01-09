@@ -602,7 +602,7 @@ function initChannel (channel) {
     channel.onmessage = (event) => {
         const messageData = JSON.parse(event.data);
         if (messageData.type === "ops") {
-            receivedOperations(JSON.parse(messageData.ops), messageData.chatID, messageData.from);
+            receivedOperations(messageData.ops, messageData.chatID, messageData.from);
         } else {
             updateChatStore(messageData);
             updateChatWindow(messageData);
