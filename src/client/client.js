@@ -249,7 +249,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     
     for (const mem of validMemberPubKeys.keys()) {
         console.log(mem);
-        keyMap.set(mem, validMemberPubKeys.get(mem));
+        keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
     }
     
     if (invalidMembers.length > 0) {
@@ -490,7 +490,7 @@ function verifyOperations (ops) {
     console.log(createOps.length);
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
-    console.log(`${enc.encode(createOp.sig) instanceof Uint8Array}     ${createOp.pk instanceof Uint8Array}`)
+    console.log(`${createOp.sig instanceof Uint8Array}     ${createOp.pk instanceof Uint8Array}`)
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), enc.encode(createOp.sig), createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
@@ -687,7 +687,7 @@ loginBtn.addEventListener("click", function (event) {
         sendToServer({ 
             type: "login", 
             name: loginInput,
-            pubKey: keyPair.publicKey
+            pubKey: dec.decode(keyPair.publicKey)
         });
     }
 });
