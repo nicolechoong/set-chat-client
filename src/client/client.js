@@ -378,9 +378,10 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 async function sendOperations (chatID, username) {
     console.log(`sending operations`);
     store.getItem(chatID).then((chatInfo) => {
+        const stringedOps = [...chatInfo.metadata.operations].map(op => { op.sig = dec.decode(op.sig); return op; });
         sendToMember({
             type: "ops",
-            ops: [...chatInfo.metadata.operations],
+            ops: stringedOps,
             chatID: chatID,
             from: localUsername,
         }, username);
@@ -391,6 +392,7 @@ async function receivedOperations (ops, chatID, username) {
     // ops: array of operation objectss
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
+        ops = ops.map(op => { op.sig = enc.encode(op.sig); return op; });
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
         if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
@@ -496,10 +498,10 @@ function verifyOperations (ops) {
     console.log(JSON.stringify(ops));
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
-    console.log(Uint8Array.from(createOp.sig));
-    console.log(`${Uint8Array.from(createOp.sig) instanceof Uint8Array}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
-    console.log(`sig length ${Uint8Array.from(createOp.sig).length}`);
-    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), Uint8Array.from(createOp.sig), createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
+    console.log(createOp.sig);
+    console.log(`${typeof createOp.sig}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
+    console.log(`sig length ${createOp.sig.length}`);
+    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
     const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
