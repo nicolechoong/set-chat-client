@@ -369,7 +369,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 deps: Array.from(getDeps(ops))
             };
         }
-        console.log(`encoded ${new TextEncoder().encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey).length}`);
+        console.log(`encoded ${new TextEncoder().encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(new TextEncoder().encode(concatOp(op)), keyPair.secretKey).length}`);
         op["sig"] = nacl.sign.detached(new TextEncoder().encode(concatOp(op)), keyPair.secretKey);
             resolve(op);
     });
