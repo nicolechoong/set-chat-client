@@ -359,7 +359,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
             };
         }
         console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, secret key ${keyPair.secretKey instanceof Uint8Array}`);
-        op["sig"] = dec.decode(nacl.sign(enc.encode(concatOp(op))), keyPair.secretKey);
+        op["sig"] = dec.decode(nacl.sign(enc.encode(concatOp(op)), keyPair.secretKey));
             resolve(op);
     });
 }
