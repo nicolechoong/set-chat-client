@@ -386,6 +386,7 @@ async function sendOperations (chatID, username) {
 }
 
 async function receivedOperations (ops, chatID, username) {
+    console.log(connections);
     sendOperations(chatID, username);
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
@@ -705,7 +706,7 @@ messageInput.addEventListener("keypress", function (event) {
 })
 
 sendMessageBtn.addEventListener("click", function () {
-    if (messageInput.length > 0) {
+    if (messageInput.value.length > 0) {
         sendChatMessage(messageInput.value);
         messageInput.value = "";
     }
