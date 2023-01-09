@@ -386,6 +386,7 @@ async function sendOperations (chatID, username) {
 }
 
 async function receivedOperations (ops, chatID, username) {
+    sendOperations(channelLabel.chatID, channelLabel.senderUsername);
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
@@ -589,7 +590,6 @@ function initChannel (channel) {
         console.log(event);
         const channelLabel = JSON.parse(event.target.label);
         console.log(`Channel ${event.target.label} opened`);
-        sendOperations(channelLabel.chatID, channelLabel.senderUsername);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
@@ -609,6 +609,7 @@ function receiveChannelCallback (event) {
     const peerConnection = connections.get(channelLabel.senderUsername);
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
+    sendOperations(channelLabel.chatID, channelLabel.senderUsername);
 }
 
 function updateChatWindow (data) {
