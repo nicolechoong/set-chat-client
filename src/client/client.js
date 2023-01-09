@@ -488,6 +488,7 @@ function verifyOperations (ops) {
     const createOps = ops.filter((op) => {return op.action === "create"});
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
+    console.log(`createops ${createOps}`);
     console.log(`${createOp.sig instanceof Uint8Array}     ${createOp.pk instanceof Uint8Array}`)
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
