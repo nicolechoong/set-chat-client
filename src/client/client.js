@@ -152,11 +152,6 @@ function initialiseStore () {
 
     store.setItem("keyPair", keyPair);
     store.setItem("joinedChats", joinedChats);
-    store.setItem("test", "abcd").then(() => {
-        store.getItem("test").then((test) => {
-            console.log(`Retrieved from localforage ${test}`);
-        })
-    });
 }
 
 // Sending Offer to Peer
@@ -363,7 +358,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 deps: getDeps(ops)
             };
         }
-        console.log(`encoded ${typeof(enc.encode(concatOp(op)))}, concatOp ${typeof(concatOp(op))}`);
+        console.log(`encoded ${enc.encode(concatOp(op))}, concatOp ${typeof(concatOp(op))}`);
         op["sig"] = dec.decode(nacl.sign(enc.encode(concatOp(op))), keyPair.secretKey);
             resolve(op);
     });
