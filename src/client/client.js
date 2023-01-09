@@ -248,7 +248,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     store.setItem("joinedChats", joinedChats);
     
     for (const mem of validMemberPubKeys.keys()) {
-        console.log(mem);
+        console.log(`adding ${mem} with pk ${validMemberPubKeys.get(mem)} to keyMap`);
         keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
     }
     
@@ -297,12 +297,13 @@ function onAdd (chatID, chatName, from) {
 }
 
 async function addToChat(members, chatID) {
-    // members is the list of members to add to the chat
+    // members is the list of members pubkey: string to add to the chat
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             for (const mem of members) {
-                const op = await generateOp("add", chatID, keyMap.get(mem), chatInfo.metadata.operations);
+                const op = await generateOp("add", chatID, mem, chatInfo.metadata.operations);
                 chatInfo.metadata.operations.add(op);
+                console.log(`added ${members} to chat`);
 
                 const sentTime = Date.now();
                 broadcastToMembers({
@@ -356,15 +357,15 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
         if (action === "create") {
             op = {
                 action: 'create', 
-                pk: keyPair.publicKey,
+                pk: dec.decode(keyPair.publicKey),
                 nonce: nacl.randomBytes(length)
             };
         } else if (action === "add" || action === "remove") {
             console.log(`adding operation ${dec.decode(keyPair.publicKey)} ${action}s ${dec.decode(pk2)}`);
             op = {
                 action: action, 
-                pk1: keyPair.publicKey,
-                pk2: pk2,
+                pk1: dec.decode(keyPair.publicKey),
+                pk2: dec.decode(pk2),
                 deps: getDeps(ops)
             };
         }
@@ -493,15 +494,15 @@ function verifyOperations (ops) {
     console.log(createOps.length);
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
-    console.log(`${enc.encode(createOp.sig) instanceof Uint8Array}     ${createOp.pk instanceof Uint8Array}`)
-    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), enc.encode(createOp.sig), createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
+    console.log(`${enc.encode(createOp.sig) instanceof Uint8Array}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
+    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), enc.encode(createOp.sig), enc.encode(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
     const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
 
     for (const op of otherOps) {
         // valid signature
-        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), enc.encode(op.sig), op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
+        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), enc.encode(op.sig), enc.encode(op.pk1))) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
