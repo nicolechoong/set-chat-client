@@ -609,7 +609,6 @@ function receiveChannelCallback (event) {
     const peerConnection = connections.get(channelLabel.senderUsername);
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
-    sendOperations(channelLabel.chatID, channelLabel.senderUsername);
 }
 
 function updateChatWindow (data) {
