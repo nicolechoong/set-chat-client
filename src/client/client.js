@@ -267,7 +267,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         },
         history: new Map(),
     }).then(() => {
-        addToChat(Array.from(validMemberPubKeys.values()), chatID);
+        addToChat(validMemberPubKeys, chatID);
     });
 
     updateChatOptions("add", chatID);
@@ -296,14 +296,14 @@ function onAdd (chatID, chatName, from) {
     updateHeading();
 }
 
-async function addToChat(members, chatID) {
+async function addToChat(validMemberPubKeys, chatID) {
     // members is the list of members pubkey: string to add to the chat
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
-            for (const mem of members) {
-                const op = await generateOp("add", chatID, mem, chatInfo.metadata.operations);
+            for (const mem of validMemberPubKeys.keys()) {
+                const op = await generateOp("add", chatID, validMemberPubKeys.get(mem), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.add(op);
-                console.log(`added ${members} to chat`);
+                console.log(`added ${mem} to chat`);
 
                 const sentTime = Date.now();
                 broadcastToMembers({
@@ -346,7 +346,6 @@ function getDeps (operations) {
 }
 
 function concatOp (op) {
-    console.log(op.action === "create" ? `${op.action} ${op.pk}${op.nonce}` : `${op.action} ${op.pk1}${op.pk2}${op.deps}`);
     return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
 }
 
