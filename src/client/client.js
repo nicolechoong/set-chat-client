@@ -18,8 +18,8 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var enc = new TextEncoder();
-var dec = new TextDecoder();
+// var enc = new TextEncoder();
+// var dec = new TextDecoder();
 
 // private keypair for the client
 var keyPair;
@@ -249,7 +249,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     
     for (const mem of validMemberPubKeys.keys()) {
         console.log(`adding ${mem} with pk ${validMemberPubKeys.get(mem)} to keyMap`);
-        keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
+        keyMap.set(mem, new TextEncoder().encode(validMemberPubKeys.get(mem)));
     }
     
     if (invalidMembers.length > 0) {
@@ -307,7 +307,7 @@ async function addToChat(validMemberPubKeys, chatID) {
 
                 const sentTime = Date.now();
                 broadcastToMembers({
-                    id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
+                    id: nacl.hash(new TextEncoder().encode(`${localUsername}:${sentTime}`)),
                     type: "add",
                     op: op,
                     from: localUsername,
@@ -336,7 +336,7 @@ async function addToChat(validMemberPubKeys, chatID) {
 function getDeps (operations) {
     var deps = new Set();
     for (const op of operations) {
-        const hashedOp = nacl.hash(enc.encode(concatOp(op)));
+        const hashedOp = nacl.hash(new TextEncoder().encode(concatOp(op)));
         if (op.action !== "create" && !op.deps.has(hashedOp)) {
             deps.add(hashedOp);
             console.log(`dependency ${op.pk1} ${op.action} ${op.pk2}`);
@@ -369,8 +369,8 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 deps: Array.from(getDeps(ops))
             };
         }
-        console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey).length}`);
-        op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
+        console.log(`encoded ${new TextEncoder().encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey).length}`);
+        op["sig"] = nacl.sign.detached(new TextEncoder().encode(concatOp(op)), keyPair.secretKey);
             resolve(op);
     });
 }
@@ -380,7 +380,7 @@ async function sendOperations (chatID, username) {
     store.getItem(chatID).then((chatInfo) => {
         const stringedOps = [...chatInfo.metadata.operations].map(op => {
             console.log(op.sig);
-            op.sig = dec.decode(op.sig);
+            op.sig = new TextDecoder().decode(op.sig);
             console.log(op.sig);
             return op; 
         });
@@ -397,7 +397,7 @@ async function receivedOperations (ops, chatID, username) {
     // ops: array of operation objectss
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
-        ops = ops.map(op => { console.log(op.sig); op.sig = enc.encode(op.sig); return op; });
+        ops = ops.map(op => { console.log(op.sig); op.sig = new TextEncoder().encode(op.sig); return op; });
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
         if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
@@ -411,7 +411,7 @@ async function receivedOperations (ops, chatID, username) {
 function getOpFromHash(ops, hashedOp) {
     if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
     for (const op of ops) {
-        if (hashedOp == nacl.hash(enc.encode(concatOp(op)))) {
+        if (hashedOp == nacl.hash(new TextEncoder().encode(concatOp(op)))) {
             hashedOps.set(hashedOp, op);
             return op;
         }
@@ -504,18 +504,18 @@ function verifyOperations (ops) {
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
     console.log(createOp.sig);
-    console.log(`${typeof createOp.sig}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
+    console.log(`${typeof createOp.sig}     ${new TextEncoder().encode(createOp.pk) instanceof Uint8Array}`)
     console.log(`sig length ${createOp.sig.length}`);
-    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
+    if (!nacl.sign.detached.verify(new TextEncoder().encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
-    const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
+    const hashedOps = new Set(ops.map((op) => nacl.hash(new TextEncoder().encode(JSON.stringify(op)))));
 
     for (const op of otherOps) {
         // valid signature
-        console.log(`${op.sig instanceof Uint8Array}     ${enc.encode(op.pk1) instanceof Uint8Array}`)
+        console.log(`${op.sig instanceof Uint8Array}     ${new TextEncoder().encode(op.pk1) instanceof Uint8Array}`)
         console.log(`sig length ${createOp.sig.length}`);
-        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
+        if (!nacl.sign.detached.verify(new TextEncoder().encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
@@ -677,7 +677,7 @@ function sendChatMessage (messageInput) {
     console.log("message sent");
     const sentTime = Date.now();
     const data = {
-        id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
+        id: nacl.hash(new TextEncoder().encode(`${localUsername}:${sentTime}`)),
         type: "text",
         from: localUsername,
         message: messageInput,
@@ -706,7 +706,7 @@ loginBtn.addEventListener("click", function (event) {
         sendToServer({ 
             type: "login", 
             name: loginInput,
-            pubKey: dec.decode(keyPair.publicKey)
+            pubKey: new TextDecoder().decode(keyPair.publicKey)
         });
     }
 });
