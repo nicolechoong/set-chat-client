@@ -380,7 +380,8 @@ async function sendOperations (chatID, username) {
         sendToMember({
             type: "ops",
             ops: Array.from(chatInfo.metadata.operations),
-            chatID: chatID
+            chatID: chatID,
+            from: localUsername,
         }, username);
     });
 }
@@ -589,14 +590,13 @@ function initPeerConnection () {
 function initChannel (channel) {
     channel.onopen = (event) => { 
         console.log(event);
-        const channelLabel = JSON.parse(event.target.label);
         console.log(`Channel ${event.target.label} opened`);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
         const messageData = JSON.parse(event.data);
         if (messageData.type === "ops") {
-            receivedOperations(messageData.ops, messageData.chatID, JSON.parse(event.target.label).senderUsername); 
+            receivedOperations(messageData.ops, messageData.chatID, messageData.from); 
         } else {
             updateChatStore(messageData);
             updateChatWindow(messageData);
