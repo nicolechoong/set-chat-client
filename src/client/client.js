@@ -279,11 +279,11 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 function onAdd (chatID, chatName, from) {
     console.log(`you've been added to chat ${chatName} by ${from}`);
     joinedChats.set(chatID, {chatName: chatName, members: []});
-    
+
     store.setItem(chatID, {
         metadata: {
             chatName: chatName,
-            operations: operations,
+            operations: new Set(),
             ignored: new Set()
         },
         history: new Map(),
