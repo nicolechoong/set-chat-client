@@ -587,7 +587,9 @@ function initPeerConnection () {
 function initChannel (channel) {
     channel.onopen = (event) => { 
         console.log(event);
+        const channelLabel = JSON.parse(event.target.label);
         console.log(`Channel ${event.target.label} opened`);
+        sendOperations(channelLabel.chatID, channelLabel.senderUsername);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
