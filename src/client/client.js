@@ -487,6 +487,7 @@ function verifyOperations (ops) {
     ops = [...ops];
     console.log(ops.length);
     const createOps = ops.filter((op) => op.action === "create");
+    console.log(createOps.length);
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
     console.log(`createops ${createOp.pk}`);
