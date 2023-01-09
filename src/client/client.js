@@ -645,6 +645,7 @@ function updateChatStore (messageData) {
 }
 
 function sendToMember (data, username) {
+    console.log(`${data}    ${username}`);
     connections.get(username).sendChannel.send(JSON.stringify(data));
 }
 
