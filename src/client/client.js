@@ -363,6 +363,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 deps: getDeps(ops)
             };
         }
+        console.log(`encoded ${typeof(enc.encode(concatOp(op)))}, concatOp ${typeof(concatOp(op))}`);
         op["sig"] = dec.decode(nacl.sign(enc.encode(concatOp(op))), keyPair.secretKey);
             resolve(op);
     });
