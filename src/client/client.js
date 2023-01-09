@@ -358,7 +358,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
             op = {
                 action: 'create', 
                 pk: keyPair.publicKey,
-                nonce: nacl.randomBytes(length)
+                nonce: nacl.randomBytes(64),
             };
         } else if (action === "add" || action === "remove") {
             console.log(`adding operation ${keyPair.publicKey} ${action}s ${pk2}`);
@@ -366,7 +366,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 action: action, 
                 pk1: keyPair.publicKey,
                 pk2: pk2,
-                deps: getDeps(ops)
+                deps: Array.from(getDeps(ops))
             };
         }
         console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey).length}`);
@@ -392,7 +392,7 @@ async function receivedOperations (ops, chatID, username) {
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
-        console.log(`verified ${verifyOperations(ops)}    is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
+        console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
         if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
             chatInfo.metadata.operations = ops;
             store.setItem(chatID, chatInfo);
