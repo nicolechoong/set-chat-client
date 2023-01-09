@@ -370,7 +370,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 deps: getDeps(ops)
             };
         }
-        console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey)}`);
+        console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey).length}`);
         op["sig"] = dec.decode(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
             resolve(op);
     });
@@ -496,6 +496,7 @@ function verifyOperations (ops) {
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
     console.log(`${enc.encode(createOp.sig) instanceof Uint8Array}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
+    console.log(`sig length ${enc.encode(createOp.sig).length}`);
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), enc.encode(createOp.sig), enc.encode(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
@@ -591,7 +592,7 @@ function initChannel (channel) {
         console.log(event);
         console.log(`Channel ${event.target.label} opened`);
         const channelLabel = JSON.parse(event.target.label);
-        sendOperations(channelLabel.chatID, channelLabel.senderUsername);
+        sendOperations(channelLabel.chatID, channelLabel.senderUsername === localUsername ? channelLabel.receiverUsername : channelLabel.senderUsername);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
