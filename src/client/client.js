@@ -380,7 +380,7 @@ async function sendOperations (chatID, username) {
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "ops",
-            ops: JSON.stringify([...chatInfo.metadata.operations]),
+            ops: [...chatInfo.metadata.operations],
             chatID: chatID,
             from: localUsername,
         }, username);
