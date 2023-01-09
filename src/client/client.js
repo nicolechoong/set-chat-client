@@ -249,7 +249,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     
     for (const mem of validMemberPubKeys.keys()) {
         console.log(mem);
-        keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
+        keyMap.set(mem, validMemberPubKeys.get(mem));
     }
     
     if (invalidMembers.length > 0) {
