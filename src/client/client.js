@@ -18,9 +18,6 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var enc = new TextEncoder();
-var dec = new TextDecoder();
-
 // private keypair for the client
 var keyPair;
 
@@ -249,7 +246,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     
     for (const mem of validMemberPubKeys.keys()) {
         console.log(mem);
-        keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
+        keyMap.set(mem, nacl.util.decodeUTF8(validMemberPubKeys.get(mem)));
     }
     
     if (invalidMembers.length > 0) {
@@ -297,7 +294,7 @@ async function addToChat(members, chatID) {
 
                 const sentTime = Date.now();
                 broadcastToMembers({
-                    id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
+                    id: nacl.hash(nacl.util.decodeUTF8(`${localUsername}:${sentTime}`)),
                     type: "add",
                     op: op,
                     from: localUsername,
@@ -326,7 +323,7 @@ async function addToChat(members, chatID) {
 function getDeps (operations) {
     var deps = new Set();
     for (const op of operations) {
-        const hashedOp = nacl.hash(enc.encode(concatOp(op)));
+        const hashedOp = nacl.hash(nacl.util.decodeUTF8(concatOp(op)));
         if (op.action !== "create" && !op.deps.has(hashedOp)) {
             deps.add(hashedOp);
             console.log(`dependency ${op.pk1} ${op.action} ${op.pk2}`);
@@ -350,7 +347,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 nonce: nacl.randomBytes(length)
             };
         } else if (action === "add" || action === "remove") {
-            console.log(`adding operation ${dec.decode(keyPair.publicKey)} ${action}s ${dec.decode(pk2)}`);
+            console.log(`adding operation ${nacl.util.encodeUTF8(keyPair.publicKey)} ${action}s ${nacl.util.encodeUTF8(pk2)}`);
             op = {
                 action: action, 
                 pk1: keyPair.publicKey,
@@ -358,8 +355,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 deps: getDeps(ops)
             };
         }
-        console.log(`encoded ${enc.encode(concatOp(op))}, concatOp ${typeof(concatOp(op))}`);
-        op["sig"] = dec.decode(nacl.sign(enc.encode(concatOp(op))), keyPair.secretKey);
+        op["sig"] = nacl.util.encodeUTF8(nacl.sign(nacl.util.decodeUTF8(concatOp(op))), keyPair.secretKey);
             resolve(op);
     });
 }
@@ -388,7 +384,7 @@ async function receivedOperations (ops, chatID, username) {
 function getOpFromHash(ops, hashedOp) {
     if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
     for (const op of ops) {
-        if (hashedOp == nacl.hash(enc.encode(concatOp(op)))) {
+        if (hashedOp == nacl.hash(nacl.util.decodeUTF8(concatOp(op)))) {
             hashedOps.set(hashedOp, op);
             return op;
         }
@@ -481,7 +477,7 @@ function verifyOperations (ops) {
     if (!nacl.sign.detached.verify(concatOp(createOps[0]), op.sig, op.pk)) { console.log("op verification failed: create key verif failed");return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
-    const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
+    const hashedOps = new Set(ops.map((op) => nacl.hash(nacl.util.decodeUTF8(JSON.stringify(op)))));
 
     for (const op of otherOps) {
         // valid signature
@@ -645,7 +641,7 @@ function sendChatMessage (messageInput) {
     console.log("message sent");
     const sentTime = Date.now();
     const data = {
-        id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
+        id: nacl.hash(nacl.util.decodeUTF8(`${localUsername}:${sentTime}`)),
         type: "text",
         from: localUsername,
         message: messageInput,
@@ -674,7 +670,7 @@ loginBtn.addEventListener("click", function (event) {
         sendToServer({ 
             type: "login", 
             name: loginInput,
-            pubKey: dec.decode(keyPair.publicKey)
+            pubKey: nacl.util.encodeUTF8(keyPair.publicKey)
         });
     }
 });
