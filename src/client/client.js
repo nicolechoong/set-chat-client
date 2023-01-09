@@ -488,7 +488,7 @@ function verifyOperations (ops) {
     const createOps = ops.filter((op) => {return op.action === "create"});
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
-    if (!nacl.sign.detached.verify(concatOp(createOp), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
+    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), enc.encode(createOp.sig), enc.encode(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
     const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
