@@ -12,6 +12,7 @@ var connectedUser, localConnection, sendChannel;
 var localUsername;
 
 // TODO: massive fucking techdebt of modularising
+// TODO: replace getItem/setItem with just gets upon login and periodic sets
 
 //////////////////////
 // GLOBAL VARIABLES //
@@ -53,6 +54,9 @@ var currentChatID = 0;
 // map from peerName:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
 
+// map from chatID to an array of usernames to connect to
+var toConnect = new Map();
+
 // (chatID: String, {chatName: String, members: Array of String})
 var joinedChats = new Map();
 
@@ -61,6 +65,9 @@ var store;
 
 // map from name to public key
 var keyMap = new Map();
+
+// storing deps for faster access
+var hashedOps = new Map();
 
 
 /////////////////////////
@@ -153,7 +160,7 @@ function initialiseStore () {
 }
 
 // Sending Offer to Peer
-function sendOffer(peerName) {
+function sendOffer(peerName, chatID) {
     
     if (peerName !== null) { 
         const newConnection = initPeerConnection(peerName);
@@ -161,7 +168,12 @@ function sendOffer(peerName) {
         connectionNames.set(newConnection, peerName);
         const peerConnection = connections.get(peerName);
 
-        peerConnection.sendChannel = peerConnection.connection.createDataChannel(`${localUsername}->${peerName}`);
+        const channelLabel = {
+            senderUsername: localUsername, 
+            receiverUsername: peerName,
+            chatID: chatID,
+        };
+        peerConnection.sendChannel = peerConnection.connection.createDataChannel(JSON.stringify(channelLabel));
         initChannel(peerConnection.sendChannel);
         console.log(`Created sendChannel for ${localUsername}->${peerName}`);
 
@@ -267,49 +279,14 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     updateHeading();
 }
 
-function getDeps (operations) {
-    var deps = new Set();
-    for (const op of operations) {
-        const hOp = nacl.hash(enc.encode(JSON.stringify(op)));
-        if (op.action !== "create" && !op.deps.has(hOp)) {
-            deps.add(hOp);
-            console.log(`dependency ${op.pk1} ${op.action} ${op.pk2}`);
-        }
-    }
-    return deps;
-}
-
-async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
-    
-    return new Promise(function(resolve) {
-        var op;
-        if (action === "create") {
-            op = {
-                action: 'create', 
-                pk: keyPair.publicKey,
-                nonce: nacl.randomBytes(length)
-            };
-        } else if (action === "add" || action === "remove") {
-            console.log(`adding operation ${dec.decode(keyPair.publicKey)} ${action}s ${dec.decode(pk2)}`);
-            op = {
-                action: action, 
-                pk1: keyPair.publicKey,
-                pk2: pk2,
-                deps: getDeps(ops)
-            };
-        }
-        op["sig"] = dec.decode(nacl.sign(enc.encode(JSON.stringify(op)), keyPair.secretKey));
-            resolve(op);
-    });
-}
-
 // When being added to a new chat
 // (chatID: String, {chatName: String, members: Array of String})
 function onAdd (chatID, chatName, from) {
     console.log(`you've been added to chat ${chatName} by ${from}`);
     joinedChats.set(chatID, {chatName: chatName, members: []});
-    // now we have to do syncing to get members
-    sendOffer(from);
+
+    // now we have to do syncing to get members and add to store
+    sendOffer(from, chatID);
     
     updateChatOptions("add", chatID);
     updateHeading();
@@ -347,6 +324,182 @@ async function addToChat(members, chatID) {
     });
 }
 
+//////////////////////////////
+// Access Control Functions //
+//////////////////////////////
+
+function getDeps (operations) {
+    var deps = new Set();
+    for (const op of operations) {
+        const hashedOp = nacl.hash(enc.encode(concatOp(op)));
+        if (op.action !== "create" && !op.deps.has(hashedOp)) {
+            deps.add(hashedOp);
+            console.log(`dependency ${op.pk1} ${op.action} ${op.pk2}`);
+        }
+    }
+    return deps;
+}
+
+function concatOp (op) {
+    return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
+}
+
+async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
+    
+    return new Promise(function(resolve) {
+        var op;
+        if (action === "create") {
+            op = {
+                action: 'create', 
+                pk: keyPair.publicKey,
+                nonce: nacl.randomBytes(length)
+            };
+        } else if (action === "add" || action === "remove") {
+            console.log(`adding operation ${dec.decode(keyPair.publicKey)} ${action}s ${dec.decode(pk2)}`);
+            op = {
+                action: action, 
+                pk1: keyPair.publicKey,
+                pk2: pk2,
+                deps: getDeps(ops)
+            };
+        }
+        op["sig"] = dec.decode(nacl.sign(enc.encode(concatOp(op))), keyPair.secretKey);
+            resolve(op);
+    });
+}
+
+async function sendOperations (chatID, username) {
+    store.getItem(chatID).then((chatInfo) => {
+        sendToMember({
+            type: "ops",
+            ops: Array.from(chatInfo.metadata.operations),
+            chatID: chatID
+        }, username);
+    });
+}
+
+async function receivedOperations (ops, chatID, username) {
+    store.getItem(chatID).then((chatInfo) => {
+        ops = new Set([...chatInfo.metadata.operations, ...ops]);
+        if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
+            chatInfo.metadata.operations = ops;
+            store.setItem(chatID, chatInfo);
+            console.log(`synced with ${username}`);
+        }
+    });
+}
+
+function getOpFromHash(ops, hashedOp) {
+    if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
+    for (const op of ops) {
+        if (hashedOp == nacl.hash(enc.encode(concatOp(op)))) {
+            hashedOps.set(hashedOp, op);
+            return op;
+        }
+    }
+}
+
+// takes in set of ops
+function precedes (ops, op1, op2) {
+    if (!ops.has(op2) || !ops.has(op1)) { return false; }
+    const toVisit = [op2];
+    const target = nacl.hash(concatOp(op1));
+    var curOp;
+    var dep;
+    while (toVisit.length > 0) {
+        curOp = toVisit.shift();
+        for (const hashedDep in curOp.deps) {
+            if (hashedDep === target) {
+                return true;
+            } else {
+                dep = getOpFromHash(ops, dep);
+                if (dep.action !== "create") {
+                    toVisit.push(dep);
+                }
+            }
+        }
+    }
+    return false;
+}
+
+function concurrent (ops, op1, op2) {
+    if (!ops.has(op1) || !ops.has(op2) || op1.sig === op2.sig || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
+    return true;
+}
+
+function authority (ops) {
+    const edges = new Set();
+    var pk;
+    for (const op1 of ops) {
+        for (const op2 of ops) {
+            if (op2.action === "create") { continue; }
+            pk = op2.pk1;
+            if ((((op1.action === "create" && op1.pk === pk) || (op1.action === "add" && op1.pk2 === pk)) && precedes(ops, op1, op2))
+                || ((op1.action === "remove" && op1.pk2 === pk) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
+                    edges.add([op1, op2]);
+                }
+        }
+
+        if ((op1.action === "create" && op1.pk === pk) || (op1.action !== "create" && op1.pk2 === pk)) {
+            edges.add([op1, {"member": pk2, "sig": pk2}]);
+        }
+    }
+
+    return edges;
+}
+
+function valid (ops, ignored, op) {
+    if (op.action === "create") { return true; }
+    if (ignored.has(op)) { return false; }
+    const inSet = ([...authority(ops)]).filter(([op1, op2]) => op.sig === op2.sig && valid(ops, ignored, op1)).map(([op1, _]) => op1);
+    const removeIn = inSet.filter(r => (r.action === "remove"));
+    for (const opA of inSet) {
+        if (opA.action === "create" || opA.action === "add") {
+            if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function members (ops, ignored) {
+    const pks = new Set();
+    var pk;
+    for (const op of ops) {
+        pk = op.action === "create" ? op.pk : op.pk2;
+        if (valid(ops, ignored, {"member": pk, "sig": pk})) {
+            pks.add(pk);
+        }
+    }
+    return pks;
+}
+
+// takes in set of ops
+function verifyOperations (ops) {
+    
+    // only one create
+    ops = [...ops];
+    const createOps = ops.filter((op) => {return op.action === "create"});
+    if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
+    if (!nacl.sign.detached.verify(concatOp(createOps[0]), op.sig, op.pk)) { console.log("op verification failed: create key verif failed");return false; }
+
+    const otherOps = ops.filter((op) => {return op.action !== "create"});
+    const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
+
+    for (const op of otherOps) {
+        // valid signature
+        if (!nacl.sign.detached.verify(concatOp(op), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
+
+        // non-empty deps and all hashes in deps resolve to an operation in o
+        for (const dep of op.deps) {
+            if (!hashedOps.has(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+        }
+    }
+
+    return true;
+}
+
 
 ////////////////////////////
 // Peer to Peer Functions //
@@ -358,7 +511,7 @@ function joinChat (chatID) {
         for (peerName of joinedChats.get(chatID).members) {
             if (peerName !== localUsername) {
                 // Insert Key Exchange Protocol
-                sendOffer(peerName);
+                sendOffer(peerName, chatID);
             }
         }
     }
@@ -427,17 +580,22 @@ function initChannel (channel) {
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
         const messageData = JSON.parse(event.data);
-        updateChatStore(messageData);
-        updateChatWindow(messageData);
+        if (messageData.type === "ops") {
+            receivedOperations(messageData.ops, messageData.chatID, JSON.parse(event.target.label).senderUsername); 
+        } else {
+            updateChatStore(messageData);
+            updateChatWindow(messageData);
+        }
     }
 }
 
 function receiveChannelCallback (event) {
-    const peerName = (event.channel.label).split("->", 1)[0];
-    console.log(`Received channel ${event.channel.label} from ${peerName}`);
-    const peerConnection = connections.get(peerName);
+    const channelLabel = JSON.parse(event.target.label);
+    console.log(`Received channel ${event.channel.label} from ${channelLabel.senderUsername}`);
+    const peerConnection = connections.get(channelLabel.senderUsername);
     peerConnection.sendChannel = event.channel;
     initChannel (peerConnection.sendChannel);
+    sendOperations(channelLabel.chatID, channelLabel.senderUsername);
 }
 
 function updateChatWindow (data) {
@@ -488,6 +646,7 @@ function broadcastToMembers (data, chatID = null) {
 }
 
 function sendChatMessage (messageInput) {
+    console.log("message sent");
     const sentTime = Date.now();
     const data = {
         id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
@@ -501,26 +660,6 @@ function sendChatMessage (messageInput) {
     broadcastToMembers(data);
     updateChatStore(currentChatID, data);
     updateChatWindow(data);
-}
-
-function sendOperations (chatID, username) {
-    store.getItem(chatID).then((chatInfo) => {
-        sendToMember(Array.from(chatInfo.metadata.operations), username);
-    });
-}
-
-function verifyOperations (ops, chatID, username) {
-    peerOps = new Set(ops);
-    store.getItem(chatID).then((chatInfo) => {
-        chatInfo.metadata.operations = new Set([...chatInfo.metadata.operations, ...peerOps]);
-        store.setItem(chatID, chatInfo);
-    });
-    // only one create
-
-    // valid signature
-
-    // non-empty deps and all hashes in deps resolve to an operation in o
-
 }
 
 
