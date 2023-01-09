@@ -345,7 +345,7 @@ function getDeps (operations) {
 }
 
 function concatOp (op) {
-    console.log(op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`);
+    console.log(op.action === "create" ? `${op.action} ${op.pk}${op.nonce}` : `${op.action} ${op.pk1}${op.pk2}${op.deps}`);
     return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
 }
 
@@ -369,7 +369,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
             };
         }
         console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, secret key ${keyPair.secretKey instanceof Uint8Array}`);
-        op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
+        op["sig"] = dec.decode(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
             resolve(op);
     });
 }
@@ -387,8 +387,6 @@ async function sendOperations (chatID, username) {
 }
 
 async function receivedOperations (ops, chatID, username) {
-    console.log(connections);
-    sendOperations(chatID, username);
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
@@ -491,12 +489,11 @@ function verifyOperations (ops) {
     
     // only one create
     ops = [...ops];
-    console.log(ops.length);
     const createOps = ops.filter((op) => op.action === "create");
     console.log(createOps.length);
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
-    console.log(`${createOp.sig instanceof Uint8Array}     ${createOp.pk instanceof Uint8Array}`)
+    console.log(`${enc.encode(createOp.sig) instanceof Uint8Array}     ${createOp.pk instanceof Uint8Array}`)
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), enc.encode(createOp.sig), createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
@@ -596,7 +593,7 @@ function initChannel (channel) {
     channel.onmessage = (event) => {
         const messageData = JSON.parse(event.data);
         if (messageData.type === "ops") {
-            receivedOperations(messageData.ops, messageData.chatID, messageData.from); 
+            receivedOperations(messageData.ops, messageData.chatID, messageData.from);
         } else {
             updateChatStore(messageData);
             updateChatWindow(messageData);
