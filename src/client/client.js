@@ -388,7 +388,8 @@ async function sendOperations (chatID, username) {
 }
 
 async function receivedOperations (ops, chatID, username) {
-    console.log(`receiving operations, ops: array of operation objects`);
+    // ops: array of operation objectss
+    console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ops]);
         console.log(`verified ${verifyOperations(ops)}    is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
@@ -492,7 +493,7 @@ function verifyOperations (ops) {
     // only one create
     ops = [...ops];
     const createOps = ops.filter((op) => op.action === "create");
-    console.log(ops.length);
+    console.log(JSON.stringify(ops));
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
     console.log(`${createOp.sig instanceof Uint8Array}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
@@ -504,6 +505,8 @@ function verifyOperations (ops) {
 
     for (const op of otherOps) {
         // valid signature
+        console.log(`${op.sig instanceof Uint8Array}     ${enc.encode(op.pk1) instanceof Uint8Array}`)
+        console.log(`sig length ${createOp.sig.length}`);
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
