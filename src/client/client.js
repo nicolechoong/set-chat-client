@@ -386,7 +386,7 @@ async function sendOperations (chatID, username) {
 }
 
 async function receivedOperations (ops, chatID, username) {
-    sendOperations(channelLabel.chatID, channelLabel.senderUsername);
+    sendOperations(chatID, username);
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
