@@ -586,11 +586,11 @@ function initChannel (channel) {
 }
 
 function receiveChannelCallback (event) {
-    const channelLabel = JSON.parse(event.target.label);
+    const channelLabel = JSON.parse(event.channel.label);
     console.log(`Received channel ${event.channel.label} from ${channelLabel.senderUsername}`);
     const peerConnection = connections.get(channelLabel.senderUsername);
     peerConnection.sendChannel = event.channel;
-    initChannel (peerConnection.sendChannel);
+    initChannel(peerConnection.sendChannel);
     sendOperations(channelLabel.chatID, channelLabel.senderUsername);
 }
 
