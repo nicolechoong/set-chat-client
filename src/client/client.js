@@ -495,7 +495,7 @@ function verifyOperations (ops) {
 
     for (const op of otherOps) {
         // valid signature
-        if (!nacl.sign.detached.verify(concatOp(op), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
+        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), enc.encode(op.sig), enc.encode(op.pk1))) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
