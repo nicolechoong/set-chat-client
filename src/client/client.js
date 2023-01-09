@@ -378,7 +378,12 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 async function sendOperations (chatID, username) {
     console.log(`sending operations`);
     store.getItem(chatID).then((chatInfo) => {
-        const stringedOps = [...chatInfo.metadata.operations].map(op => { op.sig = dec.decode(op.sig); console.log(op.sig); return op; });
+        const stringedOps = [...chatInfo.metadata.operations].map(op => {
+            console.log(op.sig);
+            op.sig = dec.decode(op.sig);
+            console.log(op.sig);
+            return op; 
+        });
         sendToMember({
             type: "ops",
             ops: stringedOps,
