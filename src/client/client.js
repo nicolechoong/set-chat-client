@@ -370,7 +370,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 deps: getDeps(ops)
             };
         }
-        console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, secret key ${keyPair.secretKey instanceof Uint8Array}`);
+        console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(enc.encode(concatOp(op)))}`);
         op["sig"] = dec.decode(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
             resolve(op);
     });
@@ -590,6 +590,8 @@ function initChannel (channel) {
     channel.onopen = (event) => { 
         console.log(event);
         console.log(`Channel ${event.target.label} opened`);
+        const channelLabel = JSON.parse(event.target.label);
+        sendOperations(channelLabel.chatID, channelLabel.senderUsername);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
@@ -609,7 +611,6 @@ function receiveChannelCallback (event) {
     const peerConnection = connections.get(channelLabel.senderUsername);
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
-    sendOperations(channelLabel.chatID, channelLabel.senderUsername);
 }
 
 function updateChatWindow (data) {
