@@ -287,7 +287,7 @@ function onAdd (chatID, chatName, from) {
             ignored: new Set()
         },
         history: new Map(),
-    })
+    });
 
     // now we have to do syncing to get members and add to store
     sendOffer(from, chatID);
@@ -375,6 +375,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 }
 
 async function sendOperations (chatID, username) {
+    console.log(`sending operations`);
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "ops",
@@ -385,6 +386,7 @@ async function sendOperations (chatID, username) {
 }
 
 async function receivedOperations (ops, chatID, username) {
+    console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
