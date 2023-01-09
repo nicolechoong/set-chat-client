@@ -267,7 +267,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         },
         history: new Map(),
     }).then(() => {
-        addToChat(Array.from(validMemberPubKeys.keys()), chatID);
+        addToChat(Array.from(validMemberPubKeys.values()), chatID);
     });
 
     updateChatOptions("add", chatID);
@@ -351,21 +351,21 @@ function concatOp (op) {
 }
 
 async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
-    // pk is string
+    // pk is uint8array
     
     return new Promise(function(resolve) {
         var op;
         if (action === "create") {
             op = {
                 action: 'create', 
-                pk: dec.decode(keyPair.publicKey),
+                pk: keyPair.publicKey,
                 nonce: nacl.randomBytes(length)
             };
         } else if (action === "add" || action === "remove") {
-            console.log(`adding operation ${dec.decode(keyPair.publicKey)} ${action}s ${pk2}`);
+            console.log(`adding operation ${keyPair.publicKey} ${action}s ${pk2}`);
             op = {
                 action: action, 
-                pk1: dec.decode(keyPair.publicKey),
+                pk1: keyPair.publicKey,
                 pk2: pk2,
                 deps: getDeps(ops)
             };
@@ -497,14 +497,14 @@ function verifyOperations (ops) {
     const createOp = createOps[0];
     console.log(`${createOp.sig instanceof Uint8Array}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
     console.log(`sig length ${createOp.sig.length}`);
-    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, enc.encode(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
+    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
     const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
 
     for (const op of otherOps) {
         // valid signature
-        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), enc.encode(op.sig), enc.encode(op.pk1))) { console.log("op verification failed: key verif failed"); return false; }
+        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
