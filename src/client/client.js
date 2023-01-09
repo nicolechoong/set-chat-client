@@ -351,6 +351,7 @@ function concatOp (op) {
 }
 
 async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
+    // pk is string
     
     return new Promise(function(resolve) {
         var op;
@@ -361,11 +362,11 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 nonce: nacl.randomBytes(length)
             };
         } else if (action === "add" || action === "remove") {
-            console.log(`adding operation ${dec.decode(keyPair.publicKey)} ${action}s ${dec.decode(pk2)}`);
+            console.log(`adding operation ${dec.decode(keyPair.publicKey)} ${action}s ${pk2}`);
             op = {
                 action: action, 
                 pk1: dec.decode(keyPair.publicKey),
-                pk2: dec.decode(pk2),
+                pk2: pk2,
                 deps: getDeps(ops)
             };
         }
