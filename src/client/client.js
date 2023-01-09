@@ -380,7 +380,7 @@ async function sendOperations (chatID, username) {
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "ops",
-            ops: Array.from(chatInfo.metadata.operations),
+            ops: JSON.stringify([...chatInfo.metadata.operations]),
             chatID: chatID,
             from: localUsername,
         }, username);
@@ -388,9 +388,9 @@ async function sendOperations (chatID, username) {
 }
 
 async function receivedOperations (ops, chatID, username) {
-    console.log(`receiving operations`);
+    console.log(`receiving operations, ops: array of operation objects`);
     store.getItem(chatID).then((chatInfo) => {
-        ops = new Set([...chatInfo.metadata.operations, ...ops]);
+        ops = new Set([...chatInfo.metadata.operations, ops]);
         console.log(`verified ${verifyOperations(ops)}    is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
         if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
             chatInfo.metadata.operations = ops;
@@ -598,7 +598,7 @@ function initChannel (channel) {
     channel.onmessage = (event) => {
         const messageData = JSON.parse(event.data);
         if (messageData.type === "ops") {
-            receivedOperations(messageData.ops, messageData.chatID, messageData.from);
+            receivedOperations(JSON.parse(messageData.ops), messageData.chatID, messageData.from);
         } else {
             updateChatStore(messageData);
             updateChatWindow(messageData);
