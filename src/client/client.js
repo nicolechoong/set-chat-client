@@ -387,10 +387,20 @@ async function sendOperations (chatID, username) {
     });
 }
 
+function unpackOp(op) {
+    op.sig = Uint8Array.from(Object.values(op.sig));
+    if (op.action === "create") {
+        op.pk = Uint8Array.from(Object.values(op.pk));
+    } else {
+        op.pk1 = Uint8Array.from(Object.values(op.pk1));
+        op.pk2 = Uint8Array.from(Object.values(op.pk2));
+    }
+}
+
 async function receivedOperations (ops, chatID, username) {
     // ops: array of operation objectss
     console.log(`receiving operations`);
-    ops.forEach(op => { console.log(op.sig); op.sig = Uint8Array.from(Object.values(op.sig))});
+    ops.forEach(op => unpackOp(op));
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
