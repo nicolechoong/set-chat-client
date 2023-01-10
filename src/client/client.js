@@ -510,7 +510,7 @@ function authority (ops) {
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.add([op1, {"member": pk, "sig": pk}]);
-        console.log(`adding member ${pk}`)
+        console.log(`adding member ${pk}`)  // TODO: remove dups
     }
     [...edges].forEach(e => printEdge(e));
 
@@ -523,7 +523,7 @@ function valid (ops, ignored, op) {
     const inSet = ([...authority(ops)]).filter((edge) => {
         const op1 = edge[0];
         const op2 = edge[1];
-        console.log(`sig eq ${op.sig} ${op2.sig} ${dec.decode(op.sig) == dec.decode(op2.sig)}   valid: ${ops, ignored, op1}`);
+        console.log(`sig eq ${op.sig} ${op2.sig}}   valid: ${ops, ignored, op1}`);
         dec.decode(op.sig) === dec.decode(op2.sig) && valid(ops, ignored, op1)
     }).map(([op1, _]) => op1);
     console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
