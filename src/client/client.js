@@ -468,7 +468,6 @@ function precedes (ops, op1, op2) {
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
         for (const hashedDep of curOp.deps) {
-            console.log(`hashedDep ${hashedDep} type is string? ${typeof hashedDep}`);
             if (hashedDep === target) {
                 return true;
             } else {
@@ -497,7 +496,8 @@ function authority (ops) {
             if (op2.action === "create") { continue; }
             pk = dec.decode(op2.pk1);
             console.log(pk);
-            console.log(`sig type ${op1.sig}`);
+            console.log(`sig type ${op1.sig}   op1.action ${op1.action}`);
+            console.log(`${concatOp(op1)} precedes ${concatOp(op2)}? ${precedes(ops, op1, op2)}`);
             if ((((op1.action === "create" && dec.decode(op1.pk) === pk) || (op1.action === "add" && dec.decode(op1.pk2) === pk)) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && op1.pk2 === pk) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.add([op1, op2]);
