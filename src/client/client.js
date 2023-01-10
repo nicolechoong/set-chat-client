@@ -391,6 +391,7 @@ function unpackOp(op) {
     op.sig = Uint8Array.from(Object.values(op.sig));
     if (op.action === "create") {
         op.pk = Uint8Array.from(Object.values(op.pk));
+        op.nonce = Uint8Array.from(Object.values(op.nonce));
     } else {
         op.pk1 = Uint8Array.from(Object.values(op.pk1));
         op.pk2 = Uint8Array.from(Object.values(op.pk2));
@@ -421,9 +422,6 @@ function verifyOperations (ops) {
     console.log(JSON.stringify(ops));
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
-    console.log(createOp.sig);
-    console.log(`${enc.encode(concatOp(createOp)) instanceof Uint8Array}     ${createOp.sig instanceof Uint8Array}     ${createOp.pk instanceof Uint8Array}`)
-    console.log(`sig length ${createOp.sig.length}`);
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => {return op.action !== "create"});
@@ -431,8 +429,6 @@ function verifyOperations (ops) {
 
     for (const op of otherOps) {
         // valid signature
-        console.log(`${op.sig instanceof Uint8Array}     ${enc.encode(op.pk1) instanceof Uint8Array}`)
-        console.log(`sig length ${createOp.sig.length}`);
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
