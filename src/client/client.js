@@ -378,15 +378,9 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 async function sendOperations (chatID, username) {
     console.log(`sending operations`);
     store.getItem(chatID).then((chatInfo) => {
-        const stringedOps = [...chatInfo.metadata.operations].map(op => {
-            console.log(op.sig);
-            op.sig = dec.decode(op.sig);
-            console.log(op.sig);
-            return op; 
-        });
         sendToMember({
             type: "ops",
-            ops: stringedOps,
+            ops: [...chatInfo.metadata.operations],
             chatID: chatID,
             from: localUsername,
         }, username);
@@ -397,14 +391,6 @@ async function receivedOperations (ops, chatID, username) {
     // ops: array of operation objectss
     console.log(`receiving operations`);
     store.getItem(chatID).then((chatInfo) => {
-        ops = ops.map(op => { 
-            console.log(op.sig);
-            let a = enc.encode(op.sig);
-            console.log(a);
-            console.log(dec.decode(a));
-            op.sig = enc.encode(op.sig);
-            return op; 
-        });
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
         if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
