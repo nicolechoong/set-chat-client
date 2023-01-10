@@ -467,8 +467,8 @@ function precedes (ops, op1, op2) {
     var dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
-        for (const hashedDep in curOp.deps) {
-            console.log(`hashedDep type is string? ${typeof hashedDep}`);
+        for (const hashedDep of curOp.deps) {
+            console.log(`hashedDep ${hashedDep} type is string? ${typeof hashedDep}`);
             if (hashedDep === target) {
                 return true;
             } else {
