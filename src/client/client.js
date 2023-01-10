@@ -440,7 +440,7 @@ function verifyOperations (ops) {
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
-            console.log(`dep that happens to be missing ${dep} ${dep instanceof Uint8Array}`)
+            console.log(`dep that happens to be missing ${dec.decode(dep)} ${dep instanceof Uint8Array}`)
             if (!hashedOps.includes(dec.decode(dep))) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
