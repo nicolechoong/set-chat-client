@@ -486,6 +486,10 @@ function concurrent (ops, op1, op2) {
     return true;
 }
 
+function printEdge(edge) {
+    console.log(`edge: ${edge[0].action} to ${edge[1].action}`);
+}
+
 function authority (ops) {
     const edges = new Set();
     var pk;
@@ -495,13 +499,12 @@ function authority (ops) {
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
             pk = dec.decode(op2.pk1);
-            console.log(pk);
             console.log(`sig type ${op1.sig}   op1.action ${op1.action}`);
             console.log(`${concatOp(op1)} precedes ${concatOp(op2)}? ${precedes(ops, op1, op2)}`);
             if ((((op1.action === "create" && dec.decode(op1.pk) === pk) || (op1.action === "add" && dec.decode(op1.pk2) === pk)) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && op1.pk2 === pk) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.add([op1, op2]);
-                console.log(`adding edge ${concatOp(op1)} to ${concatOp(op2)}`);
+                console.log(`adding edge ${op1.action} to ${op2.action}`);
             }
             
             console.log(`500 condition 1: ${op1.action == "create" && dec.decode(op1.pk) == pk}   ${op1.action != "create" && dec.decode(op1.pk2) == pk}`)
@@ -511,7 +514,7 @@ function authority (ops) {
             }
         }
     }
-    console.log(`authority ${[...edges]}`);
+    console.log(`authority ${[...edges].forEach(e => printEdge(e))}`);
 
     return edges;
 }
