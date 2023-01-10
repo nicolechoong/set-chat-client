@@ -436,11 +436,11 @@ function verifyOperations (ops) {
 
     for (const op of otherOps) {
         // valid signature
-        console.log(`${concatOp(op)}   ${op.sig}   ${op.pk1}`);
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
+            console.log(`dep that happens to be missing ${dep}`)
             if (!hashedOps.includes(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
