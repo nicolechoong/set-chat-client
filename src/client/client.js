@@ -500,6 +500,7 @@ function authority (ops) {
             if (op2.action === "create") { continue; }
             pk = dec.decode(op2.pk1);
             console.log(`sig type ${op1.sig}   op1.action ${op1.action}`);
+            console.log(`sig type ${op2.sig}   op1.action ${op2.action}`);
             console.log(`${op1.action} precedes ${op2.action}? ${precedes(ops, op1, op2)}`);
             if ((((op1.action === "create" && dec.decode(op1.pk) === pk) || (op1.action === "add" && dec.decode(op1.pk2) === pk)) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && op1.pk2 === pk) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
