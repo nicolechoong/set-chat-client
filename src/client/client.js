@@ -499,8 +499,10 @@ function authority (ops) {
 
         if ((op1.action === "create" && op1.pk === pk) || (op1.action !== "create" && op1.pk2 === pk)) {
             edges.add([op1, {"member": pk2, "sig": pk2}]);
+            console.log(`adding member ${pk2}`)
         }
     }
+    console.log(`authority ${edges}`);
 
     return edges;
 }
@@ -528,8 +530,7 @@ function members (ops, ignored) {
     const pks = new Set();
     var pk;
     for (const op of ops) {
-        pk = op.action === "create" ? op.pk : op.pk2;
-        console.log(`members checking ${concatOp(op)}`);
+        pk = op.action === "create" ? dec.decode(op.pk) : dec.decode(op.pk2);
         if (valid(ops, ignored, {"member": pk, "sig": pk})) {
             pks.add(pk);
         }
