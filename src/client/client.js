@@ -431,7 +431,7 @@ function verifyOperations (ops) {
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => op.action !== "create");
-    const hashedOps = ops.map((op) => nacl.hash(enc.encode(concatOp(op))));
+    const hashedOps = ops.map((op) => dec.decode(nacl.hash(enc.encode(concatOp(op)))));
     console.log(hashedOps);
 
     for (const op of otherOps) {
@@ -440,8 +440,8 @@ function verifyOperations (ops) {
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
-            console.log(`dep that happens to be missing ${dep}`)
-            if (!hashedOps.includes(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+            console.log(`dep that happens to be missing ${dep} ${dep instanceof Uint8Array}`)
+            if (!hashedOps.includes(dec.decode(dep))) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
 
