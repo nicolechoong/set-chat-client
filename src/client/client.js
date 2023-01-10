@@ -467,6 +467,7 @@ function precedes (ops, op1, op2) {
     var dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
+        console.log(`for op ${curOp.action} ${curOp.deps}`);
         for (const hashedDep of curOp.deps) {
             if (hashedDep === target) {
                 return true;
