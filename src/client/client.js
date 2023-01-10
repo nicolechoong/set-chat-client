@@ -390,7 +390,7 @@ async function sendOperations (chatID, username) {
 async function receivedOperations (ops, chatID, username) {
     // ops: array of operation objectss
     console.log(`receiving operations`);
-    ops.forEach(op => { console.log(op.sig); op.sig = Uint8Array.from(op.sig, key => ops[key])});
+    ops.forEach(op => { console.log(op.sig); op.sig = Uint8Array.from(Object.values(op.sig))});
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
