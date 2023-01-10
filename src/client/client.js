@@ -507,7 +507,7 @@ function authority (ops) {
                 console.log(`adding edge ${op1.action} to ${op2.action}`);
             }
             
-            console.log(`${op1.action}  ${dec.decode(op1.pk2) == pk}`);
+            console.log(`${op1.action}  ${dec.decode(op1.pk2)}  ${pk}`);
             if ((op1.action == "create" && dec.decode(op1.pk) == pk) || (op1.action != "create" && dec.decode(op1.pk2) == pk)) {
                 edges.add([op1, {"member": op2.pk1, "sig": op2.pk1}]);
                 console.log(`adding member ${pk}`)
@@ -523,8 +523,8 @@ function valid (ops, ignored, op) {
     if (op.action === "create") { console.log("create is valid"); return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter((edge) => {
-        op1 = edge[0];
-        op2 = edge[1];
+        const op1 = edge[0];
+        const op2 = edge[1];
         console.log(`sig eq ${op.sig} ${op2.sig} ${dec.decode(op.sig) == dec.decode(op2.sig)}   valid: ${ops, ignored, op1}`);
         dec.decode(op.sig) === dec.decode(op2.sig) && valid(ops, ignored, op1)
     }).map(([op1, _]) => op1);
