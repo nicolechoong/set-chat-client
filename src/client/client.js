@@ -338,7 +338,7 @@ function getDeps (operations) {
     var deps = new Set();
     console.log(operations);
     for (const op of operations) {
-        const hashedOp = dec.decode(nacl.hash(enc.encode(concatOp(op))));
+        const hashedOp = hashOp(op);
         if (op.action === "create" || (op.action !== "create" && !op.deps.has(hashedOp))) {
             deps.add(hashedOp);
             console.log(`dependency ${op.pk}${op.pk1} ${op.action} ${op.pk2}`);
@@ -429,8 +429,7 @@ function verifyOperations (ops) {
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => op.action !== "create");
-    const hashedOps = ops.map((op) => dec.decode(nacl.hash(enc.encode(concatOp(op)))));
-    console.log(hashedOps[0]);
+    const hashedOps = ops.map((op) => hashOp(op));
 
     for (const op of otherOps) {
         // valid signature
@@ -445,10 +444,14 @@ function verifyOperations (ops) {
     return true;
 }
 
+function hashOp(op) {
+    return dec.decode(nacl.hash(enc.encode(concatOp(op))));
+}
+
 function getOpFromHash(ops, hashedOp) {
     if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
     for (const op of ops) {
-        if (hashedOp == nacl.hash(enc.encode(concatOp(op)))) {
+        if (hashedOp == hashOp(op)) {
             hashedOps.set(hashedOp, op);
             return op;
         }
