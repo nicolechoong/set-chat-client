@@ -487,7 +487,7 @@ function concurrent (ops, op1, op2) {
 }
 
 function printEdge(edge) {
-    console.log(`edge: ${edge[0].action} to ${edge[1].action}`);
+    console.log(`edge: ${edge[0].action} to ${edge[1].action}${edge[1].member}`);
 }
 
 function authority (ops) {
@@ -514,7 +514,7 @@ function authority (ops) {
             }
         }
     }
-    console.log(`authority ${[...edges].forEach(e => printEdge(e))}`);
+    [...edges].forEach(e => printEdge(e));
 
     return edges;
 }
@@ -523,7 +523,7 @@ function valid (ops, ignored, op) {
     if (op.action === "create") { console.log("create is valid"); return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter(([op1, op2]) => {
-        console.log(`sig eq ${dec.decode(op.sig) === dec.decode(op2.sig)}   valid: ${ops, ignored, op1}`);
+        console.log(`sig eq ${op.sig} ${op2.sig} ${dec.decode(op.sig) == dec.decode(op2.sig)}   valid: ${ops, ignored, op1}`);
         dec.decode(op.sig) === dec.decode(op2.sig) && valid(ops, ignored, op1)
     }).map(([op1, _]) => op1);
     console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
