@@ -400,6 +400,7 @@ function unpackOp(op) {
     } else {
         op.pk1 = Uint8Array.from(Object.values(op.pk1));
         op.pk2 = Uint8Array.from(Object.values(op.pk2));
+        op.deps = op.deps.map(dep => Uint8Array.from(Object.values(dep)));
     }
 }
 
