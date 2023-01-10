@@ -711,7 +711,7 @@ loginBtn.addEventListener("click", function (event) {
         sendToServer({ 
             type: "login", 
             name: loginInput,
-            pubKey: dec.decode(keyPair.publicKey)
+            pubKey: keyPair.publicKey
         });
     }
 });
