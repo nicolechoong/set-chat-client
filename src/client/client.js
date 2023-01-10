@@ -390,6 +390,7 @@ async function sendOperations (chatID, username) {
 async function receivedOperations (ops, chatID, username) {
     // ops: array of operation objectss
     console.log(`receiving operations`);
+    ops = Uint8Array.from(ops, key => ops.get(key));
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
@@ -399,6 +400,38 @@ async function receivedOperations (ops, chatID, username) {
             console.log(`synced with ${username}`);
         }
     });
+}
+
+// takes in set of ops
+function verifyOperations (ops) {
+    
+    // only one create
+    ops = [...ops];
+    const createOps = ops.filter((op) => op.action === "create");
+    console.log(JSON.stringify(ops));
+    if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
+    const createOp = createOps[0];
+    console.log(createOp.sig);
+    console.log(`${typeof createOp.sig}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
+    console.log(`sig length ${createOp.sig.length}`);
+    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
+
+    const otherOps = ops.filter((op) => {return op.action !== "create"});
+    const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
+
+    for (const op of otherOps) {
+        // valid signature
+        console.log(`${op.sig instanceof Uint8Array}     ${enc.encode(op.pk1) instanceof Uint8Array}`)
+        console.log(`sig length ${createOp.sig.length}`);
+        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
+
+        // non-empty deps and all hashes in deps resolve to an operation in o
+        for (const dep of op.deps) {
+            if (!hashedOps.has(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+        }
+    }
+
+    return true;
 }
 
 function getOpFromHash(ops, hashedOp) {
@@ -485,38 +518,6 @@ function members (ops, ignored) {
         }
     }
     return pks;
-}
-
-// takes in set of ops
-function verifyOperations (ops) {
-    
-    // only one create
-    ops = [...ops];
-    const createOps = ops.filter((op) => op.action === "create");
-    console.log(JSON.stringify(ops));
-    if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
-    const createOp = createOps[0];
-    console.log(createOp.sig);
-    console.log(`${typeof createOp.sig}     ${enc.encode(createOp.pk) instanceof Uint8Array}`)
-    console.log(`sig length ${createOp.sig.length}`);
-    if (!nacl.sign.detached.verify(new TextEncoder().encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
-
-    const otherOps = ops.filter((op) => {return op.action !== "create"});
-    const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
-
-    for (const op of otherOps) {
-        // valid signature
-        console.log(`${op.sig instanceof Uint8Array}     ${enc.encode(op.pk1) instanceof Uint8Array}`)
-        console.log(`sig length ${createOp.sig.length}`);
-        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
-
-        // non-empty deps and all hashes in deps resolve to an operation in o
-        for (const dep of op.deps) {
-            if (!hashedOps.has(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
-        }
-    }
-
-    return true;
 }
 
 
