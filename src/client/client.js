@@ -338,7 +338,7 @@ function getDeps (operations) {
     var deps = new Set();
     console.log(operations);
     for (const op of operations) {
-        const hashedOp = nacl.hash(enc.encode(concatOp(op)));
+        const hashedOp = dec.decode(nacl.hash(enc.encode(concatOp(op))));
         if (op.action === "create" || (op.action !== "create" && !op.deps.has(hashedOp))) {
             deps.add(hashedOp);
             console.log(`dependency ${op.pk}${op.pk1} ${op.action} ${op.pk2}`);
@@ -400,7 +400,6 @@ function unpackOp(op) {
     } else {
         op.pk1 = Uint8Array.from(Object.values(op.pk1));
         op.pk2 = Uint8Array.from(Object.values(op.pk2));
-        op.deps = op.deps.map(dep => Uint8Array.from(Object.values(dep)));
     }
 }
 
@@ -439,7 +438,7 @@ function verifyOperations (ops) {
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
-            if (!hashedOps.includes(dec.decode(dep))) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+            if (!hashedOps.includes(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
 
@@ -466,7 +465,8 @@ function precedes (ops, op1, op2) {
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
         for (const hashedDep in curOp.deps) {
-            if (dec.decode(hashedDep) === target) {
+            console.log(`hashedDep type is string? ${hashedDep instanceof String}`);
+            if (hashedDep === target) {
                 return true;
             } else {
                 dep = getOpFromHash(ops, dep);
