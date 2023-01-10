@@ -543,7 +543,7 @@ function members (ops, ignored) {
     const pks = new Set();
     var pk;
     for (const op of ops) {
-        pk = op.action === "create" ? dec.decode(op.pk) : dec.decode(op.pk2);
+        pk = op.action === "create" ? op.pk : op.pk2;
         if (valid(ops, ignored, {"member": pk, "sig": pk})) {
             pks.add(pk);
         }
