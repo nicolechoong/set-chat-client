@@ -460,13 +460,13 @@ function getOpFromHash(ops, hashedOp) {
 function precedes (ops, op1, op2) {
     if (!ops.has(op2) || !ops.has(op1)) { return false; }
     const toVisit = [op2];
-    const target = nacl.hash(concatOp(op1));
+    const target = dec.decode(nacl.hash(enc.encode(concatOp(op1))));
     var curOp;
     var dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
         for (const hashedDep in curOp.deps) {
-            if (hashedDep === target) {
+            if (dec.decode(hashedDep) === target) {
                 return true;
             } else {
                 dep = getOpFromHash(ops, dep);
