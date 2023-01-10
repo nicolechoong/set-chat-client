@@ -335,6 +335,7 @@ async function addToChat(validMemberPubKeys, chatID) {
 
 function getDeps (operations) {
     var deps = new Set();
+    console.log(operations);
     for (const op of operations) {
         const hashedOp = nacl.hash(enc.encode(concatOp(op)));
         if (op.action !== "create" && !op.deps.has(hashedOp)) {
@@ -342,6 +343,7 @@ function getDeps (operations) {
             console.log(`dependency ${op.pk1} ${op.action} ${op.pk2}`);
         }
     }
+    console.log([...deps]);
     return deps;
 }
 
