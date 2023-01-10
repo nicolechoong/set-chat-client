@@ -388,6 +388,7 @@ async function sendOperations (chatID, username) {
 }
 
 function unpackOp(op) {
+    console.log(op.deps);
     op.sig = Uint8Array.from(Object.values(op.sig));
     if (op.action === "create") {
         op.pk = Uint8Array.from(Object.values(op.pk));
