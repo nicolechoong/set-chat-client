@@ -504,8 +504,8 @@ function authority (ops) {
                 console.log(`adding edge ${concatOp(op1)} to ${concatOp(op2)}`);
             }
             
-            console.log(`500 condition 1: ${op1.action == "create" && dec.decode(op1.pk) == dec.decode(pk)}   ${op1.action != "create" && dec.decode(op1.pk2) == dec.decode(pk)}`)
-            if ((op1.action == "create" && dec.decode(op1.pk) == dec.decode(pk)) || (op1.action != "create" && dec.decode(op1.pk2) == dec.decode(pk))) {
+            console.log(`500 condition 1: ${op1.action == "create" && dec.decode(op1.pk) == pk}   ${op1.action != "create" && dec.decode(op1.pk2) == pk}`)
+            if ((op1.action == "create" && dec.decode(op1.pk) == pk) || (op1.action != "create" && dec.decode(op1.pk2) == pk)) {
                 edges.add([op1, {"member": pk2, "sig": pk2}]);
                 console.log(`adding member ${pk2}`)
             }
