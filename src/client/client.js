@@ -436,12 +436,10 @@ function verifyOperations (ops) {
 
     for (const op of otherOps) {
         // valid signature
-        console.log(concatOp(op));
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
-            console.log(`dep that happens to be missing ${dec.decode(dep)} ${dec.decode(dep) === hashedOps[0]}    ${hashedOps.includes(dec.decode(dep))}`);
             if (!hashedOps.includes(dec.decode(dep))) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
@@ -509,9 +507,10 @@ function authority (ops) {
 }
 
 function valid (ops, ignored, op) {
-    if (op.action === "create") { return true; }
+    if (op.action === "create") { console.log("create is valid"); return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter(([op1, op2]) => op.sig === op2.sig && valid(ops, ignored, op1)).map(([op1, _]) => op1);
+    console.log(`inSet, meant to represent the functions that are carried out by ${op1.pk1}`)
     const removeIn = inSet.filter(r => (r.action === "remove"));
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
@@ -532,6 +531,7 @@ function members (ops, ignored) {
             pks.add(pk);
         }
     }
+    console.log(`calculated member set ${[...pks]}`);
     return pks;
 }
 
