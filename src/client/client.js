@@ -461,7 +461,7 @@ function getOpFromHash(ops, hashedOp) {
 function precedes (ops, op1, op2) {
     if (!ops.has(op2) || !ops.has(op1)) { return false; }
     const toVisit = [op2];
-    const target = hashOp(concatOp(op1));
+    const target = hashOp(op1);
     var curOp;
     var dep;
     while (toVisit.length > 0) {
