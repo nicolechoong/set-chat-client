@@ -519,14 +519,13 @@ function authority (ops) {
 }
 
 function valid (ops, ignored, op) {
-    if (op.action === "create") { console.log("create is valid"); return true; }
+    if (op.action === "create") { return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter((edge) => {
         const op1 = edge[0];
         const op2 = edge[1];
-        console.log(`sig eq ${dec.decode(op.sig) == dec.decode(op2.sig)}}   valid: ${valid(ops, ignored, op1)}`);
-        dec.decode(op.sig) == dec.decode(op2.sig) && valid(ops, ignored, op1)
-    }).map(([op1, _]) => op1);
+        return dec.decode(op.sig) == dec.decode(op2.sig) && valid(ops, ignored, op1);
+    }).map(edge => edge[0]);
     console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
     for (const opA of inSet) {
