@@ -506,13 +506,11 @@ function authority (ops) {
                 edges.add([op1, op2]);
                 console.log(`adding edge ${op1.action} to ${op2.action}`);
             }
-            
-            console.log(`${op1.action}  ${dec.decode(op1.pk2)}  ${pk}`);
-            if ((op1.action == "create" && dec.decode(op1.pk) == pk) || (op1.action != "create" && dec.decode(op1.pk2) == pk)) {
-                edges.add([op1, {"member": op2.pk1, "sig": op2.pk1}]);
-                console.log(`adding member ${pk}`)
-            }
         }
+
+        pk = op1.action == "create" ? op1.pk : op1.pk2;
+        edges.add([op1, {"member": pk, "sig": pk}]);
+        console.log(`adding member ${pk}`)
     }
     [...edges].forEach(e => printEdge(e));
 
