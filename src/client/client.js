@@ -451,6 +451,7 @@ function hashOp(op) {
 function getOpFromHash(ops, hashedOp) {
     if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
     for (const op of ops) {
+        console.log(`getOpFromHash ${concatOp(op)}`);
         if (hashedOp == hashOp(op)) {
             hashedOps.set(hashedOp, op);
             return op;
@@ -462,13 +463,13 @@ function getOpFromHash(ops, hashedOp) {
 function precedes (ops, op1, op2) {
     if (!ops.has(op2) || !ops.has(op1)) { return false; }
     const toVisit = [op2];
-    const target = dec.decode(nacl.hash(enc.encode(concatOp(op1))));
+    const target = hashOp(concatOp(op1));
     var curOp;
     var dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
         for (const hashedDep in curOp.deps) {
-            console.log(`hashedDep type is string? ${hashedDep instanceof String}`);
+            console.log(`hashedDep type is string? ${typeof hashedDep}`);
             if (hashedDep === target) {
                 return true;
             } else {
