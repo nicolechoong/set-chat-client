@@ -450,7 +450,6 @@ function hashOp(op) {
 function getOpFromHash(ops, hashedOp) {
     if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
     for (const op of ops) {
-        console.log(`getOpFromHash ${concatOp(op)}  hashOp ${hashOp(op)} hashedOp ${hashedOp}    equal? ${hashedOp == hashOp(op)}`);
         if (hashedOp == hashOp(op)) {
             hashedOps.set(hashedOp, op);
             return op;
@@ -469,6 +468,7 @@ function precedes (ops, op1, op2) {
         curOp = toVisit.shift();
         console.log(`for op ${curOp.action} ${curOp.deps}`);
         for (const hashedDep of curOp.deps) {
+            console.log(`hashedDep ${hashedDep}   target ${target}    equal? ${hashedDep === target}`);
             if (hashedDep === target) {
                 return true;
             } else {
