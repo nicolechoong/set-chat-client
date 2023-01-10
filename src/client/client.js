@@ -487,13 +487,15 @@ function concurrent (ops, op1, op2) {
 function authority (ops) {
     const edges = new Set();
     var pk;
+    // convert pk into strings to perform comparisons
     for (const op1 of ops) {
         console.log(concatOp(op1));
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
-            pk = op2.pk1;
+            pk = dec.decode(op2.pk1);
             console.log(pk);
-            if ((((op1.action === "create" && op1.pk === pk) || (op1.action === "add" && op1.pk2 === pk)) && precedes(ops, op1, op2))
+            console.log(`sig type ${op1.sig}`);
+            if ((((op1.action === "create" && dec.decode(op1.pk) === pk) || (op1.action === "add" && dec.decode(op1.pk2) === pk)) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && op1.pk2 === pk) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.add([op1, op2]);
                 console.log(`adding edge ${concatOp(op1)} to ${concatOp(op2)}`);
