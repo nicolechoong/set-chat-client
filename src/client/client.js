@@ -400,9 +400,7 @@ async function receivedOperations (ops, chatID, username) {
         ops = ops.map(op => { 
             console.log(op.sig);
             op.sig = enc.encode(op.sig);
-            op.sig = dec.decode(op.sig);
             console.log(op.sig);
-            op.sig = enc.encode(op.sig);
             return op; 
         });
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
