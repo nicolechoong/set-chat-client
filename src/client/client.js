@@ -301,6 +301,7 @@ async function addToChat(validMemberPubKeys, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             for (const mem of validMemberPubKeys.keys()) {
+                console.log(`${validMemberPubKeys.get(mem)}   ${Uint8Array.from(validMemberPubKeys.get(mem))}`);
                 const op = await generateOp("add", chatID, Uint8Array.from(validMemberPubKeys.get(mem)), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.add(op);
                 console.log(`added ${mem} to chat`);
