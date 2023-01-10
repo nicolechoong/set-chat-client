@@ -506,8 +506,8 @@ function authority (ops) {
             
             console.log(`500 condition 1: ${op1.action == "create" && dec.decode(op1.pk) == pk}   ${op1.action != "create" && dec.decode(op1.pk2) == pk}`)
             if ((op1.action == "create" && dec.decode(op1.pk) == pk) || (op1.action != "create" && dec.decode(op1.pk2) == pk)) {
-                edges.add([op1, {"member": pk2, "sig": pk2}]);
-                console.log(`adding member ${pk2}`)
+                edges.add([op1, {"member": op2.pk1, "sig": op2.pk1}]);
+                console.log(`adding member ${pk}`)
             }
         }
     }
