@@ -338,7 +338,7 @@ function getDeps (operations) {
     console.log(operations);
     for (const op of operations) {
         const hashedOp = nacl.hash(enc.encode(concatOp(op)));
-        if (op.action !== "create" && !op.deps.has(hashedOp)) {
+        if (op.action === "create" || (op.action !== "create" && !op.deps.has(hashedOp))) {
             deps.add(hashedOp);
             console.log(`dependency ${op.pk1} ${op.action} ${op.pk2}`);
         }
