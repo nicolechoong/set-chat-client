@@ -472,7 +472,7 @@ function precedes (ops, op1, op2) {
             if (hashedDep === target) {
                 return true;
             } else {
-                dep = getOpFromHash(ops, dep);
+                dep = getOpFromHash(ops, hashedDep);
                 if (dep.action !== "create") {
                     toVisit.push(dep);
                 }
