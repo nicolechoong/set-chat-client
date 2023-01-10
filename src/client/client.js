@@ -459,7 +459,7 @@ function getOpFromHash(ops, hashedOp) {
 
 // takes in set of ops
 function precedes (ops, op1, op2) {
-    if (!ops.has(op2) || !ops.has(op1)) { return false; }
+    if (!ops.has(op2) || !ops.has(op1)) { return false; } // TODO
     const toVisit = [op2];
     const target = hashOp(op1);
     var curOp;
@@ -468,7 +468,6 @@ function precedes (ops, op1, op2) {
         curOp = toVisit.shift();
         console.log(`for op ${curOp.action} ${curOp.deps}`);
         for (const hashedDep of curOp.deps) {
-            console.log(`hashedDep ${hashedDep}   target ${target}    equal? ${hashedDep === target}`);
             if (hashedDep === target) {
                 return true;
             } else {
@@ -505,8 +504,8 @@ function authority (ops) {
                 console.log(`adding edge ${concatOp(op1)} to ${concatOp(op2)}`);
             }
             
-            console.log(`500 condition 1: ${op1.action === "create" && op1.pk === pk}   ${op1.action !== "create" && op1.pk2 === pk}`)
-            if ((op1.action === "create" && op1.pk === pk) || (op1.action !== "create" && op1.pk2 === pk)) {
+            console.log(`500 condition 1: ${op1.action == "create" && dec.decode(op1.pk) == dec.decode(pk)}   ${op1.action != "create" && dec.decode(op1.pk2) == dec.decode(pk)}`)
+            if ((op1.action == "create" && dec.decode(op1.pk) == dec.decode(pk)) || (op1.action != "create" && dec.decode(op1.pk2) == dec.decode(pk))) {
                 edges.add([op1, {"member": pk2, "sig": pk2}]);
                 console.log(`adding member ${pk2}`)
             }
@@ -521,8 +520,8 @@ function valid (ops, ignored, op) {
     if (op.action === "create") { console.log("create is valid"); return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter(([op1, op2]) => {
-        console.log(`sig eq ${op.sig === op2.sig}   valid: ${ops, ignored, op1}`);
-        op.sig === op2.sig && valid(ops, ignored, op1)
+        console.log(`sig eq ${dec.decode(op.sig) === dec.decode(op2.sig)}   valid: ${ops, ignored, op1}`);
+        dec.decode(op.sig) === dec.decode(op2.sig) && valid(ops, ignored, op1)
     }).map(([op1, _]) => op1);
     console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
