@@ -366,7 +366,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 action: action, 
                 pk1: keyPair.publicKey,
                 pk2: pk2,
-                deps: Array.from(getDeps(ops))
+                deps: [...getDeps(ops)]
             };
         }
         console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(new TextEncoder().encode(concatOp(op)), keyPair.secretKey).length}`);
@@ -401,6 +401,9 @@ async function receivedOperations (ops, chatID, username) {
             console.log(op.sig);
             op.sig = enc.encode(op.sig);
             console.log(op.sig);
+            op.sign = dec.decode(op.sig);
+            console.log(op.sig);
+            op.sig = enc.encode(op.sig);
             return op; 
         });
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
