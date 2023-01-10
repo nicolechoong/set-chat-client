@@ -425,7 +425,6 @@ function verifyOperations (ops) {
     // only one create
     ops = [...ops];
     const createOps = ops.filter((op) => op.action === "create");
-    console.log(JSON.stringify(ops));
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
@@ -509,7 +508,10 @@ function authority (ops) {
 function valid (ops, ignored, op) {
     if (op.action === "create") { console.log("create is valid"); return true; }
     if (ignored.has(op)) { return false; }
-    const inSet = ([...authority(ops)]).filter(([op1, op2]) => op.sig === op2.sig && valid(ops, ignored, op1)).map(([op1, _]) => op1);
+    const inSet = ([...authority(ops)]).filter(([op1, op2]) => {
+        console.log(`sig eq ${op.sig === op2.sig}   valid: ${ops, ignored, op1}`);
+        op.sig === op2.sig && valid(ops, ignored, op1)
+    }).map(([op1, _]) => op1);
     console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
     for (const opA of inSet) {
@@ -527,6 +529,7 @@ function members (ops, ignored) {
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
+        console.log(`members checking ${concatOp(op)}`);
         if (valid(ops, ignored, {"member": pk, "sig": pk})) {
             pks.add(pk);
         }
