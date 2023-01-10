@@ -364,7 +364,6 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 nonce: nacl.randomBytes(64),
             };
         } else if (action === "add" || action === "remove") {
-            console.log("hi");
             console.log(`adding operation ${keyPair.publicKey} ${action}s ${pk2}`);
             op = {
                 action: action, 
@@ -451,7 +450,7 @@ function hashOp(op) {
 function getOpFromHash(ops, hashedOp) {
     if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
     for (const op of ops) {
-        console.log(`getOpFromHash ${concatOp(op)}`);
+        console.log(`getOpFromHash ${concatOp(op)}  hashOp ${hashOp(op)} hashedOp ${hashedOp}    equal? ${hashedOp == hashOp(op)}`);
         if (hashedOp == hashOp(op)) {
             hashedOps.set(hashedOp, op);
             return op;
