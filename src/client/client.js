@@ -429,11 +429,12 @@ function verifyOperations (ops) {
     const createOp = createOps[0];
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
-    const otherOps = ops.filter((op) => {return op.action !== "create"});
+    const otherOps = ops.filter((op) => op.action !== "create");
     const hashedOps = new Set(ops.map((op) => nacl.hash(enc.encode(JSON.stringify(op)))));
 
     for (const op of otherOps) {
         // valid signature
+        console.log(`${concatOp}   ${op.sig}   ${op.pk1}`);
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
