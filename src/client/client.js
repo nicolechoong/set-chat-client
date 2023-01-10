@@ -492,9 +492,11 @@ function authority (ops) {
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
             pk = op2.pk1;
+            console.log(pk);
             if ((((op1.action === "create" && op1.pk === pk) || (op1.action === "add" && op1.pk2 === pk)) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && op1.pk2 === pk) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.add([op1, op2]);
+                console.log(`adding edge ${concatOp(op1)} to ${concatOp(op2)}`);
             }
             
             console.log(`500 condition 1: ${op1.action === "create" && op1.pk === pk}   ${op1.action !== "create" && op1.pk2 === pk}`)
