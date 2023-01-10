@@ -510,7 +510,7 @@ function valid (ops, ignored, op) {
     if (op.action === "create") { console.log("create is valid"); return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter(([op1, op2]) => op.sig === op2.sig && valid(ops, ignored, op1)).map(([op1, _]) => op1);
-    console.log(`inSet, meant to represent the functions that are carried out by ${op1.pk1}`)
+    console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
