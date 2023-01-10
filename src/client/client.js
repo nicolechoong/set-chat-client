@@ -399,10 +399,9 @@ async function receivedOperations (ops, chatID, username) {
     store.getItem(chatID).then((chatInfo) => {
         ops = ops.map(op => { 
             console.log(op.sig);
-            op.sig = enc.encode(op.sig);
-            console.log(op.sig);
-            op.sign = dec.decode(op.sig);
-            console.log(op.sig);
+            let a = enc.encode(op.sig);
+            console.log(a);
+            console.log(dec.decode(a));
             op.sig = enc.encode(op.sig);
             return op; 
         });
