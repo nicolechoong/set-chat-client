@@ -488,21 +488,23 @@ function authority (ops) {
     const edges = new Set();
     var pk;
     for (const op1 of ops) {
+        console.log(concatOp(op1));
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
             pk = op2.pk1;
             if ((((op1.action === "create" && op1.pk === pk) || (op1.action === "add" && op1.pk2 === pk)) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && op1.pk2 === pk) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
-                    edges.add([op1, op2]);
-                }
-        }
-
-        if ((op1.action === "create" && op1.pk === pk) || (op1.action !== "create" && op1.pk2 === pk)) {
-            edges.add([op1, {"member": pk2, "sig": pk2}]);
-            console.log(`adding member ${pk2}`)
+                edges.add([op1, op2]);
+            }
+            
+            console.log(`500 condition 1: ${op1.action === "create" && op1.pk === pk}   ${op1.action !== "create" && op1.pk2 === pk}`)
+            if ((op1.action === "create" && op1.pk === pk) || (op1.action !== "create" && op1.pk2 === pk)) {
+                edges.add([op1, {"member": pk2, "sig": pk2}]);
+                console.log(`adding member ${pk2}`)
+            }
         }
     }
-    console.log(`authority ${edges}`);
+    console.log(`authority ${[...edges]}`);
 
     return edges;
 }
