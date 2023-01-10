@@ -79,9 +79,10 @@ var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazon
 
 connection.onopen = function () { 
     console.log("Connected to server"); 
-    let b = new TextEncoder().encode("hello");
-    console.log(new TextEncoder().encode("hello"));
-    console.log(new TextEncoder().encode("hello"));
+    let enc = new TextEncoder();
+    let b = enc.encode("hello");
+    console.log(enc.encode("hello"));
+    console.log(enc.encode("hello"));
     console.log(new TextDecoder().decode(b));
     let a = nacl.util.decodeBase64("hello");
     console.log(nacl.util.decodeBase64("hello"));
