@@ -454,14 +454,14 @@ function verifyOperations (ops) {
 }
 
 function hashOp(op) {
-    return dec.decode(nacl.hash(enc.encode(concatOp(op))));
+    return nacl.hash(enc.encode(concatOp(op)));
 }
 
 function getOpFromHash(ops, hashedOp) {
-    if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
+    if (hashedOps.has(dec.decode(hashedOp))) { return hashedOps.get(dec.decode(hashedOp)); }
     for (const op of ops) {
-        if (hashedOp == hashOp(op)) {
-            hashedOps.set(hashedOp, op);
+        if (arrEqual(hashedOp, hashOp(op))) {
+            hashedOps.set(dec.decode(hashedOp), op);
             return op;
         }
     }
@@ -478,7 +478,7 @@ function precedes (ops, op1, op2) {
         curOp = toVisit.shift();
         console.log(`for op ${curOp.action} ${curOp.deps}`);
         for (const hashedDep of curOp.deps) {
-            if (hashedDep === target) {
+            if (arrEqual(hashedDep, target)) {
                 return true;
             } else {
                 dep = getOpFromHash(ops, hashedDep);
