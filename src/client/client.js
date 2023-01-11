@@ -1,5 +1,4 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import { key } from "localforage";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
