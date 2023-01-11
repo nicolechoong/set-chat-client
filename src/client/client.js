@@ -439,6 +439,7 @@ function verifyOperations (ops) {
 
     const otherOps = ops.filter((op) => op.action !== "create");
     const hashedOps = ops.map((op) => hashOp(op));
+    console.log(hashedOps);
 
     for (const op of otherOps) {
         // valid signature
@@ -446,6 +447,7 @@ function verifyOperations (ops) {
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
+            console.log(dep);
             if (!hashedOps.includes(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
