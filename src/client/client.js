@@ -402,6 +402,16 @@ function unpackOp(op) {
     }
 }
 
+function arrEqual(arr1, arr2) {
+    if (arr1.length !== arr2.length) { return false; }
+    let index = 0;
+    while (index < arr1.length) {
+        if (arr1[index] !== arr2[index]) { return false; }
+        index++;
+    }
+    return true;
+}
+
 async function receivedOperations (ops, chatID, username) {
     // ops: array of operation objectss
     console.log(`receiving operations`);
@@ -482,7 +492,7 @@ function precedes (ops, op1, op2) {
 }
 
 function concurrent (ops, op1, op2) {
-    if (!ops.has(op1) || !ops.has(op2) || op1.sig === op2.sig || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
+    if (!ops.has(op1) || !ops.has(op2) || arrEqual(op1.sig, op2.sig) || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
     return true;
 }
 
@@ -498,12 +508,11 @@ function authority (ops) {
         console.log(concatOp(op1));
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
-            pk = dec.decode(op2.pk1);
             console.log(`sig type ${op1.sig}   op1.action ${op1.action}`);
-            console.log(`sig type ${op2.sig}   op1.action ${op2.action}`);
+            console.log(`sig type ${op2.sig}   op2.action ${op2.action}`);
             console.log(`${op1.action} precedes ${op2.action}? ${precedes(ops, op1, op2)}`);
-            if ((((op1.action === "create" && dec.decode(op1.pk) === pk) || (op1.action === "add" && dec.decode(op1.pk2) === pk)) && precedes(ops, op1, op2))
-                || ((op1.action === "remove" && op1.pk2 === pk) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
+            if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
+                || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.add([op1, op2]);
                 console.log(`adding edge ${op1.action} to ${op2.action}`);
             }
@@ -513,6 +522,7 @@ function authority (ops) {
         edges.add([op1, {"member": pk, "sig": pk}]);
         console.log(`adding member ${pk}`)  // TODO: remove dups
     }
+    console.log(`authority set`);
     [...edges].forEach(e => printEdge(e));
 
     return edges;
@@ -522,9 +532,8 @@ function valid (ops, ignored, op) {
     if (op.action === "create") { return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter((edge) => {
-        const op1 = edge[0];
-        const op2 = edge[1];
-        return dec.decode(op.sig) == dec.decode(op2.sig) && valid(ops, ignored, op1);
+        
+        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0]);
     }).map(edge => edge[0]);
     console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
