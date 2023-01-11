@@ -349,7 +349,7 @@ function getDeps (operations) {
 }
 
 function concatOp (op) {
-    return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
+    return JSON.stringify(op);
 }
 
 async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
@@ -391,7 +391,6 @@ async function sendOperations (chatID, username) {
 }
 
 function unpackOp(op) {
-    console.log(op.deps);
     op.sig = Uint8Array.from(Object.values(op.sig));
     if (op.action === "create") {
         op.pk = Uint8Array.from(Object.values(op.pk));
@@ -424,6 +423,7 @@ async function receivedOperations (ops, chatID, username) {
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${username}`);
         }
+        // need to reject the connection
     });
 }
 
@@ -438,7 +438,7 @@ function verifyOperations (ops) {
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => op.action !== "create");
-    const hashedOps = ops.map((op) => hashOp(op));
+    const hashedOps = ops.map((op) => dec.decode(hashOp(op)));
     console.log(hashedOps);
 
     for (const op of otherOps) {
@@ -448,7 +448,7 @@ function verifyOperations (ops) {
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
             console.log(dep);
-            if (!hashedOps.includes(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+            if (!hashedOps.includes(dec.decode(dep))) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
 
