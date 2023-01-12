@@ -444,7 +444,7 @@ function verifyOperations (ops) {
 
     for (const op of otherOps) {
         // valid signature
-        console.log(`${enc.encode(concatOp(op))}    ${op.sig}    ${op.pk1}`);
+        console.log(`${enc.encode(concatOp(op))}   sig: ${op.sig}    pk1: ${op.pk1}`);
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
@@ -461,7 +461,7 @@ function hashOp(op) {
 }
 
 function getOpFromHash(ops, hashedOp) {
-    console.log(`hashedOp param is ${hashedOp}`);
+    console.log(`hashedOp param is array ${hashedOp instanceof Uint8Array} ${JSON.stringify(hashedOp)}`);
     if (hashedOps.has(dec.decode(hashedOp))) { return hashedOps.get(dec.decode(hashedOp)); }
     for (const op of ops) {
         if (arrEqual(hashedOp, hashOp(op))) {
@@ -480,7 +480,7 @@ function precedes (ops, op1, op2) {
     var dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
-        console.log(`for op ${curOp.action} ${curOp.deps}`);
+        console.log(`for op ${curOp.action} ${JSON.stringify(curOp.deps)}`);
         for (const hashedDep of curOp.deps) {
             if (arrEqual(hashedDep, target)) {
                 return true;
