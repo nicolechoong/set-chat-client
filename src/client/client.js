@@ -159,6 +159,7 @@ function initialiseStore () {
             console.log("keyPair generated");
             store.setItem("keyPair", keyPair);
         } else {
+            console.log(`keypair ${kp}`);
             keyPair = kp;
         }
     });
