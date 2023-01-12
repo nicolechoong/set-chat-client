@@ -137,6 +137,7 @@ function onLogin(success, chats) {
     } else {
         localUsername = loginInput.value;
         joinedChats = chats;
+        
         keyMap.set(localUsername, keyPair.publicKey);
         updateHeading();
 
@@ -459,6 +460,7 @@ function hashOp(op) {
 }
 
 function getOpFromHash(ops, hashedOp) {
+    console.log(`hashedOp param is ${hashedOp}`);
     if (hashedOps.has(dec.decode(hashedOp))) { return hashedOps.get(dec.decode(hashedOp)); }
     for (const op of ops) {
         if (arrEqual(hashedOp, hashOp(op))) {
