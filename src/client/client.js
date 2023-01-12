@@ -150,7 +150,7 @@ function initialiseStore () {
     // new user: creates new store
     // returning user: will just point to the same instance
     store = localforage.createInstance({
-        name: localUsername
+        storeName: localUsername
     });
     store.setItem("joinedChats", joinedChats);
 }
