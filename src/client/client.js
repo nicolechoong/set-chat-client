@@ -248,8 +248,8 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     store.setItem("joinedChats", joinedChats);
     
     for (const mem of validMemberPubKeys.keys()) {
-        console.log(`adding ${mem} with pk ${validMemberPubKeys.get(mem)} to keyMap`);
-        keyMap.set(mem, enc.encode(validMemberPubKeys.get(mem)));
+        console.log(`adding ${mem} with pk ${dec.decode(validMemberPubKeys.get(mem))} to keyMap`);
+        keyMap.set(mem, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))));
     }
     
     if (invalidMembers.length > 0) {
@@ -510,8 +510,6 @@ function authority (ops) {
         console.log(concatOp(op1));
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
-            console.log(`sig type ${op1.sig}   op1.action ${op1.action}`);
-            console.log(`sig type ${op2.sig}   op2.action ${op2.action}`);
             console.log(`${op1.action} precedes ${op2.action}? ${precedes(ops, op1, op2)}`);
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
