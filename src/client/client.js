@@ -423,7 +423,7 @@ async function receivedOperations (ops, chatID, username) {
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${username}`);
         }
-        // need to reject the connection
+        
     });
 }
 
@@ -438,7 +438,7 @@ function verifyOperations (ops) {
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => op.action !== "create");
-    const hashedOps = ops.map((op) => dec.decode(hashOp(op)));
+    const hashedOps = ops.map((op) => hashOp(op));
     console.log(hashedOps);
 
     for (const op of otherOps) {
@@ -448,7 +448,7 @@ function verifyOperations (ops) {
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
             console.log(dep);
-            if (!hashedOps.includes(dec.decode(dep))) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+            if (!hashedOps.includes(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
 
@@ -534,7 +534,6 @@ function valid (ops, ignored, op) {
     if (op.action === "create") { return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter((edge) => {
-        
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0]);
     }).map(edge => edge[0]);
     console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
