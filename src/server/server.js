@@ -296,7 +296,7 @@ function onCreateChat (connection, data) {
   sendTo(connection, createChatMessage);
 }
 
-function getPK (connection, data) {
+function onGetPK (connection, data) {
   if (!allUsers.has(data.name)) {
     sendTo(connection, {
       type: "getPK",

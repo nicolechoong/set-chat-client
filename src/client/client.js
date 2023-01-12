@@ -124,13 +124,16 @@ connection.onmessage = function (message) {
         case "add":
             onAdd(data.chatID, data.chatName, data.from);
             break;
+        case "getPK":
+            onGetPK(data.name, data.success, data.pubKey);
+            break;
         default: 
             break; 
    } 
 };
   
 // Server approves Login
-function onLogin(success, chats) { 
+function onLogin (success, chats) { 
 
     if (success === false) { 
         alert("oops...try a different username"); 
@@ -140,8 +143,6 @@ function onLogin(success, chats) {
 
         keyMap.set(localUsername, keyPair.publicKey);
         updateHeading();
-
-        initialiseStore();
     } 
 };
 
@@ -152,7 +153,15 @@ function initialiseStore () {
         name: localUsername
     });
 
-    store.setItem("keyPair", keyPair);
+    store.getItem("keyPair").then((kp) => {
+        if (kp === null) {
+            keyPair = nacl.sign.keyPair();
+            console.log("keyPair generated");
+            store.setItem("keyPair", keyPair);
+        } else {
+            keyPair = kp;
+        }
+    });
     store.setItem("joinedChats", joinedChats);
 }
 
@@ -292,6 +301,7 @@ function onAdd (chatID, chatName, from) {
     });
 
     // now we have to do syncing to get members and add to store
+    getPK(from);
     sendOffer(from, chatID);
     
     updateChatOptions("add", chatID);
@@ -332,9 +342,27 @@ async function addToChat(validMemberPubKeys, chatID) {
     });
 }
 
+function onGetPK (name, success, pk) {
+    if (success) {
+        console.log(`Received pk of ${name}, ${dec.decode(pk)}`);
+        keyMap.set(name, Uint8Array.from(Object.values(pk)));
+        store.setItem(keyMap, keyMap);
+    } else {
+        console.error(`User ${name} does not exist`);
+    }
+}
+
 //////////////////////////////
 // Access Control Functions //
 //////////////////////////////
+
+function getPK (name) {
+    console.log(`Requesting for pk of ${name}`);
+    sendToServer({
+        type: "getPK",
+        name: name,
+    });
+}
 
 function getDeps (operations) {
     var deps = new Set();
@@ -736,8 +764,7 @@ function sendChatMessage (messageInput) {
 loginBtn.addEventListener("click", function (event) { 
     const loginInput = document.getElementById('loginInput').value;
 
-    keyPair = nacl.sign.keyPair();
-    console.log("keyPair generated");
+    initialiseStore();
 
     if (loginInput.length > 0 && isAlphanumeric(loginInput)) {
         sendToServer({ 
