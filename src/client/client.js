@@ -742,7 +742,7 @@ function sendChatMessage (messageInput) {
     };
 
     broadcastToMembers(data);
-    updateChatStore(currentChatID, data);
+    // updateChatStore(currentChatID, data);
     updateChatWindow(data);
 }
 
