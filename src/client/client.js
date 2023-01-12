@@ -149,6 +149,7 @@ function onLogin (success, chats) {
 function initialiseStore () {
     // new user: creates new store
     // returning user: will just point to the same instance
+    console.log(`init store local user: ${localUsername}`);
     store = localforage.createInstance({
         storeName: localUsername
     });
