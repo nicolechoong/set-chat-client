@@ -421,7 +421,7 @@ async function receivedOperations (ops, chatID, username) {
     ops.forEach(op => unpackOp(op));
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
-        console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
+        console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(dec.decode(keyMap.get(username)))}`);
         if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(dec.decode(keyMap.get(username)))) {
             chatInfo.metadata.operations = ops;
             store.setItem(chatID, chatInfo);
