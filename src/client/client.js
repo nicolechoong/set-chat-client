@@ -349,6 +349,7 @@ function getDeps (operations) {
 }
 
 function concatOp (op) {
+    console.log(JSON.stringify(op));
     return JSON.stringify(op);
 }
 
