@@ -77,14 +77,6 @@ var hashedOps = new Map();
 var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
 // var connection = new WebSocket('wss://localhost:3000');
 
-localforage.dropInstance({name: "a"}).then(function() {
-    console.log('Dropped the store of the current instance');
-});
-
-localforage.dropInstance({name: "b"}).then(function() {
-    console.log('Dropped the store of the current instance');
-});
-
 connection.onopen = function () { 
     console.log("Connected to server");
 };
@@ -160,6 +152,7 @@ function initialiseStore () {
     store = localforage.createInstance({
         name: localUsername
     });
+    store.clear().then(console.log("empty"));
     store.setItem("joinedChats", joinedChats);
 }
 
