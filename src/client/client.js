@@ -137,7 +137,7 @@ function onLogin(success, chats) {
     } else {
         localUsername = loginInput.value;
         joinedChats = chats;
-        
+
         keyMap.set(localUsername, keyPair.publicKey);
         updateHeading();
 
@@ -444,6 +444,7 @@ function verifyOperations (ops) {
 
     for (const op of otherOps) {
         // valid signature
+        console.log(`${enc.encode(concatOp(op))}    ${op.sig}    ${op.pk1}`);
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
