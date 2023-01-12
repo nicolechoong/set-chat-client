@@ -310,7 +310,7 @@ function onGetPK (connection, data) {
     type: "getPK",
     name: data.name,
     success: true,
-    pubKey: allUsers.get(username).pubKey
+    pubKey: allUsers.get(data.name).pubKey
   });
 }
 
