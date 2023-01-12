@@ -768,10 +768,10 @@ loginBtn.addEventListener("click", async function (event) {
             keyPair = kp;
         }
 
-        if (loginInput.length > 0 && isAlphanumeric(loginInput)) {
+        if (localUsername.length > 0 && isAlphanumeric(localUsername)) {
             sendToServer({ 
                 type: "login", 
-                name: loginInput,
+                name: localUsername,
                 pubKey: keyPair.publicKey
             });
         }
