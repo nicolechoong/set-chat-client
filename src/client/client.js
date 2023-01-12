@@ -420,7 +420,7 @@ async function receivedOperations (ops, chatID, username) {
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))}`);
-        if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(keyMap.get(username))) {
+        if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(dec.decode(keyMap.get(username)))) {
             chatInfo.metadata.operations = ops;
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${username}`);
@@ -552,7 +552,7 @@ function members (ops, ignored) {
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
         if (valid(ops, ignored, {"member": pk, "sig": pk})) {
-            pks.add(pk);
+            pks.add(dec.decode(pk));
         }
     }
     console.log(`calculated member set ${[...pks]} ${[...keyMap]}`);
