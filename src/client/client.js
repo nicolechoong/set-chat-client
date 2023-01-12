@@ -762,18 +762,18 @@ function sendChatMessage (messageInput) {
 /////////////////////
 
 // Send Login attempt
-loginBtn.addEventListener("click", function (event) { 
+loginBtn.addEventListener("click", async function (event) { 
     const loginInput = document.getElementById('loginInput').value;
 
-    initialiseStore();
-
-    if (loginInput.length > 0 && isAlphanumeric(loginInput)) {
-        sendToServer({ 
-            type: "login", 
-            name: loginInput,
-            pubKey: keyPair.publicKey
-        });
-    }
+    initialiseStore().then(() => {
+        if (loginInput.length > 0 && isAlphanumeric(loginInput)) {
+            sendToServer({ 
+                type: "login", 
+                name: loginInput,
+                pubKey: keyPair.publicKey
+            });
+        }
+    });
 });
 
 messageInput.addEventListener("keypress", function (event) {
