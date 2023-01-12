@@ -755,6 +755,7 @@ function sendChatMessage (messageInput) {
 loginBtn.addEventListener("click", async function (event) { 
     const loginInput = document.getElementById('loginInput').value;
     localUsername = loginInput.value;
+    console.log(localUsername);
 
     initialiseStore()
 
