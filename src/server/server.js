@@ -306,6 +306,7 @@ function onGetPK (connection, data) {
     })
   }
 
+  console.log(`sending pk of user ${data.name}`);
   sendTo(connection, {
     type: "getPK",
     name: data.name,

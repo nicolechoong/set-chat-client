@@ -335,7 +335,7 @@ async function addToChat(validMemberPubKeys, chatID) {
 
 function onGetPK (name, success, pk) {
     if (success) {
-        console.log(`Received pk of ${name}, ${dec.decode(pk)}`);
+        console.log(`Received pk of ${name}, ${pk}`);
         keyMap.set(name, Uint8Array.from(Object.values(pk)));
         store.setItem(keyMap, keyMap);
     } else {
