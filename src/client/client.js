@@ -248,8 +248,8 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     store.setItem("joinedChats", joinedChats);
     
     for (const mem of validMemberPubKeys.keys()) {
-        console.log(`adding ${mem} with pk ${dec.decode(validMemberPubKeys.get(mem))} to keyMap`);
         keyMap.set(mem, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))));
+        console.log(`adding ${mem} with pk ${dec.decode(keyMap.get(mem))} to keyMap`);
     }
     
     if (invalidMembers.length > 0) {
