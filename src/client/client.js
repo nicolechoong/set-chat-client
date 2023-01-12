@@ -663,6 +663,7 @@ function initChannel (channel) {
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
+        console.log(`received a message from the channel`);
         const messageData = JSON.parse(event.data);
         if (messageData.type === "ops") {
             receivedOperations(messageData.ops, messageData.chatID, messageData.from);
