@@ -159,7 +159,7 @@ function initialiseStore () {
             console.log("keyPair generated");
             store.setItem("keyPair", keyPair);
         } else {
-            console.log(`keypair ${kp}`);
+            console.log(`keypair ${JSON.stringify(kp)}`);
             keyPair = kp;
         }
     });
