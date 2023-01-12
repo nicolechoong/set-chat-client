@@ -152,17 +152,6 @@ function initialiseStore () {
     store = localforage.createInstance({
         name: localUsername
     });
-
-    store.getItem("keyPair").then((kp) => {
-        if (kp === null) {
-            keyPair = nacl.sign.keyPair();
-            console.log("keyPair generated");
-            store.setItem("keyPair", keyPair);
-        } else {
-            console.log(`keypair ${JSON.stringify(kp)}`);
-            keyPair = kp;
-        }
-    });
     store.setItem("joinedChats", joinedChats);
 }
 
@@ -765,7 +754,18 @@ function sendChatMessage (messageInput) {
 loginBtn.addEventListener("click", async function (event) { 
     const loginInput = document.getElementById('loginInput').value;
 
-    initialiseStore().then(() => {
+    initialiseStore()
+
+    store.getItem("keyPair").then((kp) => {
+        if (kp === null) {
+            keyPair = nacl.sign.keyPair();
+            console.log("keyPair generated");
+            store.setItem("keyPair", keyPair);
+        } else {
+            console.log(`keypair ${JSON.stringify(kp)}`);
+            keyPair = kp;
+        }
+
         if (loginInput.length > 0 && isAlphanumeric(loginInput)) {
             sendToServer({ 
                 type: "login", 
