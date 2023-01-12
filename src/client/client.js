@@ -538,7 +538,6 @@ function valid (ops, ignored, op) {
         
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0]);
     }).map(edge => edge[0]);
-    console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
@@ -556,6 +555,7 @@ function members (ops, ignored) {
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
         if (valid(ops, ignored, {"member": pk, "sig": pk})) {
+            console.log(`adding ${pk} to the member set`);
             pks.add(dec.decode(pk));
         }
     }
