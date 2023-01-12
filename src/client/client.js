@@ -137,6 +137,7 @@ function onLogin(success, chats) {
     } else {
         localUsername = loginInput.value;
         joinedChats = chats;
+        keyMap.set(localUsername, keyPair.publicKey);
         updateHeading();
 
         initialiseStore();
@@ -439,7 +440,6 @@ function verifyOperations (ops) {
 
     const otherOps = ops.filter((op) => op.action !== "create");
     const hashedOps = ops.map((op) => dec.decode(hashOp(op)));
-    console.log(hashedOps);
 
     for (const op of otherOps) {
         // valid signature
@@ -447,7 +447,6 @@ function verifyOperations (ops) {
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
-            console.log(dep);
             if (!hashedOps.includes(dec.decode(dep))) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
