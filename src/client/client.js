@@ -349,8 +349,7 @@ function getDeps (operations) {
 }
 
 function concatOp (op) {
-    console.log(JSON.stringify(op));
-    return JSON.stringify(op);
+    return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
 }
 
 async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
@@ -392,6 +391,7 @@ async function sendOperations (chatID, username) {
 }
 
 function unpackOp(op) {
+    console.log(op.deps);
     op.sig = Uint8Array.from(Object.values(op.sig));
     if (op.action === "create") {
         op.pk = Uint8Array.from(Object.values(op.pk));
@@ -424,7 +424,6 @@ async function receivedOperations (ops, chatID, username) {
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${username}`);
         }
-        
     });
 }
 
@@ -535,6 +534,7 @@ function valid (ops, ignored, op) {
     if (op.action === "create") { return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter((edge) => {
+        
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0]);
     }).map(edge => edge[0]);
     console.log(`inSet, meant to represent the functions that affect op ${inSet.map(x => concatOp(x))}`);
