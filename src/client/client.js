@@ -152,7 +152,6 @@ function initialiseStore () {
     store = localforage.createInstance({
         name: localUsername
     });
-    store.clear().then(console.log("empty"));
     store.setItem("joinedChats", joinedChats);
 }
 
