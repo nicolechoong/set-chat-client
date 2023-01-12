@@ -667,7 +667,7 @@ function initChannel (channel) {
         if (messageData.type === "ops") {
             receivedOperations(messageData.ops, messageData.chatID, messageData.from);
         } else {
-            updateChatStore(messageData);
+            // updateChatStore(messageData);
             updateChatWindow(messageData);
         }
     }
