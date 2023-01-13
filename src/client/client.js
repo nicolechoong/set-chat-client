@@ -717,7 +717,8 @@ function updateChatStore (messageData) {
 
 function sendToMember (data, pk) {
     console.log(`sending ${JSON.stringify(data)}   to ${keyMap.get(pk)}`);
-    connections.get(keyMap.get(pk)).sendChannel.send(JSON.stringify(data));
+    console.log(`connection keys ${[...connections.keys()]}`);
+    connections.get(pk).sendChannel.send(JSON.stringify(data));
 }
 
 function broadcastToMembers (data, chatID = null) {
