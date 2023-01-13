@@ -406,7 +406,7 @@ async function sendOperations (chatID, username) {
             type: "ops",
             ops: [...chatInfo.metadata.operations],
             chatID: chatID,
-            from: keyPair.publicKey,
+            from: dec.decode(keyPair.publicKey),
         }, username);
     });
 }
@@ -436,6 +436,7 @@ function arrEqual(arr1, arr2) {
 
 async function receivedOperations (ops, chatID, pk) {
     // ops: array of operation objectss
+    // pk: dec.decode(public key of sender)
     console.log(`receiving operations`);
     ops.forEach(op => unpackOp(op));
     store.getItem(chatID).then((chatInfo) => {
@@ -580,7 +581,7 @@ function members (ops, ignored) {
             pks.add(dec.decode(pk));
         }
     }
-    console.log(`calculated member set ${[...pks]} ${[...keyMap]}`);
+    console.log(`calculated member set ${[...pks]}      keymap: ${[...keyMap.keys()]}`);
     return pks;
 }
 
