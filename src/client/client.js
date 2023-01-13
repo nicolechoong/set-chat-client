@@ -51,7 +51,7 @@ const configuration = {
 
 var currentChatID = 0;
 
-// map from peerName:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
+// map from dec.decode(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
 
 // map from chatID to an array of usernames to connect to
@@ -407,7 +407,7 @@ async function sendOperations (chatID, username) {
             ops: [...chatInfo.metadata.operations],
             chatID: chatID,
             from: dec.decode(keyPair.publicKey),
-        }, username);
+        }, dec.decode(keyPair.publicKey));
     });
 }
 
@@ -445,7 +445,7 @@ async function receivedOperations (ops, chatID, pk) {
         console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
         if (verifyOperations(ops) && memberSet.has(pk)) {
             chatInfo.metadata.operations = ops;
-            joinedChats.get(chatID).members = 
+            joinedChats.get(chatID).members = memberSet;
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${keyMap.get(pk)}`);
         }
@@ -716,18 +716,18 @@ function updateChatStore (messageData) {
     });
 }
 
-function sendToMember (data, username) {
-    console.log(`sending ${JSON.stringify(data)}   to ${username}`);
-    connections.get(username).sendChannel.send(JSON.stringify(data));
+function sendToMember (data, pk) {
+    console.log(`sending ${JSON.stringify(data)}   to ${keyMap.get(pk)}`);
+    connections.get(keyMap.get(pk)).sendChannel.send(JSON.stringify(data));
 }
 
 function broadcastToMembers (data, chatID = null) {
     chatID = chatID === null ? currentChatID : chatID;
     console.log(`username broadcast ${joinedChats.get(chatID).members}`);
-    for (const username of joinedChats.get(chatID).members) {
+    for (const pk of joinedChats.get(chatID).members) {
         try {
-            console.log(`sending ${data} to ${username}`);
-            sendToMember(data, username);
+            console.log(`sending ${data} to ${keyMap.get(username)}`);
+            sendToMember(data, pk);
         } catch {
             continue;
         }
