@@ -141,7 +141,7 @@ function onLogin (success, chats) {
         localUsername = loginInput.value;
         joinedChats = chats;
 
-        keyMap.set(localUsername, keyPair.publicKey);
+        keyMap.set(dec.decode(keyPair.publicKey), localUsername);
         updateHeading();
     } 
 };
@@ -250,8 +250,8 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     store.setItem("joinedChats", joinedChats);
     
     for (const mem of validMemberPubKeys.keys()) {
-        keyMap.set(mem, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))));
-        console.log(`adding ${mem} with pk ${dec.decode(keyMap.get(mem))} to keyMap`);
+        keyMap.set(dec.decode(Uint8Array.from(Object.values(validMemberPubKeys.get(mem)))), mem);
+        console.log(`adding ${mem} to keyMap`);
     }
     
     if (invalidMembers.length > 0) {
@@ -336,7 +336,7 @@ async function addToChat(validMemberPubKeys, chatID) {
 function onGetPK (name, success, pk) {
     if (success) {
         console.log(`Received pk of ${name}, ${pk}`);
-        keyMap.set(name, Uint8Array.from(Object.values(pk)));
+        keyMap.set(dec.decode(Uint8Array.from(Object.values(pk))), name);
         store.setItem(keyMap, keyMap);
     } else {
         console.error(`User ${name} does not exist`);
@@ -406,7 +406,7 @@ async function sendOperations (chatID, username) {
             type: "ops",
             ops: [...chatInfo.metadata.operations],
             chatID: chatID,
-            from: localUsername,
+            from: keyPair.publicKey,
         }, username);
     });
 }
@@ -434,17 +434,19 @@ function arrEqual(arr1, arr2) {
     return true;
 }
 
-async function receivedOperations (ops, chatID, username) {
+async function receivedOperations (ops, chatID, pk) {
     // ops: array of operation objectss
     console.log(`receiving operations`);
     ops.forEach(op => unpackOp(op));
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
-        console.log(`verified ${verifyOperations(ops)} is member ${members(ops, chatInfo.metadata.ignored).has(dec.decode(keyMap.get(username)))}`);
-        if (verifyOperations(ops) && members(ops, chatInfo.metadata.ignored).has(dec.decode(keyMap.get(username)))) {
+        const memberSet = members(ops, chatInfo.metadata.ignored);
+        console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
+        if (verifyOperations(ops) && memberSet.has(pk)) {
             chatInfo.metadata.operations = ops;
+            joinedChats.get(chatID).members = 
             store.setItem(chatID, chatInfo);
-            console.log(`synced with ${username}`);
+            console.log(`synced with ${keyMap.get(pk)}`);
         }
     });
 }
@@ -561,7 +563,7 @@ function valid (ops, ignored, op) {
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
             if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
-                return true;
+                return true; 
             }
         }
     }
@@ -720,6 +722,7 @@ function sendToMember (data, username) {
 
 function broadcastToMembers (data, chatID = null) {
     chatID = chatID === null ? currentChatID : chatID;
+    console.log(`username broadcast ${joinedChats.get(chatID).members}`);
     for (const username of joinedChats.get(chatID).members) {
         try {
             console.log(`sending ${data} to ${username}`);
