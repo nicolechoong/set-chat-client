@@ -250,7 +250,6 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     store.setItem("joinedChats", joinedChats);
     
     for (const mem of validMemberPubKeys.keys()) {
-        console.log(`${dec.decode(Uint8Array.from(Object.values(validMemberPubKeys.get(mem))))}`);
         keyMap.set(dec.decode(Uint8Array.from(Object.values(validMemberPubKeys.get(mem)))), mem);
         console.log(`adding ${mem} to keyMap`);
     }
@@ -400,7 +399,6 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 }
 
 async function sendOperations (chatID, pk) {
-    console.log(`sending operations to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "ops",
@@ -721,6 +719,7 @@ function updateChatStore (messageData) {
 function sendToMember (data, pk) {
     console.log(`sending ${JSON.stringify(data)}   to ${pk}`);
     console.log(`connection keys ${[...connections.keys()]}`);
+    console.log(`keyMap ${[...keyMap]}`);
     connections.get(keyMap.get(pk)).sendChannel.send(JSON.stringify(data));
 }
 
