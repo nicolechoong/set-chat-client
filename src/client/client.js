@@ -292,6 +292,8 @@ function onAdd (chatID, chatName, from, fromPK) {
     });
 
     // now we have to do syncing to get members and add to store
+    keyMap.set(dec.decode(Uint8Array.from(Object.values(pk))), from);
+    store.setItem(keyMap, keyMap);
     sendOffer(from, Uint8Array.from(Object.values(fromPK)), chatID);
     
     updateChatOptions("add", chatID);
