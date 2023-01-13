@@ -399,7 +399,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 }
 
 async function sendOperations (chatID, pk) {
-    console.log(`sending operations`);
+    console.log(`sending operations to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "ops",
@@ -718,7 +718,7 @@ function updateChatStore (messageData) {
 }
 
 function sendToMember (data, pk) {
-    console.log(`sending ${JSON.stringify(data)}   to ${keyMap.get(pk)}`);
+    console.log(`sending ${JSON.stringify(data)}   to ${pk}`);
     console.log(`connection keys ${[...connections.keys()]}`);
     connections.get(keyMap.get(pk)).sendChannel.send(JSON.stringify(data));
 }
