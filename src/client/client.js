@@ -278,7 +278,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 
 // When being added to a new chat
 // (chatID: String, {chatName: String, members: Array of String})
-function onAdd (chatID, chatName, from) {
+function onAdd (chatID, chatName, from, fromPK) {
     console.log(`you've been added to chat ${chatName} by ${from}`);
     joinedChats.set(chatID, {chatName: chatName, members: []});
 
@@ -292,8 +292,7 @@ function onAdd (chatID, chatName, from) {
     });
 
     // now we have to do syncing to get members and add to store
-    getPK(from);
-    sendOffer(from, chatID);
+    sendOffer(from, fromPK, chatID);
     
     updateChatOptions("add", chatID);
     updateHeading();
@@ -593,10 +592,10 @@ function members (ops, ignored) {
 function joinChat (chatID) {
     if (currentChatID !== chatID) {
         currentChatID = chatID;
-        for (peerName of joinedChats.get(chatID).members) {
-            if (peerName !== localUsername) {
+        for (peerPK of joinedChats.get(chatID).members) {
+            if (peerPK !== dec.decode(keyPair.publicKey)) {
                 // Insert Key Exchange Protocol
-                sendOffer(peerName, chatID);
+                sendOffer(peerName, peerPK, chatID);
             }
         }
     }
@@ -680,7 +679,7 @@ function initChannel (channel) {
 function receiveChannelCallback (event) {
     const channelLabel = JSON.parse(event.channel.label);
     console.log(`Received channel ${event.channel.label} from ${channelLabel.senderPK}`);
-    const peerConnection = connections.get(channelLabel.senderPK);
+    const peerConnection = connections.get(keyMap.get(channelLabel.senderPK));
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
 }
