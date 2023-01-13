@@ -661,6 +661,7 @@ function initChannel (channel) {
         console.log(event);
         console.log(`Channel ${event.target.label} opened`);
         const channelLabel = JSON.parse(event.target.label);
+        console.log(`${channelLabel.senderPK}    and    ${channelLabel.receiverPK}`);
         sendOperations(channelLabel.chatID, channelLabel.senderPK === dec.decode(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
