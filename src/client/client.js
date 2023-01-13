@@ -292,6 +292,7 @@ function onAdd (chatID, chatName, from, fromPK) {
     });
 
     // now we have to do syncing to get members and add to store
+    console.log(`peerPK ${fromPK}`);
     sendOffer(from, fromPK, chatID);
     
     updateChatOptions("add", chatID);
@@ -595,6 +596,7 @@ function joinChat (chatID) {
         for (peerPK of joinedChats.get(chatID).members) {
             if (peerPK !== dec.decode(keyPair.publicKey)) {
                 // Insert Key Exchange Protocol
+                console.log(`peerPK is ${peerPK}`);
                 sendOffer(peerName, peerPK, chatID);
             }
         }

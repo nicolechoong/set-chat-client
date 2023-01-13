@@ -324,7 +324,7 @@ function onAdd (connection, data) {
     from: connection.name,
     fromPK: allUsers.get(connection.name).pubKey
   };
-  console.log(`sending add message for chat ${data.chatID} to ${data.to}`);
+  console.log(`sending add message for chat ${data.chatID} to ${data.to}, with public key ${fromPK}`);
   sendTo(connectedUsers.get(data.to).connection, addMessage);
 }
 
