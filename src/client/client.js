@@ -167,7 +167,7 @@ function sendOffer(peerName, peerPK, chatID) {
 
         const channelLabel = {
             senderPK: dec.decode(keyPair.publicKey), 
-            receiverPK: peerPK,
+            receiverPK: dec.decode(peerPK),
             chatID: chatID,
         };
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(JSON.stringify(channelLabel));
@@ -292,8 +292,7 @@ function onAdd (chatID, chatName, from, fromPK) {
     });
 
     // now we have to do syncing to get members and add to store
-    console.log(`peerPK ${fromPK}`);
-    sendOffer(from, fromPK, chatID);
+    sendOffer(from, Uint8Array.from(Object.values(fromPK)), chatID);
     
     updateChatOptions("add", chatID);
     updateHeading();
