@@ -157,7 +157,7 @@ function initialiseStore () {
 }
 
 // Sending Offer to Peer
-function sendOffer(peerName, chatID) {
+function sendOffer(peerName, peerPK, chatID) {
     
     if (peerName !== null) { 
         const newConnection = initPeerConnection(peerName);
@@ -166,8 +166,8 @@ function sendOffer(peerName, chatID) {
         const peerConnection = connections.get(peerName);
 
         const channelLabel = {
-            senderUsername: localUsername, 
-            receiverUsername: peerName,
+            senderPK: dec.decode(keyPair.publicKey), 
+            receiverPK: peerPK,
             chatID: chatID,
         };
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(JSON.stringify(channelLabel));
@@ -399,7 +399,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
     });
 }
 
-async function sendOperations (chatID, username) {
+async function sendOperations (chatID, pk) {
     console.log(`sending operations`);
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
@@ -407,7 +407,7 @@ async function sendOperations (chatID, username) {
             ops: [...chatInfo.metadata.operations],
             chatID: chatID,
             from: dec.decode(keyPair.publicKey),
-        }, dec.decode(keyPair.publicKey));
+        }, pk);
     });
 }
 
@@ -662,7 +662,7 @@ function initChannel (channel) {
         console.log(event);
         console.log(`Channel ${event.target.label} opened`);
         const channelLabel = JSON.parse(event.target.label);
-        sendOperations(channelLabel.chatID, channelLabel.senderUsername === localUsername ? channelLabel.receiverUsername : channelLabel.senderUsername);
+        sendOperations(channelLabel.chatID, channelLabel.senderPK === dec.decode(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
@@ -679,8 +679,8 @@ function initChannel (channel) {
 
 function receiveChannelCallback (event) {
     const channelLabel = JSON.parse(event.channel.label);
-    console.log(`Received channel ${event.channel.label} from ${channelLabel.senderUsername}`);
-    const peerConnection = connections.get(channelLabel.senderUsername);
+    console.log(`Received channel ${event.channel.label} from ${channelLabel.senderPK}`);
+    const peerConnection = connections.get(channelLabel.senderPK);
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
 }
