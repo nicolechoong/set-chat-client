@@ -51,7 +51,7 @@ const configuration = {
 
 var currentChatID = 0;
 
-// map from dec.decode(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
+// map from name:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
 
 // map from chatID to an array of usernames to connect to
@@ -718,7 +718,7 @@ function updateChatStore (messageData) {
 function sendToMember (data, pk) {
     console.log(`sending ${JSON.stringify(data)}   to ${keyMap.get(pk)}`);
     console.log(`connection keys ${[...connections.keys()]}`);
-    connections.get(pk).sendChannel.send(JSON.stringify(data));
+    connections.get(keyMap.get(pk)).sendChannel.send(JSON.stringify(data));
 }
 
 function broadcastToMembers (data, chatID = null) {
