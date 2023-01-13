@@ -250,6 +250,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     store.setItem("joinedChats", joinedChats);
     
     for (const mem of validMemberPubKeys.keys()) {
+        console.log(`${dec.decode(Uint8Array.from(Object.values(validMemberPubKeys.get(mem))))}`);
         keyMap.set(dec.decode(Uint8Array.from(Object.values(validMemberPubKeys.get(mem)))), mem);
         console.log(`adding ${mem} to keyMap`);
     }
@@ -334,7 +335,7 @@ async function addToChat(validMemberPubKeys, chatID) {
 
 function onGetPK (name, success, pk) {
     if (success) {
-        console.log(`Received pk of ${name}, ${pk}`);
+        console.log(`Received pk of ${name}, ${dec.decode(Uint8Array.from(Object.values(pk)))}`);
         keyMap.set(dec.decode(Uint8Array.from(Object.values(pk))), name);
         store.setItem(keyMap, keyMap);
     } else {
