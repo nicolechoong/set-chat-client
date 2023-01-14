@@ -767,8 +767,7 @@ loginBtn.addEventListener("click", async function (event) {
     localUsername = loginInput.value;
     console.log(localUsername);
 
-    initialiseStore()
-    console.log(store.keys());
+    initialiseStore();
 
     store.getItem("keyPair").then((kp) => {
         if (kp === null) {
