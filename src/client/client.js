@@ -719,9 +719,9 @@ function initChannel (channel) {
                 break;
             case "add":
             case "remove":
-                console.log(`packed op ${messageData.op}`);
+                console.log(`packed op ${messageData.op.pk1 instanceof Uint8Array}`);
                 unpackOp(messageData.op);
-                console.log(`unpacked op ${messageData.op}`);
+                console.log(`unpacked op ${messageData.op.pk1 instanceof Uint8Array}`);
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
                 updateChatWindow(messageData);
@@ -740,7 +740,8 @@ function receiveChannelCallback (event) {
 }
 
 function updateChatWindow (data) {
-    console.log(`bro pls update chat window`);
+    console.log(`bro pls update chat window ${JSON.stringify(data)}`);
+    console.log(`senttime format ${typeof data.sentTime}`);
     if (data.chatID === currentChatID) {
         var message;
         switch (data.type) {
@@ -748,16 +749,16 @@ function updateChatWindow (data) {
                 message = `${keyMap.get(data.from)}: ${data.message}`;
                 break;
             case "add":
-                message = `${keyMap.get(data.op.pk1)} added ${keyMap.get(data.op.pk2)}`;
+                message = `${keyMap.get(dec.decode(data.op.pk1))} added ${keyMap.get(dec.decode(data.op.pk2))}`;
                 break;
             case "remove":
-                message = `${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}`;
+                message = `${keyMap.get(dec.decode(data.op.pk1))} removed ${keyMap.get(dec.decode(data.op.pk2))}`;
                 break;
             default:
                 message = "";
                 break;
         }
-        const msg = `${chatMessages.innerHTML}<br />[${data.sentTime.toISOString()}] ${message}`;
+        const msg = `${chatMessages.innerHTML}<br />[${data.sentTime}] ${message}`;
         chatMessages.innerHTML = msg;
     }
 }
