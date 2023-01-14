@@ -418,7 +418,7 @@ function getDeps (operations) {
     for (const op of operations) {
         const hashedOp = hashOp(op);
         if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
-            deps.add(hashedOp);
+            deps.push(hashedOp);
             console.log(`dependency ${op.pk}${op.pk1} ${op.action} ${op.pk2}`);
         }
     }
