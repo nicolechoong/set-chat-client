@@ -730,8 +730,9 @@ function broadcastToMembers (data, chatID = null) {
     chatID = chatID === null ? currentChatID : chatID;
     console.log(`username broadcast ${[...joinedChats.get(chatID).members]}`);
     for (const pk of joinedChats.get(chatID).members) {
+        console.log(`733 pkpk ${pk}`);
         try {
-            console.log(`sending ${data} to ${keyMap.get(username)}`);
+            console.log(`sending ${data} to ${keyMap.get(pk)}`);
             sendToMember(data, pk);
         } catch {
             continue;
