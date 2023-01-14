@@ -1,4 +1,3 @@
-import { resolveObjectURL } from "buffer";
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 
 var loginBtn = document.getElementById('loginBtn'); 
