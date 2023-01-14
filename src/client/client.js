@@ -449,6 +449,7 @@ async function receivedOperations (ops, chatID, pk) {
         if (verifyOperations(ops) && memberSet.has(pk)) {
             chatInfo.metadata.operations = ops;
             joinedChats.get(chatID).members = memberSet;
+
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${keyMap.get(pk)}`);
         }
@@ -541,8 +542,7 @@ function authority (ops) {
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        edges.add([op1, {"member": pk, "sig": pk}]);
-        console.log(`adding member ${pk}`)  // TODO: remove dups
+        edges.add([op1, {"member": pk, "sig": pk}]); // TODO: remove dups
     }
 
     return edges;
@@ -572,11 +572,10 @@ function members (ops, ignored) {
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
         if (valid(ops, ignored, {"member": pk, "sig": pk})) {
-            console.log(`adding ${pk} to the member set`);
             pks.add(dec.decode(pk));
         }
     }
-    console.log(`calculated member set ${[...pks]}      keymap: ${[...keyMap.keys()]}`);
+    console.log(`calculated member set ${[...pks]}      number of members ${pks.size}}`);
     return pks;
 }
 
@@ -800,6 +799,8 @@ sendMessageBtn.addEventListener("click", function () {
 chatNameInput.addEventListener("change", selectChat);
 
 newChatBtn.addEventListener("click", createNewChat);
+
+addUserBtn.addEventListener("click", () => { addToChat(modifyUserInput.value, currentChatID); })
 
 function getChatNames() {
     var chatnames = [];
