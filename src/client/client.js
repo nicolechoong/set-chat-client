@@ -176,7 +176,6 @@ function sendOffer(peerName, peerPK, chatID) {
         const channelLabel = {
             senderPK: dec.decode(keyPair.publicKey), 
             receiverPK: dec.decode(peerPK),
-            from: localUsername,
             chatID: chatID,
         };
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(JSON.stringify(channelLabel));
@@ -365,6 +364,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 const removeMessage = {
                     type: "remove",
                     op: op,
+                    username: mem,
                     from: dec.decode(keyPair.publicKey),
                     chatID: chatID
                 };
@@ -703,6 +703,7 @@ function initChannel (channel) {
         console.log(event);
         console.log(`Channel ${event.target.label} opened`);
         const channelLabel = JSON.parse(event.target.label);
+        console.log(`the public key we will send ops to is ${channelLabel.senderPK === dec.decode(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK}`);
         sendOperations(channelLabel.chatID, channelLabel.senderPK === dec.decode(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
@@ -720,8 +721,8 @@ function initChannel (channel) {
             case "add":
             case "remove":
                 unpackOp(messageData.op);
-                keyMap.set(dec.decode(messageData.op.pk1), messageData.name);
-                keyMap.set(dec.decode(messageData.op.pk2), messageData.name);
+                keyMap.set(dec.decode(messageData.op.pk1), messageData.username);
+                keyMap.set(dec.decode(messageData.op.pk2), messageData.username);
                 store.setItem("keyMap", keyMap);
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
@@ -736,7 +737,7 @@ function initChannel (channel) {
 function receiveChannelCallback (event) {
     const channelLabel = JSON.parse(event.channel.label);
     console.log(`Received channel ${event.channel.label} from ${channelLabel.senderPK}`);
-    const peerConnection = connections.get(channelLabel.from);
+    const peerConnection = connections.get(keyMap.get(channelLabel.senderPK));
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
 }
