@@ -597,7 +597,7 @@ function authority (ops) {
 function valid (ops, ignored, op) {
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (ignored.has(op)) { return false; }
+    if (ignored.includes(op)) { return false; }
     const inSet = ([...authority(ops)]).filter((edge) => {
         
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0]);
