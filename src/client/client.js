@@ -493,6 +493,7 @@ async function receivedOperations (ops, chatID, pk) {
     console.log(`receiving operations for chatID ${chatID}`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
+        console.log(`merged set of ops ${[...ops].map(op => JSON.stringify(op))}`)
         const memberSet = members(ops, chatInfo.metadata.ignored);
         console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
         if (verifyOperations(ops) && memberSet.has(pk)) {
