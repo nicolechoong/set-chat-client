@@ -737,9 +737,9 @@ function receiveChannelCallback (event) {
 function sendAdvertisement (chatID, pk) {
     // chatID: String, pk: dec.decode(pk)
     const online = [];
-    for (const pk of joinedChats.get(chatID).members) {
-        if (connections.has(keyMap.get(pk))) {
-            online.push({peerName: keyMap.get(pk), peerPK: enc.encode(pk)});
+    for (const mem of joinedChats.get(chatID).members) {
+        if (connections.has(keyMap.get(mem))) {
+            online.push({peerName: keyMap.get(mem), peerPK: enc.encode(mem)});
         }
     }
 
