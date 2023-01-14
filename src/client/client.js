@@ -720,6 +720,7 @@ function initChannel (channel) {
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
                 updateChatWindow(messageData);
+                break;
             default:
                 console.log(`Unrecognised message type ${messageData.type}`);
         }
@@ -743,10 +744,12 @@ function sendAdvertisement (chatID, pk) {
         }
     }
 
-    sendToMember({
-        type: "advertisement",
-        online: online
-    }, pk);
+    if (online.length > 0) {
+        sendToMember({
+            type: "advertisement",
+            online: online
+        }, pk);
+    }
 }
 
 function onAdvertisement (chatID, online) {
