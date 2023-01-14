@@ -733,6 +733,7 @@ function receiveChannelCallback (event) {
 }
 
 function updateChatWindow (data) {
+    console.log(`bro pls update chat window`);
     if (data.chatID === currentChatID) {
         var message;
         switch (data.type) {
