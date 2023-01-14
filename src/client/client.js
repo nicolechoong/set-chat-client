@@ -312,7 +312,7 @@ async function addToChat(validMemberPubKeys, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             for (const mem of validMemberPubKeys.keys()) {
-                console.log(`${validMemberPubKeys.get(mem)}   ${Uint8Array.from(Object.values(validMemberPubKeys.get(mem)))}`);
+                console.log(`we are now adding ${mem} and the ops are ${chatInfo.metadata.operations}`)
                 const op = await generateOp("add", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.add(op);
                 console.log(`added ${mem} to chat`);
@@ -365,7 +365,6 @@ function getPK (name) {
 
 function getDeps (operations) {
     var deps = new Set();
-    console.log(operations);
     for (const op of operations) {
         const hashedOp = hashOp(op);
         if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
@@ -373,7 +372,6 @@ function getDeps (operations) {
             console.log(`dependency ${op.pk}${op.pk1} ${op.action} ${op.pk2}`);
         }
     }
-    console.log([...deps]);
     return deps;
 }
 
@@ -419,7 +417,6 @@ async function sendOperations (chatID, pk) {
 }
 
 function unpackOp(op) {
-    console.log(op.deps);
     op.sig = Uint8Array.from(Object.values(op.sig));
     if (op.action === "create") {
         op.pk = Uint8Array.from(Object.values(op.pk));
@@ -453,7 +450,6 @@ async function receivedOperations (ops, chatID, pk) {
         if (verifyOperations(ops) && memberSet.has(pk)) {
             chatInfo.metadata.operations = ops;
             joinedChats.get(chatID).members = memberSet;
-            console.log(`joined chats ${joinedChats.get(chatID).members}`)
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${keyMap.get(pk)}`);
         }
@@ -475,7 +471,6 @@ function verifyOperations (ops) {
 
     for (const op of otherOps) {
         // valid signature
-        console.log(`${enc.encode(concatOp(op))}   sig: ${op.sig}    pk1: ${op.pk1}`);
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
@@ -511,7 +506,6 @@ function precedes (ops, op1, op2) {
     var dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
-        console.log(`for op ${curOp.action} ${JSON.stringify(curOp.deps)}`);
         for (const hashedDep of curOp.deps) {
             if (arrEqual(hashedDep, target)) {
                 return true;
@@ -540,7 +534,6 @@ function authority (ops) {
     var pk;
     // convert pk into strings to perform comparisons
     for (const op1 of ops) {
-        console.log(concatOp(op1));
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
             console.log(`${op1.action} precedes ${op2.action}? ${precedes(ops, op1, op2)}`);
