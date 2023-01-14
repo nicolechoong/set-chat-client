@@ -537,6 +537,7 @@ function hashOp(op) {
 }
 
 function getOpFromHash(ops, hashedOp) {
+    console.log(`type of hashedOp ${hashedOp instanceof Uint8Array}  ${typeof hashedOp}`);
     if (hashedOps.has(dec.decode(hashedOp))) { return hashedOps.get(dec.decode(hashedOp)); }
     for (const op of ops) {
         if (arrEqual(hashedOp, hashOp(op))) {
@@ -574,7 +575,6 @@ function concurrent (ops, op1, op2) {
 }
 
 function authority (ops) {
-    console.log(`authority ops type ${ops}`);
     const edges = new Set();
     var pk;
     // convert pk into strings to perform comparisons
@@ -595,7 +595,6 @@ function authority (ops) {
 }
 
 function valid (ops, ignored, op) {
-    console.log(`valid ops type ${ops}`);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
     if (ignored.includes(op)) { return false; }
