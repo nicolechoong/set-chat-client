@@ -746,10 +746,10 @@ function updateChatWindow (data) {
                 message = `[${data.sentTime}] ${keyMap.get(data.from)}: ${data.message}`;
                 break;
             case "add":
-                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} added ${keyMap.get(op.pk2)}`;
+                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} added ${keyMap.get(data.op.pk2)}`;
                 break;
             case "remove":
-                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} removed ${keyMap.get(op.pk2)}`;
+                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}`;
                 break;
             default:
                 message = "";
