@@ -717,12 +717,9 @@ function initChannel (channel) {
             case "remove":
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
                 break;
-            case "text":
-                // updateChatStore(messageData);
-                updateChatWindow(messageData);
-                break;
             default:
                 console.log(`Unrecognised message type ${messageData.type}`);
+            updateChatWindow(messageData);
         }
     }
 }
@@ -740,13 +737,13 @@ function updateChatWindow (data) {
         var message;
         switch (data.type) {
             case "text":
-                message = `[${data.sentTime}] ${data.from}: ${data.message}`;
+                message = `[${data.sentTime}] ${keyMap.get(data.from)}: ${data.message}`;
                 break;
             case "add":
-                message = `[${data.sentTime}] ${data.from} added ${data.name}`;
+                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} added ${keyMap.get(data.op.pk2)}`;
                 break;
             case "remove":
-                message = `[${data.sentTime}] ${data.from} removed ${data.name}`;
+                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}`;
                 break;
             default:
                 message = "";
@@ -768,8 +765,6 @@ function updateChatStore (messageData) {
 
 function sendToMember (data, pk) {
     console.log(`sending ${JSON.stringify(data)}   to ${pk}`);
-    console.log(`connection keys ${[...connections.keys()]}`);
-    console.log(`keyMap ${[...keyMap]}`);
     connections.get(keyMap.get(pk)).sendChannel.send(JSON.stringify(data));
 }
 
@@ -792,7 +787,7 @@ function sendChatMessage (messageInput) {
     const data = {
         id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
         type: "text",
-        from: localUsername,
+        from: dec.decode(keyPair.publicKey),
         message: messageInput,
         sentTime: sentTime,
         chatID: currentChatID
