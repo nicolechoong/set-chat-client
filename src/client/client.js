@@ -488,10 +488,9 @@ function arrEqual(arr1, arr2) {
 }
 
 async function receivedOperations (ops, chatID, pk) {
-    // ops: array of operation objectss
+    // ops: array of already unpacked
     // pk: dec.decode(public key of sender)
     console.log(`receiving operations`);
-    ops.forEach(op => unpackOp(op));
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         const memberSet = members(ops, chatInfo.metadata.ignored);
@@ -715,10 +714,12 @@ function initChannel (channel) {
         const messageData = JSON.parse(event.data);
         switch (messageData.type) {
             case "ops":
+                messageData.ops.forEach(op => unpackOp(op));
                 receivedOperations(messageData.ops, messageData.chatID, messageData.from);
                 break;
             case "add":
             case "remove":
+                unpackOp(messageData.op);
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
                 updateChatWindow(messageData);
@@ -739,18 +740,16 @@ function receiveChannelCallback (event) {
 function updateChatWindow (data) {
     console.log(`bro pls update chat window`);
     if (data.chatID === currentChatID) {
-        var message, op;
+        var message;
         switch (data.type) {
             case "text":
                 message = `[${data.sentTime}] ${keyMap.get(data.from)}: ${data.message}`;
                 break;
             case "add":
-                op = unpackOp(data.op);
-                message = `[${data.sentTime}] ${keyMap.get(op.pk1)} added ${keyMap.get(op.pk2)}`;
+                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} added ${keyMap.get(op.pk2)}`;
                 break;
             case "remove":
-                op = unpackOp(data.op);
-                message = `[${data.sentTime}] ${keyMap.get(op.pk1)} removed ${keyMap.get(op.pk2)}`;
+                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} removed ${keyMap.get(op.pk2)}`;
                 break;
             default:
                 message = "";
