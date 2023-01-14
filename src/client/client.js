@@ -892,7 +892,7 @@ chatNameInput.addEventListener("change", selectChat);
 newChatBtn.addEventListener("click", createNewChat);
 
 addUserBtn.addEventListener("click", async () => {
-    if (currentChatID === null) { console.alert(`Please select a chat`); return; }
+    if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
     const pk = await getPK(username);
     modifyUserInput.value = "";
@@ -901,7 +901,7 @@ addUserBtn.addEventListener("click", async () => {
 });
 
 removeUserBtn.addEventListener("click", async () => {
-    if (currentChatID === null) { console.alert(`Please select a chat`); return; }
+    if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
     const pk = await getPK(username);
     modifyUserInput.value = "";
