@@ -267,7 +267,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     }
 
     const createOp = await generateOp("create", chatID);
-    const operations = new Set([createOp]);
+    const operations = [createOp];
 
     store.setItem(chatID, {
         metadata: {
