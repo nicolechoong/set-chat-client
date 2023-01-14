@@ -346,7 +346,7 @@ function onGetPK (name, success, pk) {
         const decodedPK = dec.decode(Uint8Array.from(Object.values(pk)));
         console.log(`Received pk of ${name}, ${decodedPK}`);
         keyMap.set(decodedPK, name);
-        store.setItem(keyMap, keyMap);
+        store.setItem("keyMap", keyMap);
         resolveGetPK(pk);
     } else {
         console.error(`User ${name} does not exist`);
@@ -810,6 +810,7 @@ newChatBtn.addEventListener("click", createNewChat);
 addUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
     const pk = await getPK(username);
+    console.log(`got pk and username here ${pk} ${username}`)
     addToChat(new Set([username, pk]), currentChatID);
 });
 
