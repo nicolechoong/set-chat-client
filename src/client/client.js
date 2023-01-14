@@ -54,7 +54,7 @@ const configuration = {
 
 var currentChatID = 0;
 
-// map from name:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
+// map from username:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
 
 // map from chatID to an array of usernames to connect to
@@ -165,6 +165,7 @@ function initialiseStore () {
 
 // Sending Offer to Peer
 function sendOffer(peerName, peerPK, chatID) {
+    // peerName: String username, peerPK: uInt8Array, chatID: String
     
     if (peerName !== null) { 
         const newConnection = initPeerConnection(peerName);
@@ -209,7 +210,7 @@ function onOffer(offer, peerName) {
         sendToServer({ 
             to: peerName,
             type: "answer", 
-            answer: answer 
+            answer: answer
         }); 
     }, function (error) { 
         alert("oops...error"); 
@@ -502,6 +503,7 @@ async function receivedOperations (ops, chatID, pk) {
 
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${keyMap.get(pk)}`);
+            sendAdvertisement(chatID, pk);
         }
     });
 }
@@ -572,10 +574,6 @@ function precedes (ops, op1, op2) {
 function concurrent (ops, op1, op2) {
     if (!ops.has(op1) || !ops.has(op2) || arrEqual(op1.sig, op2.sig) || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
     return true;
-}
-
-function printEdge(edge) {
-    console.log(`edge: ${edge[0].action} to ${edge[1].action}${edge[1].member}`);
 }
 
 function authority (ops) {
@@ -718,10 +716,14 @@ function initChannel (channel) {
                 messageData.ops.forEach(op => unpackOp(op));
                 receivedOperations(messageData.ops, messageData.chatID, messageData.from);
                 break;
+            case "advertisement":
+                onAdvertisement(messageData.chatID, messageData.online);
+                break;
             case "add":
             case "remove":
                 unpackOp(messageData.op);
-                keyMap.set(dec.decode(messageData.op), messageData.name);
+                keyMap.set(dec.decode(messageData.op.pk1), messageData.name);
+                keyMap.set(dec.decode(messageData.op.pk2), messageData.name);
                 store.setItem("keyMap", keyMap);
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
@@ -738,6 +740,32 @@ function receiveChannelCallback (event) {
     const peerConnection = connections.get(keyMap.get(channelLabel.senderPK));
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
+}
+
+function sendAdvertisement (chatID, pk) {
+    // chatID: String, pk: dec.decode(pk)
+    const online = [];
+    for (const pk of joinedChats.get(chatID).members) {
+        if (connections.has(keyMap.get(mem))) {
+            online.push({peerName: keyMap.get(mem), peerPK: enc.encode(pk)});
+        }
+    }
+
+    sendToMember({
+        id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
+        type: "advertisement",
+        online: online
+    }, pk);
+}
+
+function onAdvertisement (chatID, online) {
+    var peerPK;
+    for (const peer of online) {
+        peerPK = Uint8Array.from(Object.values(peer.peerName));
+        if (!connections.has(dec.decode(peerPK))) {
+            sendOffer(peer.peerName, peerPK, chatID);
+        }
+    }
 }
 
 function updateChatWindow (data) {
