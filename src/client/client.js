@@ -273,7 +273,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         metadata: {
             chatName: chatName,
             operations: operations,
-            ignored: new Set()
+            ignored: []
         },
         history: new Map(),
     }).then(() => {
@@ -293,8 +293,8 @@ function onAdd (chatID, chatName, from, fromPK) {
     store.setItem(chatID, {
         metadata: {
             chatName: chatName,
-            operations: new Set(),
-            ignored: new Set()
+            operations: [],
+            ignored: []
         },
         history: new Map(),
     });
@@ -313,9 +313,9 @@ async function addToChat (validMemberPubKeys, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             for (const mem of validMemberPubKeys.keys()) {
-                console.log(`we are now adding ${mem} and the ops are ${[...chatInfo.metadata.operations]}`)
+                console.log(`we are now adding ${mem} and the ops are ${chatInfo.metadata.operations}`)
                 const op = await generateOp("add", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
-                chatInfo.metadata.operations.add(op);
+                chatInfo.metadata.operations.push(op);
 
                 const addMessage = {
                     type: "add",
@@ -357,9 +357,9 @@ async function removeFromChat (validMemberPubKeys, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             for (const mem of validMemberPubKeys.keys()) {
-                console.log(`we are now removing ${mem} and the ops are ${[...chatInfo.metadata.operations]}`)
+                console.log(`we are now removing ${mem} and the ops are ${chatInfo.metadata.operations}`)
                 const op = await generateOp("remove", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
-                chatInfo.metadata.operations.add(op);
+                chatInfo.metadata.operations.push(op);
 
                 const removeMessage = {
                     type: "remove",
@@ -414,7 +414,7 @@ function getPK (name) {
 }
 
 function getDeps (operations) {
-    var deps = new Set();
+    var deps = [];
     for (const op of operations) {
         const hashedOp = hashOp(op);
         if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
@@ -429,7 +429,7 @@ function concatOp (op) {
     return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
 }
 
-async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
+async function generateOp (action, chatID, pk2 = null, ops = []) {
     // pk is uint8array
     
     return new Promise(function(resolve) {
@@ -446,7 +446,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 action: action, 
                 pk1: keyPair.publicKey,
                 pk2: pk2,
-                deps: [...getDeps(ops)]
+                deps: getDeps(ops)
             };
         }
         op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
@@ -458,7 +458,7 @@ async function sendOperations (chatID, pk) {
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "ops",
-            ops: [...chatInfo.metadata.operations],
+            ops: chatInfo.metadata.operations,
             chatID: chatID,
             from: dec.decode(keyPair.publicKey),
         }, pk);
@@ -492,7 +492,7 @@ async function receivedOperations (ops, chatID, pk) {
     // pk: dec.decode(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     store.getItem(chatID).then((chatInfo) => {
-        ops = [...chatInfo.metadata.operations, ...ops];
+        ops = unionOps(chatInfo.metadata.operations, ops2)
         console.log(`merged set of ops ${ops.map(op => JSON.stringify(op))}`)
         const memberSet = members(ops, chatInfo.metadata.ignored);
         console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
@@ -511,7 +511,6 @@ async function receivedOperations (ops, chatID, pk) {
 function verifyOperations (ops) {
     
     // only one create
-    ops = opsSet(ops);
     const createOps = ops.filter((op) => op.action === "create");
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
@@ -596,6 +595,7 @@ function authority (ops) {
 }
 
 function valid (ops, ignored, op) {
+    ops = new Set(ops);
     if (op.action === "create") { return true; }
     if (ignored.has(op)) { return false; }
     const inSet = ([...authority(ops)]).filter((edge) => {
@@ -998,15 +998,11 @@ function isAlphanumeric (str) {
     return str === str.replace(/[^a-z0-9]/gi,'');
 }
 
-function opsSet (ops) {
-    const sigSet = new Set();
-    const opsSet = [];
-
-    for (const op of ops) {
-        if (!sigSet.has(op.sig)) {
-            opsSet.push(op);
-        }
+function unionOps (ops1, ops2) {
+    const sigSet = new Set(ops1.map(op => op.sig));
+    const ops = JSON.parse(JSON.stringify(ops1));
+    for (const op of ops2) {
+        if (!sigSet.has(op.sig)) { ops.push(op); }
     }
-    
-    return setOps;
+    return ops;
 }
