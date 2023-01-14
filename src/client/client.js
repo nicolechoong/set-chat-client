@@ -717,10 +717,12 @@ function initChannel (channel) {
             case "remove":
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
                 break;
+            case "text":
+                break;
             default:
                 console.log(`Unrecognised message type ${messageData.type}`);
-            updateChatWindow(messageData);
         }
+        updateChatWindow(messageData);
     }
 }
 
