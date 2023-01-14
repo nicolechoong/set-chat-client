@@ -489,7 +489,7 @@ function arrEqual(arr1, arr2) {
 async function receivedOperations (ops, chatID, pk) {
     // ops: array of already unpacked
     // pk: dec.decode(public key of sender)
-    console.log(`receiving operations`);
+    console.log(`receiving operations for chatID ${chatID}`);
     store.getItem(chatID).then((chatInfo) => {
         ops = new Set([...chatInfo.metadata.operations, ...ops]);
         const memberSet = members(ops, chatInfo.metadata.ignored);
