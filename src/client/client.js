@@ -492,8 +492,8 @@ async function receivedOperations (ops, chatID, pk) {
     // pk: dec.decode(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     store.getItem(chatID).then((chatInfo) => {
-        ops = new Set([...chatInfo.metadata.operations, ...ops]);
-        console.log(`merged set of ops ${[...ops].map(op => JSON.stringify(op))}`)
+        ops = [...chatInfo.metadata.operations, ...ops];
+        console.log(`merged set of ops ${ops.map(op => JSON.stringify(op))}`)
         const memberSet = members(ops, chatInfo.metadata.ignored);
         console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
         if (verifyOperations(ops) && memberSet.has(pk)) {
@@ -511,7 +511,7 @@ async function receivedOperations (ops, chatID, pk) {
 function verifyOperations (ops) {
     
     // only one create
-    ops = [...ops];
+    ops = opsSet(ops);
     const createOps = ops.filter((op) => op.action === "create");
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
     const createOp = createOps[0];
@@ -994,6 +994,19 @@ function createNewChat() {
 // UTILS  //
 ////////////
 
-function isAlphanumeric(str) {
+function isAlphanumeric (str) {
     return str === str.replace(/[^a-z0-9]/gi,'');
+}
+
+function opsSet (ops) {
+    const sigSet = new Set();
+    const opsSet = [];
+
+    for (const op of ops) {
+        if (!sigSet.has(op.sig)) {
+            opsSet.push(op);
+        }
+    }
+    
+    return setOps;
 }
