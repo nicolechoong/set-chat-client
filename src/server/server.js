@@ -353,7 +353,6 @@ function sendTo(connection, message, name = "") {
 
 function broadcast(message, id = 0) {
   if (id) {
-    console.log(chats.get(id))
     for (username of chats.get(id).members) {
       if (connectedUsers.has(username)) {
         sendTo(connectedUsers.get(username).connection, message);
