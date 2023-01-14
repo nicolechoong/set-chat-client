@@ -492,7 +492,7 @@ async function receivedOperations (ops, chatID, pk) {
     // pk: dec.decode(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     store.getItem(chatID).then((chatInfo) => {
-        ops = unionOps(chatInfo.metadata.operations, ops2)
+        ops = unionOps(chatInfo.metadata.operations, ops);
         console.log(`merged set of ops ${ops.map(op => JSON.stringify(op))}`)
         const memberSet = members(ops, chatInfo.metadata.ignored);
         console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
