@@ -146,6 +146,10 @@ function onLogin (success, chats) {
 
         keyMap.set(dec.decode(keyPair.publicKey), localUsername);
         updateHeading();
+        
+        for (const chatID of joinedChats.keys()) {
+            updateChatOptions("add", chatID);
+        }
     } 
 };
 
