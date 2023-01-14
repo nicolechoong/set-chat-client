@@ -1000,7 +1000,7 @@ function isAlphanumeric (str) {
 
 function unionOps (ops1, ops2) {
     const sigSet = new Set(ops1.map(op => op.sig));
-    const ops = JSON.parse(JSON.stringify(ops1));
+    const ops = [...ops1];
     for (const op of ops2) {
         if (!sigSet.has(op.sig)) { ops.push(op); }
     }
