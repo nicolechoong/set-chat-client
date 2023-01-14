@@ -347,7 +347,7 @@ function onGetPK (name, success, pk) {
         console.log(`Received pk of ${name}, ${decodedPK}`);
         keyMap.set(decodedPK, name);
         store.setItem(keyMap, keyMap);
-        resolveGetPK(decodedPK);
+        resolveGetPK(pk);
     } else {
         console.error(`User ${name} does not exist`);
     }
