@@ -770,8 +770,8 @@ loginBtn.addEventListener("click", async function (event) {
     initialiseStore()
 
     store.getItem("keyPair").then((kp) => {
-        console.log(`${kp}`);
-        if (kp == null) {
+        console.log(`${typeof kp}`);
+        if (kp === null) {
             keyPair = nacl.sign.keyPair();
             console.log("keyPair generated");
             store.setItem("keyPair", keyPair);
