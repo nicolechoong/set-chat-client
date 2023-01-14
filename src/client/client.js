@@ -746,8 +746,8 @@ function sendAdvertisement (chatID, pk) {
     // chatID: String, pk: dec.decode(pk)
     const online = [];
     for (const pk of joinedChats.get(chatID).members) {
-        if (connections.has(keyMap.get(mem))) {
-            online.push({peerName: keyMap.get(mem), peerPK: enc.encode(pk)});
+        if (connections.has(keyMap.get(pk))) {
+            online.push({peerName: keyMap.get(pk), peerPK: enc.encode(pk)});
         }
     }
 
