@@ -719,10 +719,10 @@ function initChannel (channel) {
                 receivedOperations(messageData.ops, messageData.chatID, messageData.from);
                 break;
             case "add":
-                keyMap.set(dec.decode(messageData.op), messageData.name);
-                store.setItem("keyMap", keyMap);
             case "remove":
                 unpackOp(messageData.op);
+                keyMap.set(dec.decode(messageData.op), messageData.name);
+                store.setItem("keyMap", keyMap);
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
                 updateChatWindow(messageData);
