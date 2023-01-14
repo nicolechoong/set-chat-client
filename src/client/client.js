@@ -321,9 +321,9 @@ async function addToChat (validMemberPubKeys, chatID) {
                     id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
                     type: "add",
                     op: op,
-                    from: localUsername,
-                    name: mem,
-                    sentTime: sentTime
+                    from: dec.decode(keyPair.publicKey),
+                    sentTime: sentTime,
+                    chatID: chatID
                 }, chatID);
                 sendToServer({
                     to: mem,
@@ -364,16 +364,10 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
                     type: "remove",
                     op: op,
-                    from: localUsername,
-                    name: mem,
-                    sentTime: sentTime
+                    from: dec.decode(keyPair.publicKey),
+                    sentTime: sentTime,
+                    chatID: chatID
                 }, chatID);
-                sendToServer({
-                    to: mem,
-                    type: "remove",
-                    chatID: chatID,
-                    chatName: chatInfo.metadata.chatName
-                });
                 console.log(`removed ${mem}`);
             }
             resolve(chatInfo);
@@ -455,7 +449,9 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 
 async function sendOperations (chatID, pk) {
     store.getItem(chatID).then((chatInfo) => {
+        const sentTime = Date.now();
         sendToMember({
+            id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
             type: "ops",
             ops: [...chatInfo.metadata.operations],
             chatID: chatID,
@@ -713,11 +709,20 @@ function initChannel (channel) {
     channel.onmessage = (event) => {
         console.log(`received a message from the channel`);
         const messageData = JSON.parse(event.data);
-        if (messageData.type === "ops") {
-            receivedOperations(messageData.ops, messageData.chatID, messageData.from);
-        } else {
-            // updateChatStore(messageData);
-            updateChatWindow(messageData);
+        switch (messageData.type) {
+            case "ops":
+                receivedOperations(messageData.ops, messageData.chatID, messageData.from);
+                break;
+            case "add":
+            case "remove":
+                receivedOperations([messageData.op], messageData.chatID, messageData.from);
+                break;
+            case "message":
+                // updateChatStore(messageData);
+                updateChatWindow(messageData);
+                break;
+            default:
+                console.log(`Unrecognised message type ${messageData.type}`);
         }
     }
 }
