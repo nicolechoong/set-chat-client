@@ -312,7 +312,7 @@ async function addToChat(validMemberPubKeys, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             for (const mem of validMemberPubKeys.keys()) {
-                console.log(`we are now adding ${mem} and the ops are ${chatInfo.metadata.operations}`)
+                console.log(`we are now adding ${mem} and the ops are ${[...chatInfo.metadata.operations]}`)
                 const op = await generateOp("add", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.add(op);
                 console.log(`added ${mem} to chat`);
@@ -399,7 +399,6 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
                 deps: [...getDeps(ops)]
             };
         }
-        console.log(`encoded ${enc.encode(concatOp(op)) instanceof Uint8Array}, length of sig ${nacl.sign.detached(new TextEncoder().encode(concatOp(op)), keyPair.secretKey).length}`);
         op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
             resolve(op);
     });
@@ -487,7 +486,6 @@ function hashOp(op) {
 }
 
 function getOpFromHash(ops, hashedOp) {
-    console.log(`hashedOp param is array ${hashedOp instanceof Uint8Array} ${JSON.stringify(hashedOp)}`);
     if (hashedOps.has(dec.decode(hashedOp))) { return hashedOps.get(dec.decode(hashedOp)); }
     for (const op of ops) {
         if (arrEqual(hashedOp, hashOp(op))) {
@@ -536,11 +534,9 @@ function authority (ops) {
     for (const op1 of ops) {
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
-            console.log(`${op1.action} precedes ${op2.action}? ${precedes(ops, op1, op2)}`);
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.add([op1, op2]);
-                console.log(`adding edge ${op1.action} to ${op2.action}`);
             }
         }
 
@@ -548,8 +544,6 @@ function authority (ops) {
         edges.add([op1, {"member": pk, "sig": pk}]);
         console.log(`adding member ${pk}`)  // TODO: remove dups
     }
-    console.log(`authority set`);
-    [...edges].forEach(e => printEdge(e));
 
     return edges;
 }
