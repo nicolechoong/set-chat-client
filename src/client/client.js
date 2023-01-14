@@ -752,7 +752,8 @@ function sendAdvertisement (chatID, pk) {
     if (online.length > 0) {
         sendToMember({
             type: "advertisement",
-            online: online
+            online: online,
+            chatID: chatID
         }, pk);
     }
 }
