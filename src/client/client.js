@@ -325,6 +325,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                     sentTime: sentTime,
                     chatID: chatID
                 }, chatID);
+                console.log(`broadcasted add to members`);
                 sendToServer({
                     to: mem,
                     type: "add",
@@ -702,7 +703,6 @@ function initChannel (channel) {
         console.log(event);
         console.log(`Channel ${event.target.label} opened`);
         const channelLabel = JSON.parse(event.target.label);
-        console.log(`${channelLabel.senderPK}    and    ${channelLabel.receiverPK}`);
         sendOperations(channelLabel.chatID, channelLabel.senderPK === dec.decode(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK);
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
@@ -717,7 +717,7 @@ function initChannel (channel) {
             case "remove":
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
                 break;
-            case "message":
+            case "text":
                 // updateChatStore(messageData);
                 updateChatWindow(messageData);
                 break;
@@ -777,7 +777,6 @@ function broadcastToMembers (data, chatID = null) {
     chatID = chatID === null ? currentChatID : chatID;
     console.log(`username broadcast ${[...joinedChats.get(chatID).members]}`);
     for (const pk of joinedChats.get(chatID).members) {
-        console.log(`733 pkpk ${pk}`);
         try {
             console.log(`sending ${data} to ${keyMap.get(pk)}`);
             sendToMember(data, pk);
