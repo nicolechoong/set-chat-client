@@ -755,7 +755,7 @@ function sendAdvertisement (chatID, pk) {
 function onAdvertisement (chatID, online) {
     var peerPK;
     for (const peer of online) {
-        peerPK = Uint8Array.from(Object.values(peer.peerName));
+        peerPK = Uint8Array.from(Object.values(peer.peerPK));
         if (!connections.has(dec.decode(peerPK))) {
             console.log(`peerPK ${peerPK}   is of uint8array ${peerPK instanceof Uint8Array}`);
             sendOffer(peer.peerName, peerPK, chatID);
