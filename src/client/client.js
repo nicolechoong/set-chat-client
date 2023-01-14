@@ -1,3 +1,4 @@
+import { resolveObjectURL } from "buffer";
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 
 var loginBtn = document.getElementById('loginBtn'); 
@@ -343,9 +344,11 @@ async function addToChat(validMemberPubKeys, chatID) {
 
 function onGetPK (name, success, pk) {
     if (success) {
-        console.log(`Received pk of ${name}, ${dec.decode(Uint8Array.from(Object.values(pk)))}`);
-        keyMap.set(dec.decode(Uint8Array.from(Object.values(pk))), name);
+        const decodedPK = dec.decode(Uint8Array.from(Object.values(pk)));
+        console.log(`Received pk of ${name}, ${decodedPK}`);
+        keyMap.set(decodedPK, name);
         store.setItem(keyMap, keyMap);
+        resolveGetPK(decodedPK);
     } else {
         console.error(`User ${name} does not exist`);
     }
@@ -355,11 +358,16 @@ function onGetPK (name, success, pk) {
 // Access Control Functions //
 //////////////////////////////
 
+var resolveGetPK;
+
 function getPK (name) {
-    console.log(`Requesting for pk of ${name}`);
-    sendToServer({
-        type: "getPK",
-        name: name,
+    return new Promise((resolve) => {
+        resolveGetPK = resolve;
+        console.log(`Requesting for pk of ${name}`);
+        sendToServer({
+            type: "getPK",
+            name: name
+        });
     });
 }
 
@@ -800,12 +808,16 @@ chatNameInput.addEventListener("change", selectChat);
 
 newChatBtn.addEventListener("click", createNewChat);
 
-addUserBtn.addEventListener("click", () => { addToChat(modifyUserInput.value, currentChatID); })
+addUserBtn.addEventListener("click", async () => {
+    const username = modifyUserInput.value;
+    const pk = await getPK(username);
+    addToChat({username: pk}, currentChatID);
+});
 
 function getChatNames() {
     var chatnames = [];
     for (const chatID of joinedChats.keys()) {
-        chatnames.push(joinedChats.get(chatID).chatName)
+        chatnames.push(joinedChats.get(chatID).chatName);
     }
     return chatnames;
 }
