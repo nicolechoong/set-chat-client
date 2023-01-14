@@ -446,6 +446,7 @@ async function receivedOperations (ops, chatID, pk) {
         if (verifyOperations(ops) && memberSet.has(pk)) {
             chatInfo.metadata.operations = ops;
             joinedChats.get(chatID).members = memberSet;
+            console.log(`joined chats ${joinedChats.get(chatID).members}`)
             store.setItem(chatID, chatInfo);
             console.log(`synced with ${keyMap.get(pk)}`);
         }
