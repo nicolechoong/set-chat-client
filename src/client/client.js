@@ -810,7 +810,7 @@ newChatBtn.addEventListener("click", createNewChat);
 addUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
     const pk = await getPK(username);
-    addToChat({username: pk}, currentChatID);
+    addToChat(new Set([username, pk]), currentChatID);
 });
 
 function getChatNames() {
