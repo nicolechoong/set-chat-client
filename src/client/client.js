@@ -322,6 +322,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                     type: "add",
                     op: op,
                     from: dec.decode(keyPair.publicKey),
+                    username: mem,
                     sentTime: sentTime,
                     chatID: chatID
                 };
@@ -718,10 +719,10 @@ function initChannel (channel) {
                 receivedOperations(messageData.ops, messageData.chatID, messageData.from);
                 break;
             case "add":
+                keyMap.set(dec.decode(messageData.op), messageData.name);
+                store.setItem("keyMap", keyMap);
             case "remove":
-                console.log(`packed op ${messageData.op.pk1 instanceof Uint8Array}`);
                 unpackOp(messageData.op);
-                console.log(`unpacked op ${messageData.op.pk1 instanceof Uint8Array}`);
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
                 updateChatWindow(messageData);
@@ -740,8 +741,6 @@ function receiveChannelCallback (event) {
 }
 
 function updateChatWindow (data) {
-    console.log(`bro pls update chat window ${JSON.stringify(data)}`);
-    console.log(`senttime format ${typeof data.sentTime}`);
     if (data.chatID === currentChatID) {
         var message;
         switch (data.type) {
@@ -758,7 +757,7 @@ function updateChatWindow (data) {
                 message = "";
                 break;
         }
-        const msg = `${chatMessages.innerHTML}<br />[${data.sentTime}] ${message}`;
+        const msg = `${chatMessages.innerHTML}<br />[${new Date(data.sentTime).toISOString()}] ${message}`;
         chatMessages.innerHTML = msg;
     }
 }
@@ -824,6 +823,7 @@ loginBtn.addEventListener("click", async function (event) {
             keyPair = nacl.sign.keyPair();
             console.log("keyPair generated");
             store.setItem("keyPair", keyPair);
+            store.setItem("keyMap", keyMap);  // TODO: worry about what if we log out
         } else {
             console.log(`keypair ${JSON.stringify(kp)}`);
             keyPair = kp;
