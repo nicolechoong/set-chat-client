@@ -2,11 +2,14 @@ import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js"
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
+var addUserBtn = document.getElementById('addUserBtn');
+var removeUserBtn = document.getElementById('removeUserBtn');
 var chatMessages = document.getElementById('chatMessages');
 
 var loginInput = document.getElementById('loginInput');
 var chatNameInput = document.getElementById('chatNameInput');
 var messageInput = document.getElementById('messageInput');
+var modifyUserInput = document.getElementById('modifyUserInput');
 
 var connectedUser, localConnection, sendChannel;
 var localUsername;
@@ -361,7 +364,7 @@ function getDeps (operations) {
     console.log(operations);
     for (const op of operations) {
         const hashedOp = hashOp(op);
-        if (op.action === "create" || (op.action !== "create" && !op.deps.has(hashedOp))) {
+        if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
             deps.add(hashedOp);
             console.log(`dependency ${op.pk}${op.pk1} ${op.action} ${op.pk2}`);
         }
