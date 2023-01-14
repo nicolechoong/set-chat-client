@@ -881,12 +881,16 @@ newChatBtn.addEventListener("click", createNewChat);
 
 addUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
+    modifyUserInput.value = "";
+    if (username === localUsername) { console.alert(`Invalid username`); return; }
     const pk = await getPK(username);
     addToChat(new Map([[username, pk]]), currentChatID);
 });
 
 removeUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
+    modifyUserInput.value = "";
+    if (username === localUsername) { console.alert(`Invalid username`); return; };
     const pk = await getPK(username);
     removeFromChat(new Map([[username, pk]]), currentChatID);
 });
