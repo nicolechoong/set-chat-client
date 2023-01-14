@@ -176,6 +176,7 @@ function sendOffer(peerName, peerPK, chatID) {
         const channelLabel = {
             senderPK: dec.decode(keyPair.publicKey), 
             receiverPK: dec.decode(peerPK),
+            from: localUsername,
             chatID: chatID,
         };
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(JSON.stringify(channelLabel));
@@ -198,7 +199,7 @@ function sendOffer(peerName, peerPK, chatID) {
 }; 
 
 // Receiving Offer + Sending Answer to Peer
-function onOffer(offer, peerName) { 
+async function onOffer(offer, peerName) { 
     connections.set(peerName, {connection: initPeerConnection(), sendChannel: null});
     const peerConnection = connections.get(peerName);
 
@@ -464,7 +465,7 @@ async function sendOperations (chatID, pk) {
     });
 }
 
-function unpackOp(op) {
+function unpackOp (op) {
     op.sig = Uint8Array.from(Object.values(op.sig));
     if (op.action === "create") {
         op.pk = Uint8Array.from(Object.values(op.pk));
@@ -735,7 +736,7 @@ function initChannel (channel) {
 function receiveChannelCallback (event) {
     const channelLabel = JSON.parse(event.channel.label);
     console.log(`Received channel ${event.channel.label} from ${channelLabel.senderPK}`);
-    const peerConnection = connections.get(keyMap.get(channelLabel.senderPK));
+    const peerConnection = connections.get(channelLabel.from);
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
 }
