@@ -317,14 +317,11 @@ async function addToChat (validMemberPubKeys, chatID) {
                 const op = await generateOp("add", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.add(op);
 
-                const sentTime = Date.now();
                 const addMessage = {
-                    id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
                     type: "add",
                     op: op,
                     from: dec.decode(keyPair.publicKey),
                     username: mem,
-                    sentTime: sentTime,
                     chatID: chatID
                 };
                 broadcastToMembers(addMessage, chatID);
@@ -364,13 +361,10 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 const op = await generateOp("remove", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.add(op);
 
-                const sentTime = Date.now();
                 const removeMessage = {
-                    id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
                     type: "remove",
                     op: op,
                     from: dec.decode(keyPair.publicKey),
-                    sentTime: sentTime,
                     chatID: chatID
                 };
                 broadcastToMembers(removeMessage, chatID);
@@ -456,9 +450,7 @@ async function generateOp (action, chatID, pk2 = null, ops = new Set()) {
 
 async function sendOperations (chatID, pk) {
     store.getItem(chatID).then((chatInfo) => {
-        const sentTime = Date.now();
         sendToMember({
-            id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
             type: "ops",
             ops: [...chatInfo.metadata.operations],
             chatID: chatID,
@@ -752,7 +744,6 @@ function sendAdvertisement (chatID, pk) {
     }
 
     sendToMember({
-        id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
         type: "advertisement",
         online: online
     }, pk);
@@ -801,6 +792,9 @@ function updateChatStore (messageData) {
 
 function sendToMember (data, pk) {
     console.log(`sending ${JSON.stringify(data)}   to ${pk}`);
+    const sentTime = Date.now();
+    data.sentTime = sentTime;
+    data.id = nacl.hash(enc.encode(`${localUsername}:${sentTime}`));
     connections.get(keyMap.get(pk)).sendChannel.send(JSON.stringify(data));
 }
 
@@ -819,13 +813,10 @@ function broadcastToMembers (data, chatID = null) {
 
 function sendChatMessage (messageInput) {
     console.log("message sent");
-    const sentTime = Date.now();
     const data = {
-        id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
         type: "text",
         from: dec.decode(keyPair.publicKey),
         message: messageInput,
-        sentTime: sentTime,
         chatID: currentChatID
     };
 
