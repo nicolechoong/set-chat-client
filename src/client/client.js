@@ -300,22 +300,21 @@ function onAdd (chatID, chatName, from, fromPK) {
 
     // now we have to do syncing to get members and add to store
     keyMap.set(dec.decode(Uint8Array.from(Object.values(fromPK))), from);
-    store.setItem(keyMap, keyMap);
+    store.setItem("keyMap", keyMap);
     sendOffer(from, Uint8Array.from(Object.values(fromPK)), chatID);
     
     updateChatOptions("add", chatID);
     updateHeading();
 }
 
-async function addToChat(validMemberPubKeys, chatID) {
-    // members is the list of members pubkey: string to add to the chat
+async function addToChat (validMemberPubKeys, chatID) {
+    // members is the list of members pubkey: object
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             for (const mem of validMemberPubKeys.keys()) {
                 console.log(`we are now adding ${mem} and the ops are ${[...chatInfo.metadata.operations]}`)
                 const op = await generateOp("add", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.add(op);
-                console.log(`added ${mem} to chat`);
 
                 const sentTime = Date.now();
                 broadcastToMembers({
@@ -338,6 +337,49 @@ async function addToChat(validMemberPubKeys, chatID) {
         });
     }).then((chatInfo) => {
         store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
+    });
+}
+
+function onRemove (chatID, chatName, from, fromPK) {
+    console.log(`you've been removed from chat ${chatName} by ${from}`);
+    // updateChatOptions("remove", chatID);
+    updateHeading();
+
+    // should DISPUTE too
+    joinedChats.delete(chatID);
+
+    // as of now we just leave the left chats in the store
+}
+
+async function removeFromChat (validMemberPubKeys, chatID) {
+    store.getItem(chatID).then(async (chatInfo) => {
+        return new Promise(async (resolve) => {
+            for (const mem of validMemberPubKeys.keys()) {
+                console.log(`we are now removing ${mem} and the ops are ${[...chatInfo.metadata.operations]}`)
+                const op = await generateOp("remove", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
+                chatInfo.metadata.operations.add(op);
+
+                const sentTime = Date.now();
+                broadcastToMembers({
+                    id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
+                    type: "remove",
+                    op: op,
+                    from: localUsername,
+                    name: mem,
+                    sentTime: sentTime
+                }, chatID);
+                sendToServer({
+                    to: mem,
+                    type: "remove",
+                    chatID: chatID,
+                    chatName: chatInfo.metadata.chatName
+                });
+                console.log(`removed ${mem}`);
+            }
+            resolve(chatInfo);
+        });
+    }).then((chatInfo) => {
+        store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
     });
 }
 
@@ -810,8 +852,13 @@ newChatBtn.addEventListener("click", createNewChat);
 addUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
     const pk = await getPK(username);
-    console.log(`got pk and username here ${pk} ${username}`)
     addToChat(new Map([[username, pk]]), currentChatID);
+});
+
+removeUserBtn.addEventListener("click", async () => {
+    const username = modifyUserInput.value;
+    const pk = await getPK(username);
+    removeFromChat(new Map([[username, pk]]), currentChatID);
 });
 
 function getChatNames() {
@@ -867,13 +914,17 @@ function selectChat() {
 
 // TODO: distinguish between same name different chat
 function updateChatOptions(operation, chatID) {
+    var option = document.createElement("option");
 
     if (operation === "add") {
-        var option = document.createElement("option");
         option.text = joinedChats.get(chatID).chatName;
         chatNameInput.options.add(option);
-    } else {
-        
+    } else if (operation === "remove") {
+        if (!chatOptions.includes(chatID)) {
+            console.error(`Chat does not exist`);
+        }
+        const index = [...joinedChats.keys()].indexOf(chatID);
+        chatNameInput.options.remove(index);
     }
 }
 
