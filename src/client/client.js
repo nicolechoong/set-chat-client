@@ -811,7 +811,7 @@ addUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
     const pk = await getPK(username);
     console.log(`got pk and username here ${pk} ${username}`)
-    addToChat(new Set([username, pk]), currentChatID);
+    addToChat(new Map([username, pk]), currentChatID);
 });
 
 function getChatNames() {
