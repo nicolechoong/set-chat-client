@@ -398,6 +398,11 @@ var resolveGetPK;
 
 function getPK (name) {
     return new Promise((resolve) => {
+        for (const pk of keyMap) {
+            if (name === keyMap.get(pk)) {
+                resolve(pk);
+            }
+        }
         resolveGetPK = resolve;
         console.log(`Requesting for pk of ${name}`);
         sendToServer({
@@ -882,17 +887,17 @@ newChatBtn.addEventListener("click", createNewChat);
 
 addUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
-    modifyUserInput.value = "";
-    if (username === localUsername) { console.alert(`Invalid username`); return; }
     const pk = await getPK(username);
+    modifyUserInput.value = "";
+    if (joinedChats.get(currentChatID).members.has(pk)) { console.alert(`User has already been added`); return; }
     addToChat(new Map([[username, pk]]), currentChatID);
 });
 
 removeUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
-    modifyUserInput.value = "";
-    if (username === localUsername) { console.alert(`Invalid username`); return; };
     const pk = await getPK(username);
+    modifyUserInput.value = "";
+    if (!joinedChats.get(currentChatID).members.has(pk)) { console.alert(`Invalid username`); return; };
     removeFromChat(new Map([[username, pk]]), currentChatID);
 });
 
@@ -974,6 +979,10 @@ function createNewChat() {
         members: [member1, member2]
     });
 }
+
+////////////
+// UTILS  //
+////////////
 
 function isAlphanumeric(str) {
     return str === str.replace(/[^a-z0-9]/gi,'');
