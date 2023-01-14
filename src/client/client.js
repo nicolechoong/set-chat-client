@@ -317,15 +317,17 @@ async function addToChat (validMemberPubKeys, chatID) {
                 chatInfo.metadata.operations.add(op);
 
                 const sentTime = Date.now();
-                broadcastToMembers({
+                const addMessage = {
                     id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
                     type: "add",
                     op: op,
                     from: dec.decode(keyPair.publicKey),
                     sentTime: sentTime,
                     chatID: chatID
-                }, chatID);
+                };
+                broadcastToMembers(addMessage, chatID);
                 console.log(`broadcasted add to members`);
+                updateChatWindow(addMessage);
                 sendToServer({
                     to: mem,
                     type: "add",
@@ -361,15 +363,17 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 chatInfo.metadata.operations.add(op);
 
                 const sentTime = Date.now();
-                broadcastToMembers({
+                const removeMessage = {
                     id: nacl.hash(enc.encode(`${localUsername}:${sentTime}`)),
                     type: "remove",
                     op: op,
                     from: dec.decode(keyPair.publicKey),
                     sentTime: sentTime,
                     chatID: chatID
-                }, chatID);
+                };
+                broadcastToMembers(removeMessage, chatID);
                 console.log(`removed ${mem}`);
+                updateChatWindow(removeMessage);
             }
             resolve(chatInfo);
         });
@@ -716,13 +720,11 @@ function initChannel (channel) {
             case "add":
             case "remove":
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
-                break;
             case "text":
-                break;
+                updateChatWindow(messageData);
             default:
                 console.log(`Unrecognised message type ${messageData.type}`);
         }
-        updateChatWindow(messageData);
     }
 }
 
@@ -737,16 +739,18 @@ function receiveChannelCallback (event) {
 function updateChatWindow (data) {
     console.log(`bro pls update chat window`);
     if (data.chatID === currentChatID) {
-        var message;
+        var message, op;
         switch (data.type) {
             case "text":
                 message = `[${data.sentTime}] ${keyMap.get(data.from)}: ${data.message}`;
                 break;
             case "add":
-                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} added ${keyMap.get(data.op.pk2)}`;
+                op = unpackOp(data.op);
+                message = `[${data.sentTime}] ${keyMap.get(op.pk1)} added ${keyMap.get(op.pk2)}`;
                 break;
             case "remove":
-                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}`;
+                op = unpackOp(data.op);
+                message = `[${data.sentTime}] ${keyMap.get(op.pk1)} removed ${keyMap.get(op.pk2)}`;
                 break;
             default:
                 message = "";
