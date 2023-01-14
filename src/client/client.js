@@ -719,7 +719,9 @@ function initChannel (channel) {
                 break;
             case "add":
             case "remove":
+                console.log(`packed op ${messageData.op}`);
                 unpackOp(messageData.op);
+                console.log(`unpacked op ${messageData.op}`);
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
                 updateChatWindow(messageData);
@@ -743,19 +745,19 @@ function updateChatWindow (data) {
         var message;
         switch (data.type) {
             case "text":
-                message = `[${data.sentTime}] ${keyMap.get(data.from)}: ${data.message}`;
+                message = `${keyMap.get(data.from)}: ${data.message}`;
                 break;
             case "add":
-                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} added ${keyMap.get(data.op.pk2)}`;
+                message = `${keyMap.get(data.op.pk1)} added ${keyMap.get(data.op.pk2)}`;
                 break;
             case "remove":
-                message = `[${data.sentTime}] ${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}`;
+                message = `${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}`;
                 break;
             default:
                 message = "";
                 break;
         }
-        const msg = `${chatMessages.innerHTML}<br />${message}`;
+        const msg = `${chatMessages.innerHTML}<br />[${data.sentTime.toISOString()}] ${message}`;
         chatMessages.innerHTML = msg;
     }
 }
