@@ -551,8 +551,7 @@ function precedes (ops, op1, op2) {
     if (!ops.has(op2) || !ops.has(op1)) { return false; } // TODO
     const toVisit = [op2];
     const target = hashOp(op1);
-    var curOp;
-    var dep;
+    var curOp, dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
         for (const hashedDep of curOp.deps) {
@@ -575,6 +574,7 @@ function concurrent (ops, op1, op2) {
 }
 
 function authority (ops) {
+    console.log(`authority ops type ${ops}`);
     const edges = new Set();
     var pk;
     // convert pk into strings to perform comparisons
@@ -595,6 +595,7 @@ function authority (ops) {
 }
 
 function valid (ops, ignored, op) {
+    console.log(`valid ops type ${ops}`);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
     if (ignored.includes(op)) { return false; }
