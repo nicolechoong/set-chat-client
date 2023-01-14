@@ -750,6 +750,7 @@ function sendAdvertisement (chatID, pk) {
     }
 
     if (online.length > 0) {
+        console.log(`sending an advertistment to ${pk} of ${online}`)
         sendToMember({
             type: "advertisement",
             online: online,
@@ -803,7 +804,7 @@ function updateChatStore (messageData) {
 }
 
 function sendToMember (data, pk) {
-    console.log(`sending ${JSON.stringify(data.type)}   to ${pk}`);
+    console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     console.log(`current state of keyMap ${[...keyMap.values()]}`)
     const sentTime = Date.now();
     data.sentTime = sentTime;
