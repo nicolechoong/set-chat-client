@@ -807,7 +807,7 @@ function updateChatStore (messageData) {
 
 function sendToMember (data, pk) {
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
-    console.log(`current state of keyMap ${[...keyMap.values()]}`)
+    console.log(`current state of keyMap ${[...keyMap]}`);
     const sentTime = Date.now();
     data.sentTime = sentTime;
     data.id = nacl.hash(enc.encode(`${localUsername}:${sentTime}`));
