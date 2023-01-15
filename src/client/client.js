@@ -908,6 +908,7 @@ addUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
     const pk = await getPK(username);
+    console.log(`according to this user ${username} has ${pk}`);
     modifyUserInput.value = "";
     if (joinedChats.get(currentChatID).members.has(pk)) { console.alert(`User has already been added`); return; }
     addToChat(new Map([[pk, username]]), currentChatID);
