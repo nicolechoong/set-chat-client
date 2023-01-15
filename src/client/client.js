@@ -761,14 +761,14 @@ function sendAdvertisement (chatID, pk) {
     }
 }
 
-function onAdvertisement (chatID, online) {
+
+function onAdvertisement (chatID, peerOnline) {
     var peerPK;
-    for (const peer of online) {
+    for (const peer of peerOnline) {
         peerPK = Uint8Array.from(Object.values(peer.peerPK));
         keyMap.set(dec.decode(peerPK), peer.peerName);
         store.setItem("keyMap", keyMap);
-        if (!connections.has(dec.decode(peerPK))) {
-            console.log(`peerPK ${peerPK}   is of uint8array ${peerPK instanceof Uint8Array}`);
+        if (!connections.has(keyMap.get(dec.decode(peerPK)))) {
             sendOffer(peer.peerName, peerPK, chatID);
         }
     }
@@ -999,8 +999,6 @@ function isAlphanumeric (str) {
 
 function unionOps (ops1, ops2) {
     const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
-    console.log(`sigSet ops1 ${[...sigSet]}`);
-    console.log(`sigSet ops2 ${[...new Set(ops2.map(op => JSON.stringify(op.sig)))]}`);
     const ops = [...ops1];
     for (const op of ops2) {
         if (!sigSet.has(JSON.stringify(op.sig))) { ops.push(op); }
