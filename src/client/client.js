@@ -126,6 +126,9 @@ connection.onmessage = function (message) {
         case "add":
             onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK));
             break;
+        case "remove":
+            onRemove(data.chatID, data.chatName, data.from, objToArr(data.fromOK));
+            break;
         case "getPK":
             onGetPK(data.name, data.success, objToArr(data.pubKey));
             break;
@@ -334,7 +337,6 @@ async function addToChat (validMemberPubKeys, chatID) {
                     chatID: chatID
                 };
                 broadcastToMembers(addMessage, chatID);
-                console.log(`broadcasted add to members`);
                 updateChatWindow(addMessage);
                 sendToServer({
                     to: pk,
@@ -382,8 +384,16 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     chatID: chatID
                 };
                 broadcastToMembers(removeMessage, chatID);
-                console.log(`removed ${name}`);
                 updateChatWindow(removeMessage);
+                sendToServer({
+                    to: pk,
+                    type: "remove",
+                    from: localUsername,
+                    fromPK: keyPair.publicKey,
+                    chatID: chatID,
+                    chatName: chatInfo.metadata.chatName
+                });
+                console.log(`removed ${name}`);
             }
             resolve(chatInfo);
         });

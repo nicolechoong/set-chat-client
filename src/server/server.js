@@ -71,44 +71,37 @@ wsServer.on('connection', function(connection) {
       data = {};
     }
 
-    switch (data.type) {
-            
+    switch (data.type) { 
       case "login":
         onLogin(connection, data.name, data.pubKey);
-        break;
-                
+        break;     
       case "offer":
         onOffer(connection, data);
         break;
-
       case "answer":
         onAnswer(connection, data);
         break;
-      
       case "candidate":
         onCandidate(connection, data);
         break;
-
       case "join":
         onJoin(connection, data);
         break;
-
       case "createChat":
         onCreateChat(connection, data);
         break;
-
       case "getPK":
         onGetPK(connection, data);
         break;
-
       case "add":
         onAdd(connection, data);
         break;
-
+      case "remove":
+        onRemove(connection, data);
+        break;
       case "leave":
         onLeave(data);
         break;
-      
       default:
         sendTo(connection, {
           type: "error",
@@ -312,7 +305,12 @@ function onGetPK (connection, data) {
 
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
-  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}, with public key ${JSON.stringify(data.to)}`);
+  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
+  sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
+}
+
+function onRemove (connection, data) {
+  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
   sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
 }
 
