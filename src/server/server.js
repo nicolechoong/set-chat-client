@@ -312,6 +312,9 @@ function onGetPK (connection, data) {
 
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
+  console.log(data.to);
+  console.log(typeof data.to);
+  console.log(data.to instanceof Uint8Array);
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(objToStr(data.to)).username}, with public key ${JSON.stringify(data.to)}`);
   sendTo(connectedUsers.get(sendTo(data.to)).connection, data);
 }
