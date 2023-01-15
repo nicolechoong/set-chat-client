@@ -104,7 +104,7 @@ connection.onmessage = function (message) {
             onLogin(data.success, new Map(JSON.parse(data.joinedChats))); 
             break; 
         case "offer": 
-            onOffer(data.offer, data.from, enc.encode(data.fromPK)); 
+            onOffer(data.offer, data.from, data.fromPK); 
             break; 
         case "answer": 
             onAnswer(data.answer, data.fromPK); 
@@ -201,17 +201,18 @@ function sendOffer(peerName, peerPK, chatID) {
 
 // Receiving Offer + Sending Answer to Peer
 async function onOffer(offer, peerName, peerPK) { 
+    // offer: JSON, peerName: String, peerPK: dec.decoded String
     connections.set(peerPK, {connection: initPeerConnection(), sendChannel: null});
     const peerConnection = connections.get(peerPK);
 
-    keyMap.set(dec.decode(peerPK), peerName);
+    keyMap.set(peerPK, peerName);
     peerConnection.connection.setRemoteDescription(offer);
 
     console.log(`Sending answer to ${peerName}`);
     peerConnection.connection.createAnswer(function (answer) {
         peerConnection.connection.setLocalDescription(answer);
         sendToServer({ 
-            to: dec.decode(peerPK),
+            to: peerPK,
             fromPK: dec.decode(keyPair.publicKey),
             from: localUsername,
             type: "answer", 
