@@ -168,6 +168,7 @@ function sendOffer(peerName, peerPK, chatID) {
     
     if (peerName !== null && peerPK !== null) { 
         const newConnection = initPeerConnection(peerName);
+        console.log(`offer pk key ${JSON.stringify(peerPK)}`);
         connections.set(JSON.stringify(peerPK), {connection: newConnection, sendChannel: null});
         connectionNames.set(newConnection, JSON.stringify(peerPK));
         const peerConnection = connections.get(JSON.stringify(peerPK));
@@ -224,8 +225,9 @@ async function onOffer(offer, peerName, peerPK) {
   
 // Receiving Answer from Peer
 function onAnswer(answer, peerPK) {
+    console.log(`answer pk key ${JSON.stringify(peerPK)}`);
     console.log(JSON.stringify([...connections]));
-    console.log(`answer from received ${JSON.stringify(connections.get(JSON.stringify(peerPK)))}`)
+    console.log(`answer from received ${peerPK instanceof Uint8Array} ${JSON.stringify(connections.get(JSON.stringify(peerPK)))}`)
     connections.get(JSON.stringify(peerPK)).connection.setRemoteDescription(answer);
 } 
  
@@ -651,7 +653,7 @@ function joinChat (chatID) {
             if (peerPK !== JSON.stringify(keyPair.publicKey)) {
                 // Insert Key Exchange Protocol
                 console.log(`peerPK is ${peerPK}`);
-                sendOffer(peerName, peerPK, chatID);
+                sendOffer(peerName, strToArr(peerPK), chatID);
             }
         }
     }
