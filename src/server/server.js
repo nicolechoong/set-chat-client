@@ -306,7 +306,7 @@ function onGetPK (connection, data) {
     type: "getPK",
     name: data.name,
     success: true,
-    pubKey: Uint8Array.from(Object.values(usernameToPK.get(data.name)))
+    pubKey: Uint8Array.from(Object.values(JSON.parse(usernameToPK.get(data.name))))
   });
 }
 
