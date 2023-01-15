@@ -478,28 +478,6 @@ async function sendOperations (chatID, pk) {
     });
 }
 
-function unpackOp (op) {
-    op.sig = objToArr(op.sig);
-    if (op.action === "create") {
-        op.pk = objToArr(op.pk);
-        op.nonce = objToArr(op.nonce);
-    } else {
-        op.pk1 = objToArr(op.pk1);
-        op.pk2 = objToArr(op.pk2);
-        op.deps = op.deps.map(dep => objToArr(dep));
-    }
-}
-
-function arrEqual(arr1, arr2) {
-    if (arr1.length !== arr2.length) { return false; }
-    let index = 0;
-    while (index < arr1.length) {
-        if (arr1[index] !== arr2[index]) { return false; }
-        index++;
-    }
-    return true;
-}
-
 async function receivedOperations (ops, chatID, pk) {
     // ops: array of already unpacked
     // pk: stringify(public key of sender)
@@ -734,6 +712,7 @@ function initChannel (channel) {
             case "add":
             case "remove":
                 unpackOp(messageData.op);
+                keyMap.set(JSON.stringify(messageData.op.pk2), messageData.username);
                 store.setItem("keyMap", keyMap);
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from));
             case "text":
@@ -792,7 +771,7 @@ function updateChatWindow (data) {
         var message;
         switch (data.type) {
             case "text":
-                message = `${keyMap.get(data.from)}: ${data.message}`;
+                message = `${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
                 break;
             case "add":
                 message = `${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
@@ -1011,12 +990,34 @@ function createNewChat() {
     });
 }
 
-////////////
-// UTILS  //
-////////////
+///////////
+// UTILS //
+///////////
 
 function isAlphanumeric (str) {
     return str === str.replace(/[^a-z0-9]/gi,'');
+}
+
+function unpackOp (op) {
+    op.sig = objToArr(op.sig);
+    if (op.action === "create") {
+        op.pk = objToArr(op.pk);
+        op.nonce = objToArr(op.nonce);
+    } else {
+        op.pk1 = objToArr(op.pk1);
+        op.pk2 = objToArr(op.pk2);
+        op.deps = op.deps.map(dep => objToArr(dep));
+    }
+}
+
+function arrEqual(arr1, arr2) {
+    if (arr1.length !== arr2.length) { return false; }
+    let index = 0;
+    while (index < arr1.length) {
+        if (arr1[index] !== arr2[index]) { return false; }
+        index++;
+    }
+    return true;
 }
 
 function unionOps (ops1, ops2) {
