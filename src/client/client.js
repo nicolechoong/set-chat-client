@@ -334,7 +334,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                 console.log(`broadcasted add to members`);
                 updateChatWindow(addMessage);
                 sendToServer({
-                    to: dec.decode(pk),
+                    to: pk,
                     type: "add",
                     from: localUsername,
                     fromPK: dec.decode(keyPair.publicKey),
