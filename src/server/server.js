@@ -174,6 +174,7 @@ function onLogin (connection, name, pubKey) {
 
 function onOffer (connection, data) {
   const pk = dec.decode(Uint8Array.from(Object.values(data)));
+  console.log(`decoded pk ${pk} as sent by user ${data.from}`)
   if (connectedUsers.has(pk)) {
     console.log(`Sending offer to: ${pk}`);
 
