@@ -374,7 +374,8 @@ function getJoinedChats(pk) {
 function onReconnect (connection, pk) {
   // expecting same data as onLogin
   // we want to read through the message queue and send
-  msgQueue = allUsers.get(pk).msgQueue;
+  const msgQueue = allUsers.get(pk).msgQueue;
+  const joinedChats = Array.from(getJoinedChats(pk));
   connectedUsers.set(pk, {connection: connection, groups: []}); 
   connection.pk = pk;
 
@@ -383,13 +384,13 @@ function onReconnect (connection, pk) {
   sendTo(connection, { 
     type: "login", 
     success: true,
-    joinedChats: JSON.stringify(Array.from(getJoinedChats(pk)))
+    joinedChats: JSON.stringify(joinedChats)
   });
 
   console.log(JSON.stringify({ 
     type: "login", 
     success: true,
-    joinedChats: JSON.stringify(Array.from(getJoinedChats(pk)))
+    joinedChats: JSON.stringify(joinedChats)
   }))
 
   while (msgQueue.length > 0) {
