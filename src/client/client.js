@@ -909,7 +909,7 @@ addUserBtn.addEventListener("click", async () => {
     const pk = await getPK(username);
     modifyUserInput.value = "";
     if (joinedChats.get(currentChatID).members.has(pk)) { console.alert(`User has already been added`); return; }
-    addToChat(new Map([[username, pk]]), currentChatID);
+    addToChat(new Map([[pk, username]]), currentChatID);
 });
 
 removeUserBtn.addEventListener("click", async () => {
