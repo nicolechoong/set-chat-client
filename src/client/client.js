@@ -225,9 +225,6 @@ async function onOffer(offer, peerName, peerPK) {
   
 // Receiving Answer from Peer
 function onAnswer(answer, peerPK) {
-    console.log(`answer pk key ${JSON.stringify(peerPK)}`);
-    console.log(JSON.stringify([...connections]));
-    console.log(`answer from received ${peerPK instanceof Uint8Array} ${JSON.stringify(connections.get(JSON.stringify(peerPK)))}`)
     connections.get(JSON.stringify(peerPK)).connection.setRemoteDescription(answer);
 } 
  
