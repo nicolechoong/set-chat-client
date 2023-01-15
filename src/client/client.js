@@ -320,7 +320,7 @@ async function addToChat (validMemberPubKeys, chatID) {
             var name;
             for (const pk of validMemberPubKeys.keys()) {
                 name = validMemberPubKeys.get(pk);
-                console.log(`we are now adding ${name} and the ops are ${chatInfo.metadata.operations}`)
+                console.log(`we are now adding ${name} who has pk ${pk} and the ops are ${chatInfo.metadata.operations}`)
                 const op = await generateOp("add", chatID, enc.encode(pk), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.push(op);
 
