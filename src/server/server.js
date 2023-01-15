@@ -58,7 +58,7 @@ wsServer.on('connection', function(connection) {
   connections.push(connection);
   sendTo(connection, {
     type: "usernames",
-    usernames: Array.from([...connectedUsers.keys()].map(pk => allUsers.get(pk).username))
+    usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username)
   });
 
   connection.onmessage = function(message) {
@@ -316,10 +316,10 @@ function onAdd (connection, data) {
 
 function broadcastActiveUsernames () {
   console.log(`Broadcasting active users: ${Array.from(usernameToPK.keys())}`);
-  console.log(`All existing users: ${Array.from(allUsers.keys().map(pk => allUsers.get(pk).username))}`);
+  console.log(`All existing users: ${Array.from(allUsers.keys()).map(pk => allUsers.get(pk).username)}`);
   broadcast({
     type: "usernames",
-    usernames: Array.from([...connectedUsers.keys()].map(pk => allUsers.get(pk).username))
+    usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username)
   });
 }
 
