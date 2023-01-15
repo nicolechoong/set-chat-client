@@ -24,14 +24,20 @@ server.listen(port, () => {
   console.log(`Server is listening on https://localhost:${port}`);
 });
 
+var enc = new TextEncoder();
+var dec = new TextDecoder();
+
 // stores all connections
 const connections = [];
 
-// (username: String, {msgQueue: Array of String, pubKey: Uint8Array})
+// (pk: dec.decoded String, {msgQueue: Array of String, username: String})
 // TODO: Extend with passwords, keys etc...
 const allUsers = new Map();
 
-// (username: String, {connection: WebSocket, chatrooms: Array of String})
+// (username: String, pk: Uint8Array)
+const usernameToPK = new Map();
+
+// (pk: dec.decoded String, {connection: WebSocket, chatrooms: Array of String})
 const connectedUsers = new Map();
 
 // UNUSED FOR NOW
@@ -52,7 +58,7 @@ wsServer.on('connection', function(connection) {
   connections.push(connection);
   sendTo(connection, {
     type: "usernames",
-    usernames: Array.from(connectedUsers.keys())
+    usernames: Array.from([...connectedUsers.keys()].map(pk => allUsers.get(pk).username))
   });
 
   connection.onmessage = function(message) {
@@ -135,24 +141,26 @@ wsServer.on('connection', function(connection) {
 })
 
 function onLogin (connection, name, pubKey) {
-  console.log(`User [${name}] with pubKey [${pubKey}] online`);
+  pubKey = dec.decode(Uint8Array.from(Object.values(pubKey)));
+  console.log(`User [${name}] with pubKey [${dec.decode(pubKey)}] online`);
   // TODO: Need some username password stuff here later on
 
-  if (allUsers.has(name)) {
-    onReconnect(connection, name);
+  if (allUsers.has(pubKey)) {
+    onReconnect(connection, pubKey);
     return;
   }
 
-  if(connectedUsers.has(name)) { 
+  if(connectedUsers.has(pubKey)) { 
     sendTo(connection, { 
         type: "login", 
         success: false, 
         joinedChats: JSON.stringify([])
     }); 
   } else { 
-    connectedUsers.set(name, {connection: connection, groups: []}); 
-    connection.name = name; 
-    allUsers.set(name, {msgQueue: [], pubKey: pubKey})
+    connectedUsers.set(pubKey, {connection: connection, groups: []}); 
+    connection.pk = pubKey; 
+    allUsers.set(pubKey, {msgQueue: [], username: name});
+    usernameToPK.set(name, pubKey);
 
     sendTo(connection, { 
       type: "login", 
@@ -165,12 +173,6 @@ function onLogin (connection, name, pubKey) {
 }
 
 function onOffer (connection, data) {
-  const offerMessage = {
-    type: "offer",
-    offer: data.offer,
-    from: connection.name
-  };
-
   if (connectedUsers.has(data.to)) {
     console.log(`Sending offer to: ${data.to}`);
 
@@ -180,18 +182,12 @@ function onOffer (connection, data) {
       connection.otherNames = connection.otherNames || [];
       connection.otherNames.push(data.to);
 
-      sendTo(conn, offerMessage);
+      sendTo(conn, data);
     }
   }
 }
 
 function onAnswer (connection, data) {
-  const answerMessage = {
-    type: "answer",
-    answer: data.answer,
-    from: connection.name
-  };
-
   if (connectedUsers.has(data.to)) {
     console.log(`Sending answer to: ${data.to}`);
     
@@ -201,7 +197,7 @@ function onAnswer (connection, data) {
       connection.otherNames = connection.otherNames || [];
       connection.otherNames.push(data.to);
 
-      sendTo(conn, answerMessage);
+      sendTo(conn, data);
     }
   }
 }
@@ -213,16 +209,16 @@ function onCandidate (connection, data) {
   broadcast({
     type: "candidate",
     candidate: data.candidate,
-    from: connection.name
+    from: connection.pk
   }, data.chatroomID);
 }
 
 
 function onLeave (data) {
-  console.log(`Disconnecting from ${data.name}`);
-  var conn = connectedUsers.get(data.name).connection;
+  console.log(`Disconnecting from ${data.pk}`);
+  var conn = connectedUsers.get(data.pk).connection;
 
-  const index = conn.otherNames.indexOf(data.name);
+  const index = conn.otherNames.indexOf(data.pk);
   if (index > -1) {
     conn.otherNames.splice(index, 1);
   }
@@ -230,7 +226,7 @@ function onLeave (data) {
   if (conn != null) {
     sendTo(conn, {
       type: "leave",
-      from: data.name
+      from: data.pk
     });
   }
 }
@@ -267,23 +263,20 @@ function generateUID () {
 function onCreateChat (connection, data) {
   // data = {type: 'createChat', chatName: chat title, members: [list of users]}
   const chatID = generateUID();
-  const validMembers = data.members.filter(mem => allUsers.has(mem));
+  const validMembers = data.members.filter(mem => usernameToPK.has(mem)).map(mem => usernameToPK.get(mem));
 
   const validMemberPubKeys = new Map();
-  for (mem of data.members) {
-    if (allUsers.has(mem)) {
-      validMemberPubKeys.set(mem, allUsers.get(mem).pubKey);
-      console.log(`member [${mem}] has pk ${allUsers.get(mem).pubKey}`);
-    }
+  for (pk of validMembers) {
+    validMemberPubKeys.set(pk, allUsers.get(pk).username);
+    console.log(`member [${allUsers.get(pk).username}] has pk ${pk}`);
   }
 
-  const invalidMembers = data.members.filter(mem => !allUsers.has(mem) && mem !== "");
+  const invalidMembers = data.members.filter(mem => !usernameToPK.has(mem));
 
   // add to list of chats
   chats.set(chatID, {chatName: data.chatName, members: validMembers});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
-  console.log(`validMemberPKs ${validMemberPubKeys}`);
   console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
   const createChatMessage = {
     type: "createChat",
@@ -297,7 +290,7 @@ function onCreateChat (connection, data) {
 }
 
 function onGetPK (connection, data) {
-  if (!allUsers.has(data.name)) {
+  if (!usernameToPK.has(data.name)) {
     sendTo(connection, {
       type: "getPK",
       name: data.name,
@@ -311,51 +304,44 @@ function onGetPK (connection, data) {
     type: "getPK",
     name: data.name,
     success: true,
-    pubKey: allUsers.get(data.name).pubKey
+    pubKey: usernameToPK.get(data.name)
   });
 }
 
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
-  const addMessage = {
-    type: "add",
-    chatID: data.chatID,
-    chatName: data.chatName,
-    from: connection.name,
-    fromPK: allUsers.get(connection.name).pubKey
-  };
-  console.log(`sending add message for chat ${data.chatID} to ${data.to}, with public key ${allUsers.get(connection.name).pubKey}`);
+  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(data.to).username}, with public key ${data.to}`);
   sendTo(connectedUsers.get(data.to).connection, addMessage);
 }
 
 function broadcastActiveUsernames () {
-  console.log(`Broadcasting active users: ${Array.from(connectedUsers.keys())}`);
-  console.log(`All existing users: ${Array.from(allUsers.keys())}`)
+  console.log(`Broadcasting active users: ${Array.from(usernameToPK.keys())}`);
+  console.log(`All existing users: ${Array.from(allUsers.keys().map(pk => allUsers.get(pk).username))}`);
   broadcast({
     type: "usernames",
-    usernames: Array.from(connectedUsers.keys())
+    usernames: Array.from([...connectedUsers.keys()].map(pk => allUsers.get(pk).username))
   });
 }
 
 // Helper function to stringify outgoing messages
 // Sends the message of the user is online, else adds it to its queue (if it doesn't expire)
 // TODO: If the user doesn't exist it should send an error
-function sendTo(connection, message, name = "") {
+function sendTo(connection, message, pk = "") {
   if (connection != null) {
     connection.send(JSON.stringify(message));
     return;
   }
 
-  if (allUsers.has(name)) {
-    allUsers.get(name).msgQueue.push(message);
+  if (allUsers.has(pk)) {
+    allUsers.get(pk).msgQueue.push(message);
   }
 }
 
 function broadcast(message, id = 0) {
   if (id) {
-    for (username of chats.get(id).members) {
-      if (connectedUsers.has(username)) {
-        sendTo(connectedUsers.get(username).connection, message);
+    for (memPK of chats.get(id).members) {
+      if (connectedUsers.has(memPK)) {
+        sendTo(connectedUsers.get(memPK).connection, message);
       }
     }
   } else {
@@ -365,35 +351,35 @@ function broadcast(message, id = 0) {
   }
 }
 
-function getJoinedChats(name) {
+function getJoinedChats(pk) {
   var joined = new Map();
   for (chatID of chats.keys()) {
-    if (chats.get(chatID).members.includes(name)) {
+    if (chats.get(chatID).members.includes(pk)) {
       joined.set(chatID, chats.get(chatID));
     }
   }
   return joined;
 }
 
-function onReconnect (connection, name) {
+function onReconnect (connection, pk) {
   // expecting same data as onLogin
   // we want to read through the message queue and send
-  msgQueue = allUsers.get(name).msgQueue;
-  connectedUsers.set(name, {connection: connection, groups: []}); 
-  connection.name = name;
+  msgQueue = allUsers.get(pk).msgQueue;
+  connectedUsers.set(pk, {connection: connection, groups: []}); 
+  connection.pk = pk;
 
-  console.log(`User ${name} has rejoined`);
+  console.log(`User ${allUsers.get(pk).username} has rejoined`);
   
   sendTo(connection, { 
     type: "login", 
     success: true,
-    joinedChats: JSON.stringify(Array.from(getJoinedChats(name)))
+    joinedChats: JSON.stringify(Array.from(getJoinedChats(pk)))
   });
 
   console.log(JSON.stringify({ 
     type: "login", 
     success: true,
-    joinedChats: JSON.stringify(Array.from(getJoinedChats(name)))
+    joinedChats: JSON.stringify(Array.from(getJoinedChats(pk)))
   }))
 
   while (msgQueue.length > 0) {

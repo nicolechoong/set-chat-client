@@ -54,7 +54,7 @@ const configuration = {
 
 var currentChatID = 0;
 
-// map from username:string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
+// map from dec.decode(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
 
 // map from chatID to an array of usernames to connect to
@@ -104,10 +104,10 @@ connection.onmessage = function (message) {
             onLogin(data.success, new Map(JSON.parse(data.joinedChats))); 
             break; 
         case "offer": 
-            onOffer(data.offer, data.from); 
+            onOffer(data.offer, data.from, data.fromPK); 
             break; 
         case "answer": 
-            onAnswer(data.answer, data.from); 
+            onAnswer(data.answer, data.fromPK); 
             break; 
         case "candidate": 
             onCandidate(data.candidate, data.from); 
@@ -167,11 +167,11 @@ function initialiseStore () {
 function sendOffer(peerName, peerPK, chatID) {
     // peerName: String username, peerPK: uInt8Array, chatID: String
     
-    if (peerName !== null) { 
+    if (peerName !== null && peerPK !== null) { 
         const newConnection = initPeerConnection(peerName);
-        connections.set(peerName, {connection: newConnection, sendChannel: null});
-        connectionNames.set(newConnection, peerName);
-        const peerConnection = connections.get(peerName);
+        connections.set(peerPK, {connection: newConnection, sendChannel: null});
+        connectionNames.set(newConnection, peerPK);
+        const peerConnection = connections.get(peerPK);
 
         const channelLabel = {
             senderPK: dec.decode(keyPair.publicKey), 
@@ -185,9 +185,11 @@ function sendOffer(peerName, peerPK, chatID) {
         console.log(`Sending offer to ${peerName}`);
         peerConnection.connection.createOffer(function (offer) { 
             sendToServer({
-                to: peerName,
+                to: peerPK,
+                fromPK: keyPair.publicKey,
+                from: localUsername,
                 type: "offer",
-                offer: offer 
+                offer: offer
             });
                 
             peerConnection.connection.setLocalDescription(offer);
@@ -198,17 +200,20 @@ function sendOffer(peerName, peerPK, chatID) {
 }; 
 
 // Receiving Offer + Sending Answer to Peer
-async function onOffer(offer, peerName) { 
-    connections.set(peerName, {connection: initPeerConnection(), sendChannel: null});
-    const peerConnection = connections.get(peerName);
+async function onOffer(offer, peerName, peerPK) { 
+    connections.set(peerPK, {connection: initPeerConnection(), sendChannel: null});
+    const peerConnection = connections.get(peerPK);
 
+    keyMap.set(dec.decode(peerPK), peerName);
     peerConnection.connection.setRemoteDescription(offer);
 
     console.log(`Sending answer to ${peerName}`);
     peerConnection.connection.createAnswer(function (answer) {
         peerConnection.connection.setLocalDescription(answer);
         sendToServer({ 
-            to: peerName,
+            to: peerPK,
+            fromPK: keyPair.publicKey,
+            from: localUsername,
             type: "answer", 
             answer: answer
         }); 
@@ -218,14 +223,14 @@ async function onOffer(offer, peerName) {
 }
   
 // Receiving Answer from Peer
-function onAnswer(answer, peerName) {
-    connections.get(peerName).connection.setRemoteDescription(answer);
+function onAnswer(answer, peerPK) {
+    connections.get(peerPK).connection.setRemoteDescription(answer);
 } 
  
 // Receiving ICE Candidate from Server
-function onCandidate(candidate, peerName) {
-    if (connections.has(peerName)) {
-        connections.get(peerName).connection.addIceCandidate(new RTCIceCandidate(candidate)); 
+function onCandidate(candidate, peerPK) {
+    if (connections.has(peerPK)) {
+        connections.get(peerPK).connection.addIceCandidate(new RTCIceCandidate(candidate)); 
     }
 }
 
@@ -244,12 +249,12 @@ function onJoin (usernames) {
     }
 }
 
-function onLeave (peerName) {
-    connectionNames.delete(connections.get(peerName).connection);
-    connections.get(peerName).sendChannel.close();
-    connections.get(peerName).connection.close();
-    updateChatWindow({from: "SET", message: `${peerName} has left the room`});
-    connections.delete(peerName);
+function onLeave (peerPK) {
+    connectionNames.delete(connections.get(peerPK).connection);
+    connections.get(peerPK).sendChannel.close();
+    connections.get(peerPK).connection.close();
+    updateChatWindow({from: "SET", message: `${keyMap.get(peerPK)} has left the room`});
+    connections.delete(peerPK);
 }
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
@@ -312,33 +317,37 @@ async function addToChat (validMemberPubKeys, chatID) {
     // members is the list of members pubkey: object
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
-            for (const mem of validMemberPubKeys.keys()) {
-                console.log(`we are now adding ${mem} and the ops are ${chatInfo.metadata.operations}`)
-                const op = await generateOp("add", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
+            var name;
+            for (const pk of validMemberPubKeys.keys()) {
+                name = validMemberPubKeys.get(pk);
+                console.log(`we are now adding ${name} and the ops are ${chatInfo.metadata.operations}`)
+                const op = await generateOp("add", chatID, enc.encode(pk), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.push(op);
 
                 const addMessage = {
                     type: "add",
                     op: op,
                     from: dec.decode(keyPair.publicKey),
-                    username: mem,
+                    username: name,
                     chatID: chatID
                 };
                 broadcastToMembers(addMessage, chatID);
                 console.log(`broadcasted add to members`);
                 updateChatWindow(addMessage);
                 sendToServer({
-                    to: mem,
+                    to: pk,
                     type: "add",
+                    from: localUsername,
+                    fromPK: keyPair.publicKey,
                     chatID: chatID,
                     chatName: chatInfo.metadata.chatName
                 });
-                console.log(`added ${mem}`);
+                console.log(`added ${name}`);
             }
             resolve(chatInfo);
         });
     }).then((chatInfo) => {
-        store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
+        store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.values()]} have been added to ${chatID}`));
     });
 }
 
@@ -493,7 +502,6 @@ async function receivedOperations (ops, chatID, pk) {
     console.log(`receiving operations for chatID ${chatID}`);
     store.getItem(chatID).then((chatInfo) => {
         ops = unionOps(chatInfo.metadata.operations, ops);
-        console.log(`merged set of ops ${ops.map(op => JSON.stringify(op))}`)
         const memberSet = members(ops, chatInfo.metadata.ignored);
         console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
         if (verifyOperations(ops) && memberSet.has(pk)) {
@@ -735,7 +743,7 @@ function initChannel (channel) {
 function receiveChannelCallback (event) {
     const channelLabel = JSON.parse(event.channel.label);
     console.log(`Received channel ${event.channel.label} from ${channelLabel.senderPK}`);
-    const peerConnection = connections.get(keyMap.get(channelLabel.senderPK));
+    const peerConnection = connections.get(channelLabel.senderPK);
     peerConnection.sendChannel = event.channel;
     initChannel(peerConnection.sendChannel);
 }
@@ -744,7 +752,7 @@ function sendAdvertisement (chatID, pk) {
     // chatID: String, pk: dec.decode(pk)
     const online = [];
     for (const mem of joinedChats.get(chatID).members) {
-        if (connections.has(keyMap.get(mem)) && mem !== pk) {
+        if (connections.has(mem) && mem !== pk) {
             online.push({peerName: keyMap.get(mem), peerPK: enc.encode(mem)});
         }
     }
@@ -761,19 +769,21 @@ function sendAdvertisement (chatID, pk) {
 
 
 function onAdvertisement (chatID, peerOnline) {
+    // chatID: String, peerOnline: Array of JSON {peerName: String, peerPK: Object}
     var peerPK;
     for (const peer of peerOnline) {
         peerPK = Uint8Array.from(Object.values(peer.peerPK));
         console.log(`advertised peer ${peer.peerName} has code ${dec.decode(peerPK)}`)
         keyMap.set(dec.decode(peerPK), peer.peerName);
         store.setItem("keyMap", keyMap);
-        if (!connections.has(keyMap.get(dec.decode(peerPK))) && peer.peerName !== localUsername) {
+        if (!connections.has(dec.decode(peerPK)) && peer.peerName !== localUsername) {
             sendOffer(peer.peerName, peerPK, chatID);
         }
     }
 }
 
 function updateChatWindow (data) {
+    // data: JSON
     if (data.chatID === currentChatID) {
         var message;
         switch (data.type) {
@@ -805,12 +815,13 @@ function updateChatStore (messageData) {
 }
 
 function sendToMember (data, pk) {
+    // data: JSON, pk: String
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     console.log(`current state of keyMap ${[...keyMap]}`);
     const sentTime = Date.now();
     data.sentTime = sentTime;
     data.id = nacl.hash(enc.encode(`${localUsername}:${sentTime}`));
-    connections.get(keyMap.get(pk)).sendChannel.send(JSON.stringify(data));
+    connections.get(pk).sendChannel.send(JSON.stringify(data));
 }
 
 function broadcastToMembers (data, chatID = null) {
@@ -978,13 +989,20 @@ function updateChatOptions(operation, chatID) {
 
 function createNewChat() {
     let newChatName = document.getElementById('newChatName').value;
-    let member1 = document.getElementById('member1').value;
-    let member2 = document.getElementById('member2').value;
+    var member;
+    var members = [];
+
+    for (let i = 1; i < 3; i++) {
+        member = document.getElementById(`member${i}`).value;
+        if (member !== "") {
+            members.push(member);
+        }
+    }
 
     sendToServer({ 
         type: "createChat", 
         chatName: newChatName,
-        members: [member1, member2]
+        members: members
     });
 }
 
