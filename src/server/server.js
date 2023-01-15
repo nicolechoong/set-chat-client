@@ -173,14 +173,14 @@ function onLogin (connection, name, pubKey) {
 }
 
 function onOffer (connection, data) {
-  if (connectedUsers.has(data.to)) {
-    console.log(`Sending offer to: ${data.to}`);
+  if (connectedUsers.has(dec.decode(data.to))) {
+    console.log(`Sending offer to: ${dec.decode(data.to)}`);
 
-    const conn = connectedUsers.get(data.to).connection;
+    const conn = connectedUsers.get(dec.decode(data.to)).connection;
 
     if (conn != null) {
       connection.otherNames = connection.otherNames || [];
-      connection.otherNames.push(data.to);
+      connection.otherNames.push(dec.decode(data.to));
 
       sendTo(conn, data);
     }
@@ -188,14 +188,14 @@ function onOffer (connection, data) {
 }
 
 function onAnswer (connection, data) {
-  if (connectedUsers.has(data.to)) {
-    console.log(`Sending answer to: ${data.to}`);
+  if (connectedUsers.has(dec.decode(data.to))) {
+    console.log(`Sending answer to: ${dec.decode(data.to)}`);
     
-    const conn = connectedUsers.get(data.to).connection;
+    const conn = connectedUsers.get(dec.decode(data.to)).connection;
 
     if (conn != null) {
       connection.otherNames = connection.otherNames || [];
-      connection.otherNames.push(data.to);
+      connection.otherNames.push(dec.decode(data.to));
 
       sendTo(conn, data);
     }
