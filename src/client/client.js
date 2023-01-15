@@ -766,6 +766,7 @@ function onAdvertisement (chatID, peerOnline) {
     var peerPK;
     for (const peer of peerOnline) {
         peerPK = Uint8Array.from(Object.values(peer.peerPK));
+        console.log(`advertised peer ${peer.peerName} has code ${dec.decode(peerPK)}`)
         keyMap.set(dec.decode(peerPK), peer.peerName);
         store.setItem("keyMap", keyMap);
         if (!connections.has(keyMap.get(dec.decode(peerPK))) && peer.peerName !== localUsername) {
