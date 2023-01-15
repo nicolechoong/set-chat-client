@@ -758,12 +758,12 @@ function sendAdvertisement (chatID, pk) {
     const online = [];
     for (const mem of joinedChats.get(chatID).members) {
         if (connections.has(mem) && mem !== pk) {
-            online.push({peerName: keyMap.get(mem), peerPK: mem});
+            online.push({peerName: keyMap.get(mem), peerPK: objToArr(JSON.parse(mem))});
         }
     }
 
     if (online.length > 0) {
-        console.log(`sending an advertistment to ${pk} of ${online}`)
+        console.log(`sending an advertistment to ${pk} of ${JSON.stringify(online)}`)
         sendToMember({
             type: "advertisement",
             online: online,
@@ -775,6 +775,7 @@ function sendAdvertisement (chatID, pk) {
 
 function onAdvertisement (chatID, peerOnline) {
     // chatID: String, peerOnline: Array of JSON {peerName: String, peerPK: Object}
+    console.log(`peerOnline ${peerOnline}     ${peerOnline[0]}`)
     for (const peer of peerOnline) {
         console.log(`advertised peer ${peer.peerName} has code ${JSON.stringify(peer.peerPK)}`)
         keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
