@@ -998,12 +998,12 @@ function isAlphanumeric (str) {
 }
 
 function unionOps (ops1, ops2) {
-    const sigSet = new Set(ops1.map(op => op.sig));
+    const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
     console.log(`sigSet ops1 ${[...sigSet]}`);
-    console.log(`sigSet ops2 ${[...new Set(ops2.map(op => op.sig))]}`);
+    console.log(`sigSet ops2 ${[...new Set(ops2.map(op => JSON.stringify(op.sig)))]}`);
     const ops = [...ops1];
     for (const op of ops2) {
-        if (!sigSet.has(op.sig)) { ops.push(op); }
+        if (!sigSet.has(JSON.stringify(op.sig))) { ops.push(op); }
     }
     return ops;
 }
