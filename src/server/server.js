@@ -30,14 +30,14 @@ var dec = new TextDecoder();
 // stores all connections
 const connections = [];
 
-// (pk: dec.decoded String, {msgQueue: Array of String, username: String})
+// (pk: stringified String, {msgQueue: Array of String, username: String})
 // TODO: Extend with passwords, keys etc...
 const allUsers = new Map();
 
-// (username: String, pk: Uint8Array)
+// (username: String, pk: stringified String)
 const usernameToPK = new Map();
 
-// (pk: dec.decoded String, {connection: WebSocket, chatrooms: Array of String})
+// (pk: stringified String, {connection: WebSocket, chatrooms: Array of String})
 const connectedUsers = new Map();
 
 // UNUSED FOR NOW
@@ -141,7 +141,7 @@ wsServer.on('connection', function(connection) {
 })
 
 function onLogin (connection, name, pubKey) {
-  pubKey = dec.decode(Uint8Array.from(Object.values(pubKey)));
+  pubKey = JSON.stringify(pubKey);
   console.log(`User [${name}] with pubKey [${pubKey}] online`);
   // TODO: Need some username password stuff here later on
 
@@ -160,7 +160,7 @@ function onLogin (connection, name, pubKey) {
     connectedUsers.set(pubKey, {connection: connection, groups: []}); 
     connection.pk = pubKey; 
     allUsers.set(pubKey, {msgQueue: [], username: name});
-    usernameToPK.set(name, pubKey);
+    usernameToPK.set(name, Uint8Array.from(Object.values(pubKey)));
 
     sendTo(connection, { 
       type: "login", 
@@ -268,7 +268,7 @@ function onCreateChat (connection, data) {
 
   const validMemberPubKeys = new Map();
   for (pk of validMembers) {
-    validMemberPubKeys.set(pk, allUsers.get(pk).username);
+    validMemberPubKeys.set(allUsers.get(pk).username, JSON.parse(pk));
     console.log(`member [${allUsers.get(pk).username}] has pk ${pk}`);
   }
 
