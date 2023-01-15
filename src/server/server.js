@@ -281,7 +281,7 @@ function onCreateChat (connection, data) {
     invalidMembers: invalidMembers
   };
 
-  sendTo(connection, createChatMessage);
+  sendTo(connection, createChatMessage, connection.pk);
 }
 
 function onGetPK (connection, data) {
@@ -306,12 +306,20 @@ function onGetPK (connection, data) {
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
-  sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
+  if (connectedUsers.get(JSON.stringify(data.to)) == null) {
+    sendTo(null, data, JSON.stringify(data.to));
+  } else {
+    sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
+  }
 }
 
 function onRemove (connection, data) {
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
-  sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
+  if (connectedUsers.get(JSON.stringify(data.to)) == null) {
+    sendTo(null, data, JSON.stringify(data.to));
+  } else {
+    sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
+  }
 }
 
 function broadcastActiveUsernames () {
@@ -327,11 +335,13 @@ function broadcastActiveUsernames () {
 // Sends the message of the user is online, else adds it to its queue (if it doesn't expire)
 // TODO: If the user doesn't exist it should send an error
 function sendTo(connection, message, pk = "") {
+  // connection: RTCPeerConnection, message: JSON, pk: stringified
   if (connection != null) {
     connection.send(JSON.stringify(message));
     return;
   }
 
+  console.log(``);
   if (allUsers.has(pk)) {
     allUsers.get(pk).msgQueue.push(message);
   }
@@ -383,8 +393,7 @@ function onReconnect (connection, pk) {
   }))
 
   while (msgQueue.length > 0) {
-    sendTo(connection, msgQueue);
-    msgQueue.shift();
+    sendTo(connection, msgQueue.shift());
   }
 
   broadcastActiveUsernames();
