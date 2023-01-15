@@ -264,7 +264,7 @@ function generateUID () {
 function onCreateChat (connection, data) {
   // data = {type: 'createChat', chatName: chat title, members: [list of users]}
   const chatID = generateUID();
-  const validMembers = data.members.filter(mem => usernameToPK.has(mem)).map(mem => usernameToPK.get(mem));
+  const validMembers = data.members.filter(mem => usernameToPK.has(mem)).map(mem => JSON.parse(usernameToPK.get(mem)));
 
   const validMemberPubKeys = new Map();
   for (pk of validMembers) {
