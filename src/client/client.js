@@ -501,6 +501,7 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: array of already unpacked
     // pk: dec.decode(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
+    console.log(JSON.stringify(ops));
     store.getItem(chatID).then((chatInfo) => {
         ops = unionOps(chatInfo.metadata.operations, ops);
         const memberSet = members(ops, chatInfo.metadata.ignored);
