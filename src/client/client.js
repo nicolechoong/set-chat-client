@@ -165,7 +165,7 @@ function initialiseStore () {
 
 // Sending Offer to Peer
 function sendOffer(peerName, peerPK, chatID) {
-    // peerName: String username, peerPK: uInt8Array, chatID: String
+    // peerName: String username, peerPK: dec.decoded String, chatID: String
     
     if (peerName !== null && peerPK !== null) { 
         const newConnection = initPeerConnection(peerName);
@@ -175,7 +175,7 @@ function sendOffer(peerName, peerPK, chatID) {
 
         const channelLabel = {
             senderPK: dec.decode(keyPair.publicKey), 
-            receiverPK: dec.decode(peerPK),
+            receiverPK: peerPK,
             chatID: chatID,
         };
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(JSON.stringify(channelLabel));
@@ -185,7 +185,7 @@ function sendOffer(peerName, peerPK, chatID) {
         console.log(`Sending offer to ${peerName}`);
         peerConnection.connection.createOffer(function (offer) { 
             sendToServer({
-                to: dec.decode(peerPK),
+                to: peerPK,
                 fromPK: dec.decode(keyPair.publicKey),
                 from: localUsername,
                 type: "offer",
@@ -289,8 +289,8 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 }
 
 // When being added to a new chat
-// (chatID: String, {chatName: String, members: Array of String})
 function onAdd (chatID, chatName, from, fromPK) {
+    // chatID: String, chatName: String, from: String, fromPK: dec.decoded String
     console.log(`you've been added to chat ${chatName} by ${from}`);
     joinedChats.set(chatID, {chatName: chatName, members: []});
 
@@ -304,9 +304,9 @@ function onAdd (chatID, chatName, from, fromPK) {
     });
 
     // now we have to do syncing to get members and add to store
-    keyMap.set(dec.decode(Uint8Array.from(Object.values(fromPK))), from);
+    keyMap.set(fromPK, from);
     store.setItem("keyMap", keyMap);
-    sendOffer(from, Uint8Array.from(Object.values(fromPK)), chatID);
+    sendOffer(from, fromPK, chatID);
     
     updateChatOptions("add", chatID);
     updateHeading();
@@ -334,10 +334,10 @@ async function addToChat (validMemberPubKeys, chatID) {
                 console.log(`broadcasted add to members`);
                 updateChatWindow(addMessage);
                 sendToServer({
-                    to: pk,
+                    to: dec.decode(pk),
                     type: "add",
                     from: localUsername,
-                    fromPK: keyPair.publicKey,
+                    fromPK: dec.decode(keyPair.publicKey),
                     chatID: chatID,
                     chatName: chatInfo.metadata.chatName
                 });
@@ -772,11 +772,11 @@ function onAdvertisement (chatID, peerOnline) {
     // chatID: String, peerOnline: Array of JSON {peerName: String, peerPK: Object}
     var peerPK;
     for (const peer of peerOnline) {
-        peerPK = Uint8Array.from(Object.values(peer.peerPK));
-        console.log(`advertised peer ${peer.peerName} has code ${dec.decode(peerPK)}`)
-        keyMap.set(dec.decode(peerPK), peer.peerName);
+        peerPK = dec.decode(Uint8Array.from(Object.values(peer.peerPK)));
+        console.log(`advertised peer ${peer.peerName} has code ${peerPK}`)
+        keyMap.set(peerPK, peer.peerName);
         store.setItem("keyMap", keyMap);
-        if (!connections.has(dec.decode(peerPK)) && peer.peerName !== localUsername) {
+        if (!connections.has(peerPK) && peer.peerName !== localUsername) {
             sendOffer(peer.peerName, peerPK, chatID);
         }
     }
