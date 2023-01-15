@@ -726,7 +726,7 @@ function initChannel (channel) {
         switch (messageData.type) {
             case "ops":
                 messageData.ops.forEach(op => unpackOp(op));
-                receivedOperations(messageData.ops, messageData.chatID, messageData.from);
+                receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from));
                 break;
             case "advertisement":
                 onAdvertisement(messageData.chatID, messageData.online);
@@ -735,7 +735,7 @@ function initChannel (channel) {
             case "remove":
                 unpackOp(messageData.op);
                 store.setItem("keyMap", keyMap);
-                receivedOperations([messageData.op], messageData.chatID, messageData.from);
+                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from));
             case "text":
                 updateChatWindow(messageData);
                 break;
