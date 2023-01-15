@@ -160,7 +160,7 @@ function onLogin (connection, name, pubKey) {
     connectedUsers.set(pubKey, {connection: connection, groups: []}); 
     connection.pk = pubKey; 
     allUsers.set(pubKey, {msgQueue: [], username: name});
-    usernameToPK.set(name, Uint8Array.from(Object.values(pubKey)));
+    usernameToPK.set(name, pubKey);
 
     sendTo(connection, { 
       type: "login", 
@@ -306,7 +306,7 @@ function onGetPK (connection, data) {
     type: "getPK",
     name: data.name,
     success: true,
-    pubKey: usernameToPK.get(data.name)
+    pubKey: Uint8Array.from(Object.values(usernameToPK.get(data.name)))
   });
 }
 
