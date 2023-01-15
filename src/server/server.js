@@ -311,7 +311,7 @@ function onGetPK (connection, data) {
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(data.to).username}, with public key ${data.to}`);
-  sendTo(connectedUsers.get(data.to).connection, addMessage);
+  sendTo(connectedUsers.get(data.to).connection, data);
 }
 
 function broadcastActiveUsernames () {
