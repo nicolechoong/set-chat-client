@@ -142,7 +142,7 @@ wsServer.on('connection', function(connection) {
 
 function onLogin (connection, name, pubKey) {
   pubKey = dec.decode(Uint8Array.from(Object.values(pubKey)));
-  console.log(`User [${name}] with pubKey [${dec.decode(pubKey)}] online`);
+  console.log(`User [${name}] with pubKey [${pubKey}] online`);
   // TODO: Need some username password stuff here later on
 
   if (allUsers.has(pubKey)) {

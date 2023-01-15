@@ -262,9 +262,8 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     joinedChats.set(chatID, {chatName: chatName, members: []});
     store.setItem("joinedChats", joinedChats);
     
-    for (const mem of validMemberPubKeys.keys()) {
-        keyMap.set(dec.decode(Uint8Array.from(Object.values(validMemberPubKeys.get(mem)))), mem);
-        console.log(`adding ${mem} to keyMap`);
+    for (const pk of validMemberPubKeys.keys()) {
+        keyMap.set(pk, validMemberPubKeys.get(pk));
     }
     
     if (invalidMembers.length > 0) {
@@ -365,34 +364,35 @@ function onRemove (chatID, chatName, from, fromPK) {
 async function removeFromChat (validMemberPubKeys, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
-            for (const mem of validMemberPubKeys.keys()) {
-                console.log(`we are now removing ${mem} and the ops are ${chatInfo.metadata.operations}`)
-                const op = await generateOp("remove", chatID, Uint8Array.from(Object.values(validMemberPubKeys.get(mem))), chatInfo.metadata.operations);
+            var name;
+            for (const pk of validMemberPubKeys.keys()) {
+                name = validMemberPubKeys.get(pk);
+                console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations}`)
+                const op = await generateOp("remove", chatID, enc.encode(pk), chatInfo.metadata.operations);
                 chatInfo.metadata.operations.push(op);
 
                 const removeMessage = {
                     type: "remove",
                     op: op,
-                    username: mem,
+                    username: name,
                     from: dec.decode(keyPair.publicKey),
                     chatID: chatID
                 };
                 broadcastToMembers(removeMessage, chatID);
-                console.log(`removed ${mem}`);
+                console.log(`removed ${name}`);
                 updateChatWindow(removeMessage);
             }
             resolve(chatInfo);
         });
     }).then((chatInfo) => {
-        store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
+        store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.values()]} has been removed from ${chatID}`));
     });
 }
 
 function onGetPK (name, success, pk) {
     if (success) {
-        const decodedPK = dec.decode(Uint8Array.from(Object.values(pk)));
-        console.log(`Received pk of ${name}, ${decodedPK}`);
-        keyMap.set(decodedPK, name);
+        console.log(`Received pk of ${name}, ${pk}`);
+        keyMap.set(pk, name);
         store.setItem("keyMap", keyMap);
         resolveGetPK(pk);
     } else {
