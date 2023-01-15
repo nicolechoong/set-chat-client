@@ -212,7 +212,7 @@ function onCandidate (connection, data) {
   broadcast({
     type: "candidate",
     candidate: data.candidate,
-    from: connection.pk
+    from: Uint8Array.from(Object.values(JSON.parse(connection.pk)))
   }, data.chatroomID);
 }
 
