@@ -768,7 +768,7 @@ function onAdvertisement (chatID, peerOnline) {
         peerPK = Uint8Array.from(Object.values(peer.peerPK));
         keyMap.set(dec.decode(peerPK), peer.peerName);
         store.setItem("keyMap", keyMap);
-        if (!connections.has(keyMap.get(dec.decode(peerPK)))) {
+        if (!connections.has(keyMap.get(dec.decode(peerPK))) && peer.peerName !== localUsername) {
             sendOffer(peer.peerName, peerPK, chatID);
         }
     }
