@@ -176,7 +176,7 @@ function onOffer (connection, data) {
   const receiverPK = JSON.stringify(data.to);
   console.log(`decoded pk ${receiverPK} as sent by user ${data.from}`)
   if (connectedUsers.has(receiverPK)) {
-    console.log(`Sending offer to: ${receiverPK}`);
+    console.log(`Sending offer to: ${allUsers.get(receiverPK).username}`);
 
     const conn = connectedUsers.get(receiverPK).connection;
 
@@ -192,7 +192,7 @@ function onOffer (connection, data) {
 function onAnswer (connection, data) {
   const receiverPK = JSON.stringify(data.to);
   if (connectedUsers.has(receiverPK)) {
-    console.log(`Sending answer to: ${receiverPK}`);
+    console.log(`Sending answer to: ${allUsers.get(receiverPK).username}`);
     
     const conn = connectedUsers.get(receiverPK).connection;
 
