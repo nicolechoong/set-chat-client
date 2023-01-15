@@ -415,6 +415,7 @@ function getPK (name) {
         for (const pk of keyMap) {
             if (name === keyMap.get(pk)) {
                 resolve(objToArr(pk));
+                return;
             }
         }
         resolveGetPK = resolve;
@@ -539,7 +540,7 @@ function getOpFromHash(ops, hashedOp) {
 
 // takes in set of ops
 function precedes (ops, op1, op2) {
-    if (!ops.has(op2) || !ops.has(op1)) { return false; } // TODO
+    if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; } // TODO
     const toVisit = [op2];
     const target = hashOp(op1);
     var curOp, dep;
@@ -560,7 +561,7 @@ function precedes (ops, op1, op2) {
 }
 
 function concurrent (ops, op1, op2) {
-    if (!ops.has(op1) || !ops.has(op2) || arrEqual(op1.sig, op2.sig) || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
+    if (!hasOp(ops, op1) || !hasOp(ops, op2) || arrEqual(op1.sig, op2.sig) || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
     return true;
 }
 
@@ -891,7 +892,7 @@ addUserBtn.addEventListener("click", async () => {
     const pk = await getPK(username);
     console.log(`according to this user ${username} has ${pk}`);
     modifyUserInput.value = "";
-    if (joinedChats.get(currentChatID).members.has(pk)) { console.alert(`User has already been added`); return; }
+    if (joinedChats.get(currentChatID).members.has(JSON.stringify(pk))) { console.alert(`User has already been added`); return; }
     addToChat(new Map([[username, pk]]), currentChatID);
 });
 
@@ -900,7 +901,7 @@ removeUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
     const pk = await getPK(username);
     modifyUserInput.value = "";
-    if (!joinedChats.get(currentChatID).members.has(pk)) { console.alert(`Invalid username`); return; };
+    if (!joinedChats.get(currentChatID).members.has(JSON.stringify(pk))) { alert(`Invalid username`); return; };
     removeFromChat(new Map([[username, pk]]), currentChatID);
 });
 
@@ -1027,6 +1028,13 @@ function unionOps (ops1, ops2) {
         if (!sigSet.has(JSON.stringify(op.sig))) { ops.push(op); }
     }
     return ops;
+}
+
+function hasOp (ops, op) {
+    for (const curOp of ops) {
+        if (arrEqual(curOp, op)) { return true; }
+    }
+    return false;
 }
 
 function strToArr (str) {
