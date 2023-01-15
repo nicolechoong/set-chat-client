@@ -107,10 +107,10 @@ connection.onmessage = function (message) {
             onOffer(data.offer, data.from, enc.encode(data.fromPK)); 
             break; 
         case "answer": 
-            onAnswer(data.answer, enc.encode(data.fromPK)); 
+            onAnswer(data.answer, data.fromPK); 
             break; 
         case "candidate": 
-            onCandidate(data.candidate, enc.encode(data.from)); 
+            onCandidate(data.candidate, data.from); 
             break;
         case "usernames":
             onUsernames(data.usernames);
