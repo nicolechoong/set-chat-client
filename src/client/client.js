@@ -721,8 +721,6 @@ function initChannel (channel) {
             case "add":
             case "remove":
                 unpackOp(messageData.op);
-                keyMap.set(dec.decode(messageData.op.pk1), messageData.username);
-                keyMap.set(dec.decode(messageData.op.pk2), messageData.username);
                 store.setItem("keyMap", keyMap);
                 receivedOperations([messageData.op], messageData.chatID, messageData.from);
             case "text":
