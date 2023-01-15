@@ -537,7 +537,6 @@ function hashOp(op) {
 }
 
 function getOpFromHash(ops, hashedOp) {
-    console.log(`type of hashedOp ${hashedOp instanceof Uint8Array}  ${typeof hashedOp}`);
     if (hashedOps.has(dec.decode(hashedOp))) { return hashedOps.get(dec.decode(hashedOp)); }
     for (const op of ops) {
         if (arrEqual(hashedOp, hashOp(op))) {
@@ -1000,6 +999,8 @@ function isAlphanumeric (str) {
 
 function unionOps (ops1, ops2) {
     const sigSet = new Set(ops1.map(op => op.sig));
+    console.log(`sigSet ops1 ${[...sigSet]}`);
+    console.log(`sigSet ops2 ${[...new Set(ops2.map(op => op.sig))]}`);
     const ops = [...ops1];
     for (const op of ops2) {
         if (!sigSet.has(op.sig)) { ops.push(op); }
