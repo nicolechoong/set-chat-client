@@ -173,15 +173,16 @@ function onLogin (connection, name, pubKey) {
 }
 
 function onOffer (connection, data) {
-  console.log(`decoded pk ${data.to} as sent by user ${data.from}`)
-  if (connectedUsers.has(data.to)) {
-    console.log(`Sending offer to: ${data.to}`);
+  const receiverPK = JSON.stringify(data.to);
+  console.log(`decoded pk ${receiverPK} as sent by user ${data.from}`)
+  if (connectedUsers.has(receiverPK)) {
+    console.log(`Sending offer to: ${receiverPK}`);
 
-    const conn = connectedUsers.get(data.to).connection;
+    const conn = connectedUsers.get(receiverPK).connection;
 
     if (conn != null) {
       connection.otherNames = connection.otherNames || [];
-      connection.otherNames.push(data.to);
+      connection.otherNames.push(receiverPK);
 
       sendTo(conn, data);
     }
@@ -189,14 +190,15 @@ function onOffer (connection, data) {
 }
 
 function onAnswer (connection, data) {
-  if (connectedUsers.has(data.to)) {
-    console.log(`Sending answer to: ${data.to}`);
+  const receiverPK = JSON.stringify(data.to);
+  if (connectedUsers.has(receiverPK)) {
+    console.log(`Sending answer to: ${receiverPK}`);
     
-    const conn = connectedUsers.get(data.to).connection;
+    const conn = connectedUsers.get(receiverPK).connection;
 
     if (conn != null) {
       connection.otherNames = connection.otherNames || [];
-      connection.otherNames.push(data.to);
+      connection.otherNames.push(receiverPK);
 
       sendTo(conn, data);
     }
@@ -312,9 +314,6 @@ function onGetPK (connection, data) {
 
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
-  console.log(data.to);
-  console.log(typeof data.to);
-  console.log(data.to instanceof Uint8Array);
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}, with public key ${JSON.stringify(data.to)}`);
   sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
 }
