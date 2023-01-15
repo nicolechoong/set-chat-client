@@ -104,13 +104,13 @@ connection.onmessage = function (message) {
             onLogin(data.success, new Map(JSON.parse(data.joinedChats))); 
             break; 
         case "offer": 
-            onOffer(data.offer, data.from, data.fromPK); 
+            onOffer(data.offer, data.from, enc.encode(data.fromPK)); 
             break; 
         case "answer": 
-            onAnswer(data.answer, data.fromPK); 
+            onAnswer(data.answer, enc.encode(data.fromPK)); 
             break; 
         case "candidate": 
-            onCandidate(data.candidate, data.from); 
+            onCandidate(data.candidate, enc.encode(data.from)); 
             break;
         case "usernames":
             onUsernames(data.usernames);
@@ -185,8 +185,8 @@ function sendOffer(peerName, peerPK, chatID) {
         console.log(`Sending offer to ${peerName}`);
         peerConnection.connection.createOffer(function (offer) { 
             sendToServer({
-                to: peerPK,
-                fromPK: keyPair.publicKey,
+                to: dec.decode(peerPK),
+                fromPK: dec.decode(keyPair.publicKey),
                 from: localUsername,
                 type: "offer",
                 offer: offer
@@ -211,8 +211,8 @@ async function onOffer(offer, peerName, peerPK) {
     peerConnection.connection.createAnswer(function (answer) {
         peerConnection.connection.setLocalDescription(answer);
         sendToServer({ 
-            to: peerPK,
-            fromPK: keyPair.publicKey,
+            to: dec.decode(peerPK),
+            fromPK: dec.decode(keyPair.publicKey),
             from: localUsername,
             type: "answer", 
             answer: answer

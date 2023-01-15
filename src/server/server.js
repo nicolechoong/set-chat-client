@@ -173,16 +173,15 @@ function onLogin (connection, name, pubKey) {
 }
 
 function onOffer (connection, data) {
-  const pk = dec.decode(Uint8Array.from(Object.values(data.to)));
-  console.log(`decoded pk ${pk} as sent by user ${data.from}`)
-  if (connectedUsers.has(pk)) {
-    console.log(`Sending offer to: ${pk}`);
+  console.log(`decoded pk ${data.to} as sent by user ${data.from}`)
+  if (connectedUsers.has(data.to)) {
+    console.log(`Sending offer to: ${data.to}`);
 
-    const conn = connectedUsers.get(pk).connection;
+    const conn = connectedUsers.get(data.to).connection;
 
     if (conn != null) {
       connection.otherNames = connection.otherNames || [];
-      connection.otherNames.push(pk);
+      connection.otherNames.push(data.to);
 
       sendTo(conn, data);
     }
@@ -190,15 +189,14 @@ function onOffer (connection, data) {
 }
 
 function onAnswer (connection, data) {
-  const pk = dec.decode(Uint8Array.from(Object.values(data.to)));
-  if (connectedUsers.has(pk)) {
-    console.log(`Sending answer to: ${pk}`);
+  if (connectedUsers.has(data.to)) {
+    console.log(`Sending answer to: ${data.to}`);
     
-    const conn = connectedUsers.get(pk).connection;
+    const conn = connectedUsers.get(data.to).connection;
 
     if (conn != null) {
       connection.otherNames = connection.otherNames || [];
-      connection.otherNames.push(pk);
+      connection.otherNames.push(data.to);
 
       sendTo(conn, data);
     }
