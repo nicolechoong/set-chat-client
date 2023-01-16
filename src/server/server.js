@@ -270,7 +270,7 @@ function onCreateChat (connection, data) {
   const invalidMembers = data.members.filter(mem => !usernameToPK.has(mem));
 
   // add to list of chats
-  chats.set(chatID, {chatName: data.chatName, members: validMembers});
+  chats.set(chatID, {chatName: data.chatName, members: validMembers, currentMember: true});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
   console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
@@ -324,7 +324,7 @@ function onRemove (connection, data) {
 }
 
 function broadcastActiveUsernames () {
-  console.log(`Broadcasting active users: ${Array.from(usernameToPK.keys())}`);
+  console.log(`Broadcasting active users: ${Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username)}`);
   console.log(`All existing users: ${Array.from(allUsers.keys()).map(pk => allUsers.get(pk).username)}`);
   broadcast({
     type: "usernames",
@@ -350,13 +350,13 @@ function sendTo(connection, message, pk = "") {
 
 function broadcast(message, id = 0) {
   if (id) {
-    for (memPK of chats.get(id).members) {
+    for (const memPK of chats.get(id).members) {
       if (connectedUsers.has(memPK)) {
         sendTo(connectedUsers.get(memPK).connection, message);
       }
     }
   } else {
-    for (connection of connections) {
+    for (const connection of connections) {
       sendTo(connection, message);
     }
   }
@@ -364,7 +364,7 @@ function broadcast(message, id = 0) {
 
 function getJoinedChats(pk) {
   var joined = new Map();
-  for (chatID of chats.keys()) {
+  for (const chatID of chats) {
     if (chats.get(chatID).members.includes(pk)) {
       joined.set(chatID, chats.get(chatID));
     }
@@ -375,6 +375,7 @@ function getJoinedChats(pk) {
 function onReconnect (connection, pk) {
   // expecting same data as onLogin
   // we want to read through the message queue and send
+  // connection: WebSocket, pk: String
   const msgQueue = allUsers.get(pk).msgQueue;
   const joinedChats = Array.from(getJoinedChats(pk));
   connectedUsers.set(pk, {connection: connection, groups: []}); 
