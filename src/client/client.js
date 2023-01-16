@@ -144,7 +144,8 @@ function onLogin (success, chats, username) {
         alert("oops...try a different username"); 
     } else {
         localUsername = username;
-        console.log([...joinedChats]);
+        console.log([...chats]);
+        joinedChats = chats;
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
         updateHeading();
