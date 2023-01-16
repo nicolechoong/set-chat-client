@@ -372,6 +372,7 @@ function getJoinedChats(pk) {
   for (const chatID of chats.keys()) {
     if (chats.get(chatID).members.includes(pk)) {
       joined.set(chatID, chats.get(chatID));
+      console.log(`user ${allUsers.get(pk).username} is in ${chatID}`);
     }
   }
   return joined;
