@@ -802,6 +802,7 @@ function removePeer (pk) {
             return;
         }
     }
+    console.log(`${pk}    ${JSON.stringify(connections.get(pk))}`);
     const conn = connections.get(pk);
     conn.sendChannel.close();
     conn.connection.close();
