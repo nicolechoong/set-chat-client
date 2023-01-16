@@ -384,7 +384,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     chatID: chatID
                 };
                 broadcastToMembers(removeMessage, chatID);
-                removePeer(JSON.stringify(pk));
+                removePeer(chatID, JSON.stringify(pk));
                 updateChatWindow(removeMessage);
                 sendToServer({
                     to: pk,
@@ -732,7 +732,7 @@ function initChannel (channel) {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res) { 
                         const pk = JSON.stringify(messageData.op.pk2);
-                        if (pk !== JSON.stringify(keyPair.publicKey)) { removePeer(pk); }
+                        if (pk !== JSON.stringify(keyPair.publicKey)) { removePeer(messageData.chatID, pk); }
                         updateChatWindow(messageData);
                     }
                 });
@@ -798,11 +798,11 @@ function onAdvertisement (chatID, peerOnline) {
     }
 }
 
-function removePeer (pk) {
+function removePeer (chatID, pk) {
     // chatID: String, pk: stringified
     for (const id of joinedChats.keys()) {
         console.log(`801 predicate ${joinedChats.get(id).members.includes(pk)}`);
-        if (joinedChats.get(id).members.includes(pk)) {
+        if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
             return;
         }
     }
