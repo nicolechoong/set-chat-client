@@ -1106,6 +1106,7 @@ function objToArr (obj) {
 
 function mergeChats (localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);
+    if (receivedChats.size == 0) { return mergeChats; }
     const localChatIDs = new Set([...localChats.keys()]);
     for (const id of receivedChats.keys()) {
         if (!localChatIDs.has(id)) {
