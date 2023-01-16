@@ -100,7 +100,7 @@ connection.onmessage = function (message) {
 	
     switch(data.type) { 
         case "login": 
-            onLogin(data.success, new Map(JSON.parse(data.joinedChats))); 
+            onLogin(data.success, new Map(JSON.parse(data.joinedChats)), data.username); 
             break; 
         case "offer": 
             onOffer(data.offer, data.from, objToArr(data.fromPK)); 
@@ -138,12 +138,12 @@ connection.onmessage = function (message) {
 };
   
 // Server approves Login
-function onLogin (success, chats) { 
+function onLogin (success, chats, username) { 
 
     if (success === false) { 
         alert("oops...try a different username"); 
     } else {
-        localUsername = loginInput.value;
+        localUsername = username;
         joinedChats = chats;
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);

@@ -139,14 +139,15 @@ function onLogin (connection, name, pubKey) {
   // TODO: Need some username password stuff here later on
 
   if (allUsers.has(pubKey)) {
-    onReconnect(connection, pubKey);
+    onReconnect(connection, name, pubKey);
     return;
   }
 
   if(connectedUsers.has(pubKey)) { 
     sendTo(connection, { 
         type: "login", 
-        success: false, 
+        success: false,
+        username: name,
         joinedChats: JSON.stringify([])
     }); 
   } else { 
@@ -158,6 +159,7 @@ function onLogin (connection, name, pubKey) {
     sendTo(connection, { 
       type: "login", 
       success: true,
+      username: name,
       joinedChats: JSON.stringify([])
     });
 
@@ -365,15 +367,15 @@ function broadcast(message, id = 0) {
 function getJoinedChats(pk) {
   var joined = new Map();
   for (const chatID of chats.keys()) {
-    console.log(`chatID ${chatID}    pk ${pk}`);
     if (chats.get(chatID).members.includes(pk)) {
       joined.set(chatID, chats.get(chatID));
     }
   }
+  console.log(`chats joined by pk ${pk}    ${[...joined]}`);
   return joined;
 }
 
-function onReconnect (connection, pk) {
+function onReconnect (connection, name, pk) {
   // expecting same data as onLogin
   // we want to read through the message queue and send
   // connection: WebSocket, pk: String
@@ -387,16 +389,19 @@ function onReconnect (connection, pk) {
   sendTo(connection, { 
     type: "login", 
     success: true,
+    username: name,
     joinedChats: JSON.stringify(joinedChats)
   });
 
   console.log(JSON.stringify({ 
     type: "login", 
     success: true,
+    username: name,
     joinedChats: JSON.stringify(joinedChats)
   }))
 
   while (msgQueue.length > 0) {
+    console.log(`sending message queue`);
     sendTo(connection, msgQueue.shift());
   }
 
