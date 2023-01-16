@@ -272,7 +272,7 @@ function onCreateChat (connection, data) {
   const invalidMembers = data.members.filter(mem => !usernameToPK.has(mem));
 
   // add to list of chats
-  chats.set(chatID, {chatName: data.chatName, members: validMembers, currentMember: true});
+  chats.set(chatID, {chatName: data.chatName, members: [data.from], currentMember: true});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
   console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
@@ -308,7 +308,8 @@ function onGetPK (connection, data) {
 
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
-  chats.get(data.chatID).members.push(JSON.stringify(data.to));
+  console.log(data.to);
+  chats.get(data.chatID).members.push(data.to);
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
   if (connectedUsers.get(JSON.stringify(data.to)) == null) {
     sendTo(null, data, JSON.stringify(data.to));
@@ -318,7 +319,7 @@ function onAdd (connection, data) {
 }
 
 function onRemove (connection, data) {
-  chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(JSON.stringify(data.to)), 1);
+  chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(data.to), 1);
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
   if (connectedUsers.get(JSON.stringify(data.to)) == null) {
     sendTo(null, data, JSON.stringify(data.to));

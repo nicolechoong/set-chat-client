@@ -1038,6 +1038,7 @@ function createNewChat() {
     sendToServer({ 
         type: "createChat", 
         chatName: newChatName,
+        from: keyPair.publicKey,
         members: members
     });
 }
