@@ -729,8 +729,11 @@ function initChannel (channel) {
             case "remove":
                 unpackOp(messageData.op);
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) { removePeer(JSON.stringify(messageData.op.pk2)); }
-                    updateChatWindow(messageData);
+                    if (res) { 
+                        const pk = JSON.stringify(messageData.op.pk2);
+                        if (pk !== JSON.stringify(keyPair.publicKey)) { removePeer(pk); }
+                        updateChatWindow(messageData);
+                    }
                 });
                 break;
             case "add":
