@@ -127,7 +127,7 @@ connection.onmessage = function (message) {
             onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK));
             break;
         case "remove":
-            onRemove(data.chatID, data.chatName, data.from, objToArr(data.fromOK));
+            onRemove(data.chatID, data.chatName, data.from, objToArr(data.fromPK));
             break;
         case "getPK":
             onGetPK(data.name, data.success, objToArr(data.pubKey));
@@ -265,7 +265,7 @@ function onLeave (peerPK) {
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
 
-    joinedChats.set(chatID, {chatName: chatName, members: []});
+    joinedChats.set(chatID, {chatName: chatName, members: [], currentMember: true});
     store.setItem("joinedChats", joinedChats);
     
     for (const name of validMemberPubKeys.keys()) {
@@ -298,7 +298,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 function onAdd (chatID, chatName, from, fromPK) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array
     console.log(`you've been added to chat ${chatName} by ${from}`);
-    joinedChats.set(chatID, {chatName: chatName, members: []});
+    joinedChats.set(chatID, {chatName: chatName, members: [], currentMember: true});
 
     store.setItem(chatID, {
         metadata: {
@@ -361,7 +361,7 @@ function onRemove (chatID, chatName, from, fromPK) {
     updateHeading();
 
     // should DISPUTE too
-    joinedChats.delete(chatID);
+    joinedChats.get(chatID).currentMember = false;
 
     // as of now we just leave the left chats in the store
 }
@@ -493,19 +493,27 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: array of already unpacked
     // pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
-    store.getItem(chatID).then((chatInfo) => {
-        ops = unionOps(chatInfo.metadata.operations, ops);
-        console.log(`merged ops ${JSON.stringify(ops)}`);
-        const memberSet = members(ops, chatInfo.metadata.ignored);
-        console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
-        if (verifyOperations(ops) && memberSet.has(pk)) {
-            chatInfo.metadata.operations = ops;
-            joinedChats.get(chatID).members = memberSet;
+    return new Promise((resolve) => {
+        store.getItem(chatID).then((chatInfo) => {
+            ops = unionOps(chatInfo.metadata.operations, ops);
+            console.log(`merged ops ${JSON.stringify(ops)}`);
+            const memberSet = members(ops, chatInfo.metadata.ignored);
+            console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
+            if (verifyOperations(ops) && memberSet.has(pk)) {
+                chatInfo.metadata.operations = ops;
+                joinedChats.get(chatID).members = memberSet;
 
-            store.setItem(chatID, chatInfo);
-            console.log(`synced with ${keyMap.get(pk)}`);
-            sendAdvertisement(chatID, pk);
-        }
+                store.setItem(chatID, chatInfo);
+                console.log(`synced with ${keyMap.get(pk)}`);
+                sendAdvertisement(chatID, pk);
+                resolve(true);
+            } else {
+                connections.get(pk).sendChannel.close();
+                connections.get(pk).connection.close();
+                connections.delete(pk);
+                resolve(false);
+            }
+        })
     });
 }
 
@@ -720,14 +728,27 @@ function initChannel (channel) {
             case "advertisement":
                 onAdvertisement(messageData.chatID, messageData.online);
                 break;
-            case "add":
             case "remove":
                 unpackOp(messageData.op);
-                keyMap.set(JSON.stringify(messageData.op.pk2), messageData.username);
-                store.setItem("keyMap", keyMap);
-                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from));
+                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                    if (res) { removePeer(messageData.chatID, messageData.op.pk2) }
+                    updateChatWindow(messageData);
+                });
+                break;
+            case "add":
+                unpackOp(messageData.op);
+                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                    if (res) {
+                        keyMap.set(JSON.stringify(messageData.op.pk2), messageData.username);
+                        store.setItem("keyMap", keyMap);
+                        updateChatWindow(messageData);
+                    }
+                });
+                break;
             case "text":
-                updateChatWindow(messageData);
+                if (joinedChats.get(messageData.chatID).members.has(JSON.stringify(messageData.from))) {
+                    updateChatWindow(messageData);
+                }
                 break;
             default:
                 console.log(`Unrecognised message type ${messageData.type}`);
@@ -774,6 +795,19 @@ function onAdvertisement (chatID, peerOnline) {
             sendOffer(peer.peerName, objToArr(peer.peerPK), chatID);
         }
     }
+}
+
+function removePeer (chatID, pk) {
+    // chatID: String, pk: stringified
+    for (const id of joinedChats.keys()) {
+        if (chatID !== id && joinedChats.get(id).members.has(pk)) {
+            return;
+        }
+    }
+    const conn = connections.get(pk);
+    conn.sendChannel.close();
+    conn.connection.close();
+    connections.delete(pk);
 }
 
 function updateChatWindow (data) {
