@@ -272,7 +272,7 @@ function onCreateChat (connection, data) {
   const invalidMembers = data.members.filter(mem => !usernameToPK.has(mem));
 
   // add to list of chats
-  chats.set(chatID, {chatName: data.chatName, members: [data.from], currentMember: true});
+  chats.set(chatID, {chatName: data.chatName, members: [JSON.stringify(data.from)], currentMember: true});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
   console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
