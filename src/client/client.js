@@ -384,6 +384,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     chatID: chatID
                 };
                 broadcastToMembers(removeMessage, chatID);
+                removePeer(JSON.stringify(pk));
                 updateChatWindow(removeMessage);
                 sendToServer({
                     to: pk,
@@ -805,7 +806,6 @@ function removePeer (pk) {
             return;
         }
     }
-    console.log(`${pk}    ${JSON.stringify(connections.get(pk))}`);
     const conn = connections.get(pk);
     conn.sendChannel.close();
     conn.connection.close();
