@@ -364,7 +364,7 @@ function broadcast(message, id = 0) {
 
 function getJoinedChats(pk) {
   var joined = new Map();
-  for (const chatID of chats) {
+  for (const chatID of chats.keys()) {
     console.log(`chatID ${chatID}    pk ${pk}`);
     if (chats.get(chatID).members.includes(pk)) {
       joined.set(chatID, chats.get(chatID));
