@@ -263,6 +263,7 @@ function onCreateChat (connection, data) {
 
   const validMemberPubKeys = new Map();
   for (pk of validMembers) {
+    // pk: Object
     validMemberPubKeys.set(allUsers.get(JSON.stringify(pk)).username, pk);
   }
 

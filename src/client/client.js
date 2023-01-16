@@ -269,7 +269,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     store.setItem("joinedChats", joinedChats);
     
     for (const name of validMemberPubKeys.keys()) {
-        keyMap.set(validMemberPubKeys.get(name), name);
+        keyMap.set(JSON.stringify(validMemberPubKeys.get(name)), name);
     }
     
     if (invalidMembers.length > 0) {
@@ -938,7 +938,7 @@ addUserBtn.addEventListener("click", async () => {
     const pk = await getPK(username);
     console.log(`according to this user ${username} has ${pk}`);
     modifyUserInput.value = "";
-    if (joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { console.alert(`User has already been added`); return; }
+    if (joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`User has already been added`); return; }
     addToChat(new Map([[username, pk]]), currentChatID);
 });
 
