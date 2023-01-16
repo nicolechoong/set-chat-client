@@ -499,7 +499,7 @@ async function receivedOperations (ops, chatID, pk) {
             console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
             if (verifyOperations(ops) && memberSet.has(pk)) {
                 chatInfo.metadata.operations = ops;
-                joinedChats.get(chatID).members = memberSet;
+                joinedChats.get(chatID).members = [...memberSet];
                 store.setItem(chatID, chatInfo);
                 console.log(`synced with ${keyMap.get(pk)}`);
                 resolve(true);
@@ -744,7 +744,7 @@ function initChannel (channel) {
                 });
                 break;
             case "text":
-                if (joinedChats.get(messageData.chatID).members.has(JSON.stringify(messageData.from))) {
+                if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
                     updateChatWindow(messageData);
                 }
                 break;
@@ -796,9 +796,9 @@ function onAdvertisement (chatID, peerOnline) {
 
 function removePeer (pk) {
     // chatID: String, pk: stringified
-    for (const id of joinedChats) {
-        console.log(`801 predicate ${joinedChats.get(id).members.has(pk)}`);
-        if (joinedChats.get(id).members.has(pk)) {
+    for (const id of joinedChats.keys()) {
+        console.log(`801 predicate ${joinedChats.get(id).members.includes(pk)}`);
+        if (joinedChats.get(id).members.includes(pk)) {
             return;
         }
     }
@@ -852,7 +852,7 @@ function sendToMember (data, pk) {
 
 function broadcastToMembers (data, chatID = null) {
     chatID = chatID === null ? currentChatID : chatID;
-    console.log(`username broadcast ${[...joinedChats.get(chatID).members]}`);
+    console.log(`username broadcast ${joinedChats.get(chatID).members}`);
     for (const pk of joinedChats.get(chatID).members) {
         try {
             console.log(`sending ${JSON.stringify(data)} to ${keyMap.get(pk)}`);
@@ -934,7 +934,7 @@ addUserBtn.addEventListener("click", async () => {
     const pk = await getPK(username);
     console.log(`according to this user ${username} has ${pk}`);
     modifyUserInput.value = "";
-    if (joinedChats.get(currentChatID).members.has(JSON.stringify(pk))) { console.alert(`User has already been added`); return; }
+    if (joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { console.alert(`User has already been added`); return; }
     addToChat(new Map([[username, pk]]), currentChatID);
 });
 
@@ -943,7 +943,7 @@ removeUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
     const pk = await getPK(username);
     modifyUserInput.value = "";
-    if (!joinedChats.get(currentChatID).members.has(JSON.stringify(pk))) { alert(`Invalid username`); return; };
+    if (!joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`Invalid username`); return; };
     removeFromChat(new Map([[username, pk]]), currentChatID);
 });
 
