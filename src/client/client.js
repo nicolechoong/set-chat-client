@@ -494,7 +494,7 @@ async function receivedOperations (ops, chatID, pk) {
     return new Promise((resolve) => {
         store.getItem(chatID).then((chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
-            console.log(`merged ops ${JSON.stringify(ops)}`);
+            // console.log(`merged ops ${JSON.stringify(ops)}`);
             const memberSet = members(ops, chatInfo.metadata.ignored);
             console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
             if (verifyOperations(ops) && memberSet.has(pk)) {
@@ -794,10 +794,11 @@ function onAdvertisement (chatID, peerOnline) {
     }
 }
 
-function removePeer (chatID, pk) {
+function removePeer (pk) {
     // chatID: String, pk: stringified
-    for (const id of joinedChats.keys()) {
-        if (chatID !== id && joinedChats.get(id).members.has(pk)) {
+    for (const id of joinedChats) {
+        console.log(`801 predicate ${joinedChats.get(id).members.has(pk)}`);
+        if (joinedChats.get(id).members.has(pk)) {
             return;
         }
     }
