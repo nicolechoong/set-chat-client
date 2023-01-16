@@ -65,7 +65,7 @@ var joinedChats = new Map();
 // local cache : localForage instance
 var store;
 
-// map from name to public key : Uint8Array
+// map from public key : stringify(pk) to username : String
 var keyMap = new Map();
 
 // storing deps for faster access
@@ -449,6 +449,7 @@ function getPK (name) {
 }
 
 function getDeps (operations) {
+    // operations : Array of Object
     var deps = [];
     for (const op of operations) {
         const hashedOp = hashOp(op);
@@ -464,7 +465,7 @@ function concatOp (op) {
 }
 
 async function generateOp (action, chatID, pk2 = null, ops = []) {
-    // pk is uint8array
+    // action: String, chatID: String, pk2: Uint8Array, ops: Array of Object
     
     return new Promise(function(resolve) {
         var op;
@@ -488,6 +489,7 @@ async function generateOp (action, chatID, pk2 = null, ops = []) {
 }
 
 async function sendOperations (chatID, pk) {
+    // chatID : String, pk : String
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "ops",
@@ -499,8 +501,7 @@ async function sendOperations (chatID, pk) {
 }
 
 async function receivedOperations (ops, chatID, pk) {
-    // ops: array of already unpacked
-    // pk: stringify(public key of sender)
+    // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
         store.getItem(chatID).then((chatInfo) => {
@@ -1106,7 +1107,7 @@ function objToArr (obj) {
 
 function mergeChats (localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);
-    if (receivedChats.size == 0) { return mergeChats; }
+    if (receivedChats.size == 0) { return mergedChats; }
     const localChatIDs = new Set([...localChats.keys()]);
     for (const id of receivedChats.keys()) {
         if (!localChatIDs.has(id)) {
