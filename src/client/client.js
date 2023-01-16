@@ -299,20 +299,16 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 function onAdd (chatID, chatName, from, fromPK) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array
     console.log(`you've been added to chat ${chatName} by ${from}`);
-    if (joinedChats.has(chatID)) {
-        joinedChats.get(chatID).currentMember = true;
-    } else {
-        joinedChats.set(chatID, {chatName: chatName, members: [], currentMember: true});
+    joinedChats.set(chatID, {chatName: chatName, members: [], currentMember: true});
 
-        store.setItem(chatID, {
-            metadata: {
-                chatName: chatName,
-                operations: [],
-                ignored: []
-            },
-            history: new Map(),
-        });
-    }
+    store.setItem(chatID, {
+        metadata: {
+            chatName: chatName,
+            operations: [],
+            ignored: []
+        },
+        history: new Map(),
+    });
 
     // now we have to do syncing to get members and add to store
     keyMap.set(JSON.stringify(fromPK), from);
@@ -991,6 +987,8 @@ function selectChat() {
         const chatName = chatNameInput.options.item(index).text;
         currentChatID = getChatID(chatName);
         console.log(`trying to join chatID ${currentChatID}`);
+        const chatMods = document.getElementById('chatMods');
+        chatMods.style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
 
         const chatTitle = document.getElementById('chatHeading');
         chatTitle.innerHTML = `Chat: ${chatName}`;
