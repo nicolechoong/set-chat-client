@@ -145,7 +145,8 @@ function onLogin (success, chats, username) {
     } else {
         localUsername = username;
         console.log([...chats]);
-        joinedChats = chats;
+        joinedChats = mergeChats(joinedChats, chats);
+        store.setItem("joinedChats", joinedChats);
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
         updateHeading();
@@ -156,14 +157,22 @@ function onLogin (success, chats, username) {
     } 
 };
 
-function initialiseStore () {
+async function initialiseStore () {
     // new user: creates new store
     // returning user: will just point to the same instance
     console.log(`init store local user: ${localUsername}`);
     store = localforage.createInstance({
         storeName: localUsername
     });
-    store.setItem("joinedChats", joinedChats);
+    store.getItem("joinedChats").then((chats) => {
+        console.log([...chats]);
+        if (chats === null) {
+            joinedChats = []
+        } else {
+            joinedChats = chats;
+        }
+        store.setItem("joinedChats", joinedChats);
+    })
 }
 
 // Sending Offer to Peer
@@ -1093,4 +1102,15 @@ function strToArr (str) {
 
 function objToArr (obj) {
     return Uint8Array.from(Object.values(obj));
+}
+
+function mergeChats (localChats, receivedChats) {
+    const mergedChats = new Map([...localChats]);
+    const localChatIDs = new Set([...localChats.keys()]);
+    for (const id of receivedChats.keys()) {
+        if (!localChatIDs.has(id)) {
+            mergedChats.set(id, receivedChats.get(id));
+        } // TODO: add conflict resolution stuff
+    }
+    return mergedChats;
 }
