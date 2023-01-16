@@ -423,7 +423,7 @@ var resolveGetPK;
 function getPK (name) {
     return new Promise((resolve) => {
         for (const pk of keyMap) {
-            if (name === keyMap.get(pk)) {
+            if (name == keyMap.get(pk)) {
                 resolve(objToArr(pk));
                 return;
             }
@@ -443,7 +443,6 @@ function getDeps (operations) {
         const hashedOp = hashOp(op);
         if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
             deps.push(hashedOp);
-            console.log(`dependency ${op.pk}${op.pk1} ${op.action} ${op.pk2}`);
         }
     }
     return deps;
@@ -465,7 +464,6 @@ async function generateOp (action, chatID, pk2 = null, ops = []) {
                 nonce: nacl.randomBytes(64),
             };
         } else if (action === "add" || action === "remove") {
-            console.log(`adding operation ${keyPair.publicKey} ${action}s ${pk2}`);
             op = {
                 action: action, 
                 pk1: keyPair.publicKey,
@@ -502,10 +500,8 @@ async function receivedOperations (ops, chatID, pk) {
             if (verifyOperations(ops) && memberSet.has(pk)) {
                 chatInfo.metadata.operations = ops;
                 joinedChats.get(chatID).members = memberSet;
-
                 store.setItem(chatID, chatInfo);
                 console.log(`synced with ${keyMap.get(pk)}`);
-                sendAdvertisement(chatID, pk);
                 resolve(true);
             } else {
                 connections.get(pk).sendChannel.close();
@@ -718,12 +714,14 @@ function initChannel (channel) {
     }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
-        console.log(`received a message from the channel`);
         const messageData = JSON.parse(event.data);
+        console.log(`received a message from the channel of type ${messageData.type}`);
         switch (messageData.type) {
             case "ops":
                 messageData.ops.forEach(op => unpackOp(op));
-                receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from));
+                receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                    if (res) { sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); }
+                });
                 break;
             case "advertisement":
                 onAdvertisement(messageData.chatID, messageData.online);
@@ -786,7 +784,6 @@ function sendAdvertisement (chatID, pk) {
 
 function onAdvertisement (chatID, peerOnline) {
     // chatID: String, peerOnline: Array of JSON {peerName: String, peerPK: Object}
-    console.log(`peerOnline ${peerOnline}     ${peerOnline[0]}`)
     for (const peer of peerOnline) {
         console.log(`advertised peer ${peer.peerName} has code ${JSON.stringify(peer.peerPK)}`)
         keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
@@ -857,7 +854,7 @@ function broadcastToMembers (data, chatID = null) {
     console.log(`username broadcast ${[...joinedChats.get(chatID).members]}`);
     for (const pk of joinedChats.get(chatID).members) {
         try {
-            console.log(`sending ${data} to ${keyMap.get(pk)}`);
+            console.log(`sending ${JSON.stringify(data)} to ${keyMap.get(pk)}`);
             sendToMember(data, pk);
         } catch {
             continue;
