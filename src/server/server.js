@@ -308,6 +308,7 @@ function onGetPK (connection, data) {
 
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
+  chats.get(data.chatID).members.push(JSON.stringify(data.to));
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
   if (connectedUsers.get(JSON.stringify(data.to)) == null) {
     sendTo(null, data, JSON.stringify(data.to));
@@ -317,6 +318,7 @@ function onAdd (connection, data) {
 }
 
 function onRemove (connection, data) {
+  chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(JSON.stringify(data.to)), 1);
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
   if (connectedUsers.get(JSON.stringify(data.to)) == null) {
     sendTo(null, data, JSON.stringify(data.to));
@@ -366,6 +368,7 @@ function broadcast(message, id = 0) {
 
 function getJoinedChats(pk) {
   var joined = new Map();
+  console.log([...chat.values()].map(v => JSON.stringify(v)));
   for (const chatID of chats.keys()) {
     if (chats.get(chatID).members.includes(pk)) {
       joined.set(chatID, chats.get(chatID));
