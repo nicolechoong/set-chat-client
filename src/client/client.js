@@ -832,14 +832,14 @@ function connectToPeer (peer) {
         if (peer.peerName === localUsername) { resolve(false); return; }
         if (connections.has(JSON.stringify(peer.peerPK))) { resolve(true); return; }
 
+        resolveConnectToPeer.set(resolve);
+        console.log(`advertised peer ${peer.peerName} has code ${JSON.stringify(peer.peerPK)}`)
+        keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
+        store.setItem("keyMap", keyMap);
+        sendOffer(peer.peerName, peer.peerPK);
         setTimeout(() => {
-            resolveConnectToPeer.set(resolve);
-            console.log(`advertised peer ${peer.peerName} has code ${JSON.stringify(peer.peerPK)}`)
-            keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
-            store.setItem("keyMap", keyMap);
-            sendOffer(peer.peerName, peer.peerPK);
-        }, 10000);
-        resolve(false);
+            resolve(false);
+        }, 5000);
     });
 }
 
