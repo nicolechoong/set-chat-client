@@ -289,12 +289,14 @@ function onCreateChat (connection, data) {
 
 function onGetPK (connection, data) {
   if (!usernameToPK.has(data.name)) {
+    console.log(`User ${data.name} does not exist`);
     sendTo(connection, {
       type: "getPK",
       name: data.name,
       success: false,
       pubKey: []
     })
+    return;
   }
 
   console.log(`sending pk of user ${data.name}`);
