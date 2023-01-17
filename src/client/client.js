@@ -873,7 +873,7 @@ function sendToMember (data, pk) {
     // data: JSON, pk: String
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     console.log(`current state of keyMap ${[...keyMap]}`);
-    data.id = nacl.hash(enc.encode(`${localUsername}:${sentTime}`));
+    data.id = nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`));
     connections.get(pk).sendChannel.send(JSON.stringify(data));
 }
 
@@ -1049,7 +1049,7 @@ function createNewChat() {
 
     for (let i = 1; i < 3; i++) {
         member = document.getElementById(`member${i}`).value;
-        if (member !== "") {
+        if (member !== "" && member !== localUsername && !members.has(member)) {
             members.push(member);
         }
     }
