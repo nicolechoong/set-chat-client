@@ -53,6 +53,9 @@ const configuration = {
 
 var currentChatID = 0;
 
+// map from msgID : string to msg : Object
+var currentChatHistory = new Map();
+
 // map from stringify(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
 
@@ -147,6 +150,12 @@ function onLogin (success, chats, username) {
         console.log([...chats]);
         joinedChats = mergeChats(joinedChats, chats);
         store.setItem("joinedChats", joinedChats);
+
+        if (joinedChats.size > 0) {
+            for (const id of joinedChats.keys()) {
+                // need to query server for online
+            }
+        }
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
         updateHeading();
@@ -745,6 +754,7 @@ function initChannel (channel) {
                         const pk = JSON.stringify(messageData.op.pk2);
                         if (pk !== JSON.stringify(keyPair.publicKey)) { removePeer(messageData.chatID, pk); }
                         updateChatWindow(messageData);
+                        updateChatStore(data);
                     }
                 });
                 break;
@@ -755,12 +765,14 @@ function initChannel (channel) {
                         keyMap.set(JSON.stringify(messageData.op.pk2), messageData.username);
                         store.setItem("keyMap", keyMap);
                         updateChatWindow(messageData);
+                        updateChatStore(data);
                     }
                 });
                 break;
             case "text":
                 if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
                     updateChatWindow(messageData);
+                    updateChatStore(data);
                 }
                 break;
             default:
@@ -849,7 +861,7 @@ function updateChatWindow (data) {
 function updateChatStore (messageData) {
     store.getItem(messageData.chatID).then((chatInfo) => {
         chatInfo.history.set(messageData.id, messageData);
-        store.setItem(chatID, chatInfo);
+        store.setItem(messageData.chatID, chatInfo);
     }).then(() => {
         console.log("updated chat store");
     });
@@ -888,7 +900,7 @@ function sendChatMessage (messageInput) {
     };
 
     broadcastToMembers(data);
-    // updateChatStore(currentChatID, data);
+    updateChatStore(data);
     updateChatWindow(data);
 }
 
@@ -1003,13 +1015,10 @@ function selectChat() {
         const chatTitle = document.getElementById('chatHeading');
         chatTitle.innerHTML = `Chat: ${chatName}`;
         chatMessages.innerHTML = "";
-        var msg = "";
         store.getItem(currentChatID).then((chatInfo) => {
-            for (const mid of chatInfo.history.keys()) {
-                const data = chatInfo.history.get(mid);
-                msg = `${msg}<br />[${data.setTime}] ${data.from}: ${data.message}`
+            for (const id of chatInfo.history.keys()) {
+                updateChatWindow (chatInfo.history.get(id));
             }
-            chatMessages.innerHTML = msg;
         });
         joinChat(currentChatID);
     }
