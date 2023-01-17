@@ -1,4 +1,5 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
+import * as automerge from "https://unpkg.com/browse//automerge@0.7.2/";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -739,7 +740,10 @@ function initChannel (channel) {
             case "ops":
                 messageData.ops.forEach(op => unpackOp(op));
                 receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) { sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); }
+                    if (res) { 
+                        sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
+
+                    }
                 });
                 break;
             case "advertisement":
@@ -820,6 +824,14 @@ function sendAdvertisement (chatID, pk) {
             online: online
         }, pk);
     }
+}
+
+function sendChatHistory (chatID, pk) {
+    console.log(`sending an advertistment to ${pk} of ${JSON.stringify(online)}`)
+    sendToMember({
+        type: "advertisement",
+        online: online
+    }, pk);
 }
 
 var resolveConnectToPeer = new Map();
