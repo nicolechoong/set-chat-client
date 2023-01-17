@@ -148,7 +148,7 @@ function onLogin (connection, name, pubKey) {
         type: "login", 
         success: false,
         username: name,
-        joinedChats: JSON.stringify([])
+        joinedChats: []
     }); 
   } else { 
     connectedUsers.set(pubKey, {connection: connection, groups: []}); 
@@ -160,7 +160,7 @@ function onLogin (connection, name, pubKey) {
       type: "login", 
       success: true,
       username: name,
-      joinedChats: JSON.stringify([])
+      joinedChats: []
     });
 
     broadcastActiveUsernames();
