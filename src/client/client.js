@@ -787,7 +787,7 @@ function onChannelOpen (event) {
     
     for (const chatID of joinedChats.keys()) {
         if (joinedChats.get(chatID).members.includes(peerPK)) {
-            sendOperations(chatID, JSON.stringify(peer.pk));
+            sendOperations(chatID, JSON.stringify(peerPK));
         }
     }
 
