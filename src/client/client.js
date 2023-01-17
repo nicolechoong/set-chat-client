@@ -318,7 +318,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 function onAdd (chatID, chatName, from, fromPK) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array
     console.log(`you've been added to chat ${chatName} by ${from}`);
-    joinedChats.set(chatID, {chatName: chatName, members: [], currentMember: true});
+    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], currentMember: true});
 
     store.setItem(chatID, {
         metadata: {
@@ -353,6 +353,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                     username: name,
                     chatID: chatID
                 };
+                joinedChats.get(chatID).members.push(JSON.stringify(pk));
                 broadcastToMembers(addMessage, chatID);
                 updateChatWindow(addMessage);
                 sendToServer({
@@ -427,10 +428,12 @@ function onGetPK (name, success, pk) {
         keyMap.set(JSON.stringify(pk), name);
         store.setItem("keyMap", keyMap);
         resolveGetPK.get(name)(pk);
-        resolveGetPK.delete(name);
     } else {
+        rejectGetPK.get(name)(new Error("User does not exist"));
         console.error(`User ${name} does not exist`);
     }
+    resolveGetPK.delete(name);
+    rejectGetPK.delete(name);
 }
 
 //////////////////////////////
@@ -438,9 +441,10 @@ function onGetPK (name, success, pk) {
 //////////////////////////////
 
 var resolveGetPK = new Map();
+var rejectGetPK = new Map();
 
 function getPK (name) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         for (const pk of keyMap) {
             if (name == keyMap.get(pk)) {
                 resolve(objToArr(pk));
@@ -448,6 +452,7 @@ function getPK (name) {
             }
         }
         resolveGetPK.set(name) = resolve;
+        rejectGetPK.set(name) = resolve;
         console.log(`Requesting for pk of ${name}`);
         sendToServer({
             type: "getPK",
@@ -975,20 +980,28 @@ newChatBtn.addEventListener("click", createNewChat);
 addUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
-    const pk = await getPK(username);
-    console.log(`according to this user ${username} has ${pk}`);
-    modifyUserInput.value = "";
-    if (joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`User has already been added`); return; }
-    addToChat(new Map([[username, pk]]), currentChatID);
+    try {
+        const pk = await getPK(username);
+        console.log(`according to this user ${username} has ${pk}`);
+        modifyUserInput.value = "";
+        if (joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`User has already been added`); return; }
+        addToChat(new Map([[username, pk]]), currentChatID);
+    } catch (err) {
+        alert(`User does not exist`);
+    }
 });
 
 removeUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
-    const pk = await getPK(username);
-    modifyUserInput.value = "";
-    if (!joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`Invalid username`); return; };
-    removeFromChat(new Map([[username, pk]]), currentChatID);
+    try {
+        const pk = await getPK(username);
+        modifyUserInput.value = "";
+        if (!joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`Invalid username`); return; };
+        removeFromChat(new Map([[username, pk]]), currentChatID);
+    } catch (err) {
+        alert(`User does not exist`);
+    }
 });
 
 function getChatNames() {
