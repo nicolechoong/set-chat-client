@@ -398,10 +398,15 @@ function onReconnect (connection, name, pk) {
     const onlineMembers = [];
     for (const mem of members) {
       if (connectedUsers.has(mem)) {
-        onlineMembers.push(mem);
+        onlineMembers.push({
+          peerName: allUsers.get(mem).username,
+          peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
+        });
       }
     }
-    online.set(chatID, onlineMembers);
+    if (onlineMembers.length > 0) {
+      online.set(chatID, onlineMembers);
+    }
   }
   
   sendTo(connection, { 

@@ -53,9 +53,6 @@ const configuration = {
 
 var currentChatID = 0;
 
-// map from msgID : string to msg : Object
-var currentChatHistory = new Map();
-
 // map from stringify(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
 
@@ -103,7 +100,7 @@ connection.onmessage = function (message) {
 	
     switch(data.type) { 
         case "login": 
-            onLogin(data.success, new Map(data.joinedChats), data.username); 
+            onLogin(data.success, new Map(data.joinedChats), new Map(data.online), data.username); 
             break; 
         case "offer": 
             onOffer(data.offer, data.from, objToArr(data.fromPK)); 
@@ -141,27 +138,30 @@ connection.onmessage = function (message) {
 };
   
 // Server approves Login
-function onLogin (success, chats, username) { 
+async function onLogin (success, chats, online, username) { 
 
     if (success === false) { 
         alert("oops...try a different username"); 
     } else {
         localUsername = username;
-        console.log([...chats]);
         joinedChats = mergeChats(joinedChats, chats);
         store.setItem("joinedChats", joinedChats);
-
-        if (joinedChats.size > 0) {
-            for (const id of joinedChats.keys()) {
-                // need to query server for online
-            }
-        }
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
         updateHeading();
         
         for (const chatID of joinedChats.keys()) {
             updateChatOptions("add", chatID);
+        }
+
+        for (const chatID of online.keys()) {
+            for (const peer of online.get(chatID)) {
+                peer.peerPK = objToArr(peer.peerPK);
+                if (await connectToPeer(peer)) { 
+                    console.log(`Successfully connected to ${peer.peerName}`);
+                    sendOperations(chatID, JSON.stringify(peer.pk));
+                }
+            }
         }
     } 
 };
@@ -185,8 +185,8 @@ async function initialiseStore () {
 }
 
 // Sending Offer to Peer
-function sendOffer(peerName, peerPK, chatID) {
-    // peerName: String username, peerPK: Uint8Array, chatID: String
+function sendOffer(peerName, peerPK) {
+    // peerName: String username, peerPK: Uint8Array
     
     if (peerName !== null && peerPK !== null) { 
         const newConnection = initPeerConnection(peerName);
@@ -197,8 +197,7 @@ function sendOffer(peerName, peerPK, chatID) {
 
         const channelLabel = {
             senderPK: JSON.stringify(keyPair.publicKey), 
-            receiverPK: JSON.stringify(peerPK),
-            chatID: chatID,
+            receiverPK: JSON.stringify(peerPK)
         };
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(JSON.stringify(channelLabel));
         initChannel(peerConnection.sendChannel);
@@ -330,10 +329,7 @@ function onAdd (chatID, chatName, from, fromPK) {
         history: new Map(),
     });
 
-    // now we have to do syncing to get members and add to store
-    keyMap.set(JSON.stringify(fromPK), from);
-    store.setItem("keyMap", keyMap);
-    sendOffer(from, fromPK, chatID);
+    connectToPeer({peerName: from, peerPK: fromPK}); // TODO: if no peers online, need to ask server
     
     updateChatOptions("add", chatID);
     updateHeading();
@@ -430,7 +426,8 @@ function onGetPK (name, success, pk) {
         console.log(`Received pk of ${name}, ${pk}`);
         keyMap.set(JSON.stringify(pk), name);
         store.setItem("keyMap", keyMap);
-        resolveGetPK(pk);
+        resolveGetPK.get(name)(pk);
+        resolveGetPK.delete(name);
     } else {
         console.error(`User ${name} does not exist`);
     }
@@ -440,7 +437,7 @@ function onGetPK (name, success, pk) {
 // Access Control Functions //
 //////////////////////////////
 
-var resolveGetPK;
+var resolveGetPK = new Map();
 
 function getPK (name) {
     return new Promise((resolve) => {
@@ -450,7 +447,7 @@ function getPK (name) {
                 return;
             }
         }
-        resolveGetPK = resolve;
+        resolveGetPK.set(name) = resolve;
         console.log(`Requesting for pk of ${name}`);
         sendToServer({
             type: "getPK",
@@ -666,7 +663,7 @@ function joinChat (chatID) {
             if (peerPK !== JSON.stringify(keyPair.publicKey)) {
                 // Insert Key Exchange Protocol
                 console.log(`peerPK is ${peerPK}`);
-                sendOffer(peerName, strToArr(peerPK), chatID);
+                sendOffer(peerName, strToArr(peerPK));
             }
         }
     }
@@ -728,13 +725,7 @@ function initPeerConnection () {
 }
 
 function initChannel (channel) {
-    channel.onopen = (event) => { 
-        console.log(event);
-        console.log(`Channel ${event.target.label} opened`);
-        const channelLabel = JSON.parse(event.target.label);
-        console.log(`the public key we will send ops to is ${channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK}`);
-        sendOperations(channelLabel.chatID, channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK);
-    }
+    channel.onopen = (event) => { onChannelOpen(event); }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => {
         const messageData = JSON.parse(event.data);
@@ -783,6 +774,17 @@ function initChannel (channel) {
     }
 }
 
+function onChannelOpen (event) {
+    console.log(`Channel ${event.target.label} opened`);
+    const channelLabel = JSON.parse(event.target.label);
+    const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
+    console.log(`the public key we will send ops to is ${peerPK}`);
+    if (resolveConnectToPeer.has(peerPK)) {
+        resolveConnectToPeer.get(peerPK)(true);
+        resolveConnectToPeer.delete(peerPK);
+    }
+}
+
 function receiveChannelCallback (event) {
     const channelLabel = JSON.parse(event.channel.label);
     console.log(`Received channel ${event.channel.label} from ${channelLabel.senderPK}`);
@@ -810,17 +812,23 @@ function sendAdvertisement (chatID, pk) {
     }
 }
 
+var resolveConnectToPeer = new Map();
 
-function onAdvertisement (chatID, peerOnline) {
-    // chatID: String, peerOnline: Array of JSON {peerName: String, peerPK: Object}
-    for (const peer of peerOnline) {
-        console.log(`advertised peer ${peer.peerName} has code ${JSON.stringify(peer.peerPK)}`)
-        keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
-        store.setItem("keyMap", keyMap);
-        if (!connections.has(JSON.stringify(peer.peerPK)) && peer.peerName !== localUsername) {
-            sendOffer(peer.peerName, objToArr(peer.peerPK), chatID);
-        }
-    }
+function connectToPeer (peer) {
+    // peer: Array of JSON {peerName: String, peerPK: Uint8Array}
+    return new Promise((resolve) => {
+        if (peer.peerName === localUsername) { resolve(false); return; }
+        if (connections.has(JSON.stringify(peer.peerPK))) { resolve(true); return; }
+
+        setTimeout(() => {
+            resolveConnectToPeer.set(resolve);
+            console.log(`advertised peer ${peer.peerName} has code ${JSON.stringify(peer.peerPK)}`)
+            keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
+            store.setItem("keyMap", keyMap);
+            sendOffer(peer.peerName, peer.peerPK);
+        }, 10000);
+        resolve(false);
+    });
 }
 
 function removePeer (chatID, pk) {
@@ -1049,7 +1057,7 @@ function createNewChat() {
 
     for (let i = 1; i < 3; i++) {
         member = document.getElementById(`member${i}`).value;
-        if (member !== "" && member !== localUsername && !members.has(member)) {
+        if (member !== "" && member !== localUsername && !members.includes(member)) {
             members.push(member);
         }
     }
