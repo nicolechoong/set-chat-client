@@ -103,7 +103,7 @@ connection.onmessage = function (message) {
 	
     switch(data.type) { 
         case "login": 
-            onLogin(data.success, new Map(JSON.parse(data.joinedChats)), data.username); 
+            onLogin(data.success, new Map(data.joinedChats), data.username); 
             break; 
         case "offer": 
             onOffer(data.offer, data.from, objToArr(data.fromPK)); 

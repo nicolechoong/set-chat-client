@@ -384,25 +384,40 @@ function onReconnect (connection, name, pk) {
   // we want to read through the message queue and send
   // connection: WebSocket, pk: String
   const msgQueue = allUsers.get(pk).msgQueue;
-  const joinedChats = Array.from(getJoinedChats(pk));
+  const joinedChats = getJoinedChats(pk);
   connectedUsers.set(pk, {connection: connection, groups: []}); 
   connection.pk = pk;
 
   console.log(`User ${allUsers.get(pk).username} has rejoined`);
   console.log(`all chats..? ${JSON.stringify(chats)}`);
+
+  const online = new Map();
+  var members;
+  for (const chatID of joinedChats.keys()) {
+    members = joinedChats.get(chatID).members;
+    const onlineMembers = [];
+    for (const mem of members) {
+      if (connectedUsers.has(mem)) {
+        onlineMembers.push(mem);
+      }
+    }
+    online.set(chatID, onlineMembers);
+  }
   
   sendTo(connection, { 
     type: "login", 
     success: true,
     username: name,
-    joinedChats: JSON.stringify(joinedChats)
+    joinedChats: Array.from(joinedChats),
+    online: Array.from(online)
   });
 
   console.log(JSON.stringify({ 
     type: "login", 
     success: true,
     username: name,
-    joinedChats: JSON.stringify(joinedChats)
+    joinedChats: Array.from(joinedChats),
+    online: Array.from(online)
   }))
 
   while (msgQueue.length > 0) {
