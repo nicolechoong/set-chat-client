@@ -781,7 +781,7 @@ function onChannelOpen (event) {
     const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
     
     for (const chatID of joinedChats.keys()) {
-        if (joinedChats.get(chatID).includes(peerPK)) {
+        if (joinedChats.get(chatID).members.includes(peerPK)) {
             sendOperations(chatID, JSON.stringify(peer.pk));
         }
     }
