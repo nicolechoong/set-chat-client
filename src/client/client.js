@@ -159,7 +159,7 @@ async function onLogin (success, chats, online, username) {
                 peer.peerPK = objToArr(peer.peerPK);
                 if (await connectToPeer(peer)) { 
                     console.log(`Successfully connected to ${peer.peerName}`);
-                    sendOperations(chatID, JSON.stringify(peer.pk));
+                    sendOperations(chatID, JSON.stringify(peer.peerPK));
                 }
             }
         }
@@ -787,7 +787,7 @@ function onChannelOpen (event) {
     
     for (const chatID of joinedChats.keys()) {
         if (joinedChats.get(chatID).members.includes(peerPK)) {
-            sendOperations(chatID, JSON.stringify(peerPK));
+            sendOperations(chatID, peerPK);
         }
     }
 
@@ -833,7 +833,7 @@ function connectToPeer (peer) {
         if (connections.has(JSON.stringify(peer.peerPK))) { resolve(true); return; }
 
         resolveConnectToPeer.set(resolve);
-        console.log(`advertised peer ${peer.peerName} has code ${JSON.stringify(peer.peerPK)}`)
+        console.log(`adding peer ${peer.peerName} to the keyMap ${JSON.stringify(peer.peerPK)}`)
         keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
         store.setItem("keyMap", keyMap);
         sendOffer(peer.peerName, peer.peerPK);
