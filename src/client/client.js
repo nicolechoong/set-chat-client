@@ -228,6 +228,7 @@ async function onOffer(offer, peerName, peerPK) {
     const peerConnection = connections.get(JSON.stringify(peerPK));
 
     keyMap.set(JSON.stringify(peerPK), peerName);
+    store.setItem("keyMap", keyMap);
     peerConnection.connection.setRemoteDescription(offer);
 
     console.log(`Sending answer to ${peerName}`);
@@ -290,6 +291,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
     for (const name of validMemberPubKeys.keys()) {
         keyMap.set(JSON.stringify(validMemberPubKeys.get(name)), name);
     }
+    store.setItem("keyMap", keyMap);
     
     if (invalidMembers.length > 0) {
         alert(`The following users do not exist ${invalidMembers}`);
