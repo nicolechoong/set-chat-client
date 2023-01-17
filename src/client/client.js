@@ -174,7 +174,6 @@ async function initialiseStore () {
         storeName: localUsername
     });
     store.getItem("joinedChats").then((chats) => {
-        console.log([...chats]);
         if (chats === null) {
             joinedChats = []
         } else {
@@ -452,7 +451,7 @@ function getPK (name) {
             }
         }
         resolveGetPK.set(name) = resolve;
-        rejectGetPK.set(name) = resolve;
+        rejectGetPK.set(name) = reject;
         console.log(`Requesting for pk of ${name}`);
         sendToServer({
             type: "getPK",
@@ -988,6 +987,7 @@ addUserBtn.addEventListener("click", async () => {
         addToChat(new Map([[username, pk]]), currentChatID);
     } catch (err) {
         alert(`User does not exist`);
+        console.log(err);
     }
 });
 
@@ -1054,7 +1054,6 @@ function selectChat() {
     }
 }
 
-// TODO: distinguish between same name different chat
 function updateChatOptions(operation, chatID) {
     var option = document.createElement("option");
 
@@ -1146,7 +1145,7 @@ function objToArr (obj) {
 
 function mergeChats (localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);
-    if (receivedChats.size == 0) { return mergedChats; }
+    if (receivedChats.size === 0) { return mergedChats; }
     const localChatIDs = new Set([...localChats.keys()]);
     for (const id of receivedChats.keys()) {
         if (!localChatIDs.has(id)) {
