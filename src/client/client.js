@@ -450,8 +450,8 @@ function getPK (name) {
                 return;
             }
         }
-        resolveGetPK.set(name) = resolve;
-        rejectGetPK.set(name) = reject;
+        resolveGetPK.set(name, resolve);
+        rejectGetPK.set(name, reject);
         console.log(`Requesting for pk of ${name}`);
         sendToServer({
             type: "getPK",
