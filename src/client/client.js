@@ -1,5 +1,5 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-const Automerge = require('@automerge/automerge');
+import Automerge from "@automerge/automerge";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
