@@ -498,6 +498,7 @@ async function generateOp (action, chatID, pk2 = null, ops = []) {
 
 async function sendOperations (chatID, pk) {
     // chatID : String, pk : String
+    console.log(`sending operations to ${keyMap.get(pk)}`);
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "ops",
@@ -778,7 +779,13 @@ function onChannelOpen (event) {
     console.log(`Channel ${event.target.label} opened`);
     const channelLabel = JSON.parse(event.target.label);
     const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
-    console.log(`the public key we will send ops to is ${peerPK}`);
+    
+    for (const chatID of joinedChats.keys()) {
+        if (joinedChats.get(chatID).includes(peerPK)) {
+            sendOperations(chatID, JSON.stringify(peer.pk));
+        }
+    }
+
     if (resolveConnectToPeer.has(peerPK)) {
         resolveConnectToPeer.get(peerPK)(true);
         resolveConnectToPeer.delete(peerPK);
