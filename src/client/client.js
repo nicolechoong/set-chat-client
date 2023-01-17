@@ -743,7 +743,7 @@ function initChannel (channel) {
                 });
                 break;
             case "advertisement":
-                onAdvertisement(messageData.chatID, messageData.online);
+                messageData.online.forEach((peer) => connectToPeer(peer));
                 break;
             case "remove":
                 unpackOp(messageData.op);
@@ -817,8 +817,7 @@ function sendAdvertisement (chatID, pk) {
         console.log(`sending an advertistment to ${pk} of ${JSON.stringify(online)}`)
         sendToMember({
             type: "advertisement",
-            online: online,
-            chatID: chatID
+            online: online
         }, pk);
     }
 }
