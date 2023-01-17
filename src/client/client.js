@@ -754,7 +754,7 @@ function initChannel (channel) {
                         const pk = JSON.stringify(messageData.op.pk2);
                         if (pk !== JSON.stringify(keyPair.publicKey)) { removePeer(messageData.chatID, pk); }
                         updateChatWindow(messageData);
-                        updateChatStore(data);
+                        updateChatStore(messageData);
                     }
                 });
                 break;
@@ -765,14 +765,14 @@ function initChannel (channel) {
                         keyMap.set(JSON.stringify(messageData.op.pk2), messageData.username);
                         store.setItem("keyMap", keyMap);
                         updateChatWindow(messageData);
-                        updateChatStore(data);
+                        updateChatStore(messageData);
                     }
                 });
                 break;
             case "text":
                 if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
                     updateChatWindow(messageData);
-                    updateChatStore(data);
+                    updateChatStore(messageData);
                 }
                 break;
             default:
