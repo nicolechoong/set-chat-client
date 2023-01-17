@@ -873,13 +873,13 @@ function sendToMember (data, pk) {
     // data: JSON, pk: String
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     console.log(`current state of keyMap ${[...keyMap]}`);
-    const sentTime = Date.now();
-    data.sentTime = sentTime;
     data.id = nacl.hash(enc.encode(`${localUsername}:${sentTime}`));
     connections.get(pk).sendChannel.send(JSON.stringify(data));
 }
 
 function broadcastToMembers (data, chatID = null) {
+    const sentTime = Date.now();
+    data.sentTime = sentTime;
     chatID = chatID === null ? currentChatID : chatID;
     console.log(`username broadcast ${joinedChats.get(chatID).members}`);
     for (const pk of joinedChats.get(chatID).members) {
