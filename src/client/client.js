@@ -839,7 +839,7 @@ function sendAdvertisement (chatID, pk) {
 }
 
 function sendChatHistory (chatID, pk) {
-    console.log(`sending chat history to ${pk} of ${JSON.stringify(online)}`)
+    console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         sendToMember({
             type: "history",
