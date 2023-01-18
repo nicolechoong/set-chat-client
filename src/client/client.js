@@ -362,7 +362,6 @@ async function addToChat (validMemberPubKeys, chatID) {
                     chatID: chatID,
                     chatName: chatInfo.metadata.chatName
                 });
-                updateChatWindow(addMessage);
                 console.log(`added ${name}`);
             }
             resolve(chatInfo);
@@ -410,7 +409,6 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     chatID: chatID,
                     chatName: chatInfo.metadata.chatName
                 });
-                updateChatWindow(removeMessage);
                 console.log(`removed ${name}`);
             }
             resolve(chatInfo);
@@ -1200,6 +1198,5 @@ function mergeChatHistory (localMsg, receivedMsg) {
             mergedChatHistory.set(id, receivedMsg.get(id));
         }
     }
-    mergedChatHistory = new Map([...mergedChatHistory.entries()].sort((a, b) => b[1].sentTime - a[1].sentTime));
-    return mergedChatHistory;
+    return new Map([...mergedChatHistory.entries()].sort((a, b) => b[1].sentTime - a[1].sentTime));
 }
