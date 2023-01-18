@@ -1197,5 +1197,5 @@ function mergeChatHistory (localMsg, receivedMsg) {
             mergedChatHistory.set(id, receivedMsg.get(id));
         }
     }
-    return new Map([...mergedChatHistory.entries()].sort((a, b) => b[1].sentTime - a[1].sentTime));
+    return new Map([...mergedChatHistory.entries()].sort((a, b) => a[1].sentTime - b[1].sentTime));
 }
