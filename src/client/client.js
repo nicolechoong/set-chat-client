@@ -177,7 +177,7 @@ async function initialiseStore () {
         if (chats === null) {
             joinedChats = [];
         } else {
-            joinedChats = chats;
+            joinedChats = [];
         }
         store.setItem("joinedChats", joinedChats);
     })
