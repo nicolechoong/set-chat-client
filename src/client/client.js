@@ -362,14 +362,14 @@ async function addToChat (validMemberPubKeys, chatID) {
                 joinedChats.get(chatID).members.push(JSON.stringify(pk));
                 const messageData = broadcastToMembers(addMessage, chatID);
                 chatInfo.history.set(messageData.id, messageData);
-                // sendToServer({
-                //     to: pk,
-                //     type: "add",
-                //     from: localUsername,
-                //     fromPK: keyPair.publicKey,
-                //     chatID: chatID,
-                //     chatName: chatInfo.metadata.chatName
-                // });
+                sendToServer({
+                    to: pk,
+                    type: "add",
+                    from: localUsername,
+                    fromPK: keyPair.publicKey,
+                    chatID: chatID,
+                    chatName: chatInfo.metadata.chatName
+                });
                 console.log(`added ${name}`);
             }
             resolve(chatInfo);
@@ -412,14 +412,14 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 const messageData = broadcastToMembers(removeMessage, chatID);
                 chatInfo.history.set(messageData.id, messageData);
                 removePeer(chatID, JSON.stringify(pk));
-                // sendToServer({
-                //     to: pk,
-                //     type: "remove",
-                //     from: localUsername,
-                //     fromPK: keyPair.publicKey,
-                //     chatID: chatID,
-                //     chatName: chatInfo.metadata.chatName
-                // });
+                sendToServer({
+                    to: pk,
+                    type: "remove",
+                    from: localUsername,
+                    fromPK: keyPair.publicKey,
+                    chatID: chatID,
+                    chatName: chatInfo.metadata.chatName
+                });
                 console.log(`removed ${name}`);
             }
             resolve(chatInfo);
