@@ -993,7 +993,7 @@ loginBtn.addEventListener("click", async function (event) {
     localUsername = loginInput.value;
     console.log(localUsername);
 
-    initialiseStore();
+    await initialiseStore();
 
     store.getItem("keyPair").then((kp) => {
         if (kp === null) {
