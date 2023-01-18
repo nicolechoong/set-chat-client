@@ -4,6 +4,7 @@ var loginBtn = document.getElementById('loginBtn');
 var sendMessageBtn = document.getElementById('sendMessageBtn');
 var addUserBtn = document.getElementById('addUserBtn');
 var removeUserBtn = document.getElementById('removeUserBtn');
+var resetStoreBtn = document.getElementById('resetStoreBtn');
 var chatMessages = document.getElementById('chatMessages');
 
 var loginInput = document.getElementById('loginInput');
@@ -318,6 +319,7 @@ function onAdd (chatID, chatName, from, fromPK) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array
     console.log(`you've been added to chat ${chatName} by ${from}`);
     joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], currentMember: true});
+    store.setItem("joinedChats", joinedChats);
 
     store.setItem(chatID, {
         metadata: {
@@ -372,6 +374,7 @@ async function addToChat (validMemberPubKeys, chatID) {
             resolve(chatInfo);
         });
     }).then((chatInfo) => {
+        store.setItem("joinedChats", joinedChats);
         store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
     });
 }
@@ -380,6 +383,7 @@ function onRemove (chatID, chatName, from, fromPK) {
     console.log(`you've been removed from chat ${chatName} by ${from}`);
     // updateChatOptions("remove", chatID);
     joinedChats.get(chatID).currentMember = false;
+    store.setItem("joinedChats", joinedChats);
     updateHeading();
 
     // should DISPUTE too
@@ -1058,6 +1062,16 @@ removeUserBtn.addEventListener("click", async () => {
     }
 });
 
+resetStoreBtn.addEventListener("click", () => {
+    store.keys().then((keys) => {
+        for (const key of keys) {
+            if (key !== "keyPair") {
+                store.removeItem(key);
+            }
+        }
+    })
+})
+
 function getChatNames() {
     var chatnames = [];
     for (const chatID of joinedChats.keys()) {
@@ -1209,6 +1223,7 @@ function formatDate (now) {
 }
 
 function mergeChats (localChats, receivedChats) {
+    console.log(`Received chat sizes ${localChats.size}   ${receivedChats.size}`);
     const mergedChats = new Map([...localChats]);
     if (receivedChats.size === 0) { return mergedChats; }
     const localChatIDs = new Set([...localChats.keys()]);
