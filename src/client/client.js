@@ -180,7 +180,7 @@ async function initialiseStore () {
         } else {
             joinedChats = chats;
         }
-        store.setItem("joinedChats", joinedChats).then(`store initialised to ${joinedChats}`);
+        store.setItem("joinedChats", joinedChats).then(console.log(`store initialised to ${joinedChats}`));
     });
 }
 
