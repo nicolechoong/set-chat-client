@@ -397,7 +397,6 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations}`)
                 const op = await generateOp("remove", chatID, pk, chatInfo.metadata.operations);
                 chatInfo.metadata.operations.push(op);
-                chatInfo.history.push({})
 
                 const removeMessage = {
                     type: "remove",
@@ -406,7 +405,8 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     from: keyPair.publicKey,
                     chatID: chatID
                 };
-                broadcastToMembers(removeMessage, chatID);
+                const messageData = broadcastToMembers(removeMessage, chatID);
+                chatInfo.history.set(messageData.id, messageData);
                 removePeer(chatID, JSON.stringify(pk));
                 sendToServer({
                     to: pk,
