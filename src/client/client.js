@@ -938,7 +938,6 @@ function broadcastToMembers (data, chatID = null) {
             continue;
         }
     }
-    updateChatStore(data);
     updateChatWindow(data);
 }
 
