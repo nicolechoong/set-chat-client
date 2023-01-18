@@ -148,6 +148,11 @@ async function onLogin (success, chats, online, username) {
         store.setItem("joinedChats", joinedChats);
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
+        store.getItem("keyMap").then((storedKeyMap) => {
+            keyMap = storedKeyMap;
+            keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
+            store.setItem("keyMap", keyMap);
+        })
         updateHeading();
         
         for (const chatID of joinedChats.keys()) {
