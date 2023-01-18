@@ -420,7 +420,12 @@ function getJoinedChats(pk) {
   var joined = new Map();
   for (const chatID of chats.keys()) {
     if (chats.get(chatID).members.includes(pk)) {
-      joined.set(chatID, chats.get(chatID));
+      const chatInfo = chats.get(chatID);
+      joined.set(chatID, {
+        chatName: chatInfo.chatName,
+        members: chatInfo.members,
+        currentMember: true
+      });
       console.log(`user ${allUsers.get(pk).username} is in ${chatID}`);
     }
   }
