@@ -1174,7 +1174,7 @@ function objToArr (obj) {
 
 function formatDate (now) {
     const date = new Date(now);
-    return `${date.getDay()}/${date.getMonth()} ${date.getHours()}:${date.getMinutes()}`;
+    return `${date.getDate()}/${date.getMonth()+1} ${date.getHours()}:${date.getMinutes()}`;
 }
 
 function mergeChats (localChats, receivedChats) {
@@ -1198,7 +1198,6 @@ function mergeChatHistory (localMsg, receivedMsg) {
             mergedChatHistory.set(id, receivedChats.get(id));
         }
     }
-    new Map([...m.entries()].sort((a,b) => b[1] - a[1]))
-    mergedChatHistory = new Map([...mergeChatHistory.entries()].sort((a, b) => b[1].sentTime - a[1].sentTime));
+    mergedChatHistory = new Map([...mergedChatHistory.entries()].sort((a, b) => b[1].sentTime - a[1].sentTime));
     return mergedChatHistory;
 }
