@@ -950,7 +950,6 @@ function sendChatMessage (messageInput) {
 
     broadcastToMembers(data);
     updateChatStore(data);
-    updateChatWindow(data);
 }
 
 
