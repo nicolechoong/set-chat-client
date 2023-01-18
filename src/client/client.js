@@ -844,6 +844,7 @@ function sendChatHistory (chatID, pk) {
         sendToMember({
             type: "history",
             history: Array.from(chatInfo.history),
+            chatID: chatID
         }, pk);
     });
 }
