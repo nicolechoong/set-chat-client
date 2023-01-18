@@ -363,7 +363,6 @@ async function addToChat (validMemberPubKeys, chatID) {
                     chatName: chatInfo.metadata.chatName
                 });
                 updateChatWindow(addMessage);
-                await updateChatStore(addMessage);
                 console.log(`added ${name}`);
             }
             resolve(chatInfo);
@@ -412,7 +411,6 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     chatName: chatInfo.metadata.chatName
                 });
                 updateChatWindow(removeMessage);
-                await updateChatStore(removeMessage);
                 console.log(`removed ${name}`);
             }
             resolve(chatInfo);
@@ -940,6 +938,8 @@ function broadcastToMembers (data, chatID = null) {
             continue;
         }
     }
+    updateChatStore(data);
+    updateChatWindow(data);
 }
 
 function sendChatMessage (messageInput) {
