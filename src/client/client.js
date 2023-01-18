@@ -354,7 +354,6 @@ async function addToChat (validMemberPubKeys, chatID) {
                 };
                 joinedChats.get(chatID).members.push(JSON.stringify(pk));
                 broadcastToMembers(addMessage, chatID);
-                updateChatWindow(addMessage);
                 sendToServer({
                     to: pk,
                     type: "add",
@@ -363,6 +362,8 @@ async function addToChat (validMemberPubKeys, chatID) {
                     chatID: chatID,
                     chatName: chatInfo.metadata.chatName
                 });
+                updateChatWindow(addMessage);
+                await updateChatStore(addMessage);
                 console.log(`added ${name}`);
             }
             resolve(chatInfo);
@@ -402,7 +403,6 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 };
                 broadcastToMembers(removeMessage, chatID);
                 removePeer(chatID, JSON.stringify(pk));
-                updateChatWindow(removeMessage);
                 sendToServer({
                     to: pk,
                     type: "remove",
@@ -411,6 +411,8 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     chatID: chatID,
                     chatName: chatInfo.metadata.chatName
                 });
+                updateChatWindow(removeMessage);
+                await updateChatStore(removeMessage);
                 console.log(`removed ${name}`);
             }
             resolve(chatInfo);
@@ -1174,7 +1176,8 @@ function objToArr (obj) {
 
 function formatDate (now) {
     const date = new Date(now);
-    return `${date.getDate()}/${date.getMonth()+1} ${date.getHours()}:${date.getMinutes()}`;
+    const intl = new Intl.DateTimeFormat('en-UK').format(date);
+    return `${intl} ${date.getHours()}:${date.getMinutes()}`;
 }
 
 function mergeChats (localChats, receivedChats) {
