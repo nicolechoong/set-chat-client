@@ -349,7 +349,7 @@ function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   const toPK = JSON.stringify(data.to);
 
-  console.log(`adding member ${data.to} to chats store`);
+  console.log(`adding member ${toPK} to chats store`);
   if (chats.get(data.chatID).exMembers.includes(toPK)) {
     chats.get(data.chatID).exMembers.splice(chats.get(data.chatID).exMembers.indexOf(toPK), 1);
   }
