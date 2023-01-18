@@ -355,7 +355,6 @@ async function addToChat (validMemberPubKeys, chatID) {
                 joinedChats.get(chatID).members.push(JSON.stringify(pk));
                 broadcastToMembers(addMessage, chatID);
                 updateChatWindow(addMessage);
-                updateChatStore(addMessage);
                 sendToServer({
                     to: pk,
                     type: "add",
@@ -404,7 +403,6 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 broadcastToMembers(removeMessage, chatID);
                 removePeer(chatID, JSON.stringify(pk));
                 updateChatWindow(removeMessage);
-                updateChatStore(addMessage);
                 sendToServer({
                     to: pk,
                     type: "remove",
