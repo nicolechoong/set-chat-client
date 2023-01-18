@@ -175,6 +175,7 @@ async function initialiseStore () {
         storeName: localUsername
     });
     store.getItem("joinedChats").then((chats) => {
+        console.log(chats);
         if (chats === null) {
             joinedChats = [];
         } else {
