@@ -353,7 +353,8 @@ async function addToChat (validMemberPubKeys, chatID) {
                     chatID: chatID
                 };
                 joinedChats.get(chatID).members.push(JSON.stringify(pk));
-                broadcastToMembers(addMessage, chatID);
+                const messageData = broadcastToMembers(addMessage, chatID);
+                chatInfo.history.set(messageData.id, messageData);
                 sendToServer({
                     to: pk,
                     type: "add",
@@ -374,10 +375,10 @@ async function addToChat (validMemberPubKeys, chatID) {
 function onRemove (chatID, chatName, from, fromPK) {
     console.log(`you've been removed from chat ${chatName} by ${from}`);
     // updateChatOptions("remove", chatID);
+    joinedChats.get(chatID).currentMember = false;
     updateHeading();
 
     // should DISPUTE too
-    joinedChats.get(chatID).currentMember = false;
 
     // as of now we just leave the left chats in the store
 }
@@ -391,6 +392,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations}`)
                 const op = await generateOp("remove", chatID, pk, chatInfo.metadata.operations);
                 chatInfo.metadata.operations.push(op);
+                chatInfo.history.push({})
 
                 const removeMessage = {
                     type: "remove",
@@ -919,13 +921,13 @@ function sendToMember (data, pk) {
     // data: JSON, pk: String
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     console.log(`current state of keyMap ${[...keyMap]}`);
-    data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
     connections.get(pk).sendChannel.send(JSON.stringify(data));
 }
 
 function broadcastToMembers (data, chatID = null) {
     const sentTime = Date.now();
     data.sentTime = sentTime;
+    data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
     chatID = chatID === null ? currentChatID : chatID;
     console.log(`username broadcast ${joinedChats.get(chatID).members}`);
     for (const pk of joinedChats.get(chatID).members) {
@@ -937,6 +939,7 @@ function broadcastToMembers (data, chatID = null) {
         }
     }
     updateChatWindow(data);
+    return data;
 }
 
 function sendChatMessage (messageInput) {
@@ -1057,6 +1060,10 @@ function updateHeading() {
         const availableChats = document.getElementById('availableChats');
         availableChats.innerHTML = `Chats: ${getChatNames().join(", ")}`;
     }
+
+    if (currentChatID > 0) {
+        document.getElementById('chatMods').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
+    }
 }
 
 function selectChat() {
@@ -1066,8 +1073,6 @@ function selectChat() {
         const chatName = chatNameInput.options.item(index).text;
         currentChatID = getChatID(chatName);
         console.log(`trying to join chatID ${currentChatID}`);
-        const chatMods = document.getElementById('chatMods');
-        chatMods.style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
 
         const chatTitle = document.getElementById('chatHeading');
         chatTitle.innerHTML = `Chat: ${chatName}`;
