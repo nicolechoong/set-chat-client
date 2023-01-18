@@ -1115,7 +1115,7 @@ const chatOptions = {};
 function updateChatOptions(operation, chatID) {
     var option = document.createElement("option");
     const index = [...joinedChats.keys()].indexOf(chatID);
-    if (chatOptions.has(chatID)) {
+    if (!chatOptions.has(chatID)) {
         if (operation === "add") {
             option.text = joinedChats.get(chatID).chatName;
             chatNameInput.options.add(option);
