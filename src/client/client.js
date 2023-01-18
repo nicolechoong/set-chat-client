@@ -132,6 +132,9 @@ connection.onmessage = function (message) {
         case "getPK":
             onGetPK(data.name, data.success, objToArr(data.pubKey));
             break;
+        case "getOnline":
+            onGetOnline(data.online);
+            break;
         default: 
             break; 
    } 
@@ -159,15 +162,7 @@ async function onLogin (success, chats, online, username) {
             updateChatOptions("add", chatID);
         }
 
-        for (const chatID of online.keys()) {
-            for (const peer of online.get(chatID)) {
-                peer.peerPK = objToArr(peer.peerPK);
-                if (await connectToPeer(peer)) { 
-                    console.log(`Successfully connected to ${peer.peerName}`);
-                    sendOperations(chatID, JSON.stringify(peer.peerPK));
-                }
-            }
-        }
+        onGetOnline (online);
     } 
 };
 
@@ -333,7 +328,11 @@ function onAdd (chatID, chatName, from, fromPK) {
         history: new Map(),
     });
 
-    connectToPeer({peerName: from, peerPK: fromPK}); // TODO: if no peers online, need to ask server
+    if (connectToPeer({peerName: from, peerPK: fromPK})) {
+        sendOperations(chatID, fromPK);
+    } else {
+        getOnline(chatID);
+    }
     
     updateChatOptions("add", chatID);
     updateHeading();
@@ -438,6 +437,26 @@ function onGetPK (name, success, pk) {
     }
     resolveGetPK.delete(name);
     rejectGetPK.delete(name);
+}
+
+async function onGetOnline (online) {
+    for (const chatID of online.keys()) {
+        for (const peer of online.get(chatID)) {
+            peer.peerPK = objToArr(peer.peerPK);
+            if (await connectToPeer(peer)) { 
+                console.log(`Successfully connected to ${peer.peerName}`);
+                sendOperations(chatID, JSON.stringify(peer.peerPK));
+            }
+        }
+    }
+}
+
+function getOnline (chatID = 0) {
+    sendToServer({
+        type: "getOnline",
+        pk: keyPair.publicKey,
+        chatID: chatID
+    });
 }
 
 //////////////////////////////
@@ -1084,7 +1103,7 @@ function selectChat() {
         chatMessages.innerHTML = "";
         store.getItem(currentChatID).then((chatInfo) => {
             for (const id of chatInfo.history.keys()) {
-                updateChatWindow (chatInfo.history.get(id));
+                updateChatWindow(chatInfo.history.get(id));
             }
         });
         // joinChat(currentChatID);
@@ -1093,16 +1112,17 @@ function selectChat() {
 
 function updateChatOptions(operation, chatID) {
     var option = document.createElement("option");
-
-    if (operation === "add") {
-        option.text = joinedChats.get(chatID).chatName;
-        chatNameInput.options.add(option);
-    } else if (operation === "remove") {
-        if (!chatOptions.includes(chatID)) {
-            console.error(`Chat does not exist`);
+    if (!joinedChats.has(chatID)) {
+        if (operation === "add") {
+            option.text = joinedChats.get(chatID).chatName;
+            chatNameInput.options.add(option);
+        } else if (operation === "remove") {
+            if (!chatOptions.includes(chatID)) {
+                console.error(`Chat does not exist`);
+            }
+            const index = [...joinedChats.keys()].indexOf(chatID);
+            chatNameInput.options.remove(index);
         }
-        const index = [...joinedChats.keys()].indexOf(chatID);
-        chatNameInput.options.remove(index);
     }
 }
 

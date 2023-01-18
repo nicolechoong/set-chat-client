@@ -90,6 +90,9 @@ wsServer.on('connection', function(connection) {
       case "getPK":
         onGetPK(connection, data);
         break;
+      case "getOnline":
+        onGetOnline(connection, data);
+        break;
       case "add":
         onAdd(connection, data);
         break;
@@ -303,6 +306,39 @@ function onGetPK (connection, data) {
     success: true,
     pubKey: Uint8Array.from(Object.values(JSON.parse(usernameToPK.get(data.name))))
   });
+}
+
+function onGetOnline (connection, data) {
+  const online = new Map();
+  const joinedChats = getJoinedChats(data.pk);
+  var chats, members;
+
+  if (data.chatID !== 0) {
+    chats = [data.chatID];
+  } else {
+    chats = joinedChats.keys();
+  }
+
+  for (const chatID of chats) {
+    members = joinedChats.get(chatID).members;
+    const onlineMembers = [];
+    for (const mem of members) {
+      if (connectedUsers.has(mem)) {
+        onlineMembers.push({
+          peerName: allUsers.get(mem).username,
+          peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
+        });
+      }
+    }
+    if (onlineMembers.length > 0) {
+      online.set(chatID, onlineMembers);
+    }
+  }
+
+  sendTo(connection, {
+    type: "getOnline",
+    online: Array.from(online)
+  })
 }
 
 function onAdd (connection, data) {
