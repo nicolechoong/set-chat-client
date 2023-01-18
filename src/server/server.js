@@ -272,7 +272,7 @@ function onCreateChat (connection, data) {
   const invalidMembers = data.members.filter(mem => !usernameToPK.has(mem));
 
   // add to list of chats
-  chats.set(chatID, {chatName: data.chatName, members: [JSON.stringify(data.from)], currentMember: true});
+  chats.set(chatID, {chatName: data.chatName, members: [JSON.stringify(data.from)], exMembers: []});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
   console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
@@ -308,12 +308,12 @@ function onGetPK (connection, data) {
   });
 }
 
-function onGetOnline (connection, data) {
+function getOnline (pk, chatID=0) {
   const online = new Map();
-  const joinedChats = getJoinedChats(data.pk);
+  const joinedChats = getJoinedChats(pk);
   var chats, members;
 
-  if (data.chatID !== 0) {
+  if (chatID !== 0) {
     chats = [data.chatID];
   } else {
     chats = joinedChats.keys();
@@ -335,31 +335,44 @@ function onGetOnline (connection, data) {
     }
   }
 
+  return online;
+}
+
+function onGetOnline (connection, data) {
   sendTo(connection, {
     type: "getOnline",
-    online: Array.from(online)
+    online: Array.from(getOnline(connection.pk, data.chatID))
   })
 }
 
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
+  const toPK = JSON.stringify(data.to);
+
   console.log(`adding member ${data.to} to chats store`);
-  chats.get(data.chatID).members.push(JSON.stringify(data.to));
-  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
-  if (connectedUsers.get(JSON.stringify(data.to)) == null) {
-    sendTo(null, data, JSON.stringify(data.to));
+  if (chats.get(data.chatID).exMembers.includes(toPK)) {
+    chats.get(data.chatID).exMembers.splice(chats.get(data.chatID).exMembers.indexOf(toPK), 1);
+  }
+  chats.get(data.chatID).members.push(toPK);
+
+  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
+  if (connectedUsers.get(toPK) == null) {
+    sendTo(null, data, toPK);
   } else {
-    sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
+    sendTo(connectedUsers.get(toPK).connection, data);
   }
 }
 
 function onRemove (connection, data) {
-  chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(JSON.stringify(data.to)), 1);
-  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(JSON.stringify(data.to)).username}`);
-  if (connectedUsers.get(JSON.stringify(data.to)) == null) {
-    sendTo(null, data, JSON.stringify(data.to));
+  const toPK = JSON.stringify(data.to);
+  chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
+  chats.get(data.chatID).exMembers.push(toPK);
+
+  console.log(`sending remove message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
+  if (connectedUsers.get(toPK) == null) {
+    sendTo(null, data, toPK);
   } else {
-    sendTo(connectedUsers.get(JSON.stringify(data.to)).connection, data);
+    sendTo(connectedUsers.get(toPK).connection, data);
   }
 }
 
@@ -425,31 +438,13 @@ function onReconnect (connection, name, pk) {
 
   console.log(`User ${allUsers.get(pk).username} has rejoined`);
   console.log(`all chats..? ${JSON.stringify(chats)}`);
-
-  const online = new Map();
-  var members;
-  for (const chatID of joinedChats.keys()) {
-    members = joinedChats.get(chatID).members;
-    const onlineMembers = [];
-    for (const mem of members) {
-      if (connectedUsers.has(mem)) {
-        onlineMembers.push({
-          peerName: allUsers.get(mem).username,
-          peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
-        });
-      }
-    }
-    if (onlineMembers.length > 0) {
-      online.set(chatID, onlineMembers);
-    }
-  }
   
   sendTo(connection, { 
     type: "login", 
     success: true,
     username: name,
     joinedChats: Array.from(joinedChats),
-    online: Array.from(online)
+    online: Array.from(getOnline(pk))
   });
 
   console.log(JSON.stringify({ 
@@ -457,7 +452,7 @@ function onReconnect (connection, name, pk) {
     success: true,
     username: name,
     joinedChats: Array.from(joinedChats),
-    online: Array.from(online)
+    online: Array.from(getOnline(pk))
   }))
 
   while (msgQueue.length > 0) {
