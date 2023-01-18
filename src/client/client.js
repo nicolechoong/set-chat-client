@@ -1110,23 +1110,21 @@ function selectChat() {
     }
 }
 
-const chatOptions = {};
+const chatOptions = new Set();
 
 function updateChatOptions(operation, chatID) {
     var option = document.createElement("option");
-    const index = [...joinedChats.keys()].indexOf(chatID);
-    if (!chatOptions.has(chatID)) {
-        if (operation === "add") {
-            option.text = joinedChats.get(chatID).chatName;
-            chatNameInput.options.add(option);
-            chatOptions.add(chatID);
-        } else if (operation === "remove") {
-            if (!chatOptions.includes(chatID)) {
-                console.error(`Chat does not exist`);
-            }
-            chatNameInput.options.remove(index);
-            chatOptions.delete(chat);
-        }
+    if (operation === "add" && !chatOptions.has(chatID)) {
+        option.text = joinedChats.get(chatID).chatName;
+        chatNameInput.options.add(option);
+        chatOptions.add(chatID);
+        return;
+    }
+        
+    if (operation === "remove" && chatOptions.includes(chatID)) {
+        const index = [...joinedChats.keys()].indexOf(chatID);
+        chatNameInput.options.remove(index);
+        chatOptions.delete(chatID);
     }
 }
 
