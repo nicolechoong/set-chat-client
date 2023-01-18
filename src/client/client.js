@@ -316,7 +316,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 }
 
 // When being added to a new chat
-function onAdd (chatID, chatName, from, fromPK) {
+async function onAdd (chatID, chatName, from, fromPK) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array
     console.log(`you've been added to chat ${chatName} by ${from}`);
     joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], currentMember: true});
@@ -331,7 +331,7 @@ function onAdd (chatID, chatName, from, fromPK) {
         history: new Map(),
     });
 
-    if (connectToPeer({peerName: from, peerPK: fromPK})) {
+    if (await connectToPeer({peerName: from, peerPK: fromPK})) {
         sendOperations(chatID, fromPK);
     } else {
         getOnline(chatID);
@@ -549,6 +549,8 @@ async function receivedOperations (ops, chatID, pk) {
         store.getItem(chatID).then((chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
             // console.log(`merged ops ${JSON.stringify(ops)}`);
+
+            // DO VERIFY THEN CALACULATE MEMBER SETTT
             const memberSet = members(ops, chatInfo.metadata.ignored);
             console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
             if (verifyOperations(ops) && memberSet.has(pk)) {
@@ -647,7 +649,7 @@ function authority (ops) {
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        edges.add([op1, {"member": pk, "sig": pk}]); // TODO: remove dups
+        edges.add([op1, {"member": pk, "sig": pk}]);
     }
 
     return edges;
@@ -664,6 +666,8 @@ function valid (ops, ignored, op, seen) {
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], [...seen, op]);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
+
+    // ADD COMMENTS
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
             if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
@@ -1124,7 +1128,6 @@ function selectChat() {
                 updateChatWindow(chatInfo.history.get(id));
             }
         });
-        // joinChat(currentChatID);
     }
 }
 
@@ -1232,9 +1235,7 @@ function mergeChats (localChats, receivedChats) {
     if (receivedChats.size === 0) { return mergedChats; }
     const localChatIDs = new Set([...localChats.keys()]);
     for (const id of receivedChats.keys()) {
-        if (!localChatIDs.has(id)) {
-            mergedChats.set(id, receivedChats.get(id));
-        } // TODO: add conflict resolution stuff
+        mergedChats.set(id, receivedChats.get(id));
     }
     return mergedChats;
 }

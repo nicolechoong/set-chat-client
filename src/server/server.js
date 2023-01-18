@@ -396,7 +396,6 @@ function sendTo(connection, message, pk = "") {
     return;
   }
 
-  console.log(``);
   if (allUsers.has(pk)) {
     allUsers.get(pk).msgQueue.push(message);
   }
