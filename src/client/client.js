@@ -917,7 +917,7 @@ function sendToMember (data, pk) {
     // data: JSON, pk: String
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     console.log(`current state of keyMap ${[...keyMap]}`);
-    data.id = nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`));
+    data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
     connections.get(pk).sendChannel.send(JSON.stringify(data));
 }
 
