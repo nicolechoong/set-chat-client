@@ -320,6 +320,7 @@ function getOnline (pk, chatID=0) {
   }
 
   for (const chatID of chats) {
+    if (!joinedChats.get(chatID).currentMember) { continue; }
     members = joinedChats.get(chatID).members;
     const onlineMembers = [];
     for (const mem of members) {
@@ -418,15 +419,23 @@ function broadcast(message, id = 0) {
 function getJoinedChats(pk) {
   // pk string
   var joined = new Map();
+  
   for (const chatID of chats.keys()) {
+    const chatInfo = chats.get(chatID);
     if (chats.get(chatID).members.includes(pk)) {
-      const chatInfo = chats.get(chatID);
       joined.set(chatID, {
         chatName: chatInfo.chatName,
         members: chatInfo.members,
         currentMember: true
       });
       console.log(`user ${allUsers.get(pk).username} is in ${chatID}`);
+    }
+    if (chats.get(chatID).exMembers.includes(pk)) {
+      joined.set(chatID, {
+        chatName: chatInfo.chatName,
+        members: chatInfo.members, // note that we are still sending updated members...
+        currentMember: false
+      });
     }
   }
   return joined;
