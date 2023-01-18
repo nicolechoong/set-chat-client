@@ -750,6 +750,7 @@ function initChannel (channel) {
                 break;
             case "history":
                 store.getItem(messageData.chatID).then((chatInfo) => {
+                    console.log(`received history is ${JSON.stringify(messageData.history)}`);
                     chatInfo.history = mergeChatHistory(chatInfo.history, new Map(messageData.history));
                     if (messageData.chatID === currentChatID) {
                         chatMessages.innerHTML = "";
@@ -759,6 +760,7 @@ function initChannel (channel) {
                             }
                         });
                     }
+                    store.setItem(messageData.chatID, chatInfo);
                 });
                 break;
             case "remove":
@@ -841,6 +843,7 @@ function sendAdvertisement (chatID, pk) {
 function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
+        console.log(`this is the history ${Array.from(chatInfo.history)}`);
         sendToMember({
             type: "history",
             history: Array.from(chatInfo.history),
@@ -1171,7 +1174,7 @@ function objToArr (obj) {
 
 function formatDate (now) {
     const date = new Date(now);
-    return `${date.getDay}/${date.getMonth()} ${date.getHours()}:${date.getMinutes}`;
+    return `${date.getDay()}/${date.getMonth()} ${date.getHours()}:${date.getMinutes()}`;
 }
 
 function mergeChats (localChats, receivedChats) {
