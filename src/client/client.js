@@ -355,6 +355,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                 joinedChats.get(chatID).members.push(JSON.stringify(pk));
                 broadcastToMembers(addMessage, chatID);
                 updateChatWindow(addMessage);
+                updateChatStore(addMessage);
                 sendToServer({
                     to: pk,
                     type: "add",
@@ -403,6 +404,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 broadcastToMembers(removeMessage, chatID);
                 removePeer(chatID, JSON.stringify(pk));
                 updateChatWindow(removeMessage);
+                updateChatStore(addMessage);
                 sendToServer({
                     to: pk,
                     type: "remove",
@@ -1195,7 +1197,7 @@ function mergeChatHistory (localMsg, receivedMsg) {
     const localMsgIDs = new Set([...localMsg.keys()]);
     for (const id of receivedMsg.keys()) {
         if (!localMsgIDs.has(id)) {
-            mergedChatHistory.set(id, receivedChats.get(id));
+            mergedChatHistory.set(id, receivedMsg.get(id));
         }
     }
     mergedChatHistory = new Map([...mergedChatHistory.entries()].sort((a, b) => b[1].sentTime - a[1].sentTime));
