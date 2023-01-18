@@ -153,7 +153,7 @@ async function onLogin (success, chats, online, username) {
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
         store.getItem("keyMap").then((storedKeyMap) => {
-            keyMap = storedKeyMap;
+            keyMap = storedKeyMap === null ? new Map() : storedKeyMap;
             keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
             store.setItem("keyMap", keyMap);
         })
@@ -181,7 +181,7 @@ async function initialiseStore () {
             joinedChats = chats;
         }
         store.setItem("joinedChats", joinedChats);
-    })
+    });
 }
 
 // Sending Offer to Peer
@@ -1063,6 +1063,7 @@ removeUserBtn.addEventListener("click", async () => {
 });
 
 resetStoreBtn.addEventListener("click", () => {
+    console.log(`resetting store...`);
     store.keys().then((keys) => {
         for (const key of keys) {
             if (key !== "keyPair") {
