@@ -1,5 +1,4 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import Automerge from "/node_modules/@automerge/automerge";
 
 var loginBtn = document.getElementById('loginBtn'); 
 var sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -742,12 +741,25 @@ function initChannel (channel) {
                 receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res) { 
                         sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
-
+                        sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                     }
                 });
                 break;
             case "advertisement":
                 messageData.online.forEach((peer) => connectToPeer(peer));
+                break;
+            case "history":
+                store.getItem(messageData.chatID).then((chatInfo) => {
+                    chatInfo.history = mergeChatHistory(chatInfo.history, new Map(messageData.history));
+                    if (messageData.chatID === currentChatID) {
+                        chatMessages.innerHTML = "";
+                        store.getItem(currentChatID).then((chatInfo) => {
+                            for (const id of chatInfo.history.keys()) {
+                                updateChatWindow (chatInfo.history.get(id));
+                            }
+                        });
+                    }
+                });
                 break;
             case "remove":
                 unpackOp(messageData.op);
@@ -827,11 +839,13 @@ function sendAdvertisement (chatID, pk) {
 }
 
 function sendChatHistory (chatID, pk) {
-    console.log(`sending an advertistment to ${pk} of ${JSON.stringify(online)}`)
-    sendToMember({
-        type: "advertisement",
-        online: online
-    }, pk);
+    console.log(`sending chat history to ${pk} of ${JSON.stringify(online)}`)
+    store.getItem(chatID).then((chatInfo) => {
+        sendToMember({
+            type: "history",
+            history: Array.from(chatInfo.history),
+        }, pk);
+    });
 }
 
 var resolveConnectToPeer = new Map();
@@ -885,12 +899,12 @@ function updateChatWindow (data) {
                 message = "";
                 break;
         }
-        const msg = `${chatMessages.innerHTML}<br />[${new Date(data.sentTime).toISOString()}] ${message}`;
+        const msg = `${chatMessages.innerHTML}<br />[${formatDate(data.sentTime)}] ${message}`;
         chatMessages.innerHTML = msg;
     }
 }
 
-function updateChatStore (messageData) {
+async function updateChatStore (messageData) {
     store.getItem(messageData.chatID).then((chatInfo) => {
         chatInfo.history.set(messageData.id, messageData);
         store.setItem(messageData.chatID, chatInfo);
@@ -1061,7 +1075,7 @@ function selectChat() {
                 updateChatWindow (chatInfo.history.get(id));
             }
         });
-        joinChat(currentChatID);
+        // joinChat(currentChatID);
     }
 }
 
@@ -1154,6 +1168,11 @@ function objToArr (obj) {
     return Uint8Array.from(Object.values(obj));
 }
 
+function formatDate (now) {
+    const date = new Date(now);
+    return `${date.getDay}/${date.getMonth()} ${date.getHours()}:${date.getMinutes}`;
+}
+
 function mergeChats (localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);
     if (receivedChats.size === 0) { return mergedChats; }
@@ -1164,4 +1183,18 @@ function mergeChats (localChats, receivedChats) {
         } // TODO: add conflict resolution stuff
     }
     return mergedChats;
+}
+
+function mergeChatHistory (localMsg, receivedMsg) {
+    const mergedChatHistory = new Map([...localMsg]);
+    if (receivedMsg.size === 0) { return mergedChatHistory; }
+    const localMsgIDs = new Set([...localMsg.keys()]);
+    for (const id of receivedMsg.keys()) {
+        if (!localMsgIDs.has(id)) {
+            mergedChatHistory.set(id, receivedChats.get(id));
+        }
+    }
+    new Map([...m.entries()].sort((a,b) => b[1] - a[1]))
+    mergedChatHistory = new Map([...mergeChatHistory.entries()].sort((a, b) => b[1].sentTime - a[1].sentTime));
+    return mergedChatHistory;
 }

@@ -17,19 +17,12 @@ app.get('/src/client/client.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'client.js'));
 });
 
-app.get('/node_modules/@automerge/automerge/index.d.ts', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'node_modules', '@automerge', 'automerge', 'index.d.ts'));
-});
-
 const server = https.createServer({ key, cert }, app);
 
 const port = 3000;
 server.listen(port, () => {
   console.log(`Server is listening on https://localhost:${port}`);
 });
-
-var enc = new TextEncoder();
-var dec = new TextDecoder();
 
 // stores all connections
 const connections = [];
