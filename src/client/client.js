@@ -362,14 +362,14 @@ async function addToChat (validMemberPubKeys, chatID) {
                 joinedChats.get(chatID).members.push(JSON.stringify(pk));
                 const messageData = broadcastToMembers(addMessage, chatID);
                 chatInfo.history.set(messageData.id, messageData);
-                sendToServer({
-                    to: pk,
-                    type: "add",
-                    from: localUsername,
-                    fromPK: keyPair.publicKey,
-                    chatID: chatID,
-                    chatName: chatInfo.metadata.chatName
-                });
+                // sendToServer({
+                //     to: pk,
+                //     type: "add",
+                //     from: localUsername,
+                //     fromPK: keyPair.publicKey,
+                //     chatID: chatID,
+                //     chatName: chatInfo.metadata.chatName
+                // });
                 console.log(`added ${name}`);
             }
             resolve(chatInfo);
@@ -412,14 +412,14 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 const messageData = broadcastToMembers(removeMessage, chatID);
                 chatInfo.history.set(messageData.id, messageData);
                 removePeer(chatID, JSON.stringify(pk));
-                sendToServer({
-                    to: pk,
-                    type: "remove",
-                    from: localUsername,
-                    fromPK: keyPair.publicKey,
-                    chatID: chatID,
-                    chatName: chatInfo.metadata.chatName
-                });
+                // sendToServer({
+                //     to: pk,
+                //     type: "remove",
+                //     from: localUsername,
+                //     fromPK: keyPair.publicKey,
+                //     chatID: chatID,
+                //     chatName: chatInfo.metadata.chatName
+                // });
                 console.log(`removed ${name}`);
             }
             resolve(chatInfo);
@@ -653,13 +653,15 @@ function authority (ops) {
     return edges;
 }
 
-function valid (ops, ignored, op) {
+function valid (ops, ignored, op, seen) {
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (ignored.includes(op)) { return false; }
+    if (ignored.includes(op) || seen.includes(op)) { return false; }
+
+    // all the valid operations before op2
     const inSet = ([...authority(ops)]).filter((edge) => {
-        
-        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0]);
+
+        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], [...seen, op]);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
     for (const opA of inSet) {
@@ -677,7 +679,7 @@ function members (ops, ignored) {
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
-        if (valid(ops, ignored, {"member": pk, "sig": pk})) {
+        if (valid(ops, ignored, {"member": pk, "sig": pk}, [])) {
             pks.add(JSON.stringify(pk));
         }
     }
