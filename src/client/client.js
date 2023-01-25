@@ -877,10 +877,10 @@ function sendChatHistory (chatID, pk) {
                 console.log(`this is the history ${chatInfo.history}`);
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
                 if (interval[1] === 0) {
-                    peerHistory.concat(chat.history.slice(start));
+                    peerHistory.concat(chatInfo.history.slice(start));
                 } else {
                     chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-                    peerHistory.concat(chat.history.slice(start, end));
+                    peerHistory.concat(chatInfo.history.slice(start, end));
                 }
             }
         }
