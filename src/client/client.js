@@ -541,6 +541,7 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
+        if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); }
         store.getItem(chatID).then((chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
             // console.log(`merged ops ${JSON.stringify(ops)}`);
@@ -774,7 +775,7 @@ function receivedMessage (messageData) {
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                 if (res) { 
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
-                    // sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
             });
             break;
@@ -866,19 +867,21 @@ function sendAdvertisement (chatID, pk) {
 function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
-        console.log(`chatInfo ${[...chatInfo.historyTable]}`);
         const peerHistory = [];
-        const intervals = chatInfo.historyTable.get(pk);
-        console.log(intervals);
-        var start, end;
-        for (const interval of intervals) {
-            console.log(`this is the history ${chatInfo.history}`);
-            start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
-            if (interval[1] === 0) {
-                peerHistory.concat(chat.history.slice(start));
-            } else {
-                chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-                peerHistory.concat(chat.history.slice(start, end));
+
+        if (chatInfo.historyTable.has(pk)) {
+            const intervals = chatInfo.historyTable.get(pk);
+            console.log(intervals);
+            var start, end;
+            for (const interval of intervals) {
+                console.log(`this is the history ${chatInfo.history}`);
+                start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
+                if (interval[1] === 0) {
+                    peerHistory.concat(chat.history.slice(start));
+                } else {
+                    chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
+                    peerHistory.concat(chat.history.slice(start, end));
+                }
             }
         }
 
