@@ -366,8 +366,8 @@ async function addToChat (validMemberPubKeys, chatID) {
                 chatName: chatInfo.metadata.chatName
             });
             
-            // joinedChats.get(chatID).members.push(JSON.stringify(pk));
-            // await store.setItem("joinedChats", joinedChats);
+            joinedChats.get(chatID).members.push(JSON.stringify(pk));
+            await store.setItem("joinedChats", joinedChats);
             await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
             broadcastToMembers(addMessage, chatID);
             console.log(`added ${name}`);
@@ -438,6 +438,7 @@ function onGetPK (name, success, pk) {
 }
 
 async function onGetOnline (online) {
+    console.log(`type of online from onGetOnline is array ${online instanceof Array}`);
     for (const chatID of online.keys()) {
         for (const peer of online.get(chatID)) {
             peer.peerPK = objToArr(peer.peerPK);
