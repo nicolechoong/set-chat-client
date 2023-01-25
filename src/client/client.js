@@ -438,7 +438,8 @@ function onGetPK (name, success, pk) {
 }
 
 async function onGetOnline (online) {
-    console.log(`type of online from onGetOnline is array ${online instanceof Array}`);
+    console.log(`type of online from onGetOnline is array ${online instanceof String}`);
+    console.log(`online ${online}`)
     for (const chatID of online.keys()) {
         for (const peer of online.get(chatID)) {
             peer.peerPK = objToArr(peer.peerPK);
