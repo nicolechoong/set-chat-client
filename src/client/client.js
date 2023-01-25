@@ -333,7 +333,7 @@ async function onAdd (chatID, chatName, from, fromPK) {
     const senderOnline = await connectToPeer({peerName: from, peerPK: fromPK});
     console.log(`sender online ${senderOnline}`);
     if (senderOnline) {
-        sendOperations(chatID, fromPK);
+        sendOperations(chatID, JSON.stringify(fromPK));
     } else {
         getOnline(chatID);
     }
@@ -440,7 +440,6 @@ function onGetPK (name, success, pk) {
 }
 
 async function onGetOnline (online) {
-    console.log(`online ${online}`)
     for (const chatID of online.keys()) {
         for (const peer of online.get(chatID)) {
             peer.peerPK = objToArr(peer.peerPK);
