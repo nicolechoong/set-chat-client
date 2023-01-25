@@ -900,7 +900,7 @@ function connectToPeer (peer) {
         if (peer.peerName === localUsername) { resolve(false); return; }
         if (connections.has(JSON.stringify(peer.peerPK))) { resolve(true); return; }
 
-        resolveConnectToPeer.set(resolve);
+        resolveConnectToPeer.set(JSON.stringify(peer.peerPK), resolve);
         console.log(`adding peer ${peer.peerName} to the keyMap ${JSON.stringify(peer.peerPK)}`)
         keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
         store.setItem("keyMap", keyMap);
