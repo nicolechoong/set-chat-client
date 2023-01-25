@@ -330,7 +330,9 @@ async function onAdd (chatID, chatName, from, fromPK) {
         historyTable: new Map(),
     });
 
-    if (await connectToPeer({peerName: from, peerPK: fromPK})) {
+    const senderOnline = await connectToPeer({peerName: from, peerPK: fromPK});
+    console.log(`sender online ${senderOnline}`);
+    if (senderOnline) {
         sendOperations(chatID, fromPK);
     } else {
         getOnline(chatID);
