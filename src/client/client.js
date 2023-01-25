@@ -358,9 +358,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                     username: name,
                     chatID: chatID
                 };
-                joinedChats.get(chatID).members.push(JSON.stringify(pk));
-                const messageData = broadcastToMembers(addMessage, chatID);
-                chatInfo.history.push(messageData);
+                broadcastToMembers(addMessage, chatID);
                 sendToServer({
                     to: pk,
                     type: "add",
@@ -374,6 +372,7 @@ async function addToChat (validMemberPubKeys, chatID) {
             resolve(chatInfo);
         });
     }).then((chatInfo) => {
+        joinedChats.get(chatID).members.push(JSON.stringify(pk));
         store.setItem("joinedChats", joinedChats);
         store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
     });
@@ -408,9 +407,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     from: keyPair.publicKey,
                     chatID: chatID
                 };
-                const messageData = broadcastToMembers(removeMessage, chatID);
-                chatInfo.history.push(messageData);
-                removePeer(messageData);
+                broadcastToMembers(removeMessage, chatID);
                 sendToServer({
                     to: pk,
                     type: "remove",
@@ -766,58 +763,59 @@ function initPeerConnection () {
 function initChannel (channel) {
     channel.onopen = (event) => { onChannelOpen(event); }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
-    channel.onmessage = (event) => {
-        const messageData = JSON.parse(event.data);
-        console.log(`received a message from the channel of type ${messageData.type}`);
-        switch (messageData.type) {
-            case "ops":
-                messageData.ops.forEach(op => unpackOp(op));
-                receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) { 
-                        sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
-                        sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-                    }
-                });
-                break;
-            case "advertisement":
-                messageData.online.forEach((peer) => connectToPeer(peer));
-                break;
-            case "history":
-                store.getItem(messageData.chatID).then((chatInfo) => {
-                    console.log(`received history is ${JSON.stringify(messageData.history)}`);
-                    chatInfo.history = mergeChatHistory(chatInfo.history, messageData.history);
-                    if (messageData.chatID === currentChatID) {
-                        chatMessages.innerHTML = "";
-                        store.getItem(currentChatID).then((chatInfo) => {
-                            for (const msg of chatInfo.history) {
-                                updateChatWindow (msg);
-                            }
-                        });
-                    }
-                    store.setItem(messageData.chatID, chatInfo);
-                });
-                break;
-            case "remove":
-                unpackOp(messageData.op);
-                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) { removePeer(messageData); }
-                });
-                break;
-            case "add":
-                unpackOp(messageData.op);
-                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) { addPeer(messageData); }
-                });
-                break;
-            case "text":
-                if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
-                    updateChatWindow(messageData);
-                    updateChatStore(messageData);
+    channel.onmessage = (event) => { receivedMessage(JSON.parse(event.data)) }
+}
+
+function receivedMessage (messageData) {
+    console.log(`received a message from the channel of type ${messageData.type}`);
+    switch (messageData.type) {
+        case "ops":
+            messageData.ops.forEach(op => unpackOp(op));
+            receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                if (res) { 
+                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
+                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
-                break;
-            default:
-                console.log(`Unrecognised message type ${messageData.type}`);
-        }
+            });
+            break;
+        case "advertisement":
+            messageData.online.forEach((peer) => connectToPeer(peer));
+            break;
+        case "history":
+            store.getItem(messageData.chatID).then((chatInfo) => {
+                console.log(`received history is ${JSON.stringify(messageData.history)}`);
+                chatInfo.history = mergeChatHistory(chatInfo.history, messageData.history);
+                if (messageData.chatID === currentChatID) {
+                    chatMessages.innerHTML = "";
+                    store.getItem(currentChatID).then((chatInfo) => {
+                        for (const msg of chatInfo.history) {
+                            updateChatWindow (msg);
+                        }
+                    });
+                }
+                store.setItem(messageData.chatID, chatInfo);
+            });
+            break;
+        case "remove":
+            unpackOp(messageData.op);
+            receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                if (res) { removePeer(messageData); }
+            });
+            break;
+        case "add":
+            unpackOp(messageData.op);
+            receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                if (res) { addPeer(messageData); }
+            });
+            break;
+        case "text":
+            if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
+                updateChatWindow(messageData);
+                updateChatStore(messageData);
+            }
+            break;
+        default:
+            console.log(`Unrecognised message type ${messageData.type}`);
     }
 }
 
@@ -869,6 +867,7 @@ function sendChatHistory (chatID, pk) {
     store.getItem(chatID).then((chatInfo) => {
         const peerHistory = [];
         const intervals = chatInfo.historyTable.get(pk);
+        console.log(intervals);
         var start, end;
         for (const interval of intervals) {
             console.log(`this is the history ${chatInfo.history}`);
@@ -913,9 +912,13 @@ async function addPeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
+    console.log(joinedChats.get(messageData.chatID));
 
     updateChatWindow(messageData);
     store.get(messageData.chatID).then((chatInfo) => {
+        if (!chatInfo.historyTable.has(pk)) {
+            chatInfo.historyTable.set(pk, []);
+        }
         chatInfo.historyTable.get(pk).push([messageData.id, 0]);
         chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
@@ -1001,8 +1004,7 @@ function broadcastToMembers (data, chatID = null) {
             continue;
         }
     }
-    updateChatWindow(data);
-    return data;
+    receivedMessage(data);
 }
 
 function sendChatMessage (messageInput) {
