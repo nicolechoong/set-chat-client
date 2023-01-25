@@ -543,21 +543,22 @@ async function receivedOperations (ops, chatID, pk) {
             ops = unionOps(chatInfo.metadata.operations, ops);
             // console.log(`merged ops ${JSON.stringify(ops)}`);
 
-            // DO VERIFY THEN CALACULATE MEMBER SETTT
-            const memberSet = members(ops, chatInfo.metadata.ignored);
-            console.log(`verified ${verifyOperations(ops)} is member ${memberSet.has(pk)}`);
-            if (verifyOperations(ops) && memberSet.has(pk)) {
-                chatInfo.metadata.operations = ops;
-                joinedChats.get(chatID).members = [...memberSet];
-                store.setItem(chatID, chatInfo);
-                console.log(`synced with ${keyMap.get(pk)}`);
-                resolve(true);
-            } else {
-                connections.get(pk).sendChannel.close();
-                connections.get(pk).connection.close();
-                connections.delete(pk);
-                resolve(false);
+            if (verifyOperations(ops)) {
+                const memberSet = members(ops, chatInfo.metadata.ignored);
+                console.log(`verified true is member ${memberSet.has(pk)}`);
+                if (memberSet.has(pk)) {
+                    chatInfo.metadata.operations = ops;
+                    joinedChats.get(chatID).members = [...memberSet];
+                    store.setItem(chatID, chatInfo);
+                    console.log(`synced with ${keyMap.get(pk)}`);
+                    resolve(true);
+                    return;
+                }
             }
+            connections.get(pk).sendChannel.close();
+            connections.get(pk).connection.close();
+            connections.delete(pk);
+            resolve(false);
         })
     });
 }
@@ -771,7 +772,7 @@ function receivedMessage (messageData) {
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                 if (res) { 
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
-                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                    // sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
             });
             break;
@@ -862,7 +863,7 @@ function sendAdvertisement (chatID, pk) {
 function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
-        console.log(`chatInfo ${chatInfo.metadata.chatName}`)
+        console.log(`chatInfo ${[...chatInfo.historyTable]}`);
         const peerHistory = [];
         const intervals = chatInfo.historyTable.get(pk);
         console.log(intervals);
