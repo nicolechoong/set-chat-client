@@ -343,38 +343,35 @@ async function onAdd (chatID, chatName, from, fromPK) {
 async function addToChat (validMemberPubKeys, chatID) {
     // members is the list of members pubkey: object
     store.getItem(chatID).then(async (chatInfo) => {
-        return new Promise(async (resolve) => {
-            var pk;
-            for (const name of validMemberPubKeys.keys()) {
-                pk = objToArr(validMemberPubKeys.get(name));
-                console.log(`we are now adding ${name} who has pk ${pk} and the ops are ${chatInfo.metadata.operations}`);
-                const op = await generateOp("add", chatID, pk, chatInfo.metadata.operations);
-                chatInfo.metadata.operations.push(op);
+        var pk;
+        for (const name of validMemberPubKeys.keys()) {
+            pk = objToArr(validMemberPubKeys.get(name));
+            console.log(`we are now adding ${name} who has pk ${pk} and the ops are ${chatInfo.metadata.operations}`);
+            const op = await generateOp("add", chatID, pk, chatInfo.metadata.operations);
+            chatInfo.metadata.operations.push(op);
 
-                const addMessage = {
-                    type: "add",
-                    op: op,
-                    from: keyPair.publicKey,
-                    username: name,
-                    chatID: chatID
-                };
-                broadcastToMembers(addMessage, chatID);
-                sendToServer({
-                    to: pk,
-                    type: "add",
-                    from: localUsername,
-                    fromPK: keyPair.publicKey,
-                    chatID: chatID,
-                    chatName: chatInfo.metadata.chatName
-                });
-                console.log(`added ${name}`);
-            }
-            resolve(chatInfo);
-        });
-    }).then((chatInfo) => {
-        joinedChats.get(chatID).members.push(JSON.stringify(pk));
-        store.setItem("joinedChats", joinedChats);
-        store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
+            const addMessage = {
+                type: "add",
+                op: op,
+                from: keyPair.publicKey,
+                username: name,
+                chatID: chatID
+            };
+            sendToServer({
+                to: pk,
+                type: "add",
+                from: localUsername,
+                fromPK: keyPair.publicKey,
+                chatID: chatID,
+                chatName: chatInfo.metadata.chatName
+            });
+            
+            // joinedChats.get(chatID).members.push(JSON.stringify(pk));
+            // await store.setItem("joinedChats", joinedChats);
+            await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
+            broadcastToMembers(addMessage, chatID);
+            console.log(`added ${name}`);
+        }
     });
 }
 
@@ -865,6 +862,7 @@ function sendAdvertisement (chatID, pk) {
 function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
+        console.log(`chatInfo ${chatInfo.metadata.chatName}`)
         const peerHistory = [];
         const intervals = chatInfo.historyTable.get(pk);
         console.log(intervals);
