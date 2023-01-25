@@ -831,6 +831,7 @@ function onChannelOpen (event) {
         }
     }
 
+    console.log(`connected,here is resolve ${[...resolveConnectToPeer]} and here is the pk ${peerPK}`);
     if (resolveConnectToPeer.has(peerPK)) {
         resolveConnectToPeer.get(peerPK)(true);
         resolveConnectToPeer.delete(peerPK);
