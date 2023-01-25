@@ -314,7 +314,7 @@ function getOnline (pk, chatID=0) {
   var chats, members;
 
   if (chatID !== 0) {
-    chats = [data.chatID];
+    chats = [chatID];
   } else {
     chats = joinedChats.keys();
   }

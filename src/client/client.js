@@ -57,9 +57,6 @@ var currentChatID = 0;
 // map from stringify(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
 var connections = new Map();
 
-// map from chatID to an array of usernames to connect to
-var toConnect = new Map();
-
 // (chatID: String, {chatName: String, members: Array of String})
 var joinedChats = new Map();
 
@@ -306,7 +303,8 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
             operations: operations,
             ignored: []
         },
-        history: new Map(),
+        history: [],
+        historyTable: new Map(),
     }).then(() => {
         addToChat(validMemberPubKeys, chatID);
     });
@@ -328,7 +326,8 @@ async function onAdd (chatID, chatName, from, fromPK) {
             operations: [],
             ignored: []
         },
-        history: new Map(),
+        history: [],
+        historyTable: new Map(),
     });
 
     if (await connectToPeer({peerName: from, peerPK: fromPK})) {
@@ -361,7 +360,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                 };
                 joinedChats.get(chatID).members.push(JSON.stringify(pk));
                 const messageData = broadcastToMembers(addMessage, chatID);
-                chatInfo.history.set(messageData.id, messageData);
+                chatInfo.history.push(messageData);
                 sendToServer({
                     to: pk,
                     type: "add",
@@ -410,8 +409,8 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                     chatID: chatID
                 };
                 const messageData = broadcastToMembers(removeMessage, chatID);
-                chatInfo.history.set(messageData.id, messageData);
-                removePeer(chatID, JSON.stringify(pk));
+                chatInfo.history.push(messageData);
+                removePeer(messageData);
                 sendToServer({
                     to: pk,
                     type: "remove",
@@ -786,12 +785,12 @@ function initChannel (channel) {
             case "history":
                 store.getItem(messageData.chatID).then((chatInfo) => {
                     console.log(`received history is ${JSON.stringify(messageData.history)}`);
-                    chatInfo.history = mergeChatHistory(chatInfo.history, new Map(messageData.history));
+                    chatInfo.history = mergeChatHistory(chatInfo.history, messageData.history);
                     if (messageData.chatID === currentChatID) {
                         chatMessages.innerHTML = "";
                         store.getItem(currentChatID).then((chatInfo) => {
-                            for (const id of chatInfo.history.keys()) {
-                                updateChatWindow (chatInfo.history.get(id));
+                            for (const msg of chatInfo.history) {
+                                updateChatWindow (msg);
                             }
                         });
                     }
@@ -801,23 +800,13 @@ function initChannel (channel) {
             case "remove":
                 unpackOp(messageData.op);
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) { 
-                        const pk = JSON.stringify(messageData.op.pk2);
-                        if (pk !== JSON.stringify(keyPair.publicKey)) { removePeer(messageData.chatID, pk); }
-                        updateChatWindow(messageData);
-                        updateChatStore(messageData);
-                    }
+                    if (res) { removePeer(messageData); }
                 });
                 break;
             case "add":
                 unpackOp(messageData.op);
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) {
-                        keyMap.set(JSON.stringify(messageData.op.pk2), messageData.username);
-                        store.setItem("keyMap", keyMap);
-                        updateChatWindow(messageData);
-                        updateChatStore(messageData);
-                    }
+                    if (res) { addPeer(messageData); }
                 });
                 break;
             case "text":
@@ -878,10 +867,24 @@ function sendAdvertisement (chatID, pk) {
 function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
-        console.log(`this is the history ${Array.from(chatInfo.history)}`);
+        const peerHistory = [];
+        const intervals = chatInfo.historyTable.get(pk);
+        var start, end;
+        for (const interval of intervals) {
+            console.log(`this is the history ${chatInfo.history}`);
+            start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
+            if (interval[1] === 0) {
+                peerHistory.concat(chat.history.slice(start));
+            } else {
+                chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
+                peerHistory.concat(chat.history.slice(start, end));
+            }
+        }
+
+        console.log(`sending ${peerHistory}`);
         sendToMember({
             type: "history",
-            history: Array.from(chatInfo.history),
+            history: peerHistory,
             chatID: chatID
         }, pk);
     });
@@ -906,18 +909,43 @@ function connectToPeer (peer) {
     });
 }
 
-function removePeer (chatID, pk) {
-    // chatID: String, pk: stringified
-    for (const id of joinedChats.keys()) {
-        console.log(`801 predicate ${joinedChats.get(id).members.includes(pk)}`);
-        if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
-            return;
+async function addPeer (messageData) {
+    const pk = JSON.stringify(messageData.op.pk2);
+    keyMap.set(pk, messageData.username);
+    store.setItem("keyMap", keyMap);
+
+    updateChatWindow(messageData);
+    store.get(messageData.chatID).then((chatInfo) => {
+        chatInfo.historyTable.get(pk).push([messageData.id, 0]);
+        chatInfo.history.push(messageData);
+        store.setItem(messageData.chatID, chatInfo);
+    });
+}
+
+function removePeer (messageData) {
+    const pk = JSON.stringify(messageData.op.pk2);
+
+    updateChatWindow(messageData);
+    store.get(messageData.chatID).then((chatInfo) => {
+        const interval = chatInfo.historyTable.get(pk).pop();
+        interval[1] = messageData.id;
+        chatInfo.historyTable.get(pk).push(interval);
+        chatInfo.history.push(messageData);
+        store.setItem(messageData.chatID, chatInfo);
+    });
+
+    if (pk !== JSON.stringify(keyPair.publicKey)) { 
+        for (const id of joinedChats.keys()) {
+            if (messageData.chatID !== id && joinedChats.get(id).members.includes(pk)) {
+                return;
+            }
         }
+
+        const conn = connections.get(pk);
+        conn.sendChannel.close();
+        conn.connection.close();
+        connections.delete(pk);
     }
-    const conn = connections.get(pk);
-    conn.sendChannel.close();
-    conn.connection.close();
-    connections.delete(pk);
 }
 
 function updateChatWindow (data) {
@@ -945,7 +973,7 @@ function updateChatWindow (data) {
 
 async function updateChatStore (messageData) {
     store.getItem(messageData.chatID).then((chatInfo) => {
-        chatInfo.history.set(messageData.id, messageData);
+        chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
     }).then(() => {
         console.log("updated chat store");
@@ -1124,8 +1152,8 @@ function selectChat() {
         chatTitle.innerHTML = `Chat: ${chatName}`;
         chatMessages.innerHTML = "";
         store.getItem(currentChatID).then((chatInfo) => {
-            for (const id of chatInfo.history.keys()) {
-                updateChatWindow(chatInfo.history.get(id));
+            for (const data of chatInfo.history) {
+                updateChatWindow(data);
             }
         });
     }
@@ -1241,13 +1269,18 @@ function mergeChats (localChats, receivedChats) {
 }
 
 function mergeChatHistory (localMsg, receivedMsg) {
-    const mergedChatHistory = new Map([...localMsg]);
-    if (receivedMsg.size === 0) { return mergedChatHistory; }
-    const localMsgIDs = new Set([...localMsg.keys()]);
-    for (const id of receivedMsg.keys()) {
-        if (!localMsgIDs.has(id)) {
-            mergedChatHistory.set(id, receivedMsg.get(id));
+    if (receivedMsg.size === 0) { return localMsg; }
+    const mergedChatHistory = localMsg.concat(receivedMsg);
+    const localMsgIDs = new Set(localMsg.map(msg => msg.id));
+    for (const msg of receivedMsg) {
+        if (!localMsgIDs.has(msg.id)) {
+            mergedChatHistory.push(msg);
         }
     }
-    return new Map([...mergedChatHistory.entries()].sort((a, b) => a[1].sentTime - b[1].sentTime));
+    return mergedChatHistory.sort((a, b) => {
+        if (a.sentTime > b.sentTime) { return -1; }
+        if (a.sentTime < b.sentTime) { return 1; }
+        if (a.username > b.username) { return -1; }
+        else { return 1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
+    });
 }
