@@ -915,7 +915,7 @@ async function addPeer (messageData) {
     console.log(joinedChats.get(messageData.chatID));
 
     updateChatWindow(messageData);
-    store.get(messageData.chatID).then((chatInfo) => {
+    store.getItem(messageData.chatID).then((chatInfo) => {
         if (!chatInfo.historyTable.has(pk)) {
             chatInfo.historyTable.set(pk, []);
         }
@@ -929,7 +929,7 @@ function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
 
     updateChatWindow(messageData);
-    store.get(messageData.chatID).then((chatInfo) => {
+    store.getItem(messageData.chatID).then((chatInfo) => {
         const interval = chatInfo.historyTable.get(pk).pop();
         interval[1] = messageData.id;
         chatInfo.historyTable.get(pk).push(interval);
