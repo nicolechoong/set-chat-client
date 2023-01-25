@@ -131,7 +131,7 @@ connection.onmessage = function (message) {
             onGetPK(data.name, data.success, objToArr(data.pubKey));
             break;
         case "getOnline":
-            onGetOnline(data.online);
+            onGetOnline(new Map(data.online));
             break;
         default: 
             break; 
@@ -438,7 +438,6 @@ function onGetPK (name, success, pk) {
 }
 
 async function onGetOnline (online) {
-    console.log(`type of online from onGetOnline is array ${online instanceof String}`);
     console.log(`online ${online}`)
     for (const chatID of online.keys()) {
         for (const peer of online.get(chatID)) {
