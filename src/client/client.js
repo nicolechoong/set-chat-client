@@ -471,8 +471,8 @@ function getUsername (pk) {
             resolve(keyMap.get(pk));
             return;
         }
-        resolveGetPK.set(pk, resolve);
-        rejectGetPK.set(pk, reject);
+        resolveGetUsername.set(pk, resolve);
+        rejectGetUsername.set(pk, reject);
         console.log(`Requesting for username of ${pk}`);
         sendToServer({
             type: "getUsername",
@@ -1230,6 +1230,12 @@ function updateHeading() {
     }
 
     if (currentChatID > 0) {
+        const chatTitle = document.getElementById('chatHeading');
+        chatTitle.innerHTML = `Chat: ${chatName}`;
+
+        const chatMembers = document.getElementById('chatMembers');
+        chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap(pk)).join(", ")}`;
+
         document.getElementById('chatMods').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
     }
 }
@@ -1240,9 +1246,7 @@ function selectChat() {
     if (index > 0) {
         const chatName = chatNameInput.options.item(index).text;
         currentChatID = getChatID(chatName);
-
-        const chatTitle = document.getElementById('chatHeading');
-        chatTitle.innerHTML = `Chat: ${chatName}`;
+        updateHeading();
         chatMessages.innerHTML = "";
         store.getItem(currentChatID).then(async (chatInfo) => {
             for (const data of chatInfo.history) {
