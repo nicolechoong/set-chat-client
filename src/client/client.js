@@ -649,8 +649,11 @@ async function receivedOperations (ops, chatID, pk) {
                     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
                         joinedChats.get(chatID).currentMember = true;
                         updateChatOptions("add", chatID);
-                        updateHeading();
+
+                    } else {
+                        joinedChats.get(chatID).currentMember = false;
                     }
+                    updateHeading();
 
                     chatInfo.metadata.operations = ops;
                     joinedChats.get(chatID).members = [...memberSet];
