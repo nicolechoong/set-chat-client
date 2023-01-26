@@ -564,6 +564,7 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
+        console.log(`pk why is it not equal ${pk}, ${pk === JSON.stringify(keyPair.publicKey)}`);
         if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); }
         store.getItem(chatID).then((chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
@@ -1033,7 +1034,7 @@ function broadcastToMembers (data, chatID = null) {
     console.log(`username broadcast ${joinedChats.get(chatID).members}`);
     for (const pk of joinedChats.get(chatID).members) {
         try {
-            console.log(`sending ${JSON.stringify(data)} to ${keyMap.get(pk)}`);
+            console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
             sendToMember(data, pk);
         } catch {
             continue;
