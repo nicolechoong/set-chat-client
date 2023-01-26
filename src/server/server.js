@@ -93,6 +93,8 @@ wsServer.on('connection', function(connection) {
       case "getOnline":
         onGetOnline(connection, data);
         break;
+      case "getUsername":
+        onGetUsername(connection, data);
       case "add":
         onAdd(connection, data);
         break;
@@ -289,23 +291,23 @@ function onCreateChat (connection, data) {
 }
 
 function onGetPK (connection, data) {
-  if (!usernameToPK.has(data.name)) {
-    console.log(`User ${data.name} does not exist`);
+  if (!usernameToPK.has(data.username)) {
+    console.log(`User ${data.username} does not exist`);
     sendTo(connection, {
       type: "getPK",
-      name: data.name,
+      username: data.username,
       success: false,
-      pubKey: []
+      pk: []
     })
     return;
   }
 
-  console.log(`sending pk of user ${data.name}`);
+  console.log(`sending pk of user ${data.username}`);
   sendTo(connection, {
     type: "getPK",
-    name: data.name,
+    username: data.username,
     success: true,
-    pubKey: Uint8Array.from(Object.values(JSON.parse(usernameToPK.get(data.name))))
+    pk: Uint8Array.from(Object.values(JSON.parse(usernameToPK.get(data.username))))
   });
 }
 
@@ -345,6 +347,23 @@ function onGetOnline (connection, data) {
     type: "getOnline",
     online: Array.from(getOnline(connection.pk, data.chatID))
   })
+}
+
+function onGetUsername (connection, data) {
+  if (allUsers.has(data.pk)) {
+    sendTo(connection, {
+      type: "getUsername",
+      pk: data.pk,
+      success: true,
+      username: allUsers.get(data.pk).username
+    });
+  } else {
+    sendTo(connection, {
+      type: "getUsername",
+      pk: data.pk,
+      success: false,
+    });
+  }
 }
 
 function onAdd (connection, data) {

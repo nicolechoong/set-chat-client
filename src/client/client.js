@@ -127,11 +127,14 @@ connection.onmessage = function (message) {
         case "add":
             onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK));
             break;
-        case "remove":
-            onRemove(data.chatID, data.chatName, objToArr(data.fromPK));
+        // case "remove":
+        //     onRemove(data.chatID, data.chatName, objToArr(data.fromPK));
+        //     break;
+        case "getUsername":
+            onGetUsername(data.username, data.success, data.pk);
             break;
         case "getPK":
-            onGetPK(data.name, data.success, objToArr(data.pubKey));
+            onGetPK(data.username, data.success, objToArr(data.pk));
             break;
         case "getOnline":
             onGetOnline(new Map(data.online));
@@ -328,9 +331,9 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 // When being added to a new chat
 async function onAdd (chatID, chatName, from, fromPK) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array
+
+    // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
-    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], currentMember: true});
-    store.setItem("joinedChats", joinedChats);
 
     store.setItem(chatID, {
         metadata: {
@@ -443,6 +446,41 @@ async function removeFromChat (validMemberPubKeys, chatID) {
     });
 }
 
+function onGetUsername (name, success, pk) {
+    // name: String, success: boolean, pk: string
+    if (success) {
+        console.log(`Received username of ${pk}, ${name}`);
+        keyMap.set(JSON.stringify(pk), name);
+        store.setItem("keyMap", keyMap);
+        resolveGetUsername.get(pk)(name);
+    } else {
+        rejectGetUsername.get(pk)(new Error("User does not exist"));
+        console.error(`User ${name} does not exist`);
+    }
+    resolveGetUsername.delete(pk);
+    rejectGetUsername.delete(pk);
+}
+
+var resolveGetUsername = new Map();
+var rejectGetUsername = new Map();
+
+function getUsername (pk) {
+    // pk: stringified(pk)
+    return new Promise((resolve, reject) => {
+        if (keyMap.has(pk)) {
+            resolve(keyMap.get(pk));
+            return;
+        }
+        resolveGetPK.set(pk, resolve);
+        rejectGetPK.set(pk, reject);
+        console.log(`Requesting for username of ${pk}`);
+        sendToServer({
+            type: "getUsername",
+            pk: pk
+        });
+    });
+}
+
 function onGetPK (name, success, pk) {
     // name: String, success: boolean, pk: Uint8Array
     if (success) {
@@ -496,20 +534,20 @@ async function onQueuedOnline (pk) {
 var resolveGetPK = new Map();
 var rejectGetPK = new Map();
 
-function getPK (name) {
+function getPK (username) {
     return new Promise((resolve, reject) => {
         for (const pk of keyMap) {
-            if (name == keyMap.get(pk)) {
+            if (username == keyMap.get(pk)) {
                 resolve(objToArr(pk));
                 return;
             }
         }
-        resolveGetPK.set(name, resolve);
-        rejectGetPK.set(name, reject);
-        console.log(`Requesting for pk of ${name}`);
+        resolveGetPK.set(username, resolve);
+        rejectGetPK.set(username, reject);
+        console.log(`Requesting for pk of ${username}`);
         sendToServer({
             type: "getPK",
-            name: name
+            username: username
         });
     });
 }
@@ -582,7 +620,11 @@ async function receivedOperations (ops, chatID, pk) {
                 console.log(`verified true is member ${memberSet.has(pk)}`);
                 if (memberSet.has(pk)) {
                     chatInfo.metadata.operations = ops;
+                    if (!joinedChats.has(chatID)) {
+                        joinedChats.set(chatID, {chatName: chatName, members: [], currentMember: true});
+                    }
                     joinedChats.get(chatID).members = [...memberSet];
+                    store.setItem("joinedChats", joinedChats);
                     store.setItem(chatID, chatInfo);
                     console.log(`synced with ${keyMap.get(pk)}`);
                     resolve(true);
@@ -825,9 +867,9 @@ function receivedMessage (messageData) {
                 chatInfo.history = mergeChatHistory(chatInfo.history, messageData.history);
                 if (messageData.chatID === currentChatID) {
                     chatMessages.innerHTML = "";
-                    store.getItem(currentChatID).then((chatInfo) => {
+                    store.getItem(currentChatID).then(async (chatInfo) => {
                         for (const msg of chatInfo.history) {
-                            updateChatWindow (msg);
+                            await updateChatWindow (msg);
                         }
                     });
                 }
@@ -957,11 +999,9 @@ function connectToPeer (peer) {
 }
 
 async function addPeer (messageData) {
-    console.log(`addPeer`);
     const pk = JSON.stringify(messageData.op.pk2);
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
-    console.log(joinedChats.get(messageData.chatID));
 
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
@@ -970,7 +1010,6 @@ async function addPeer (messageData) {
         }
         chatInfo.historyTable.get(pk).push([messageData.id, 0]);
         chatInfo.history.push(messageData);
-        console.log(`chat history length ${chatInfo.history.length}`);
         store.setItem(messageData.chatID, chatInfo);
     }).then(() => console.log(`added message data to chat history`));
 }
@@ -1005,19 +1044,23 @@ async function removePeer (messageData) {
     }
 }
 
-function updateChatWindow (data) {
+async function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
-        var message;
+        var message, name1, name2;
         switch (data.type) {
             case "text":
                 message = `${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
                 break;
             case "add":
-                message = `${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                name1 = await getUsername(JSON.stringify(data.op.pk1));
+                name2 = await getUsername(JSON.stringify(data.op.pk2));
+                message = `${name1} added ${name2}`;
                 break;
             case "remove":
-                message = `${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                name1 = await getUsername(JSON.stringify(data.op.pk1));
+                name2 = await getUsername(JSON.stringify(data.op.pk2));
+                message = `${name1} removed ${name2}`;
                 break;
             default:
                 message = "";
@@ -1059,7 +1102,6 @@ function broadcastToMembers (data, chatID = null) {
 }
 
 function sendChatMessage (messageInput) {
-    console.log("message sent");
     const data = {
         type: "text",
         from: keyPair.publicKey,
@@ -1169,7 +1211,6 @@ function getChatNames() {
 }
 
 function getChatID(chatName) {
-    console.log(Array.from(joinedChats.keys()));
     for (const chatID of joinedChats.keys()) {
         if (chatName === joinedChats.get(chatID).chatName) {
             return chatID;
@@ -1197,14 +1238,13 @@ function selectChat() {
     if (index > 0) {
         const chatName = chatNameInput.options.item(index).text;
         currentChatID = getChatID(chatName);
-        console.log(`trying to join chatID ${currentChatID}`);
 
         const chatTitle = document.getElementById('chatHeading');
         chatTitle.innerHTML = `Chat: ${chatName}`;
         chatMessages.innerHTML = "";
-        store.getItem(currentChatID).then((chatInfo) => {
+        store.getItem(currentChatID).then(async (chatInfo) => {
             for (const data of chatInfo.history) {
-                updateChatWindow(data);
+                await updateChatWindow(data);
             }
         });
     }
