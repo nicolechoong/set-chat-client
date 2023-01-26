@@ -314,7 +314,7 @@ function onGetPK (connection, data) {
 
 function getOnline (pk, chatID) {
   const onlineMembers = [];
-  console.log(`chatID ${chatID} and ${[...chats.keys]}`);
+  console.log(`chatID ${chatID} and ${[...chats.keys()]}`);
   if (chats.has(chatID) && chats.get(chatID).members.includes(JSON.stringify(pk))) {
     console.log(`chat ${chatID} has the following members ${chats.get(chatID).members}`);
     for (const mem of chats.get(chatID).members) {

@@ -119,7 +119,7 @@ connection.onmessage = function (message) {
             onJoin(data.usernames);
             break;
         case "leave":
-            onLeave(objToArr(data.from));
+            onLeave(JSON.stringify(data.from));
             break;
         case "createChat":
             onCreateChat(data.chatID, data.chatName, new Map(JSON.parse(data.validMemberPubKeys)), data.invalidMembers);
@@ -286,8 +286,8 @@ function onJoin (usernames) {
 }
 
 function onLeave (peerPK) {
-    peerPK = JSON.stringify(peerPK);
-    // connectionNames.delete(connections.get(peerPK).connection);
+    // peerPK : string
+    connectionNames.delete(connections.get(peerPK).connection);
     connections.get(peerPK).sendChannel.close();
     connections.get(peerPK).sendChannel = null;
     connections.get(peerPK).connection.close();
