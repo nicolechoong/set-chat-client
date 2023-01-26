@@ -912,12 +912,8 @@ function sendChatHistory (chatID, pk) {
             var start, end;
             for (const interval of intervals) {
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
-                if (interval[1] === 0) {
-                    peerHistory = peerHistory.concat(chatInfo.history.slice(start));
-                } else {
-                    end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-                    peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
-                }
+                end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
+                peerHistory = peerHistory.concat(chatInfo.history.slice(start, end + 1));
             }
         }
 
@@ -1044,7 +1040,6 @@ function sendToMember (data, pk) {
     // data: JSON, pk: String
     if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
-    console.log(`current state of keyMap ${[...keyMap]}`);
     connections.get(pk).sendChannel.send(JSON.stringify(data));
 }
 
