@@ -294,7 +294,7 @@ function onLeave (peerPK) {
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
 
-    joinedChats.set(chatID, {chatName: chatName, members: [], currentMember: true});
+    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(keyPair.publicKey)], currentMember: true});
     store.setItem("joinedChats", joinedChats);
     
     for (const name of validMemberPubKeys.keys()) {
@@ -939,6 +939,7 @@ function connectToPeer (peer) {
 }
 
 async function addPeer (messageData) {
+    console.log(`addPeer`);
     const pk = JSON.stringify(messageData.op.pk2);
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
@@ -1030,8 +1031,7 @@ function sendToMember (data, pk) {
 }
 
 function broadcastToMembers (data, chatID = null) {
-    const sentTime = Date.now();
-    data.sentTime = sentTime;
+    data.sentTime = Date.now();
     data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
     chatID = chatID === null ? currentChatID : chatID;
     console.log(`username broadcast ${joinedChats.get(chatID).members}`);
