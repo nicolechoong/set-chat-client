@@ -981,6 +981,7 @@ async function addPeer (messageData) {
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
     
+    updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
             const interval = chatInfo.historyTable.get(pk).pop();
