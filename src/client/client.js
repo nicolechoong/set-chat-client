@@ -369,7 +369,8 @@ async function addToChat (validMemberPubKeys, chatID) {
                 op: op,
                 from: keyPair.publicKey,
                 username: name,
-                chatID: chatID
+                chatID: chatID,
+                chatName: chatInfo.metadata.chatName
             };
             sendToServer({
                 to: pk,
@@ -921,7 +922,7 @@ function sendChatHistory (chatID, pk) {
 var resolveConnectToPeer = new Map();
 
 function connectToPeer (peer) {
-    // peer: Array of JSON {peerName: String, peerPK: Uint8Array}
+    // peer: JSON {peerName: String, peerPK: Uint8Array}
     return new Promise((resolve) => {
         if (peer.peerName === localUsername) { resolve(false); return; }
         if (connections.has(JSON.stringify(peer.peerPK))) { resolve(true); return; }
@@ -944,7 +945,7 @@ async function addPeer (messageData) {
     console.log(joinedChats.get(messageData.chatID));
 
     updateChatWindow(messageData);
-    store.getItem(messageData.chatID).then((chatInfo) => {
+    await store.getItem(messageData.chatID).then((chatInfo) => {
         if (!chatInfo.historyTable.has(pk)) {
             chatInfo.historyTable.set(pk, []);
         }
@@ -953,18 +954,20 @@ async function addPeer (messageData) {
         store.setItem(messageData.chatID, chatInfo);
     });
 
-    if (!msgQueue.has(pk)) {
-        msgQueue.set(pk, []);
+    if (!(await connectToPeer({peerPK: messageData.op.pk2, peerName: messageData.username}))) {
+        if (!msgQueue.has(pk)) {
+            msgQueue.set(pk, []);
+        }
+        msgQueue.get(pk).push(messageData);
+        store.setItem("msgQueue", msgQueue);
     }
-    msgQueue.get(pk).push(messageData);
-    store.setItem("msgQueue", msgQueue);
 }
 
-function removePeer (messageData) {
+async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
 
     updateChatWindow(messageData);
-    store.getItem(messageData.chatID).then((chatInfo) => {
+    await store.getItem(messageData.chatID).then((chatInfo) => {
         const interval = chatInfo.historyTable.get(pk).pop();
         interval[1] = messageData.id;
         chatInfo.historyTable.get(pk).push(interval);
@@ -1052,7 +1055,6 @@ function sendChatMessage (messageInput) {
     };
 
     broadcastToMembers(data);
-    updateChatStore(data);
 }
 
 

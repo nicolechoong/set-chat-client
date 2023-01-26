@@ -356,12 +356,12 @@ function onAdd (connection, data) {
   }
   chats.get(data.chatID).members.push(toPK);
 
-  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
-  if (connectedUsers.get(toPK) == null) {
-    sendTo(null, data, toPK);
-  } else {
-    sendTo(connectedUsers.get(toPK).connection, data);
-  }
+  // console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
+  // if (connectedUsers.get(toPK) == null) {
+  //   sendTo(null, data, toPK);
+  // } else {
+  //   sendTo(connectedUsers.get(toPK).connection, data);
+  // }
 }
 
 function onRemove (connection, data) {
