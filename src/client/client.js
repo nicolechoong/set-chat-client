@@ -335,6 +335,9 @@ async function onAdd (chatID, chatName, from, fromPK) {
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
 
+    joinedChats.set(chatID, {chatName: chatInfo.metadata.chatName, members: [JSON.stringify(fromPK)], currentMember: true});
+    store.setItem("joinedChats", joinedChats);
+
     store.setItem(chatID, {
         metadata: {
             chatName: chatName,
@@ -615,17 +618,18 @@ async function receivedOperations (ops, chatID, pk) {
             if (verifyOperations(ops)) {
                 const memberSet = members(ops, chatInfo.metadata.ignored);
                 console.log(`verified true is member ${memberSet.has(pk)}`);
-                if (memberSet.has(pk)) {
-                    chatInfo.metadata.operations = ops;
-                    if (!joinedChats.has(chatID)) { // being added after syncing
-                        joinedChats.set(chatID, {chatName: chatInfo.metadata.chatName, members: [], currentMember: true});
+
+                if (memberSet.has(pk)) { // successfully authenticated
+                    console.log(`synced with ${keyMap.get(pk)}`);
+                    if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
                         updateChatOptions("add", chatID);
                         updateHeading();
                     }
+
+                    chatInfo.metadata.operations = ops;
                     joinedChats.get(chatID).members = [...memberSet];
                     store.setItem("joinedChats", joinedChats);
                     store.setItem(chatID, chatInfo);
-                    console.log(`synced with ${keyMap.get(pk)}`);
                     resolve(true);
                     return;
                 }
@@ -903,7 +907,6 @@ function onChannelOpen (event) {
     const channelLabel = JSON.parse(event.target.label);
     const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
     
-    console.log(`connected,here is resolve ${[...resolveConnectToPeer]} and here is the pk ${peerPK}`);
     if (resolveConnectToPeer.has(peerPK)) {
         resolveConnectToPeer.get(peerPK)(true);
         resolveConnectToPeer.delete(peerPK);
