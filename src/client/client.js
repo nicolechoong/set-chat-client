@@ -850,16 +850,16 @@ function onChannelOpen (event) {
     const channelLabel = JSON.parse(event.target.label);
     const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
     
-    for (const chatID of joinedChats.keys()) {
-        if (joinedChats.get(chatID).members.includes(peerPK)) {
-            sendOperations(chatID, peerPK);
-        }
-    }
-
     console.log(`connected,here is resolve ${[...resolveConnectToPeer]} and here is the pk ${peerPK}`);
     if (resolveConnectToPeer.has(peerPK)) {
         resolveConnectToPeer.get(peerPK)(true);
         resolveConnectToPeer.delete(peerPK);
+    }
+
+    for (const chatID of joinedChats.keys()) {
+        if (joinedChats.get(chatID).members.includes(peerPK)) {
+            sendOperations(chatID, peerPK);
+        }
     }
 }
 
@@ -954,14 +954,6 @@ async function addPeer (messageData) {
         chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
     });
-
-    if (!(await connectToPeer({peerPK: messageData.op.pk2, peerName: messageData.username}))) {
-        if (!msgQueue.has(pk)) {
-            msgQueue.set(pk, []);
-        }
-        msgQueue.get(pk).push(messageData);
-        store.setItem("msgQueue", msgQueue);
-    }
 }
 
 async function removePeer (messageData) {
