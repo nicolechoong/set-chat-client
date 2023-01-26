@@ -128,7 +128,7 @@ connection.onmessage = function (message) {
             onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK));
             break;
         case "remove":
-            onRemove(data.chatID, data.chatName, data.from, objToArr(data.fromPK));
+            onRemove(data.chatID, data.chatName, objToArr(data.fromPK));
             break;
         case "getPK":
             onGetPK(data.name, data.success, objToArr(data.pubKey));
@@ -390,8 +390,8 @@ async function addToChat (validMemberPubKeys, chatID) {
     });
 }
 
-function onRemove (chatID, chatName, from, fromPK) {
-    console.log(`you've been removed from chat ${chatName} by ${from}`);
+function onRemove (chatID, chatName, fromPK) {
+    console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
     // updateChatOptions("remove", chatID);
     joinedChats.get(chatID).currentMember = false;
     store.setItem("joinedChats", joinedChats);
@@ -899,17 +899,13 @@ function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         var peerHistory = [];
-
-        console.log(`chat history table has pk ${chatInfo.historyTable.has(pk)}`);
         
         if (chatInfo.historyTable.has(pk)) {
             const intervals = chatInfo.historyTable.get(pk);
             console.log(intervals);
             var start, end;
             for (const interval of intervals) {
-                console.log(`this is the history ${chatInfo.history} ${chatInfo.history.length}`);
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
-                console.log(`find index ${start} and ${chatInfo.history[0].id === interval[0]}`);
                 if (interval[1] === 0) {
                     peerHistory = peerHistory.concat(chatInfo.history.slice(start));
                 } else {
@@ -919,7 +915,6 @@ function sendChatHistory (chatID, pk) {
             }
         }
 
-        console.log(`sending ${peerHistory}`);
         sendToMember({
             type: "history",
             history: peerHistory,
@@ -979,7 +974,9 @@ async function addPeer (messageData) {
 
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
-    if (pk === JSON.stringify(keyPair.publicKey)) { return; }
+    if (pk === JSON.stringify(keyPair.publicKey)) { 
+        onRemove(messageData.chatID, joinedChats.get(chatID).chatName, messageData.from);
+    }
 
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {

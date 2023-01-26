@@ -370,12 +370,12 @@ function onRemove (connection, data) {
   chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
   chats.get(data.chatID).exMembers.push(toPK);
 
-  console.log(`sending remove message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
-  if (connectedUsers.get(toPK) == null) {
-    sendTo(null, data, toPK);
-  } else {
-    sendTo(connectedUsers.get(toPK).connection, data);
-  }
+  // console.log(`sending remove message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
+  // if (connectedUsers.get(toPK) == null) {
+  //   sendTo(null, data, toPK);
+  // } else {
+  //   sendTo(connectedUsers.get(toPK).connection, data);
+  // }
 }
 
 function broadcastActiveUsernames () {
