@@ -980,20 +980,20 @@ async function addPeer (messageData) {
 
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
-    if (pk === JSON.stringify(keyPair.publicKey)) { 
-        return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, messageData.from);
-    }
-
-    updateChatWindow(messageData);
+    
     await store.getItem(messageData.chatID).then((chatInfo) => {
-        const interval = chatInfo.historyTable.get(pk).pop();
-        interval[1] = messageData.id;
-        chatInfo.historyTable.get(pk).push(interval);
+        if (chatInfo.historyTable.has(pk)) {
+            const interval = chatInfo.historyTable.get(pk).pop();
+            interval[1] = messageData.id;
+            chatInfo.historyTable.get(pk).push(interval);
+        }
         chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
     });
 
-    if (pk !== JSON.stringify(keyPair.publicKey)) { 
+    if (pk === JSON.stringify(keyPair.publicKey)) {
+        return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, messageData.from);
+    } else {
         for (const id of joinedChats.keys()) {
             if (messageData.chatID !== id && joinedChats.get(id).members.includes(pk)) {
                 return;
@@ -1333,9 +1333,9 @@ function mergeChatHistory (localMsg, receivedMsg) {
         }
     }
     return mergedChatHistory.sort((a, b) => {
-        if (a.sentTime > b.sentTime) { return -1; }
-        if (a.sentTime < b.sentTime) { return 1; }
-        if (a.username > b.username) { return -1; }
-        else { return 1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
+        if (a.sentTime > b.sentTime) { return 1; }
+        if (a.sentTime < b.sentTime) { return -1; }
+        if (a.username > b.username) { return 1; }
+        else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
     });
 }
