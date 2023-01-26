@@ -113,7 +113,7 @@ connection.onmessage = function (message) {
             onCandidate(data.candidate, objToArr(data.from)); 
             break;
         case "connectedUsers":
-            onConnectedUsers(data.users);
+            onConnectedUsers(data.usernames);
             break;
         case "join":
             onJoin(data.usernames);
@@ -263,12 +263,12 @@ function onCandidate(candidate, peerPK) {
     }
 }
 
-function onConnectedUsers(users) {
-    if (users.length > 0) {
-        document.getElementById('usernames').innerHTML = `Currently Online: ${users.join(", ")}`;
+function onConnectedUsers(usernames) {
+    if (usernames.length > 0) {
+        document.getElementById('usernames').innerHTML = `Currently Online: ${usernames.join(", ")}`;
     }
     if (localUsername) {
-        const toSend = [...msgQueue.entries()].filter(entry => users.has(keyMap(entry[0]))).map(entry => entry[0]);
+        const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap(entry[0]))).map(entry => entry[0]);
         console.log(`online from queued ${toSend}`);
         console.log(`type of public key ${pk instanceof String}`);
         for (const pk of toSend) {
