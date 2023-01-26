@@ -395,6 +395,12 @@ function onRemove (chatID, chatName, fromPK) {
     // updateChatOptions("remove", chatID);
     joinedChats.get(chatID).currentMember = false;
     store.setItem("joinedChats", joinedChats);
+    for (const pk of joinedChats.get(chatID).members) {
+        connections.get(pk).sendChannel.close();
+        connections.get(pk).connection.close();
+        connections.delete(pk);
+    }
+
     updateHeading();
 
     // should DISPUTE too
@@ -975,7 +981,7 @@ async function addPeer (messageData) {
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
     if (pk === JSON.stringify(keyPair.publicKey)) { 
-        onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, messageData.from);
+        return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, messageData.from);
     }
 
     updateChatWindow(messageData);
