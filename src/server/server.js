@@ -314,10 +314,11 @@ function onGetPK (connection, data) {
 
 function getOnline (pk, chatID) {
   const onlineMembers = [];
+  console.log(`chat ${chatID} has the following members ${chats.get(chatID).members}`);
+  console.log(`conditions ${chats.has(chatID)} and ${chats.get(chatID).members.includes(JSON.stringify(pk))}`);
   if (chats.has(chatID) && chats.get(chatID).members.includes(JSON.stringify(pk))) {
-    const members = chats.get(chatID).members;
-    for (const mem of members) {
-      if (connectedUsers.has(mem)) {
+    for (const mem of chats.get(chatID).members) {
+      if (connectedUsers.has(mem) && mem !== JSON.stringify(pk)) {
         onlineMembers.push({
           peerName: allUsers.get(mem).username,
           peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
