@@ -896,7 +896,7 @@ function sendAdvertisement (chatID, pk) {
 function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
-        const peerHistory = [];
+        var peerHistory = [];
 
         console.log(`chat history table has pk ${chatInfo.historyTable.has(pk)}`);
         
