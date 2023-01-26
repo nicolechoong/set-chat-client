@@ -762,6 +762,7 @@ function initPeerConnection () {
         connection.onnegotiationneeded = function (event) {
             console.log("On negotiation needed")
             if (connection.connectionState === "failed") {
+                console.log(JSON.stringify(event));
                 console.log(`connection name ${connectionNames.get(connection)}`);
                 connection.createOffer(function (offer) { 
                     sendToServer({
@@ -908,10 +909,10 @@ function sendChatHistory (chatID, pk) {
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
                 console.log(`find index ${start} and ${chatInfo.history[0].id === interval[0]}`);
                 if (interval[1] === 0) {
-                    peerHistory.concat(chatInfo.history.slice(start));
+                    peerHistory = peerHistory.concat(chatInfo.history.slice(start));
                 } else {
                     end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-                    peerHistory.concat(chatInfo.history.slice(start, end));
+                    peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
                 }
             }
         }
