@@ -66,6 +66,9 @@ var store;
 // map from public key : stringify(pk) to username : String
 var keyMap = new Map();
 
+// map from public key : stringify(pk) to array of JSON object representing the message data
+var msgQueue = new Map();
+
 // storing deps for faster access
 var hashedOps = new Map();
 
@@ -109,8 +112,8 @@ connection.onmessage = function (message) {
         case "candidate": 
             onCandidate(data.candidate, objToArr(data.from)); 
             break;
-        case "usernames":
-            onUsernames(data.usernames);
+        case "connectedUsers":
+            onConnectedUsers(data.users);
             break;
         case "join":
             onJoin(data.usernames);
@@ -154,6 +157,7 @@ async function onLogin (success, chats, online, username) {
             keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
             store.setItem("keyMap", keyMap);
         })
+        store.getItem("msgQueue").then((msgQ) => { msgQueue = msgQ; console.log(`msgQueue updated`); });
         updateHeading();
         
         for (const chatID of joinedChats.keys()) {
@@ -164,12 +168,12 @@ async function onLogin (success, chats, online, username) {
     } 
 };
 
-async function initialiseStore () {
+async function initialiseStore (username) {
     // new user: creates new store
     // returning user: will just point to the same instance
-    console.log(`init store local user: ${localUsername}`);
+    console.log(`init store local user: ${username}`);
     store = localforage.createInstance({
-        storeName: localUsername
+        storeName: username
     });
     store.getItem("joinedChats").then((chats) => {
         console.log(chats);
@@ -256,9 +260,17 @@ function onCandidate(candidate, peerPK) {
     }
 }
 
-function onUsernames(usernames) {
-    if (usernames.length > 0) {
-        document.getElementById('usernames').innerHTML = `Currently Online: ${usernames.join(", ")}`;
+function onConnectedUsers(users) {
+    if (users.length > 0) {
+        document.getElementById('usernames').innerHTML = `Currently Online: ${users.join(", ")}`;
+    }
+    if (localUsername) {
+        const toSend = [...msgQueue.entries()].filter(entry => users.has(keyMap(entry[0]))).map(entry => entry[0]);
+        console.log(`online from queued ${toSend}`);
+        console.log(`type of public key ${pk instanceof String}`);
+        for (const pk of toSend) {
+            onQueuedOnline(objToArr(pk));
+        }
     }
 }
 
@@ -457,6 +469,17 @@ function getOnline (chatID = 0) {
         pk: keyPair.publicKey,
         chatID: chatID
     });
+}
+
+async function onQueuedOnline (pk) {
+    // pk: Uint8Array
+    if (await connectToPeer(pk)) {
+        const queue = msgQueue.get(JSON.stringify(pk));
+        while (queue.length > 0) {
+            sendToMember(queue.shift(), JSON.stringify(pk));
+        }
+        msgQueue.delete(JSON.stringify(pk)); // honestly so fucking crude
+    }
 }
 
 //////////////////////////////
@@ -928,6 +951,12 @@ async function addPeer (messageData) {
         chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
     });
+
+    if (!msgQueue.has(pk)) {
+        msgQueue.set(pk, []);
+    }
+    msgQueue.get(pk).push(messageData);
+    store.setItem("msgQueue", msgQueue);
 }
 
 function removePeer (messageData) {
@@ -1032,10 +1061,10 @@ function sendChatMessage (messageInput) {
 
 // Send Login attempt
 loginBtn.addEventListener("click", async function (event) { 
-    localUsername = loginInput.value;
-    console.log(localUsername);
+    const username = loginInput.value;
+    console.log(username);
 
-    await initialiseStore();
+    await initialiseStore(username);
 
     store.getItem("keyPair").then((kp) => {
         if (kp === null) {
@@ -1043,15 +1072,16 @@ loginBtn.addEventListener("click", async function (event) {
             console.log("keyPair generated");
             store.setItem("keyPair", keyPair);
             store.setItem("keyMap", keyMap);  // TODO: worry about what if we log out
+            store.setItem("msgQueue", msgQueue);
         } else {
             console.log(`keypair ${JSON.stringify(kp)}`);
             keyPair = kp;
         }
 
-        if (localUsername.length > 0 && isAlphanumeric(localUsername)) {
+        if (username.length > 0 && isAlphanumeric(username)) {
             sendToServer({ 
                 type: "login", 
-                name: localUsername,
+                name: username,
                 pubKey: keyPair.publicKey
             });
         }

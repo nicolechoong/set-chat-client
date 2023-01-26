@@ -54,8 +54,8 @@ wsServer.on('connection', function(connection) {
   console.log("User connected");
   connections.push(connection);
   sendTo(connection, {
-    type: "usernames",
-    usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username)
+    type: "connectedUsers",
+    users: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username),
   });
 
   connection.onmessage = function(message) {
