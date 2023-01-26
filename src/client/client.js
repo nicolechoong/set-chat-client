@@ -913,7 +913,8 @@ function sendChatHistory (chatID, pk) {
             for (const interval of intervals) {
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
                 end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-                peerHistory = peerHistory.concat(chatInfo.history.slice(start, end + 1));
+                end = end < 0 ? chatInfo.history.length : end + 1;
+                peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
             }
         }
 
