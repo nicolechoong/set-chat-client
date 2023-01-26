@@ -748,40 +748,40 @@ function initPeerConnection () {
         };
         connection.oniceconnectionstatechange = function (event) {
             if (connection.iceConnectionState === "failed") {
-                console.log("Restarting ICE");
+                console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
                 connection.restartIce();
             }
         }
         connection.onconnectionstatechange = function (event) {
             console.log(event);
             if (connection.connectionState === "failed") {
-                console.log("Restarting ICE");
+                console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
                 connection.restartIce();
             }
         }
-        connection.onnegotiationneeded = function (event) {
-            console.log("On negotiation needed")
-            if (connection.connectionState === "failed") {
-                console.log(JSON.stringify(event));
-                console.log(`connection name ${connectionNames.get(connection)}`);
-                connection.createOffer(function (offer) { 
-                    sendToServer({
-                        to: connectionNames.get(connection),
-                        type: "offer",
-                        offer: offer ,
-                        fromPK: keyPair.publicKey,
-                        from: localUsername,
-                    });
-                    connection.setLocalDescription(offer);
-                }, function (error) { 
-                    alert("An error has occurred."); 
-                }, function () {
-                    console.log("Create Offer failed");
-                }, {
-                    iceRestart: true
-                });
-            }
-        }
+        // connection.onnegotiationneeded = function (event) {
+        //     console.log("On negotiation needed")
+        //     if (connection.connectionState === "failed") {
+        //         console.log(JSON.stringify(event));
+        //         console.log(`connection name ${connectionNames.get(connection)}`);
+        //         connection.createOffer(function (offer) { 
+        //             sendToServer({
+        //                 to: connectionNames.get(connection),
+        //                 type: "offer",
+        //                 offer: offer ,
+        //                 fromPK: keyPair.publicKey,
+        //                 from: localUsername,
+        //             });
+        //             connection.setLocalDescription(offer);
+        //         }, function (error) { 
+        //             alert("An error has occurred."); 
+        //         }, function () {
+        //             console.log("Create Offer failed");
+        //         }, {
+        //             iceRestart: true
+        //         });
+        //     }
+        // }
         console.log("Local RTCPeerConnection object was created");
         return connection;
     } catch (e) {
