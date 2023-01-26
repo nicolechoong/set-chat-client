@@ -335,7 +335,7 @@ async function onAdd (chatID, chatName, from, fromPK) {
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
 
-    joinedChats.set(chatID, {chatName: chatInfo.metadata.chatName, members: [JSON.stringify(fromPK)], currentMember: true});
+    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], currentMember: true});
     store.setItem("joinedChats", joinedChats);
 
     store.setItem(chatID, {
