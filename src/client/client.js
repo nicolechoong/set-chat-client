@@ -1234,7 +1234,7 @@ function updateHeading() {
         chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
 
         const chatMembers = document.getElementById('chatMembers');
-        chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap(pk)).join(", ")}`;
+        chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
 
         document.getElementById('chatMods').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
     }
