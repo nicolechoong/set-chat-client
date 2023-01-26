@@ -358,7 +358,7 @@ function onGetUsername (connection, data) {
       type: "getUsername",
       pk: data.pk,
       success: true,
-      username: allUsers.get(JSON.stringify(data.pk)).username
+      username: allUsers.get(data.pk).username
     });
   } else {
     sendTo(connection, {
