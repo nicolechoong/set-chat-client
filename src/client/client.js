@@ -805,16 +805,6 @@ function receivedMessage (messageData) {
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res) { 
-                    await store.getItem(messageData.chatID).then((chatInfo) => {
-                        for (const pk of joinedChats.get(messageData.chatID).members) {
-                            if (!chatInfo.historyTable.has(pk)) {
-                                chatInfo.historyTable.set(pk, []);
-                            }
-                            chatInfo.historyTable.get(pk).push([messageData.id, 0]);
-                            chatInfo.history.push(messageData);
-                        }
-                        store.setItem(messageData.chatID, chatInfo);
-                    }).then(() => console.log(`added message data to chat history`));
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
