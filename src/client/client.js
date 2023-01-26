@@ -1310,6 +1310,7 @@ function mergeChatHistory (localMsg, receivedMsg) {
     if (receivedMsg.size === 0) { return localMsg; }
     const mergedChatHistory = localMsg.concat(receivedMsg);
     const localMsgIDs = new Set(localMsg.map(msg => msg.id));
+    console.log(`localmsgids ${[...localMsg]}`);
     for (const msg of receivedMsg) {
         if (!localMsgIDs.has(msg.id)) {
             mergedChatHistory.push(msg);
