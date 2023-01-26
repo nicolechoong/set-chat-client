@@ -748,6 +748,7 @@ function initPeerConnection () {
         };
         connection.oniceconnectionstatechange = function (event) {
             if (connection.iceConnectionState === "failed") {
+                connections.delete(JSON.stringify(connectionNames.get(connection)));
                 console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
                 connection.restartIce();
             }
@@ -755,6 +756,7 @@ function initPeerConnection () {
         connection.onconnectionstatechange = function (event) {
             console.log(event);
             if (connection.connectionState === "failed") {
+                connections.delete(JSON.stringify(connectionNames.get(connection)));
                 console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
                 connection.restartIce();
             }
@@ -803,6 +805,15 @@ function receivedMessage (messageData) {
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                 if (res) { 
+                    await store.getItem(messageData.chatID).then((chatInfo) => {
+                        if (!chatInfo.historyTable.has(pk)) {
+                            chatInfo.historyTable.set(pk, []);
+                        }
+                        chatInfo.historyTable.get(pk).push([messageData.id, 0]);
+                        chatInfo.history.push(messageData);
+                        store.setItem(messageData.chatID, chatInfo);
+                    }).then(() => console.log(`added message data to chat history`));
+
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
@@ -1316,7 +1327,6 @@ function mergeChatHistory (localMsg, receivedMsg) {
             mergedChatHistory.push(msg);
         }
     }
-    console.log(`merged chat history size ${mergeChatHistory.length}`);
     return mergedChatHistory.sort((a, b) => {
         if (a.sentTime > b.sentTime) { return -1; }
         if (a.sentTime < b.sentTime) { return 1; }
