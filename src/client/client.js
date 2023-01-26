@@ -975,7 +975,7 @@ async function addPeer (messageData) {
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
     if (pk === JSON.stringify(keyPair.publicKey)) { 
-        onRemove(messageData.chatID, joinedChats.get(chatID).chatName, messageData.from);
+        onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, messageData.from);
     }
 
     updateChatWindow(messageData);
@@ -1048,7 +1048,6 @@ function broadcastToMembers (data, chatID = null) {
     console.log(`username broadcast ${joinedChats.get(chatID).members}`);
     for (const pk of joinedChats.get(chatID).members) {
         try {
-            console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
             sendToMember(data, pk);
         } catch {
             continue;
