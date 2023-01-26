@@ -157,7 +157,10 @@ async function onLogin (success, chats, online, username) {
             keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
             store.setItem("keyMap", keyMap);
         })
-        store.getItem("msgQueue").then((msgQ) => { msgQueue = msgQ; console.log(`msgQueue updated`); });
+        store.getItem("msgQueue").then((storedMsgQueue) => {
+            msgQueue = storedMsgQueue === null ? new Map() : storedMsgQueue;
+            console.log(`msgQueue updated`);
+        });
         updateHeading();
         
         for (const chatID of joinedChats.keys()) {
