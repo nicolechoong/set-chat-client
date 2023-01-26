@@ -894,12 +894,14 @@ function sendChatHistory (chatID, pk) {
     store.getItem(chatID).then((chatInfo) => {
         const peerHistory = [];
 
+        console.log(`chat history table has pk ${chatInfo.historyTable.has(pk)}`);
+        
         if (chatInfo.historyTable.has(pk)) {
             const intervals = chatInfo.historyTable.get(pk);
             console.log(intervals);
             var start, end;
             for (const interval of intervals) {
-                console.log(`this is the history ${chatInfo.history}`);
+                console.log(`this is the history ${chatInfo.history} ${chatInfo.history.length}`);
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
                 if (interval[1] === 0) {
                     peerHistory.concat(chatInfo.history.slice(start));

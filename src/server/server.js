@@ -169,7 +169,8 @@ function onLogin (connection, name, pubKey) {
 
 function onOffer (connection, data) {
   const receiverPK = JSON.stringify(data.to);
-  console.log(`decoded pk ${receiverPK} as sent by user ${data.from}`)
+  console.log(`received ${JSON.stringify(data)}`);
+  console.log(`decoded pk ${receiverPK} as sent by user ${connection.pk}`);
   if (connectedUsers.has(receiverPK)) {
     console.log(`Sending offer to: ${allUsers.get(receiverPK).username}`);
 
