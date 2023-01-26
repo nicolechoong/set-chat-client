@@ -621,7 +621,7 @@ async function receivedOperations (ops, chatID, pk) {
                 if (memberSet.has(pk)) {
                     chatInfo.metadata.operations = ops;
                     if (!joinedChats.has(chatID)) {
-                        joinedChats.set(chatID, {chatName: chatName, members: [], currentMember: true});
+                        joinedChats.set(chatID, {chatName: chatInfo.metadata.chatName, members: [], currentMember: true});
                     }
                     joinedChats.get(chatID).members = [...memberSet];
                     store.setItem("joinedChats", joinedChats);
