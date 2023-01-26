@@ -1128,29 +1128,28 @@ function sendChatMessage (messageInput) {
 loginBtn.addEventListener("click", async function (event) { 
     const username = loginInput.value;
     console.log(username);
+    if (username.length > 0 && isAlphanumeric(username)) {
+        await initialiseStore(username);
 
-    await initialiseStore(username);
+        store.getItem("keyPair").then((kp) => {
+            if (kp === null) {
+                keyPair = nacl.sign.keyPair();
+                console.log("keyPair generated");
+                store.setItem("keyPair", keyPair);
+                store.setItem("keyMap", keyMap);  // TODO: worry about what if we log out
+                store.setItem("msgQueue", msgQueue);
+            } else {
+                console.log(`keypair ${JSON.stringify(kp)}`);
+                keyPair = kp;
+            }
 
-    store.getItem("keyPair").then((kp) => {
-        if (kp === null) {
-            keyPair = nacl.sign.keyPair();
-            console.log("keyPair generated");
-            store.setItem("keyPair", keyPair);
-            store.setItem("keyMap", keyMap);  // TODO: worry about what if we log out
-            store.setItem("msgQueue", msgQueue);
-        } else {
-            console.log(`keypair ${JSON.stringify(kp)}`);
-            keyPair = kp;
-        }
-
-        if (username.length > 0 && isAlphanumeric(username)) {
             sendToServer({ 
                 type: "login", 
                 name: username,
                 pubKey: keyPair.publicKey
             });
-        }
-    });
+        });
+    }
 });
 
 messageInput.addEventListener("keypress", function (event) {
