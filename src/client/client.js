@@ -803,7 +803,7 @@ function receivedMessage (messageData) {
     switch (messageData.type) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
-            receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+            receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res) { 
                     await store.getItem(messageData.chatID).then((chatInfo) => {
                         if (!chatInfo.historyTable.has(pk)) {
@@ -1149,13 +1149,9 @@ removeUserBtn.addEventListener("click", async () => {
 
 resetStoreBtn.addEventListener("click", () => {
     console.log(`resetting store...`);
-    store.keys().then((keys) => {
-        for (const key of keys) {
-            if (key !== "keyPair") {
-                store.removeItem(key);
-            }
-        }
-    })
+    store.setItem("joinedChats", new Map());
+    store.setItem("keyMap", new Map([[JSON.stringify(peer.peerPK), peer.peerName]]));
+    store.setItem("msgQueue", new Map());
 })
 
 function getChatNames() {
