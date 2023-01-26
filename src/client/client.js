@@ -289,7 +289,9 @@ function onLeave (peerPK) {
     peerPK = JSON.stringify(peerPK);
     // connectionNames.delete(connections.get(peerPK).connection);
     connections.get(peerPK).sendChannel.close();
+    connections.get(peerPK).sendChannel = null;
     connections.get(peerPK).connection.close();
+    connections.get(peerPK).connection = null;
     updateChatWindow({from: "SET", message: `${keyMap.get(peerPK)} has left the room`});
     connections.delete(peerPK);
 }
@@ -400,9 +402,13 @@ function onRemove (chatID, chatName, fromPK) {
     joinedChats.get(chatID).currentMember = false;
     store.setItem("joinedChats", joinedChats);
     for (const pk of joinedChats.get(chatID).members) {
-        connections.get(pk).sendChannel.close();
-        connections.get(pk).connection.close();
-        connections.delete(pk);
+        if (connections.has(pk)) {
+            connections.get(pk).sendChannel.close();
+            connections.get(pk).sendChannel = null;
+            connections.get(pk).connection.close();
+            connections.get(pk).connection = null;
+            connections.delete(pk);
+        }
     }
 
     updateHeading();
@@ -655,7 +661,9 @@ async function receivedOperations (ops, chatID, pk) {
                 }
             }
             connections.get(pk).sendChannel.close();
+            connections.get(pk).sendChannel = null;
             connections.get(pk).connection.close();
+            connections.get(pk).connection = null;
             connections.delete(pk);
             resolve(false);
         })
@@ -1025,6 +1033,7 @@ async function addPeer (messageData) {
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
 
+    updateHeading();
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (!chatInfo.historyTable.has(pk)) {
@@ -1059,9 +1068,10 @@ async function removePeer (messageData) {
             }
         }
 
-        const conn = connections.get(pk);
-        conn.sendChannel.close();
-        conn.connection.close();
+        connections.get(pk).sendChannel.close();
+        connections.get(pk).sendChannel = null;
+        connections.get(pk).connection.close();
+        connections.get(pk).connection = null;
         connections.delete(pk);
     }
 }
