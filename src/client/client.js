@@ -1315,6 +1315,7 @@ function mergeChatHistory (localMsg, receivedMsg) {
             mergedChatHistory.push(msg);
         }
     }
+    console.log(`merged chat history size ${mergeChatHistory.length}`);
     return mergedChatHistory.sort((a, b) => {
         if (a.sentTime > b.sentTime) { return -1; }
         if (a.sentTime < b.sentTime) { return 1; }
