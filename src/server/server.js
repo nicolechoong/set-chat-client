@@ -381,7 +381,7 @@ function broadcastActiveUsernames () {
   console.log(`Broadcasting active users: ${Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username)}`);
   console.log(`All existing users: ${Array.from(allUsers.keys()).map(pk => allUsers.get(pk).username)}`);
   broadcast({
-    type: "usernames",
+    type: "connectedUsers",
     usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username)
   });
 }
