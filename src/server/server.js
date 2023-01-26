@@ -314,6 +314,7 @@ function onGetPK (connection, data) {
 
 function getOnline (pk, chatID) {
   const onlineMembers = [];
+  console.log(`chatID ${chatID} and ${[...chats.keys]}`);
   if (chats.has(chatID) && chats.get(chatID).members.includes(JSON.stringify(pk))) {
     console.log(`chat ${chatID} has the following members ${chats.get(chatID).members}`);
     for (const mem of chats.get(chatID).members) {
@@ -460,7 +461,7 @@ function onReconnect (connection, name, pk) {
   connection.pk = pk;
 
   console.log(`User ${allUsers.get(pk).username} has rejoined`);
-  console.log(`all chats..? ${JSON.stringify(chats)}`);
+  console.log(`all chats..? ${JSON.stringify([...chats])}`);
   
   sendTo(connection, { 
     type: "login", 
