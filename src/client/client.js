@@ -450,7 +450,7 @@ function onGetUsername (name, success, pk) {
     // name: String, success: boolean, pk: string
     if (success) {
         console.log(`Received username of ${pk}, ${name}`);
-        keyMap.set(JSON.stringify(pk), name);
+        keyMap.set(pk, name);
         store.setItem("keyMap", keyMap);
         resolveGetUsername.get(pk)(name);
     } else {
