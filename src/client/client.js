@@ -612,7 +612,7 @@ async function receivedOperations (ops, chatID, pk) {
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
         console.log(`pk why is it not equal ${pk}, ${pk === JSON.stringify(keyPair.publicKey)}`);
-        if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); }
+        if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
             // console.log(`merged ops ${JSON.stringify(ops)}`);
