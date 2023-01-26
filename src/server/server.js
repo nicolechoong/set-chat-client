@@ -351,12 +351,14 @@ function onGetOnline (connection, data) {
 }
 
 function onGetUsername (connection, data) {
+  console.log(`seeking username for${data.pk}`);
   if (allUsers.has(data.pk)) {
+    console.log(`returning username ${allUsers.get(data.pk).username}`);
     sendTo(connection, {
       type: "getUsername",
       pk: data.pk,
       success: true,
-      username: allUsers.get(data.pk).username
+      username: allUsers.get(JSON.stringify(data.pk)).username
     });
   } else {
     sendTo(connection, {

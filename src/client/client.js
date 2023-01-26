@@ -446,6 +446,9 @@ async function removeFromChat (validMemberPubKeys, chatID) {
     });
 }
 
+var resolveGetUsername = new Map();
+var rejectGetUsername = new Map();
+
 function onGetUsername (name, success, pk) {
     // name: String, success: boolean, pk: string
     if (success) {
@@ -461,9 +464,6 @@ function onGetUsername (name, success, pk) {
     rejectGetUsername.delete(pk);
 }
 
-var resolveGetUsername = new Map();
-var rejectGetUsername = new Map();
-
 function getUsername (pk) {
     // pk: stringified(pk)
     return new Promise((resolve, reject) => {
@@ -472,6 +472,7 @@ function getUsername (pk) {
             return;
         }
         resolveGetUsername.set(pk, resolve);
+        console.log(`resolveGetUsername ${resolveGetUsername.get(pk)}`);
         rejectGetUsername.set(pk, reject);
         console.log(`Requesting for username of ${pk}`);
         sendToServer({
@@ -620,12 +621,11 @@ async function receivedOperations (ops, chatID, pk) {
                 console.log(`verified true is member ${memberSet.has(pk)}`);
 
                 if (memberSet.has(pk)) { // successfully authenticated
+                    for (const mem of memberSet) { // populating keyMap
+                        await getUsername(mem);
+                    }
                     console.log(`synced with ${keyMap.get(pk)}`);
                     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-                        for (const mem of memberSet) { // populating keyMap
-                            await getUsername(mem);
-                        }
-                        memberSet.forEach(getUsername);
                         updateChatOptions("add", chatID);
                         updateHeading();
                     }
