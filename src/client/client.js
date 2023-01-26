@@ -270,7 +270,6 @@ function onConnectedUsers(usernames) {
     if (localUsername) {
         const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap(entry[0]))).map(entry => entry[0]);
         console.log(`online from queued ${toSend}`);
-        console.log(`type of public key ${pk instanceof String}`);
         for (const pk of toSend) {
             onQueuedOnline(objToArr(pk));
         }
