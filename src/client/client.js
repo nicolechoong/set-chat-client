@@ -806,14 +806,15 @@ function receivedMessage (messageData) {
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res) { 
                     await store.getItem(messageData.chatID).then((chatInfo) => {
-                        if (!chatInfo.historyTable.has(pk)) {
-                            chatInfo.historyTable.set(pk, []);
+                        for (const pk of joinedChats.get(messageData.chatID).members) {
+                            if (!chatInfo.historyTable.has(pk)) {
+                                chatInfo.historyTable.set(pk, []);
+                            }
+                            chatInfo.historyTable.get(pk).push([messageData.id, 0]);
+                            chatInfo.history.push(messageData);
                         }
-                        chatInfo.historyTable.get(pk).push([messageData.id, 0]);
-                        chatInfo.history.push(messageData);
                         store.setItem(messageData.chatID, chatInfo);
                     }).then(() => console.log(`added message data to chat history`));
-
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
@@ -1149,9 +1150,13 @@ removeUserBtn.addEventListener("click", async () => {
 
 resetStoreBtn.addEventListener("click", () => {
     console.log(`resetting store...`);
-    store.setItem("joinedChats", new Map());
-    store.setItem("keyMap", new Map([[JSON.stringify(peer.peerPK), peer.peerName]]));
-    store.setItem("msgQueue", new Map());
+    store.keys().then((keys) => {
+        for (const key of keys) {
+            if (key !== "keyPair") {
+                store.removeItem(key);
+            }
+        }
+    })
 })
 
 function getChatNames() {
