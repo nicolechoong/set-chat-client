@@ -1231,7 +1231,7 @@ function updateHeading() {
 
     if (currentChatID > 0) {
         const chatTitle = document.getElementById('chatHeading');
-        chatTitle.innerHTML = `Chat: ${chatName}`;
+        chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
 
         const chatMembers = document.getElementById('chatMembers');
         chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap(pk)).join(", ")}`;
