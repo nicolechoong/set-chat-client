@@ -131,7 +131,7 @@ connection.onmessage = function (message) {
         //     onRemove(data.chatID, data.chatName, objToArr(data.fromPK));
         //     break;
         case "getUsername":
-            onGetUsername(data.username, data.success, data.pk);
+            onGetUsername(data.username, data.success, JSON.stringify(data.pk));
             break;
         case "getPK":
             onGetPK(data.username, data.success, objToArr(data.pk));
@@ -329,7 +329,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 }
 
 // When being added to a new chat
-async function onAdd (chatID, chatName, from, fromPK) {
+function onAdd (chatID, chatName, from, fromPK) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array
 
     // we want to move this actual joining to after syncing with someone from the chat
@@ -346,15 +346,15 @@ async function onAdd (chatID, chatName, from, fromPK) {
         },
         history: [],
         historyTable: new Map(),
-    });
-
-    if (connections.has(JSON.stringify(fromPK))) {
-        sendOperations(chatID, JSON.stringify(fromPK));
-    } else {
-        if (!(await connectToPeer({peerName: from, peerPK: fromPK}))) {
-            getOnline(chatID);
+    }).then(async () => {
+        if (connections.has(JSON.stringify(fromPK))) {
+            sendOperations(chatID, JSON.stringify(fromPK));
+        } else {
+            if (!(await connectToPeer({peerName: from, peerPK: fromPK}))) {
+                getOnline(chatID);
+            }
         }
-    }
+    });
 }
 
 async function addToChat (validMemberPubKeys, chatID) {
@@ -1369,6 +1369,7 @@ function mergeJoinedChats (localChats, receivedChats) {
 }
 
 function mergeChatHistory (localMsg, receivedMsg) {
+    console.log(`local length ${localMsg.length}`);
     if (receivedMsg.size === 0) { return localMsg; }
     const mergedChatHistory = localMsg;
     const localMsgIDs = new Set(localMsg.map(msg => msg.id));
