@@ -314,7 +314,7 @@ function onGetPK (connection, data) {
 
 function getOnline (pk, chatID) {
   const onlineMembers = [];
-  if (chats.get(chatID).members.has(JSON.stringify(pk))) {
+  if (chats.has(chatID) && chats.get(chatID).members.has(JSON.stringify(pk))) {
     const members = chats.get(chatID).members;
     for (const mem of members) {
       if (connectedUsers.has(mem)) {
