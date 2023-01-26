@@ -313,21 +313,18 @@ function onGetPK (connection, data) {
 }
 
 function getOnline (pk, chatID) {
-  const joinedChats = getJoinedChats(pk);
-  var members;
-
-  // if (!joinedChats.get(chatID).currentMember) { continue; }
-  members = joinedChats.get(chatID).members;
   const onlineMembers = [];
-  for (const mem of members) {
-    if (connectedUsers.has(mem)) {
-      onlineMembers.push({
-        peerName: allUsers.get(mem).username,
-        peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
-      });
+  if (chats.get(chatID).members.has(JSON.stringify(pk))) {
+    const members = chats.get(chatID).members;
+    for (const mem of members) {
+      if (connectedUsers.has(mem)) {
+        onlineMembers.push({
+          peerName: allUsers.get(mem).username,
+          peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
+        });
+      }
     }
   }
-
   return onlineMembers;
 }
 
