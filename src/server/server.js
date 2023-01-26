@@ -368,6 +368,7 @@ function onGetUsername (connection, data) {
 
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
+  console.log(JSON.stringify(data));
   const toPK = JSON.stringify(data.to);
 
   console.log(`adding member ${toPK} to chats store ${data.chatID} ${chats.has(data.chatID)} ${[...chats.keys()]}`);
