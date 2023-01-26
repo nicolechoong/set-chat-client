@@ -952,8 +952,9 @@ async function addPeer (messageData) {
         }
         chatInfo.historyTable.get(pk).push([messageData.id, 0]);
         chatInfo.history.push(messageData);
+        console.log(`chat history length ${chatInfo.history.length}`);
         store.setItem(messageData.chatID, chatInfo);
-    });
+    }).then(() => console.log(`added message data to chat history`));
 }
 
 async function removePeer (messageData) {
