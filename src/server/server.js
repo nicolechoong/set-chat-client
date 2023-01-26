@@ -55,7 +55,7 @@ wsServer.on('connection', function(connection) {
   connections.push(connection);
   sendTo(connection, {
     type: "connectedUsers",
-    usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username),
+    usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username).sort(),
   });
 
   connection.onmessage = function(message) {
@@ -312,41 +312,30 @@ function onGetPK (connection, data) {
   });
 }
 
-function getOnline (pk, chatID=0) {
-  const online = new Map();
+function getOnline (pk, chatID) {
   const joinedChats = getJoinedChats(pk);
-  var chats, members;
+  var members;
 
-  if (chatID !== 0) {
-    chats = [chatID];
-  } else {
-    chats = joinedChats.keys();
-  }
-
-  for (const chatID of chats) {
-    if (!joinedChats.get(chatID).currentMember) { continue; }
-    members = joinedChats.get(chatID).members;
-    const onlineMembers = [];
-    for (const mem of members) {
-      if (connectedUsers.has(mem)) {
-        onlineMembers.push({
-          peerName: allUsers.get(mem).username,
-          peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
-        });
-      }
-    }
-    if (onlineMembers.length > 0) {
-      online.set(chatID, onlineMembers);
+  // if (!joinedChats.get(chatID).currentMember) { continue; }
+  members = joinedChats.get(chatID).members;
+  const onlineMembers = [];
+  for (const mem of members) {
+    if (connectedUsers.has(mem)) {
+      onlineMembers.push({
+        peerName: allUsers.get(mem).username,
+        peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
+      });
     }
   }
 
-  return online;
+  return onlineMembers;
 }
 
 function onGetOnline (connection, data) {
   sendTo(connection, {
     type: "getOnline",
-    online: Array.from(getOnline(connection.pk, data.chatID))
+    chatID: data.chatID,
+    online: getOnline(connection.pk, data.chatID)
   })
 }
 
@@ -406,7 +395,7 @@ function broadcastActiveUsernames () {
   console.log(`All existing users: ${Array.from(allUsers.keys()).map(pk => allUsers.get(pk).username)}`);
   broadcast({
     type: "connectedUsers",
-    usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username)
+    usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username).sort()
   });
 }
 
@@ -480,16 +469,14 @@ function onReconnect (connection, name, pk) {
     type: "login", 
     success: true,
     username: name,
-    joinedChats: Array.from(joinedChats),
-    online: Array.from(getOnline(pk))
+    joinedChats: Array.from(joinedChats)
   });
 
   console.log(JSON.stringify({ 
     type: "login", 
     success: true,
     username: name,
-    joinedChats: Array.from(joinedChats),
-    online: Array.from(getOnline(pk))
+    joinedChats: Array.from(joinedChats)
   }))
 
   while (msgQueue.length > 0) {

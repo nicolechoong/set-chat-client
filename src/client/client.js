@@ -101,7 +101,7 @@ connection.onmessage = function (message) {
 	
     switch(data.type) { 
         case "login": 
-            onLogin(data.success, new Map(data.joinedChats), new Map(data.online), data.username); 
+            onLogin(data.success, new Map(data.joinedChats), data.username); 
             break; 
         case "offer": 
             onOffer(data.offer, data.from, objToArr(data.fromPK)); 
@@ -137,7 +137,7 @@ connection.onmessage = function (message) {
             onGetPK(data.username, data.success, objToArr(data.pk));
             break;
         case "getOnline":
-            onGetOnline(new Map(data.online));
+            onGetOnline(data.online, data.chatID);
             break;
         default: 
             break; 
@@ -145,7 +145,7 @@ connection.onmessage = function (message) {
 };
   
 // Server approves Login
-async function onLogin (success, chats, online, username) { 
+async function onLogin (success, chats, username) { 
 
     if (success === false) { 
         alert("oops...try a different username"); 
@@ -167,9 +167,8 @@ async function onLogin (success, chats, online, username) {
         
         for (const chatID of joinedChats.keys()) {
             updateChatOptions("add", chatID);
+            getOnline(chatID);
         }
-
-        onGetOnline (online);
     } 
 };
 
@@ -335,7 +334,7 @@ function onAdd (chatID, chatName, from, fromPK) {
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
 
-    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], currentMember: true});
+    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], currentMember: false});
     store.setItem("joinedChats", joinedChats);
 
     store.setItem(chatID, {
@@ -351,7 +350,9 @@ function onAdd (chatID, chatName, from, fromPK) {
             sendOperations(chatID, JSON.stringify(fromPK));
         } else {
             if (!(await connectToPeer({peerName: from, peerPK: fromPK}))) {
-                getOnline(chatID);
+                if (!getOnline(chatID)) {
+
+                }
             }
         }
     });
@@ -498,23 +499,36 @@ function onGetPK (name, success, pk) {
     rejectGetPK.delete(name);
 }
 
-async function onGetOnline (online) {
-    for (const chatID of online.keys()) {
-        for (const peer of online.get(chatID)) {
-            peer.peerPK = objToArr(peer.peerPK);
-            if (await connectToPeer(peer)) { 
-                console.log(`Successfully connected to ${peer.peerName}`);
-                sendOperations(chatID, JSON.stringify(peer.peerPK));
-            }
+async function onGetOnline (online, chatID) {
+    if (online.length == 0) {
+        resolveGetOnline.get(chatID)(false);
+    }
+    for (const peer of online) {
+        peer.peerPK = objToArr(peer.peerPK);
+        if (await connectToPeer(peer)) { 
+            console.log(`Successfully connected to ${peer.peerName}`);
+            sendOperations(chatID, JSON.stringify(peer.peerPK));
+            resolveGetOnline.get(true); // doesn't mean that it synced
         }
     }
+    resolveGetOnline.delete(chatID);
 }
 
-function getOnline (chatID = 0) {
-    sendToServer({
-        type: "getOnline",
-        pk: keyPair.publicKey,
-        chatID: chatID
+// TODO: ADD PROMISE FOR GET ONLINE
+// IF NONE ONLINE, ADD TO MSG QUEUE FOR ALL MEMBERS IN THAT CHAT... (APPROXIMATION)
+// WHEN WE GET AN UPDATE, CHECK TO SEE IF THERE IS A NON-EMPTY QUEUE FOR THAT
+// then connect and send queue (first should be send ops)
+
+var resolveGetOnline = new Map();
+
+function getOnline (chatID) {
+    return new Promise((resolve) => {
+        resolveGetOnline.set(chatID, resolve);
+        sendToServer({
+            type: "getOnline",
+            pk: keyPair.publicKey,
+            chatID: chatID
+        });
     });
 }
 
@@ -1170,7 +1184,7 @@ chatNameInput.addEventListener("change", selectChat);
 
 newChatBtn.addEventListener("click", createNewChat);
 
-addUserBtn.addEventListener("click", async () => {
+addUserBtn.addEventListener ("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
     try {
@@ -1184,7 +1198,7 @@ addUserBtn.addEventListener("click", async () => {
     }
 });
 
-removeUserBtn.addEventListener("click", async () => {
+removeUserBtn.addEventListener ("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
     try {
@@ -1197,7 +1211,7 @@ removeUserBtn.addEventListener("click", async () => {
     }
 });
 
-resetStoreBtn.addEventListener("click", () => {
+resetStoreBtn.addEventListener ("click", () => {
     console.log(`resetting store...`);
     store.keys().then((keys) => {
         for (const key of keys) {
@@ -1208,7 +1222,7 @@ resetStoreBtn.addEventListener("click", () => {
     })
 })
 
-function getChatNames() {
+function getChatNames () {
     var chatnames = [];
     for (const chatID of joinedChats.keys()) {
         chatnames.push(joinedChats.get(chatID).chatName);
@@ -1216,7 +1230,7 @@ function getChatNames() {
     return chatnames;
 }
 
-function getChatID(chatName) {
+function getChatID (chatName) {
     for (const chatID of joinedChats.keys()) {
         if (chatName === joinedChats.get(chatID).chatName) {
             return chatID;
@@ -1225,7 +1239,7 @@ function getChatID(chatName) {
     return -1;
 }
 
-function updateHeading() {
+function updateHeading () {
     const title = document.getElementById('heading');
     title.innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
     if (joinedChats.size > 0) {
@@ -1244,7 +1258,7 @@ function updateHeading() {
     }
 }
 
-function selectChat() {
+function selectChat () {
     const index = chatNameInput.selectedIndex;
 
     if (index > 0) {
