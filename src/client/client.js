@@ -611,7 +611,7 @@ async function receivedOperations (ops, chatID, pk) {
     return new Promise((resolve) => {
         console.log(`pk why is it not equal ${pk}, ${pk === JSON.stringify(keyPair.publicKey)}`);
         if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); }
-        store.getItem(chatID).then((chatInfo) => {
+        store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
             // console.log(`merged ops ${JSON.stringify(ops)}`);
 
@@ -622,6 +622,10 @@ async function receivedOperations (ops, chatID, pk) {
                 if (memberSet.has(pk)) { // successfully authenticated
                     console.log(`synced with ${keyMap.get(pk)}`);
                     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
+                        for (const mem of memberSet) { // populating keyMap
+                            await getUsername(mem);
+                        }
+                        memberSet.forEach(getUsername);
                         updateChatOptions("add", chatID);
                         updateHeading();
                     }
@@ -1055,14 +1059,14 @@ async function updateChatWindow (data) {
                 message = `${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
                 break;
             case "add":
-                name1 = await getUsername(JSON.stringify(data.op.pk1));
-                name2 = await getUsername(JSON.stringify(data.op.pk2));
-                message = `${name1} added ${name2}`;
+                // name1 = await getUsername(JSON.stringify(data.op.pk1));
+                // name2 = await getUsername(JSON.stringify(data.op.pk2));
+                message = `${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             case "remove":
-                name1 = await getUsername(JSON.stringify(data.op.pk1));
-                name2 = await getUsername(JSON.stringify(data.op.pk2));
-                message = `${name1} removed ${name2}`;
+                // name1 = await getUsername(JSON.stringify(data.op.pk1));
+                // name2 = await getUsername(JSON.stringify(data.op.pk2));
+                message = `${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             default:
                 message = "";
