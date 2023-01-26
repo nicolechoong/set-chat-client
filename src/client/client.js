@@ -148,7 +148,7 @@ async function onLogin (success, chats, online, username) {
         alert("oops...try a different username"); 
     } else {
         localUsername = username;
-        joinedChats = mergeChats(joinedChats, chats);
+        joinedChats = mergeJoinedChats(joinedChats, chats);
         store.setItem("joinedChats", joinedChats);
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
@@ -1295,7 +1295,7 @@ function formatDate (now) {
     return `${intl} ${date.getHours()}:${date.getMinutes()}`;
 }
 
-function mergeChats (localChats, receivedChats) {
+function mergeJoinedChats (localChats, receivedChats) {
     console.log(`Received chat sizes ${localChats.size}   ${receivedChats.size}`);
     const mergedChats = new Map([...localChats]);
     if (receivedChats.size === 0) { return mergedChats; }
@@ -1308,9 +1308,9 @@ function mergeChats (localChats, receivedChats) {
 
 function mergeChatHistory (localMsg, receivedMsg) {
     if (receivedMsg.size === 0) { return localMsg; }
-    const mergedChatHistory = localMsg.concat(receivedMsg);
+    const mergedChatHistory = localMsg;
     const localMsgIDs = new Set(localMsg.map(msg => msg.id));
-    console.log(`localmsgids ${[...localMsg]}`);
+    console.log(`localmsgids ${[...localMsgIDs]}`);
     for (const msg of receivedMsg) {
         if (!localMsgIDs.has(msg.id)) {
             mergedChatHistory.push(msg);
