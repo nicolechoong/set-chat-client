@@ -474,7 +474,7 @@ function onReconnect (connection, name, pk) {
     success: true,
     username: name,
     joinedChats: Array.from(joinedChats)
-  }))
+  }));
 
   while (msgQueue.length > 0) {
     console.log(`sending message queue`);

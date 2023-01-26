@@ -1391,7 +1391,9 @@ function mergeJoinedChats (localChats, receivedChats) {
     if (receivedChats.size === 0) { return mergedChats; }
     const localChatIDs = new Set([...localChats.keys()]);
     for (const id of receivedChats.keys()) {
-        mergedChats.set(id, receivedChats.get(id));
+        if (!localChatIDs.has(id)) {
+            mergedChats.set(id, receivedChats.get(id));
+        }
     }
     return mergedChats;
 }
