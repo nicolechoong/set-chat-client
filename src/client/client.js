@@ -159,7 +159,6 @@ async function onLogin (success, chats, online, username) {
         })
         store.getItem("msgQueue").then((storedMsgQueue) => {
             msgQueue = storedMsgQueue === null ? new Map() : storedMsgQueue;
-            console.log(`msgQueue updated`);
         });
         updateHeading();
         
@@ -179,7 +178,6 @@ async function initialiseStore (username) {
         storeName: username
     });
     store.getItem("joinedChats").then((chats) => {
-        console.log(chats);
         if (chats === null) {
             joinedChats = [];
         } else {
@@ -268,7 +266,7 @@ function onConnectedUsers(usernames) {
         document.getElementById('usernames').innerHTML = `Currently Online: ${usernames.join(", ")}`;
     }
     if (localUsername) {
-        const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap(entry[0]))).map(entry => entry[0]);
+        const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap.get(entry[0]))).map(entry => entry[0]);
         console.log(`online from queued ${toSend}`);
         for (const pk of toSend) {
             onQueuedOnline(objToArr(pk));
@@ -1158,7 +1156,6 @@ function getChatNames() {
 function getChatID(chatName) {
     console.log(Array.from(joinedChats.keys()));
     for (const chatID of joinedChats.keys()) {
-        console.log(chatID);
         if (chatName === joinedChats.get(chatID).chatName) {
             return chatID;
         }
