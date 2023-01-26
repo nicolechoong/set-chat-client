@@ -285,7 +285,7 @@ function onJoin (usernames) {
 
 function onLeave (peerPK) {
     peerPK = JSON.stringify(peerPK);
-    connectionNames.delete(connections.get(peerPK).connection);
+    // connectionNames.delete(connections.get(peerPK).connection);
     connections.get(peerPK).sendChannel.close();
     connections.get(peerPK).connection.close();
     updateChatWindow({from: "SET", message: `${keyMap.get(peerPK)} has left the room`});
@@ -762,11 +762,14 @@ function initPeerConnection () {
         connection.onnegotiationneeded = function (event) {
             console.log("On negotiation needed")
             if (connection.connectionState === "failed") {
+                console.log(`connection name ${connectionNames.get(connection)}`);
                 connection.createOffer(function (offer) { 
                     sendToServer({
                         to: connectionNames.get(connection),
                         type: "offer",
-                        offer: offer 
+                        offer: offer ,
+                        fromPK: keyPair.publicKey,
+                        from: localUsername,
                     });
                     connection.setLocalDescription(offer);
                 }, function (error) { 
@@ -903,10 +906,11 @@ function sendChatHistory (chatID, pk) {
             for (const interval of intervals) {
                 console.log(`this is the history ${chatInfo.history} ${chatInfo.history.length}`);
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
+                console.log(`find index ${start} and ${chatInfo.history[0].id === interval[0]}`);
                 if (interval[1] === 0) {
                     peerHistory.concat(chatInfo.history.slice(start));
                 } else {
-                    chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
+                    end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
                     peerHistory.concat(chatInfo.history.slice(start, end));
                 }
             }
