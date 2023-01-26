@@ -928,6 +928,17 @@ function sendChatHistory (chatID, pk) {
     });
 }
 
+function initChatHistoryTable (messageData) {
+    store.getItem(messageData.chatID).then((chatInfo) => {
+        for (const pk of joinedChats.get(messageData.chatID).members) {
+            if (!chatInfo.historyTable.has(pk)) {
+                chatInfo.historyTable.set(pk, []);
+            }
+            chatInfo.historyTable.get(pk).push([messageData.id, 0]);
+        }
+    });
+}
+
 var resolveConnectToPeer = new Map();
 
 function connectToPeer (peer) {
@@ -968,6 +979,7 @@ async function addPeer (messageData) {
 
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
+    if (pk === JSON.stringify(keyPair.publicKey)) { return; }
 
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
