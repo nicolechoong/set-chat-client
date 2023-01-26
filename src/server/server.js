@@ -264,7 +264,7 @@ function onCreateChat (connection, data) {
   const validMembers = data.members.filter(mem => usernameToPK.has(mem)).map(mem => JSON.parse(usernameToPK.get(mem)));
 
   const validMemberPubKeys = new Map();
-  for (pk of validMembers) {
+  for (const pk of validMembers) {
     // pk: Object
     validMemberPubKeys.set(allUsers.get(JSON.stringify(pk)).username, pk);
   }
