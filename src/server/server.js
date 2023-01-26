@@ -95,6 +95,7 @@ wsServer.on('connection', function(connection) {
         break;
       case "getUsername":
         onGetUsername(connection, data);
+        break;
       case "add":
         onAdd(connection, data);
         break;

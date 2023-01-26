@@ -1359,7 +1359,6 @@ function formatDate (now) {
 }
 
 function mergeJoinedChats (localChats, receivedChats) {
-    console.log(`Received chat sizes ${localChats.size}   ${receivedChats.size}`);
     const mergedChats = new Map([...localChats]);
     if (receivedChats.size === 0) { return mergedChats; }
     const localChatIDs = new Set([...localChats.keys()]);
@@ -1373,7 +1372,6 @@ function mergeChatHistory (localMsg, receivedMsg) {
     if (receivedMsg.size === 0) { return localMsg; }
     const mergedChatHistory = localMsg;
     const localMsgIDs = new Set(localMsg.map(msg => msg.id));
-    console.log(`localmsgids ${[...localMsgIDs]}`);
     for (const msg of receivedMsg) {
         if (!localMsgIDs.has(msg.id)) {
             mergedChatHistory.push(msg);
