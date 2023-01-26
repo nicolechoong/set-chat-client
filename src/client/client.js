@@ -455,6 +455,7 @@ function onGetUsername (name, success, pk) {
         console.log(`Received username of ${pk}, ${name}`);
         keyMap.set(pk, name);
         store.setItem("keyMap", keyMap);
+        console.log(`resolveGetUsername keys ${[...resolveGetUsername.keys()]}`);
         resolveGetUsername.get(pk)(name);
     } else {
         rejectGetUsername.get(pk)(new Error("User does not exist"));
