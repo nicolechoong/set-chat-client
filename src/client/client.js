@@ -352,9 +352,6 @@ async function onAdd (chatID, chatName, from, fromPK) {
             getOnline(chatID);
         }
     }
-    
-    updateChatOptions("add", chatID);
-    updateHeading();
 }
 
 async function addToChat (validMemberPubKeys, chatID) {
@@ -620,8 +617,10 @@ async function receivedOperations (ops, chatID, pk) {
                 console.log(`verified true is member ${memberSet.has(pk)}`);
                 if (memberSet.has(pk)) {
                     chatInfo.metadata.operations = ops;
-                    if (!joinedChats.has(chatID)) {
+                    if (!joinedChats.has(chatID)) { // being added after syncing
                         joinedChats.set(chatID, {chatName: chatInfo.metadata.chatName, members: [], currentMember: true});
+                        updateChatOptions("add", chatID);
+                        updateHeading();
                     }
                     joinedChats.get(chatID).members = [...memberSet];
                     store.setItem("joinedChats", joinedChats);
