@@ -1019,6 +1019,7 @@ async function updateChatStore (messageData) {
 
 function sendToMember (data, pk) {
     // data: JSON, pk: String
+    if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     console.log(`current state of keyMap ${[...keyMap]}`);
     connections.get(pk).sendChannel.send(JSON.stringify(data));
@@ -1038,7 +1039,6 @@ function broadcastToMembers (data, chatID = null) {
             continue;
         }
     }
-    receivedMessage(data);
 }
 
 function sendChatMessage (messageInput) {
@@ -1111,7 +1111,6 @@ addUserBtn.addEventListener("click", async () => {
     const username = modifyUserInput.value;
     try {
         const pk = await getPK(username);
-        console.log(`according to this user ${username} has ${pk}`);
         modifyUserInput.value = "";
         if (joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`User has already been added`); return; }
         addToChat(new Map([[username, pk]]), currentChatID);
