@@ -795,8 +795,7 @@ function hasCycle (ops, edges) {
     return false;
 }
 
-function valid (ops, ignored, op, authorityGraph) {
-    console.log(`authorityGraph type ${authorityGraph instanceof Array}`);
+function valid (ops, ignored, op, seen, authorityGraph) {
     printEdge(op);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
@@ -822,7 +821,7 @@ function valid (ops, ignored, op, authorityGraph) {
 function members (ops, ignored) {
     const pks = new Set();
     const authorityGraph = authority(ops);
-    if (hasCycle(ops, authorityGraph)) { console.log(`cycle detected motherfuckers`); }
+    if (hasCycle(ops, authorityGraph)) { console.log(`cycle detected motherfuckers`); return; }
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
