@@ -796,13 +796,14 @@ function hasCycle (ops, edges) {
 }
 
 function valid (ops, ignored, op, authorityGraph) {
+    console.log(`authorityGraph type ${typeof authorityGraph}`);
     printEdge(op);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
     if (ignored.includes(op)) { return false; }
 
     // all the valid operations before op2
-    const inSet = (authorityGraph).filter((edge) => {
+    const inSet = authorityGraph.filter((edge) => {
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], authorityGraph);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
@@ -820,7 +821,7 @@ function valid (ops, ignored, op, authorityGraph) {
 
 function members (ops, ignored) {
     const pks = new Set();
-    const authorityGraph = [...authority(ops)];
+    const authorityGraph = authority(ops);
     if (hasCycle(ops, authorityGraph)) { console.log(`cycle detected motherfuckers`); }
     var pk;
     for (const op of ops) {
