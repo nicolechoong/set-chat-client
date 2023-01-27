@@ -756,7 +756,8 @@ function valid (ops, ignored, op, seen) {
 
     // all the valid operations before op2
     const inSet = ([...authority(ops)]).filter((edge) => {
-        seen = seen.copy().add(JSON.stringify(op));
+        seen = seen.copy();
+        seen.add(JSON.stringify(op));
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
@@ -1367,12 +1368,11 @@ function arrEqual(arr1, arr2) {
 
 function unionOps (ops1, ops2) {
     const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
-    console.log(`ops1 length ${ops1.length}   ops2 length ${ops2.length}`);
-    console.log(`ops1 set ${ops1.map(op => JSON.stringify(op.sig))}      ops2 set ${ops2.map(op => JSON.stringify(op.sig))}`);
     const ops = [...ops1];
     for (const op of ops2) {
         if (!sigSet.has(JSON.stringify(op.sig))) { ops.push(op); }
     }
+    console.log(`ops1 length ${ops1.length}   ops2 length ${ops2.length}    ops length ${ops.length}`);
     return ops;
 }
 
