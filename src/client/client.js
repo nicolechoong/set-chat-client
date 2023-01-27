@@ -795,7 +795,7 @@ function hasCycle (ops, edges) {
     return false;
 }
 
-function valid (ops, ignored, op, seen, authorityGraph) {
+function valid (ops, ignored, op, authorityGraph) {
     printEdge(op);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
