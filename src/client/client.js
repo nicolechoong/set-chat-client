@@ -595,7 +595,6 @@ async function generateOp (action, chatID, pk2 = null, ops = []) {
                 pk2: pk2,
                 deps: getDeps(ops)
             };
-            console.log(`operation ${op.action} has ${op.deps.length} deps`);
         }
         op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
             resolve(op);
@@ -619,7 +618,6 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
-        console.log(`pk why is it not equal ${pk}, ${pk === JSON.stringify(keyPair.publicKey)}`);
         if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
@@ -778,7 +776,6 @@ function hasCycle (ops, edges) {
         }
         adjacency.get(JSON.stringify(edge[0].sig)).push(edge);
     }
-    console.log(`keys sig ${[...adjacency.keys()]}`);
 
     while (queue.length > 0) {
         cur = queue.shift();
@@ -1323,6 +1320,7 @@ function getIgnored (conc) {
     document.getElementById('chatBox').style.display = "none";
     var option;
     ignoredOptions.innerHTML = "";
+    console.log(`length of conc ${conc.length}`);
     for (const op of conc) {
         option = document.createElement("option");
         option.text = `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`;
