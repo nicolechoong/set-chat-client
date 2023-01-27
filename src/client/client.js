@@ -331,7 +331,6 @@ function onAdd (chatID, chatName, from, fromPK, msgID) {
 
     joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], exMembers: [], currentMember: false});
     store.setItem("joinedChats", joinedChats);
-    initChatHistoryTable(chatID, msgID);
 
     store.setItem(chatID, {
         metadata: {
@@ -342,6 +341,7 @@ function onAdd (chatID, chatName, from, fromPK, msgID) {
         history: [],
         historyTable: new Map(),
     }).then(async () => {
+        initChatHistoryTable(chatID, msgID);
         if (connections.has(JSON.stringify(fromPK))) {
             sendOperations(chatID, JSON.stringify(fromPK));
         } else {
@@ -998,6 +998,7 @@ async function sendChatHistory (chatID, pk) {
 }
 
 function initChatHistoryTable (chatID, msgID) {
+    console.log(`initialised store`);
     store.getItem(chatID).then((chatInfo) => {
         for (const pk of joinedChats.get(chatID).members) {
             if (!chatInfo.historyTable.has(pk)) {
