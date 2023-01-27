@@ -410,38 +410,32 @@ function onRemove (chatID, chatName, fromPK) {
 
 async function removeFromChat (validMemberPubKeys, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
-        return new Promise(async (resolve) => {
-            var pk;
-            for (const name of validMemberPubKeys.keys()) {
-                pk = objToArr(validMemberPubKeys.get(name));
-                console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations}`)
-                const op = await generateOp("remove", chatID, pk, chatInfo.metadata.operations);
-                console.log(`1. num of ops ${chatInfo.metadata.operations.length}`);
-                chatInfo.metadata.operations.push(op);
+       var pk;
+        for (const name of validMemberPubKeys.keys()) {
+            pk = objToArr(validMemberPubKeys.get(name));
+            console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations}`)
+            const op = await generateOp("remove", chatID, pk, chatInfo.metadata.operations);
+            chatInfo.metadata.operations.push(op);
+            await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
 
-                const removeMessage = {
-                    type: "remove",
-                    op: op,
-                    username: name,
-                    from: keyPair.publicKey,
-                    chatID: chatID
-                };
-                broadcastToMembers(removeMessage, chatID);
-                sendToServer({
-                    to: pk,
-                    type: "remove",
-                    from: localUsername,
-                    fromPK: keyPair.publicKey,
-                    chatID: chatID,
-                    chatName: chatInfo.metadata.chatName
-                });
-                console.log(`removed ${name}`);
-            }
-            resolve(chatInfo);
-        });
-    }).then((chatInfo) => {
-        console.log(`2. num of ops ${chatInfo.metadata.operations.length}`);
-        store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
+            const removeMessage = {
+                type: "remove",
+                op: op,
+                username: name,
+                from: keyPair.publicKey,
+                chatID: chatID
+            };
+            broadcastToMembers(removeMessage, chatID);
+            sendToServer({
+                to: pk,
+                type: "remove",
+                from: localUsername,
+                fromPK: keyPair.publicKey,
+                chatID: chatID,
+                chatName: chatInfo.metadata.chatName
+            });
+            console.log(`removed ${name}`);
+        }
     });
 }
 
