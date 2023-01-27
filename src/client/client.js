@@ -734,7 +734,7 @@ function printEdge (op1, op2) {
     } else {
         output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} ->`;
     }
-    if (op2.action !== "mem") {
+    if (op2.action === "mem") {
         output = `${output} mem ${JSON.stringify(op2.member)}`;
     } else {
         output = `${output} op2 ${keyMap.get(JSON.stringify(op2.pk1))} ${op2.action} ${keyMap.get(JSON.stringify(op2.pk2))}`;
@@ -802,7 +802,7 @@ function members (ops, ignored) {
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
-        if (valid(ops, ignored, {"member": pk, "sig": pk}, new Set())) {
+        if (valid(ops, ignored, {"member": pk, "sig": pk, "action": "mem"}, new Set())) {
             pks.add(JSON.stringify(pk));
         }
     }
