@@ -286,13 +286,15 @@ function onJoin (usernames) {
 
 function onLeave (peerPK) {
     // peerPK : string
-    connectionNames.delete(connections.get(peerPK).connection);
-    connections.get(peerPK).sendChannel.close();
-    connections.get(peerPK).sendChannel = null;
-    connections.get(peerPK).connection.close();
-    connections.get(peerPK).connection = null;
-    updateChatWindow({from: "SET", message: `${keyMap.get(peerPK)} has left the room`});
-    connections.delete(peerPK);
+    if (connections.has(peerPK)) {
+        connectionNames.delete(connections.get(peerPK).connection);
+        connections.get(peerPK).sendChannel.close();
+        connections.get(peerPK).sendChannel = null;
+        connections.get(peerPK).connection.close();
+        connections.get(peerPK).connection = null;
+        updateChatWindow({from: "SET", message: `${keyMap.get(peerPK)} has left the room`});
+        connections.delete(peerPK);
+    }
 }
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
@@ -463,7 +465,7 @@ function onGetUsername (name, success, pk) {
         keyMap.set(pk, name);
         store.setItem("keyMap", keyMap);
         console.log(`resolveGetUsername keys ${[...resolveGetUsername.keys()]}`);
-        resolveGetUsername.get(pk)(name);
+        resolveGetUsername.get(pk)(name);   
     } else {
         rejectGetUsername.get(pk)(new Error("User does not exist"));
         console.error(`User ${name} does not exist`);
@@ -657,17 +659,20 @@ async function receivedOperations (ops, chatID, pk) {
 
                     chatInfo.metadata.operations = ops;
                     joinedChats.get(chatID).members = [...memberSet];
+                    joinedChats.get(chatID).members.sort();
                     store.setItem("joinedChats", joinedChats);
                     store.setItem(chatID, chatInfo);
                     resolve(true);
                     return;
                 }
             }
-            connections.get(pk).sendChannel.close();
-            connections.get(pk).sendChannel = null;
-            connections.get(pk).connection.close();
-            connections.get(pk).connection = null;
-            connections.delete(pk);
+            if (connections.has(pk)) {
+                connections.get(pk).sendChannel.close();
+                connections.get(pk).sendChannel = null;
+                connections.get(pk).connection.close();
+                connections.get(pk).connection = null;
+                connections.delete(pk);
+            }
             resolve(false);
         })
     });
@@ -1036,6 +1041,10 @@ async function addPeer (messageData) {
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
 
+    joinedChats.get(messageData.chatID).members.push(pk);
+    joinedChats.get(messageData.chatID).members.sort();
+    store.setItem("joinedChats", joinedChats);
+
     updateHeading();
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
@@ -1062,6 +1071,9 @@ async function removePeer (messageData) {
         store.setItem(messageData.chatID, chatInfo);
     });
 
+    joinedChats.get(messageData.chatID).members.splice(pk, 1);
+    store.setItem("joinedChats", joinedChats);
+
     if (pk === JSON.stringify(keyPair.publicKey)) {
         return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, messageData.from);
     } else {
@@ -1071,11 +1083,13 @@ async function removePeer (messageData) {
             }
         }
 
-        connections.get(pk).sendChannel.close();
-        connections.get(pk).sendChannel = null;
-        connections.get(pk).connection.close();
-        connections.get(pk).connection = null;
-        connections.delete(pk);
+        if (connection.has(pk)) {
+            connections.get(pk).sendChannel.close();
+            connections.get(pk).sendChannel = null;
+            connections.get(pk).connection.close();
+            connections.get(pk).connection = null;
+            connections.delete(pk);
+        }
     }
 }
 
