@@ -796,7 +796,7 @@ function hasCycle (ops, edges) {
 }
 
 function valid (ops, ignored, op, authorityGraph) {
-    console.log(`authorityGraph type ${typeof authorityGraph}`);
+    console.log(`authorityGraph type ${authorityGraph instanceof Array}`);
     printEdge(op);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
@@ -826,7 +826,7 @@ function members (ops, ignored) {
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
-        if (valid(ops, ignored, {"member": pk, "sig": pk, "action": "mem"}, new Set(), authorityGraph)) {
+        if (valid(ops, ignored, {"member": pk, "sig": pk, "action": "mem"}, authorityGraph)) {
             pks.add(JSON.stringify(pk));
         }
     }
