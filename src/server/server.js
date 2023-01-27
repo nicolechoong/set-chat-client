@@ -317,7 +317,7 @@ function onGetPK (connection, data) {
 function getOnline (pk, chatID) {
   // pk : stringified(pk)
   const onlineMembers = [];
-  if (chats.has(chatID) && chats.get(chatID).members.includes(pk)) {
+  if (chats.has(chatID) && (chats.get(chatID).members.includes(pk) || chats.get(chatID).exMembers.includes(pk))) {
     for (const mem of chats.get(chatID).members) {
       if (connectedUsers.has(mem) && mem !== pk) {
         onlineMembers.push({
