@@ -792,7 +792,7 @@ function hasCycle (ops, edges) {
                         conc.push(op);
                     }
                 }
-                conc.forEach(printEdge);
+                console.log(`here is the number of concurrent ${conc.length}`);
                 return { cycle: true, concurrent: conc };
             }
             if (edge[1].action !== "mem") {
@@ -1323,7 +1323,7 @@ function getIgnored (conc) {
     ignoredOptions.innerHTML = "";
     for (const op of conc) {
         option = document.createElement("option");
-        option.text = `${op.action} ${keyMap.get(op.pk2)}`;
+        option.text = `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`;
         ignoredInput.options.add(option);
         ignoredOptions.push(op);
     }
