@@ -27,7 +27,7 @@ var enc = new TextEncoder();
 // private keypair for the client
 var keyPair;
 
-// connection to peerName
+// connection to stringified(peerPK)
 var connectionNames = new Map();
 
 const configuration = { 
@@ -286,15 +286,7 @@ function onJoin (usernames) {
 
 function onLeave (peerPK) {
     // peerPK : string
-    if (connections.has(peerPK)) {
-        connectionNames.delete(connections.get(peerPK).connection);
-        connections.get(peerPK).sendChannel.close();
-        connections.get(peerPK).sendChannel = null;
-        connections.get(peerPK).connection.close();
-        connections.get(peerPK).connection = null;
-        updateChatWindow({from: "SET", message: `${keyMap.get(peerPK)} has left the room`});
-        connections.delete(peerPK);
-    }
+    closeConnections(peerPK);
 }
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
@@ -404,13 +396,7 @@ function onRemove (chatID, chatName, fromPK) {
     joinedChats.get(chatID).currentMember = false;
     store.setItem("joinedChats", joinedChats);
     for (const pk of joinedChats.get(chatID).members) {
-        if (connections.has(pk)) {
-            connections.get(pk).sendChannel.close();
-            connections.get(pk).sendChannel = null;
-            connections.get(pk).connection.close();
-            connections.get(pk).connection = null;
-            connections.delete(pk);
-        }
+        closeConnections(pk);
     }
 
     updateHeading();
@@ -668,13 +654,7 @@ async function receivedOperations (ops, chatID, pk) {
                     return;
                 }
             }
-            if (connections.has(pk)) {
-                connections.get(pk).sendChannel.close();
-                connections.get(pk).sendChannel = null;
-                connections.get(pk).connection.close();
-                connections.get(pk).connection = null;
-                connections.delete(pk);
-            }
+            closeConnections(pk);
             resolve(false);
         })
     });
@@ -824,6 +804,9 @@ function initPeerConnection () {
     try {
         const connection = new RTCPeerConnection(configuration);
         connection.ondatachannel = receiveChannelCallback;
+        connection.onclose = function (event) {
+            closeConnections(connectionNames.get(connection));
+        };
         connection.onicecandidate = function (event) {
             console.log("New candidate");
             if (event.candidate) {
@@ -1095,33 +1078,22 @@ async function removePeer (messageData) {
                 return;
             }
         }
-
-        if (connections.has(pk)) {
-            connections.get(pk).sendChannel.close();
-            connections.get(pk).sendChannel = null;
-            connections.get(pk).connection.close();
-            connections.get(pk).connection = null;
-            connections.delete(pk);
-        }
+        closeConnections(pk);
     }
 }
 
 async function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
-        var message, name1, name2;
+        var message;
         switch (data.type) {
             case "text":
                 message = `${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
                 break;
             case "add":
-                // name1 = await getUsername(JSON.stringify(data.op.pk1));
-                // name2 = await getUsername(JSON.stringify(data.op.pk2));
                 message = `${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             case "remove":
-                // name1 = await getUsername(JSON.stringify(data.op.pk1));
-                // name2 = await getUsername(JSON.stringify(data.op.pk2));
                 message = `${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             default:
@@ -1441,4 +1413,19 @@ function mergeChatHistory (localMsg, receivedMsg) {
         if (a.username > b.username) { return 1; }
         else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
     });
+}
+
+function closeConnections (pk) {
+    if (connections.has(pk)) {
+        connectionNames.delete(connections.get(pk).connection);
+        if (connections.get(peerPK).sendChannel) {
+            connections.get(peerPK).sendChannel.close();
+            connections.get(peerPK).sendChannel = null;
+        }
+        if (connections.get(peerPK).connection) {
+            connections.get(peerPK).connection.close();
+            connections.get(peerPK).connection = null;
+        }
+        connections.delete(peerPK);
+    }
 }
