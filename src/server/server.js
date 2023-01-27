@@ -118,20 +118,22 @@ wsServer.on('connection', function(connection) {
     connection.onclose = function() {
       if (connection.pk) {
         console.log(`User [${allUsers.get(connection.pk).username}] disconnected`);
-        const removeFrom = connectedUsers.get(connection.pk).groups;
+        // const removeFrom = connectedUsers.get(connection.pk).groups;
+        console.log(`1. checking if deleted ${connectedUsers.size()}`);
         connectedUsers.delete(connection.pk);
+        console.log(`2. checking if deleted ${connectedUsers.size()}`);
         connections.splice(connections.indexOf(connection), 1);
 
-        broadcastActiveUsernames()
+        broadcastActiveUsernames();
 
-        for (chatroomID of removeFrom) {
-          chatrooms.get(chatroomID).splice(chatrooms.get(chatroomID).indexOf(connection.name), 1);
-          console.log(`${connection.name} has left ${chatroomID}`);
-          broadcast({
-            type: "leave",
-            from: connection.name
-          }, chatroomID);
-        }
+        // for (chatroomID of removeFrom) {
+        //   chatrooms.get(chatroomID).splice(chatrooms.get(chatroomID).indexOf(connection.name), 1);
+        //   console.log(`${connection.name} has left ${chatroomID}`);
+        //   broadcast({
+        //     type: "leave",
+        //     from: connection.name
+        //   }, chatroomID);
+        // }
       }
     };
 })
