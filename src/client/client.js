@@ -756,6 +756,7 @@ function valid (ops, ignored, op, seen) {
 
     // all the valid operations before op2
     const inSet = ([...authority(ops)]).filter((edge) => {
+        console.log(`seen type ${seen instanceof Set}`);
         seen = seen.copy();
         seen.add(JSON.stringify(op));
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen);
