@@ -1041,8 +1041,10 @@ async function addPeer (messageData) {
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
 
-    joinedChats.get(messageData.chatID).members.push(pk);
-    joinedChats.get(messageData.chatID).members.sort();
+    if (!joinedChats.get(messageData.chatID).members.includes(pk)) {
+        joinedChats.get(messageData.chatID).members.push(pk);
+        joinedChats.get(messageData.chatID).members.sort();
+    }
     store.setItem("joinedChats", joinedChats);
 
     updateHeading();
@@ -1083,7 +1085,7 @@ async function removePeer (messageData) {
             }
         }
 
-        if (connection.has(pk)) {
+        if (connections.has(pk)) {
             connections.get(pk).sendChannel.close();
             connections.get(pk).sendChannel = null;
             connections.get(pk).connection.close();
