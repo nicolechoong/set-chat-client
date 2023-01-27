@@ -752,14 +752,14 @@ function authority (ops) {
             if (op2.action === "create") { continue; }
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
-                edges.add([op1, op2]);
+                edges.add(JSON.stringify([op1, op2]));
                 printEdge(op1, op2);
             }
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        edges.add([op1, {"member": pk, "sig": pk, "action": "mem"}]);
-        printEdge(op1, op2);
+        edges.add(JSON.stringify([op1, {"member": pk, "sig": pk, "action": "mem"}]));
+        printEdge(op1, {"member": pk, "sig": pk, "action": "mem"});
     }
     console.log(`number of ${edges.size}`);
     return edges;
@@ -783,6 +783,7 @@ function valid (ops, ignored, op, seen) {
     // all the valid operations before op2
     const authorityGraph = [...authority(ops)];
     const inSet = (authorityGraph).filter((edge) => {
+        edge = JSON.parse(edge);
         seen = new Set([...seen]);
         seen.add(JSON.stringify(op));
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen);
