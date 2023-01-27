@@ -816,6 +816,7 @@ function hasCycle (ops, edges) {
                     }
                 }
                 console.log(`here is the number of concurrent ${conc.length}`);
+                conc.forEach(console.log(`conc op ${op.action} ${keyMap.get(op.pk2)}`));
                 return { cycle: true, concurrent: conc };
             }
             if (edge[1].action !== "mem") {
@@ -860,7 +861,7 @@ async function members (ops, ignored) {
         ignored.push(ignoredOp);
         removeOp(ops, ignoredOp);
         console.log(`cycle detected motherfuckers`);
-        console.log(`ops ${ops.length} ignored ${ignored}`);
+        console.log(`ops ${ops.length} ignored ${ignored.length}`);
         return;
     }
     var pk;
