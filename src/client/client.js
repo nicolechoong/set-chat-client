@@ -764,27 +764,46 @@ function authority (ops) {
     return edges;
 }
 
-function hasCycle (edges) {
-    const unseen = [...edges];
-    while (seen.size < edges.length) {
-        for (const edge of seen) {
-            seen = new Set([...seen, edges.filt])
-        }
+function hasCycle (ops, edges) {
+    const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
+    const seen = new Set([JSON.stringify(start.sig)]);
+    const adjacency = new Map();
+    const queue = [start];
+    var cur;
 
+    for (const edge of edges) {
+        if (!adjacency.has(JSON.stringify(edge[0].sig))) {
+            adjacency.set(JSON.stringify(op.sig), []);
+        }
+        adjacency.get(JSON.stringify(op.sig)).push(edge);
     }
+    console.log(`keys sig ${[...adjacency.keys()]}`);
+
+    while (queue.length > 0) {
+        cur = queue.shift();
+        console.log(`state of seen ${[...seen]}`);
+        for (const edge of adjacency.get(JSON.stringify(cur.sig))) {
+            if (seen.has(JSON.stringify(edge[1].sig))) {
+                return true;
+            }
+            if (edge[1].action !== "mem") {
+                queue.push(edge[1]);
+                seen.add(JSON.stringify(edge[1].sig));
+            }
+        }
+    }
+    return false;
 }
 
-function valid (ops, ignored, op, seen, authorityGraph) {
+function valid (ops, ignored, op, authorityGraph) {
     printEdge(op);
-    console.log(`seen sigs ${[...seen]}`);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (ignored.includes(op) || seen.has(JSON.stringify(op.sig))) { return false; }
+    if (ignored.includes(op)) { return false; }
 
     // all the valid operations before op2
     const inSet = (authorityGraph).filter((edge) => {
-        seen = new Set([...seen, JSON.stringify(op.sig)]);
-        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen, authorityGraph);
+        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], authorityGraph);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
@@ -802,6 +821,7 @@ function valid (ops, ignored, op, seen, authorityGraph) {
 function members (ops, ignored) {
     const pks = new Set();
     const authorityGraph = [...authority(ops)];
+    if (hasCycle(authorityGraph)) { console.log(`cycle detected motherfuckers`); }
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
