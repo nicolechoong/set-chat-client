@@ -735,7 +735,7 @@ function printEdge (op1, op2=null) {
     } else {
         output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} `;
     }
-    if (op === null) {
+    if (op2 === null) {
         if (op2.action === "mem") {
             output = `-> ${output} mem ${JSON.stringify(op2.member)}`;
         } else {
