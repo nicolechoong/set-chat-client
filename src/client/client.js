@@ -784,7 +784,16 @@ function hasCycle (ops, edges) {
         console.log(`state of seen ${[...seen]}`);
         for (const edge of adjacency.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(edge[1].sig))) {
-                return true;
+                // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
+                // all edges caused with that as edge[0] 
+                for (const op of ops) {
+                    if (concurrent(ops, cur, op)) {
+                        console.log(`concurrent ops`);
+                        printEdge(cur);
+                        printEdge(op);
+                    }
+                }
+                return { cycle: true, edge: edge };
             }
             if (edge[1].action !== "mem") {
                 queue.push(edge[1]);
@@ -792,7 +801,7 @@ function hasCycle (ops, edges) {
             }
         }
     }
-    return false;
+    return { cycle: false};
 }
 
 function valid (ops, ignored, op, authorityGraph) {
@@ -821,7 +830,10 @@ function valid (ops, ignored, op, authorityGraph) {
 function members (ops, ignored) {
     const pks = new Set();
     const authorityGraph = authority(ops);
-    if (hasCycle(ops, authorityGraph)) { console.log(`cycle detected motherfuckers`); return; }
+    if (hasCycle(ops, authorityGraph).cycle) {
+        console.log(`cycle detected motherfuckers`);
+        
+    }
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
