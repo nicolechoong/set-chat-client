@@ -785,19 +785,16 @@ function hasCycle (ops, edges) {
         for (const edge of adjacency.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(edge[1].sig))) {
                 // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
-                // all edges caused with that as edge[0] 
+                // all edges caused with that as edge[0]
+                const concurrent = [edge[1]];
+                printEdge(edge[1]);
                 for (const op of ops) {
-                    console.log(`concurrent ops what is edge1 ${JSON.stringify(edge[1])}`);
-                    console.log(`concurrent ops deps ${edge[1].deps}`);
-                    console.log(`concurrent ops what is op ${JSON.stringify(op)}`);
-                    console.log(`concurrent ops deps ${op.deps}`);
                     if (op.action !== "create" && concurrent(ops, edge[1], op)) {
-                        console.log(`concurrent ops what is cur ${JSON.stringify(edge[1])}`);
-                        printEdge(edge[1]);
-                        printEdge(op);
+                        concurrent.push(op);
                     }
                 }
-                return { cycle: true, edge: edge };
+                concurrent.forEach(printEdge);
+                return { cycle: true, concurrent: concurrent };
             }
             if (edge[1].action !== "mem") {
                 queue.push(edge[1]);
