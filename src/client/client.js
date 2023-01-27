@@ -786,7 +786,7 @@ function hasCycle (ops, edges) {
             if (seen.has(JSON.stringify(edge[1].sig))) {
                 // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
                 // all edges caused with that as edge[0]
-                const conc = [];
+                const conc = [edge[1]];
                 for (const op of ops) {
                     console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${edge[1].action} ${keyMap.get(JSON.stringify(edge[1].pk2))}?`)
                     if (op.action !== "create" && concurrent(ops, edge[1], op)) {
