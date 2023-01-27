@@ -733,7 +733,7 @@ function printEdge (op1, op2=null) {
     if (op1.action === "create") {
         output = `op1 ${keyMap.get(JSON.stringify(op1.pk))} ${op1.action} ${JSON.stringify(op1.sig)} `;
     } else {
-        output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} `;
+        output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} ${JSON.stringify(op1.sig)} `;
     }
     if (op2) {
         if (op2.action === "mem") {
@@ -755,15 +755,12 @@ function authority (ops) {
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.push([op1, op2]);
-                printEdge(op1, op2);
             }
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.push([op1, {"member": pk, "sig": pk, "action": "mem"}]);
-        printEdge(op1, {"member": pk, "sig": pk, "action": "mem"});
     }
-    console.log(`number of ${edges.length}`);
     return edges;
 }
 
@@ -909,7 +906,6 @@ function receivedMessage (messageData) {
     switch (messageData.type) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
-            console.log(`received a whole ${messageData.ops.length} ops`);
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res) { 
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
@@ -1011,7 +1007,6 @@ async function sendChatHistory (chatID, pk) {
         
         if (chatInfo.historyTable.has(pk)) {
             const intervals = chatInfo.historyTable.get(pk);
-            console.log(`the intervals areeee ${intervals}`);
             var start, end;
             for (const interval of intervals) {
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
@@ -1030,7 +1025,7 @@ async function sendChatHistory (chatID, pk) {
 }
 
 function initChatHistoryTable (chatID, msgID) {
-    console.log(`initialised store`);
+    console.log(`initialised chat history`);
     store.getItem(chatID).then((chatInfo) => {
         for (const pk of joinedChats.get(chatID).members) {
             if (!chatInfo.historyTable.has(pk)) {
@@ -1093,7 +1088,6 @@ async function removePeer (messageData) {
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
             const interval = chatInfo.historyTable.get(pk).pop();
-            console.log(`let's see the interval ${interval}`);
             interval[1] = messageData.id;
             chatInfo.historyTable.get(pk).push(interval);
         }
