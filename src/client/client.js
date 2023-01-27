@@ -734,6 +734,7 @@ function printEdge (op1, op2) {
     } else {
         output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} ->`;
     }
+    if (members.un)
     output = `${output} op2 ${keyMap.get(JSON.stringify(op2.pk1))} ${op2.action} ${keyMap.get(JSON.stringify(op2.pk2))} ->`;
     console.log(output);
 }
@@ -755,8 +756,18 @@ function authority (ops) {
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.add([op1, {"member": pk, "sig": pk}]);
     }
-
+    console.log(edges.size);
     return edges;
+}
+
+function hasCycle (edges) {
+    const seen = edges.filter(edge => { return edge[0].action === "create"; });
+    while (seen.size < edges.length) {
+        for (const edge of seen) {
+            seen = new Set([...seen, edges.filt])
+        }
+
+    }
 }
 
 function valid (ops, ignored, op, seen) {
