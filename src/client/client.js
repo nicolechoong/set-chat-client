@@ -860,6 +860,8 @@ async function members (ops, ignored) {
         ignored.push(ignoredOp);
         removeOp(ops, ignoredOp);
         console.log(`cycle detected motherfuckers`);
+        console.log(`ops ${ops.length} ignored ${ignored}`);
+        return;
     }
     var pk;
     for (const op of ops) {
