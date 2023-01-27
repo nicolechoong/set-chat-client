@@ -569,7 +569,6 @@ function getDeps (operations) {
             deps.push(hashedOp);
         }
     }
-    console.log(`operation ${op.action} has ${deps.length} deps`);
     return deps;
 }
 
@@ -596,6 +595,7 @@ async function generateOp (action, chatID, pk2 = null, ops = []) {
                 deps: getDeps(ops)
             };
         }
+        console.log(`operation ${op.action} has ${op.deps.length} deps`);
         op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
             resolve(op);
     });
