@@ -1047,7 +1047,7 @@ async function addPeer (messageData) {
         joinedChats.get(messageData.chatID).members.push(pk);
         joinedChats.get(messageData.chatID).members.sort();
     }
-    if (!joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
+    if (joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
         joinedChats.get(messageData.chatID).exMembers.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
     }
     store.setItem("joinedChats", joinedChats);
@@ -1070,6 +1070,7 @@ async function removePeer (messageData) {
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
+            console.log(`let's see the interval ${interval}`);
             const interval = chatInfo.historyTable.get(pk).pop();
             interval[1] = messageData.id;
             chatInfo.historyTable.get(pk).push(interval);
@@ -1078,8 +1079,12 @@ async function removePeer (messageData) {
         store.setItem(messageData.chatID, chatInfo);
     });
 
-    joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
-    joinedChats.get(messageData.chatID).exMembers.push(pk);
+    if (joinedChats.get(messageData.chatID).members.includes(pk)) {
+        joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+    }
+    if (!joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
+        joinedChats.get(messageData.chatID).exMembers.push(pk);
+    }
     store.setItem("joinedChats", joinedChats);
 
     if (pk === JSON.stringify(keyPair.publicKey)) {
