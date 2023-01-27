@@ -940,9 +940,12 @@ function receivedMessage (messageData) {
             break;
         case "add":
             unpackOp(messageData.op);
-            receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                if (res) { addPeer(messageData); }
-            });
+            if (arrEqual(messageData.op.pk2, keyPair.publicKey)) { onAdd(); }
+            else {
+                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                    if (res) { addPeer(messageData); }
+                });
+            }
             break;
         case "text":
             if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
