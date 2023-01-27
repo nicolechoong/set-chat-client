@@ -754,7 +754,6 @@ function authority (ops) {
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.add([op1, {"member": pk, "sig": pk}]);
-        printEdge(op1, op2);
     }
 
     return edges;
