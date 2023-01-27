@@ -1418,14 +1418,14 @@ function mergeChatHistory (localMsg, receivedMsg) {
 function closeConnections (pk) {
     if (connections.has(pk)) {
         connectionNames.delete(connections.get(pk).connection);
-        if (connections.get(peerPK).sendChannel) {
-            connections.get(peerPK).sendChannel.close();
-            connections.get(peerPK).sendChannel = null;
+        if (connections.get(pk).sendChannel) {
+            connections.get(pk).sendChannel.close();
+            connections.get(pk).sendChannel = null;
         }
-        if (connections.get(peerPK).connection) {
-            connections.get(peerPK).connection.close();
-            connections.get(peerPK).connection = null;
+        if (connections.get(pk).connection) {
+            connections.get(pk).connection.close();
+            connections.get(pk).connection = null;
         }
-        connections.delete(peerPK);
+        connections.delete(pk);
     }
 }
