@@ -614,6 +614,23 @@ async function sendOperations (chatID, pk) {
     });
 }
 
+async function sendIgnored (chatID, pk, ignored) {
+    // chatID : String, pk : String
+    console.log(`sending operations to ${keyMap.get(pk)}`);
+    store.getItem(chatID).then((chatInfo) => {
+        sendToMember({
+            type: "ops",
+            ignored: ignored,
+            chatID: chatID,
+            from: keyPair.publicKey,
+        }, pk);
+    });
+}
+
+async function receivedIgnored (ignored, chatID, pk) {
+
+}
+
 async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
@@ -624,7 +641,14 @@ async function receivedOperations (ops, chatID, pk) {
             // console.log(`merged ops ${JSON.stringify(ops)}`);
 
             if (verifyOperations(ops)) {
-                const memberSet = await members(ops, chatInfo.metadata.ignored);
+                const memberInfo = await members(ops, chatInfo.metadata.ignored);
+                const memberSet = memberInfo.members;
+
+                // if (memberInfo.ignored.length > 0) {
+                //     sendIgnored(chatID, pk, ignored);
+                //     chatInfo.metadata.ignored()
+                // }
+
                 console.log(`verified true is member ${memberSet.has(pk)}`);
 
                 if (memberSet.has(pk)) { // successfully authenticated
@@ -830,13 +854,12 @@ async function members (ops, ignored) {
     const pks = new Set();
     const authorityGraph = authority(ops);
     const scan = hasCycle(ops, authorityGraph);
+
     if (scan.cycle) {
         const ignoredOp = await getIgnored(scan.concurrent);
         ignored.push(ignoredOp);
         removeOp(ops, ignoredOp);
-        console.log(`the ignored op is ${ignoredOp.action} ${keyMap.get(ignoredOp.pk2)}`);
         console.log(`cycle detected motherfuckers`);
-        return;
     }
     var pk;
     for (const op of ops) {
@@ -846,7 +869,7 @@ async function members (ops, ignored) {
         }
     }
     console.log(`calculated member set ${[...pks]}      number of members ${pks.size}}`);
-    return pks;
+    return { members: pks, ignored: ignored };
 }
 
 
@@ -1319,18 +1342,15 @@ function getIgnored (conc) {
     document.getElementById('universeSelection').style.display = "block";
     document.getElementById('chatBox').style.display = "none";
     var option;
-    var length = ignoredInput.options.length;
-    for (let i = length-1; i >= 0; i--) {
+    for (let i = ignoredInput.options.length-1; i >= 0; i--) {
         ignoredInput.remove(i);
     }
-    console.log(`length of conc ${conc.length}`);
     for (const op of conc) {
         option = document.createElement("option");
         option.text = `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`;
         ignoredInput.add(option);
         ignoredOptions.push(op);
     }
-    console.log(`length of ignored options ${ignoredOptions.length}`);
     return new Promise((resolve) => {
         resolveGetIgnored = resolve;
     });
