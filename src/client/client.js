@@ -773,9 +773,9 @@ function hasCycle (ops, edges) {
 
     for (const edge of edges) {
         if (!adjacency.has(JSON.stringify(edge[0].sig))) {
-            adjacency.set(JSON.stringify(op.sig), []);
+            adjacency.set(JSON.stringify(edge[0].sig), []);
         }
-        adjacency.get(JSON.stringify(op.sig)).push(edge);
+        adjacency.get(JSON.stringify(edge[0].sig)).push(edge);
     }
     console.log(`keys sig ${[...adjacency.keys()]}`);
 
