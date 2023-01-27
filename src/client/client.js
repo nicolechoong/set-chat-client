@@ -727,6 +727,17 @@ function concurrent (ops, op1, op2) {
     return true;
 }
 
+function printEdge (op1, op2) {
+    var output = "";
+    if (op1.action === "create") {
+        output = `op1 ${keyMap.get(JSON.stringify(op1.pk))} ${op1.action} ->`;
+    } else {
+        output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} ->`;
+    }
+    output = `${output} op2 ${keyMap.get(JSON.stringify(op2.pk1))} ${op2.action} ${keyMap.get(JSON.stringify(op2.pk2))} ->`;
+    console.log(output);
+}
+
 function authority (ops) {
     const edges = new Set();
     var pk;
@@ -737,13 +748,13 @@ function authority (ops) {
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.add([op1, op2]);
-                console.log(`added edge ${concatOp(op1)}->${concatOp(op2)}`);
+                printEdge(op1, op2);
             }
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.add([op1, {"member": pk, "sig": pk}]);
-        console.log(`added edge ${concatOp(op1)}->leaf ${pk}`);
+        printEdge(op1, op2);
     }
 
     return edges;
@@ -756,7 +767,6 @@ function valid (ops, ignored, op, seen) {
 
     // all the valid operations before op2
     const inSet = ([...authority(ops)]).filter((edge) => {
-        console.log(`seen type ${seen instanceof Set}`);
         seen = new Set([...seen]);
         seen.add(JSON.stringify(op));
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen);
