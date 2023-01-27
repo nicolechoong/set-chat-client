@@ -821,7 +821,7 @@ function valid (ops, ignored, op, authorityGraph) {
 function members (ops, ignored) {
     const pks = new Set();
     const authorityGraph = [...authority(ops)];
-    if (hasCycle(authorityGraph)) { console.log(`cycle detected motherfuckers`); }
+    if (hasCycle(ops, authorityGraph)) { console.log(`cycle detected motherfuckers`); }
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
