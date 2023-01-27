@@ -151,7 +151,7 @@ async function onLogin (success, chats, username) {
         alert("oops...try a different username"); 
     } else {
         localUsername = username;
-        joinedChats = mergeJoinedChats(joinedChats, chats);
+        joinedChats = mergeJoinedChats(joinedChats, new Map());
         store.setItem("joinedChats", joinedChats);
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
@@ -264,9 +264,8 @@ function onCandidate(candidate, peerPK) {
 }
 
 function onConnectedUsers(usernames) {
-    if (usernames.length > 0) {
-        document.getElementById('usernames').innerHTML = `Currently Online: ${usernames.join(", ")}`;
-    }
+    document.getElementById('usernames').innerHTML = `Currently Online: ${usernames.join(", ")}`;
+
     if (localUsername) {
         const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap.get(entry[0]))).map(entry => entry[0]);
         console.log(`online from queued ${toSend}`);
@@ -353,7 +352,8 @@ function onAdd (chatID, chatName, from, fromPK) {
         } else {
             if (!(await connectToPeer({peerName: from, peerPK: fromPK}))) {
                 if (!getOnline(chatID)) {
-
+                    console.log(`no one is online :(`);
+                    
                 }
             }
         }
