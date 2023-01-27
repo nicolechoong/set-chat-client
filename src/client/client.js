@@ -413,7 +413,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
        var pk;
         for (const name of validMemberPubKeys.keys()) {
             pk = objToArr(validMemberPubKeys.get(name));
-            console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations}`)
+            console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations.map(op => op.action)}`);
             const op = await generateOp("remove", chatID, pk, chatInfo.metadata.operations);
             chatInfo.metadata.operations.push(op);
             await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
@@ -569,6 +569,7 @@ function getDeps (operations) {
             deps.push(hashedOp);
         }
     }
+    console.log(`operation ${op.action} has ${deps.length} deps`);
     return deps;
 }
 
@@ -758,6 +759,7 @@ function authority (ops) {
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.add([op1, {"member": pk, "sig": pk, "action": "mem"}]);
+        printEdge(op1, op2);
     }
     console.log(`number of ${edges.size}`);
     return edges;
