@@ -323,7 +323,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 }
 
 // When being added to a new chat
-function onAdd (chatID, chatName, from, fromPK) {
+function onAdd (chatID, chatName, from, fromPK, msgID) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array
 
     // we want to move this actual joining to after syncing with someone from the chat
@@ -331,6 +331,7 @@ function onAdd (chatID, chatName, from, fromPK) {
 
     joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], exMembers: [], currentMember: false});
     store.setItem("joinedChats", joinedChats);
+    initChatHistoryTable(chatID, msgID);
 
     store.setItem(chatID, {
         metadata: {
@@ -372,19 +373,20 @@ async function addToChat (validMemberPubKeys, chatID) {
                 chatID: chatID,
                 chatName: chatInfo.metadata.chatName
             };
+            
+            joinedChats.get(chatID).members.push(JSON.stringify(pk));
+            await store.setItem("joinedChats", joinedChats);
+            await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
+            const msgID = broadcastToMembers(addMessage, chatID);
             sendToServer({
                 to: pk,
                 type: "add",
                 from: localUsername,
                 fromPK: keyPair.publicKey,
                 chatID: chatID,
-                chatName: chatInfo.metadata.chatName
+                chatName: chatInfo.metadata.chatName,
+                msgID: msgID,
             });
-            
-            joinedChats.get(chatID).members.push(JSON.stringify(pk));
-            await store.setItem("joinedChats", joinedChats);
-            await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
-            broadcastToMembers(addMessage, chatID);
             console.log(`added ${name}`);
         }
     });
@@ -995,14 +997,15 @@ async function sendChatHistory (chatID, pk) {
     });
 }
 
-function initChatHistoryTable (messageData) {
-    store.getItem(messageData.chatID).then((chatInfo) => {
-        for (const pk of joinedChats.get(messageData.chatID).members) {
+function initChatHistoryTable (chatID, msgID) {
+    store.getItem(chatID).then((chatInfo) => {
+        for (const pk of joinedChats.get(chatID).members) {
             if (!chatInfo.historyTable.has(pk)) {
                 chatInfo.historyTable.set(pk, []);
             }
-            chatInfo.historyTable.get(pk).push([messageData.id, 0]);
+            chatInfo.historyTable.get(pk).push([msgID, 0]);
         }
+        store.setItem(chatID, chatInfo);
     });
 }
 
@@ -1139,6 +1142,7 @@ function broadcastToMembers (data, chatID = null) {
             continue;
         }
     }
+    return data.id;
 }
 
 function sendChatMessage (messageInput) {
