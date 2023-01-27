@@ -734,8 +734,8 @@ function printEdge (op1, op2) {
     } else {
         output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} ->`;
     }
-    if (op2.members === undefined) {
-        output = `${output} mem ${keyMap.get(JSON.stringify(pk))}`;
+    if (op2.member === undefined) {
+        output = `${output} mem ${keyMap.get(JSON.stringify(op2.member))}`;
     } else {
         output = `${output} op2 ${keyMap.get(JSON.stringify(op2.pk1))} ${op2.action} ${keyMap.get(JSON.stringify(op2.pk2))}`;
     }
