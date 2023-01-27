@@ -741,11 +741,13 @@ function authority (ops) {
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.add([op1, op2]);
+                console.log(`added edge ${concatOp(op1)}->${concatOp(op2)}`);
             }
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.add([op1, {"member": pk, "sig": pk}]);
+        console.log(`added edge ${concatOp(op1)}->leaf ${pk}`);
     }
 
     return edges;
