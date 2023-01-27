@@ -299,7 +299,7 @@ function onLeave (peerPK) {
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
 
-    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(keyPair.publicKey)], currentMember: true});
+    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(keyPair.publicKey)], exMembers: [], currentMember: true});
     store.setItem("joinedChats", joinedChats);
     
     for (const name of validMemberPubKeys.keys()) {
@@ -337,7 +337,7 @@ function onAdd (chatID, chatName, from, fromPK) {
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
 
-    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], currentMember: false});
+    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], exMembers: [], currentMember: false});
     store.setItem("joinedChats", joinedChats);
 
     store.setItem(chatID, {
@@ -658,6 +658,7 @@ async function receivedOperations (ops, chatID, pk) {
                     updateHeading();
 
                     chatInfo.metadata.operations = ops;
+                    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => {return !memberSet.has(pk)});
                     joinedChats.get(chatID).members = [...memberSet];
                     joinedChats.get(chatID).members.sort();
                     store.setItem("joinedChats", joinedChats);
@@ -949,7 +950,7 @@ function onChannelOpen (event) {
     }
 
     for (const chatID of joinedChats.keys()) {
-        if (joinedChats.get(chatID).members.includes(peerPK)) {
+        if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.includes(peerPK)) {
             sendOperations(chatID, peerPK);
         }
     }
@@ -1045,6 +1046,9 @@ async function addPeer (messageData) {
         joinedChats.get(messageData.chatID).members.push(pk);
         joinedChats.get(messageData.chatID).members.sort();
     }
+    if (!joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
+        joinedChats.get(messageData.chatID).exMembers.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+    }
     store.setItem("joinedChats", joinedChats);
 
     updateHeading();
@@ -1073,7 +1077,8 @@ async function removePeer (messageData) {
         store.setItem(messageData.chatID, chatInfo);
     });
 
-    joinedChats.get(messageData.chatID).members.splice(pk, 1);
+    joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+    joinedChats.get(messageData.chatID).exMembers.push(pk);
     store.setItem("joinedChats", joinedChats);
 
     if (pk === JSON.stringify(keyPair.publicKey)) {
