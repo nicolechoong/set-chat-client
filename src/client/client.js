@@ -744,7 +744,7 @@ function printEdge (op1, op2) {
 }
 
 function authority (ops) {
-    const edges = new Set();
+    const edges = [];
     var pk;
     // convert pk into strings to perform comparisons
     for (const op1 of ops) {
@@ -752,21 +752,21 @@ function authority (ops) {
             if (op2.action === "create") { continue; }
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
-                edges.add([op1, op2]);
+                edges.push([op1, op2]);
                 printEdge(op1, op2);
             }
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        edges.add([op1, {"member": pk, "sig": pk, "action": "mem"}]);
+        edges.push([op1, {"member": pk, "sig": pk, "action": "mem"}]);
         printEdge(op1, {"member": pk, "sig": pk, "action": "mem"});
     }
-    console.log(`number of ${edges.size}`);
+    console.log(`number of ${edges.length}`);
     return edges;
 }
 
 function hasCycle (edges) {
-    const seen = edges.filter(edge => { return edge[0].action === "create"; });
+    const unseen = [...edges];
     while (seen.size < edges.length) {
         for (const edge of seen) {
             seen = new Set([...seen, edges.filt])
@@ -775,16 +775,14 @@ function hasCycle (edges) {
     }
 }
 
-function valid (ops, ignored, op, seen) {
+function valid (ops, ignored, op, seen, authorityGraph) {
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (ignored.includes(op) || seen.has(JSON.stringify(op))) { return false; }
+    if (ignored.includes(op) || seen.has(JSON.stringify(op.sig))) { return false; }
 
     // all the valid operations before op2
-    const authorityGraph = [...authority(ops)];
     const inSet = (authorityGraph).filter((edge) => {
-        seen = new Set([...seen]);
-        seen.add(JSON.stringify(op));
+        seen = new Set([...seen, JSON.stringify(op.sig)]);
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
@@ -802,10 +800,11 @@ function valid (ops, ignored, op, seen) {
 
 function members (ops, ignored) {
     const pks = new Set();
+    const authorityGraph = [...authority(ops)];
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
-        if (valid(ops, ignored, {"member": pk, "sig": pk, "action": "mem"}, new Set())) {
+        if (valid(ops, ignored, {"member": pk, "sig": pk, "action": "mem"}, new Set()), authorityGraph) {
             pks.add(JSON.stringify(pk));
         }
     }
