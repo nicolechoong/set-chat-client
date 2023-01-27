@@ -324,7 +324,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 
 // When being added to a new chat
 function onAdd (chatID, chatName, from, fromPK, msgID) {
-    // chatID: String, chatName: String, from: String, fromPK: Uint8Array
+    // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
@@ -972,8 +972,9 @@ function receivedMessage (messageData) {
             break;
         case "add":
             unpackOp(messageData.op);
-            if (arrEqual(messageData.op.pk2, keyPair.publicKey)) { onAdd(); }
-            else {
+            if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
+                onAdd(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(from)), objToArray(messageData.from), msgID);
+            } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res) { addPeer(messageData); }
                 });
