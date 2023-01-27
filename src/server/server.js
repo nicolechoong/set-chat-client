@@ -276,7 +276,7 @@ function onCreateChat (connection, data) {
   const invalidMembers = data.members.filter(mem => !usernameToPK.has(mem));
 
   // add to list of chats
-  chats.set(chatID, {chatName: data.chatName, members: [JSON.stringify(data.from)], exMembers: []});
+  chats.set(chatID, {chatName: data.chatName, members: [JSON.stringify(data.from)]});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
   console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
@@ -315,7 +315,7 @@ function onGetPK (connection, data) {
 function getOnline (pk, chatID) {
   // pk : stringified(pk)
   const onlineMembers = [];
-  if (chats.has(chatID) && (chats.get(chatID).members.includes(pk) || chats.get(chatID).exMembers.includes(pk))) {
+  if (chats.has(chatID) && (chats.get(chatID).members.includes(pk))) {
     for (const mem of chats.get(chatID).members) {
       if (connectedUsers.has(mem) && mem !== pk) {
         onlineMembers.push({
@@ -361,9 +361,6 @@ function onAdd (connection, data) {
   const toPK = JSON.stringify(data.to);
 
   console.log(`adding member ${toPK} to chats store ${data.chatID} ${chats.has(data.chatID)} ${[...chats.keys()]}`);
-  if (chats.get(data.chatID).exMembers.includes(toPK)) {
-    chats.get(data.chatID).exMembers.splice(chats.get(data.chatID).exMembers.indexOf(toPK), 1);
-  }
   chats.get(data.chatID).members.push(toPK);
 
   console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
@@ -375,9 +372,8 @@ function onAdd (connection, data) {
 }
 
 function onRemove (connection, data) {
-  const toPK = JSON.stringify(data.to);
-  chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
-  chats.get(data.chatID).exMembers.push(toPK);
+//   const toPK = JSON.stringify(data.to);
+//   chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
 
   // console.log(`sending remove message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
   // if (connectedUsers.get(toPK) == null) {
@@ -438,13 +434,6 @@ function getJoinedChats(pk) {
         currentMember: true
       });
       console.log(`user ${allUsers.get(pk).username} is in ${chatID}`);
-    }
-    if (chats.get(chatID).exMembers.includes(pk)) {
-      joined.set(chatID, {
-        chatName: chatInfo.chatName,
-        members: chatInfo.members, // note that we are still sending updated members...
-        currentMember: false
-      });
     }
   }
   return joined;
