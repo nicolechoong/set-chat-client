@@ -788,9 +788,9 @@ function hasCycle (ops, edges) {
                 // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
                 // all edges caused with that as edge[0] 
                 for (const op of ops) {
-                    if (concurrent(ops, cur, op)) {
-                        console.log(`concurrent ops`);
-                        printEdge(cur);
+                    if (concurrent(ops, edge[1], op)) {
+                        console.log(`concurrent ops what is cur ${JSON.stringify(edge[1])}`);
+                        printEdge(edge[1]);
                         printEdge(op);
                     }
                 }
