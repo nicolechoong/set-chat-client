@@ -709,7 +709,6 @@ function precedes (ops, op1, op2) {
     var curOp, dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
-        console.log(typeof curOp.deps);
         for (const hashedDep of curOp.deps) {
             if (arrEqual(hashedDep, target)) {
                 return true;
@@ -788,6 +787,7 @@ function hasCycle (ops, edges) {
                 // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
                 // all edges caused with that as edge[0] 
                 for (const op of ops) {
+                    console.log(`concurrent ops what is edge1 ${JSON.stringify(edge[1])}`);
                     if (concurrent(ops, edge[1], op)) {
                         console.log(`concurrent ops what is cur ${JSON.stringify(edge[1])}`);
                         printEdge(edge[1]);
