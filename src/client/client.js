@@ -884,6 +884,7 @@ function receivedMessage (messageData) {
     switch (messageData.type) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
+            console.log(`received a whole ${messageData.ops.length} ops`);
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res) { 
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
@@ -1372,6 +1373,7 @@ function arrEqual(arr1, arr2) {
 
 function unionOps (ops1, ops2) {
     const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
+    console.log(`ops1 length ${ops1.length}   ops2 length ${ops2.length}`);
     console.log(`ops1 set ${ops1.map(op => JSON.stringify(op.sig))}      ops2 set ${ops2.map(op => JSON.stringify(op.sig))}`);
     const ops = [...ops1];
     for (const op of ops2) {
