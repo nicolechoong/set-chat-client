@@ -649,7 +649,6 @@ async function receivedOperations (ops, chatID, pk) {
                     joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => {return !memberSet.has(pk)});
                     joinedChats.get(chatID).members = [...memberSet];
                     joinedChats.get(chatID).members.sort();
-                    console.log(`current state of ex ${joinedChats.get(chatID).exMembers} and current state of mems ${joinedChats.get(chatID).members}`);
                     store.setItem("joinedChats", joinedChats);
                     store.setItem(chatID, chatInfo);
                     resolve(true);
@@ -1369,6 +1368,7 @@ function arrEqual(arr1, arr2) {
 
 function unionOps (ops1, ops2) {
     const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
+    console.log(`ops1 set ${ops1.map(op => JSON.stringify(op.sig))}      ops2 set ${ops2.map(op => JSON.stringify(op.sig))}`);
     const ops = [...ops1];
     for (const op of ops2) {
         if (!sigSet.has(JSON.stringify(op.sig))) { ops.push(op); }
