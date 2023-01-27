@@ -1319,14 +1319,18 @@ function getIgnored (conc) {
     document.getElementById('universeSelection').style.display = "block";
     document.getElementById('chatBox').style.display = "none";
     var option;
-    ignoredOptions.innerHTML = "";
+    var length = ignoredInput.options.length;
+    for (let i = length-1; i >= 0; i--) {
+        ignoredInput.remove(i);
+    }
     console.log(`length of conc ${conc.length}`);
     for (const op of conc) {
         option = document.createElement("option");
         option.text = `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`;
-        ignoredInput.options.add(option);
+        ignoredInput.add(option);
         ignoredOptions.push(op);
     }
+    console.log(`length of ignored options ${ignoredOptions.length}`);
     return new Promise((resolve) => {
         resolveGetIgnored = resolve;
     });
@@ -1396,14 +1400,14 @@ function updateChatOptions(operation, chatID) {
     var option = document.createElement("option");
     if (operation === "add" && !chatOptions.has(chatID)) {
         option.text = joinedChats.get(chatID).chatName;
-        chatNameInput.options.add(option);
+        chatNameInput.add(option);
         chatOptions.add(chatID);
         return;
     }
         
     if (operation === "remove" && chatOptions.has(chatID)) {
         const index = [...joinedChats.keys()].indexOf(chatID);
-        chatNameInput.options.remove(index);
+        chatNameInput.remove(index);
         chatOptions.delete(chatID);
     }
 }
