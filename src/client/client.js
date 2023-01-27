@@ -783,7 +783,7 @@ function valid (ops, ignored, op, seen, authorityGraph) {
     // all the valid operations before op2
     const inSet = (authorityGraph).filter((edge) => {
         seen = new Set([...seen, JSON.stringify(op.sig)]);
-        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen);
+        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen, authorityGraph);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
