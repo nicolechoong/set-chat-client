@@ -1060,8 +1060,8 @@ async function removePeer (messageData) {
     
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
-            console.log(`let's see the interval ${interval}`);
             const interval = chatInfo.historyTable.get(pk).pop();
+            console.log(`let's see the interval ${interval}`);
             interval[1] = messageData.id;
             chatInfo.historyTable.get(pk).push(interval);
         }
