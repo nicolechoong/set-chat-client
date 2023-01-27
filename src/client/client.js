@@ -816,7 +816,7 @@ function hasCycle (ops, edges) {
                     }
                 }
                 console.log(`here is the number of concurrent ${conc.length}`);
-                conc.forEach(op => {console.log(`conc op ${op.action} ${keyMap.get(op.pk2)}`)});
+                conc.forEach(op => {console.log(`conc op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
                 return { cycle: true, concurrent: conc };
             }
             if (edge[1].action !== "mem") {
