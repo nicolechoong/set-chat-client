@@ -652,10 +652,10 @@ async function receivedOperations (ops, chatID, pk) {
                     store.setItem(chatID, chatInfo);
                     resolve(true);
                     return;
-                } else {
-                    if (joinedChats.get(chatID).exMembers.includes(pk)) {
-                        sendChatHistory(chatID, pk);
-                    }
+                }
+                if (joinedChats.get(chatID).exMembers.includes(pk)) {
+                    sendChatHistory(chatID, pk).then(closeConnections(pk));
+                    return;
                 }
             }
             closeConnections(pk);
@@ -970,7 +970,7 @@ function sendAdvertisement (chatID, pk) {
     }
 }
 
-function sendChatHistory (chatID, pk) {
+async function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         var peerHistory = [];
@@ -1054,8 +1054,6 @@ async function addPeer (messageData) {
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
     
-    updateHeading();
-    updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
             console.log(`let's see the interval ${interval}`);
@@ -1074,6 +1072,9 @@ async function removePeer (messageData) {
         joinedChats.get(messageData.chatID).exMembers.push(pk);
     }
     store.setItem("joinedChats", joinedChats);
+    
+    updateHeading();
+    updateChatWindow(messageData);
 
     if (pk === JSON.stringify(keyPair.publicKey)) {
         return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, messageData.from);
