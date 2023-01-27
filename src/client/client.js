@@ -804,7 +804,7 @@ function members (ops, ignored) {
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
-        if (valid(ops, ignored, {"member": pk, "sig": pk, "action": "mem"}, new Set()), authorityGraph) {
+        if (valid(ops, ignored, {"member": pk, "sig": pk, "action": "mem"}, new Set(), authorityGraph)) {
             pks.add(JSON.stringify(pk));
         }
     }
