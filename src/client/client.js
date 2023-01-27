@@ -652,6 +652,10 @@ async function receivedOperations (ops, chatID, pk) {
                     store.setItem(chatID, chatInfo);
                     resolve(true);
                     return;
+                } else {
+                    if (joinedChats.get(chatID).exMembers.includes(pk)) {
+                        sendChatHistory(chatID, pk);
+                    }
                 }
             }
             closeConnections(pk);
@@ -1050,6 +1054,7 @@ async function addPeer (messageData) {
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
     
+    updateHeading();
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
