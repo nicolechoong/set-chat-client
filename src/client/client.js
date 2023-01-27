@@ -788,6 +788,9 @@ function hasCycle (ops, edges) {
                 // all edges caused with that as edge[0] 
                 for (const op of ops) {
                     console.log(`concurrent ops what is edge1 ${JSON.stringify(edge[1])}`);
+                    console.log(`concurrent ops deps ${edge[1].deps}`);
+                    console.log(`concurrent ops what is op ${JSON.stringify(op)}`);
+                    console.log(`concurrent ops deps ${op.deps}`);
                     if (concurrent(ops, edge[1], op)) {
                         console.log(`concurrent ops what is cur ${JSON.stringify(edge[1])}`);
                         printEdge(edge[1]);
