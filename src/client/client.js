@@ -786,15 +786,15 @@ function hasCycle (ops, edges) {
             if (seen.has(JSON.stringify(edge[1].sig))) {
                 // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
                 // all edges caused with that as edge[0]
-                const concurrent = [edge[1]];
+                const conc = [edge[1]];
                 printEdge(edge[1]);
                 for (const op of ops) {
                     if (op.action !== "create" && concurrent(ops, edge[1], op)) {
-                        concurrent.push(op);
+                        conc.push(op);
                     }
                 }
-                concurrent.forEach(printEdge);
-                return { cycle: true, concurrent: concurrent };
+                conc.forEach(printEdge);
+                return { cycle: true, concurrent: conc };
             }
             if (edge[1].action !== "mem") {
                 queue.push(edge[1]);
