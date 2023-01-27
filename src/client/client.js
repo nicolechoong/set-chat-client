@@ -728,17 +728,19 @@ function concurrent (ops, op1, op2) {
     return true;
 }
 
-function printEdge (op1, op2) {
+function printEdge (op1, op2=null) {
     var output = "";
     if (op1.action === "create") {
-        output = `op1 ${keyMap.get(JSON.stringify(op1.pk))} ${op1.action} ->`;
+        output = `op1 ${keyMap.get(JSON.stringify(op1.pk))} ${op1.action} ${JSON.stringify(op1.sig)} `;
     } else {
-        output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} ->`;
+        output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} `;
     }
-    if (op2.action === "mem") {
-        output = `${output} mem ${JSON.stringify(op2.member)}`;
-    } else {
-        output = `${output} op2 ${keyMap.get(JSON.stringify(op2.pk1))} ${op2.action} ${keyMap.get(JSON.stringify(op2.pk2))}`;
+    if (op === null) {
+        if (op2.action === "mem") {
+            output = `-> ${output} mem ${JSON.stringify(op2.member)}`;
+        } else {
+            output = `-> ${output} op2 ${keyMap.get(JSON.stringify(op2.pk1))} ${op2.action} ${keyMap.get(JSON.stringify(op2.pk2))}`;
+        }
     }
     console.log(output);
 }
@@ -776,6 +778,8 @@ function hasCycle (edges) {
 }
 
 function valid (ops, ignored, op, seen, authorityGraph) {
+    printEdge(op);
+    console.log(`seen sigs ${[...seen]}`);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
     if (ignored.includes(op) || seen.has(JSON.stringify(op.sig))) { return false; }
