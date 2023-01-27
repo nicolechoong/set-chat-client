@@ -594,8 +594,8 @@ async function generateOp (action, chatID, pk2 = null, ops = []) {
                 pk2: pk2,
                 deps: getDeps(ops)
             };
+            console.log(`operation ${op.action} has ${op.deps.length} deps`);
         }
-        console.log(`operation ${op.action} has ${op.deps.length} deps`);
         op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
             resolve(op);
     });
@@ -781,7 +781,8 @@ function valid (ops, ignored, op, seen) {
     if (ignored.includes(op) || seen.has(JSON.stringify(op))) { return false; }
 
     // all the valid operations before op2
-    const inSet = ([...authority(ops)]).filter((edge) => {
+    const authorityGraph = [...authority(ops)];
+    const inSet = (authorityGraph).filter((edge) => {
         seen = new Set([...seen]);
         seen.add(JSON.stringify(op));
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen);
