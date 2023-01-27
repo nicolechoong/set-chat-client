@@ -661,6 +661,7 @@ async function receivedOperations (ops, chatID, pk) {
                     joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => {return !memberSet.has(pk)});
                     joinedChats.get(chatID).members = [...memberSet];
                     joinedChats.get(chatID).members.sort();
+                    console.log(`current state of ex ${joinedChats.get(chatID).exMembers} and current state of mems ${joinedChats.get(chatID).members}`);
                     store.setItem("joinedChats", joinedChats);
                     store.setItem(chatID, chatInfo);
                     resolve(true);
@@ -989,7 +990,7 @@ function sendChatHistory (chatID, pk) {
         
         if (chatInfo.historyTable.has(pk)) {
             const intervals = chatInfo.historyTable.get(pk);
-            console.log(intervals);
+            console.log(`the intervals areeee ${intervals}`);
             var start, end;
             for (const interval of intervals) {
                 start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
