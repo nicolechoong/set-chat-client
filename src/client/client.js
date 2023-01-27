@@ -709,6 +709,7 @@ function precedes (ops, op1, op2) {
     var curOp, dep;
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
+        console.log(typeof curOp.deps);
         for (const hashedDep of curOp.deps) {
             if (arrEqual(hashedDep, target)) {
                 return true;
@@ -832,7 +833,7 @@ function members (ops, ignored) {
     const authorityGraph = authority(ops);
     if (hasCycle(ops, authorityGraph).cycle) {
         console.log(`cycle detected motherfuckers`);
-        
+        return;
     }
     var pk;
     for (const op of ops) {
