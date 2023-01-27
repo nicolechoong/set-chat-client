@@ -119,9 +119,7 @@ wsServer.on('connection', function(connection) {
       if (connection.pk) {
         console.log(`User [${allUsers.get(connection.pk).username}] disconnected`);
         // const removeFrom = connectedUsers.get(connection.pk).groups;
-        console.log(`1. checking if deleted ${connectedUsers.size}`);
         connectedUsers.delete(connection.pk);
-        console.log(`2. checking if deleted ${connectedUsers.size}`);
         connections.splice(connections.indexOf(connection), 1);
 
         broadcastActiveUsernames();
