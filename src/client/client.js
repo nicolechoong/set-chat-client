@@ -752,12 +752,12 @@ function authority (ops) {
 function valid (ops, ignored, op, seen) {
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (ignored.includes(op) || seen.includes(op)) { return false; }
+    if (ignored.includes(op) || seen.has(JSON.stringify(op))) { return false; }
 
     // all the valid operations before op2
     const inSet = ([...authority(ops)]).filter((edge) => {
-
-        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], [...seen, op]);
+        seen = seen.copy().add(JSON.stringify(op));
+        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], seen);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
@@ -777,7 +777,7 @@ function members (ops, ignored) {
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
-        if (valid(ops, ignored, {"member": pk, "sig": pk}, [])) {
+        if (valid(ops, ignored, {"member": pk, "sig": pk}, new Set())) {
             pks.add(JSON.stringify(pk));
         }
     }
