@@ -655,8 +655,8 @@ async function receivedOperations (ops, chatID, pk) {
                     resolve(true);
                     return;
                 }
-                if (joinedChats.get(chatID).exMembers.includes(pk)) {
-                    sendChatHistory(chatID, pk).then(closeConnections(pk));
+                if (joinedChats.get(chatID).exMembers.includes(pk)) {   
+                    sendChatHistory(chatID, pk); // should still close after
                     return;
                 }
             }
@@ -1129,6 +1129,7 @@ function sendToMember (data, pk) {
     if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     connections.get(pk).sendChannel.send(JSON.stringify(data));
+    return;
 }
 
 function broadcastToMembers (data, chatID = null) {
