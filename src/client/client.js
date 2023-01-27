@@ -9,6 +9,7 @@ var chatMessages = document.getElementById('chatMessages');
 
 var loginInput = document.getElementById('loginInput');
 var chatNameInput = document.getElementById('chatNameInput');
+var ignoredInput = document.getElementById('ignoredInput');
 var messageInput = document.getElementById('messageInput');
 var modifyUserInput = document.getElementById('modifyUserInput');
 
@@ -69,7 +70,7 @@ var keyMap = new Map();
 // map from public key : stringify(pk) to array of JSON object representing the message data
 var msgQueue = new Map();
 
-// storing deps for faster access
+// caching deps
 var hashedOps = new Map();
 
 
@@ -625,7 +626,7 @@ async function receivedOperations (ops, chatID, pk) {
             // console.log(`merged ops ${JSON.stringify(ops)}`);
 
             if (verifyOperations(ops)) {
-                const memberSet = members(ops, chatInfo.metadata.ignored);
+                const memberSet = await members(ops, chatInfo.metadata.ignored);
                 console.log(`verified true is member ${memberSet.has(pk)}`);
 
                 if (memberSet.has(pk)) { // successfully authenticated
@@ -781,13 +782,11 @@ function hasCycle (ops, edges) {
 
     while (queue.length > 0) {
         cur = queue.shift();
-        console.log(`state of seen ${[...seen]}`);
         for (const edge of adjacency.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(edge[1].sig))) {
                 // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
                 // all edges caused with that as edge[0]
-                const conc = [edge[1]];
-                printEdge(edge[1]);
+                const conc = [];
                 for (const op of ops) {
                     if (op.action !== "create" && concurrent(ops, edge[1], op)) {
                         conc.push(op);
@@ -828,10 +827,15 @@ function valid (ops, ignored, op, authorityGraph) {
     return false;
 }
 
-function members (ops, ignored) {
+async function members (ops, ignored) {
     const pks = new Set();
     const authorityGraph = authority(ops);
-    if (hasCycle(ops, authorityGraph).cycle) {
+    const scan = hasCycle(ops, authorityGraph);
+    if (scan.cycle) {
+        const ignoredOp = await getIgnored(scan.concurrent);
+        ignored.push(ignoredOp);
+        removeOp(ops, ignoredOp);
+        console.log(`the ignored op is ${ignoredOp.action} ${keyMap.get(ignoredOp.pk2)}`);
         console.log(`cycle detected motherfuckers`);
         return;
     }
@@ -1267,6 +1271,8 @@ sendMessageBtn.addEventListener("click", function () {
 
 chatNameInput.addEventListener("change", selectChat);
 
+ignoredInput.addEventListener("change", selectIgnored);
+
 newChatBtn.addEventListener("click", createNewChat);
 
 addUserBtn.addEventListener ("click", async () => {
@@ -1306,6 +1312,31 @@ resetStoreBtn.addEventListener ("click", () => {
         }
     })
 })
+
+const ignoredOptions = [];
+var resolveGetIgnored;
+
+function getIgnored (conc) {
+    document.getElementById('universeSelection').style.display = "block";
+    document.getElementById('chatBox').style.display = "none";
+    var option;
+    ignoredOptions.innerHTML = "";
+    for (const op of conc) {
+        option = document.createElement("option");
+        option.text = `${op.action} ${keyMap.get(op.pk2)}`;
+        ignoredInput.options.add(option);
+        ignoredOptions.push(op);
+    }
+    return new Promise((resolve) => {
+        resolveGetIgnored = resolve;
+    });
+}
+
+function selectIgnored () {
+    resolveGetIgnored(ignoredOptions[ignoredInput.selectedIndex]);
+    document.getElementById('chatBox').style.display = "block";
+    document.getElementById('universeSelection').style.display = "none";
+}
 
 function getChatNames () {
     var chatnames = [];
@@ -1370,7 +1401,7 @@ function updateChatOptions(operation, chatID) {
         return;
     }
         
-    if (operation === "remove" && chatOptions.includes(chatID)) {
+    if (operation === "remove" && chatOptions.has(chatID)) {
         const index = [...joinedChats.keys()].indexOf(chatID);
         chatNameInput.options.remove(index);
         chatOptions.delete(chatID);
@@ -1442,6 +1473,14 @@ function hasOp (ops, op) {
         if (arrEqual(curOp, op)) { return true; }
     }
     return false;
+}
+
+function removeOp (ops, op) {
+    for (let i=0; i < ops.length; i++) {
+        if (arrEqual(ops[i].sig, op.sig)) {
+            ops.splice(i, 1);
+        }
+    }
 }
 
 function strToArr (str) {

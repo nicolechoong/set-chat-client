@@ -38,17 +38,24 @@
 
             <div>
                 <h2 id="chatHeading">Chat</h2>
-                <p id="chatMembers"></p>
-                <div id="chatMods">
-                    <input type = "text" id = "modifyUserInput" />
-                    <button id = "addUserBtn">Add</button>
-                    <button id = "removeUserBtn">Remove</button> 
+                <div id="universeSelection">
+                    Select an operation to ignore
+                    <select name="toIgnore" id="ignoredInput" style="width:200px">
+                    </select>
                 </div>
-                <div id="chatWindow" style="overflow-y:scroll; max-height:400px;"></div>
-                    <p id="chatMessages"></p>
+                <div id="chatBox">
+                    <p id="chatMembers"></p>
+                    <div id="chatMods">
+                        <input type = "text" id = "modifyUserInput" />
+                        <button id = "addUserBtn">Add</button>
+                        <button id = "removeUserBtn">Remove</button> 
+                    </div>
+                    <div id="chatWindow" style="overflow-y:scroll; max-height:400px;"></div>
+                        <p id="chatMessages"></p>
+                    </div>
+                    <input type = "text" id = "messageInput" style="width:75%"/>
+                    <button id = "sendMessageBtn">Send</button> 
                 </div>
-                <input type = "text" id = "messageInput" style="width:75%"/>
-                <button id = "sendMessageBtn">Send</button> 
             </div>
                
             <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
