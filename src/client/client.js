@@ -416,6 +416,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
                 pk = objToArr(validMemberPubKeys.get(name));
                 console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations}`)
                 const op = await generateOp("remove", chatID, pk, chatInfo.metadata.operations);
+                console.log(`1. num of ops ${chatInfo.metadata.operations.length}`);
                 chatInfo.metadata.operations.push(op);
 
                 const removeMessage = {
@@ -439,6 +440,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
             resolve(chatInfo);
         });
     }).then((chatInfo) => {
+        console.log(`2. num of ops ${chatInfo.metadata.operations.length}`);
         store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
     });
 }
