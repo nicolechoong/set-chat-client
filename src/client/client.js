@@ -734,8 +734,8 @@ function printEdge (op1, op2) {
     } else {
         output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} ->`;
     }
-    if (op2.member === undefined) {
-        output = `${output} mem ${keyMap.get(JSON.stringify(op2.member))}`;
+    if (op2.action !== "mem") {
+        output = `${output} mem ${JSON.stringify(op2.member)}`;
     } else {
         output = `${output} op2 ${keyMap.get(JSON.stringify(op2.pk1))} ${op2.action} ${keyMap.get(JSON.stringify(op2.pk2))}`;
     }
@@ -757,7 +757,7 @@ function authority (ops) {
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        edges.add([op1, {"member": pk, "sig": pk}]);
+        edges.add([op1, {"member": pk, "sig": pk, "action": "mem"}]);
     }
     console.log(`number of ${edges.size}`);
     return edges;
