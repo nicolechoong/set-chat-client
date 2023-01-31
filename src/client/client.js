@@ -78,7 +78,7 @@ var hashedOps = new Map();
 // WebSocket to Server //
 /////////////////////////
 
-var connection = new WebSocket('wss://ec2-35-178-80-94.eu-west-2.compute.amazonaws.com:3000/'); 
+var connection = new WebSocket('wss://35.178.80.94:3000/'); 
 // var connection = new WebSocket('wss://localhost:3000');
 
 connection.onopen = function () { 
@@ -87,7 +87,7 @@ connection.onopen = function () {
   
 connection.onerror = function (err) { 
     console.log("Error: ", err);
-    alert("Please authorise https://ec2-35-178-80-94.eu-west-2.compute.amazonaws.com:3000/ on your device before refreshing! ")
+    alert("Please authorise wss://35.178.80.94:3000/ on your device before refreshing! ")
 };
 
 function sendToServer(message) {
