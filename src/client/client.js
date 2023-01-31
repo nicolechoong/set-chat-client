@@ -78,7 +78,7 @@ var hashedOps = new Map();
 // WebSocket to Server //
 /////////////////////////
 
-var connection = new WebSocket('wss://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/'); 
+var connection = new WebSocket('wss://ec2-35-178-80-94.eu-west-2.compute.amazonaws.com:3000/'); 
 // var connection = new WebSocket('wss://localhost:3000');
 
 connection.onopen = function () { 
@@ -87,7 +87,7 @@ connection.onopen = function () {
   
 connection.onerror = function (err) { 
     console.log("Error: ", err);
-    alert("Please authorise https://ec2-13-40-196-240.eu-west-2.compute.amazonaws.com:3000/ on your device before refreshing! ")
+    alert("Please authorise https://ec2-35-178-80-94.eu-west-2.compute.amazonaws.com:3000/ on your device before refreshing! ")
 };
 
 function sendToServer(message) {
@@ -860,7 +860,7 @@ async function members (ops, ignored) {
         const ignoredOp = await getIgnored(scan.concurrent);
         ignored.push(ignoredOp);
         removeOp(ops, ignoredOp);
-        console.log(`cycle detected motherfuckers`);
+        console.log(`cycle!!!!`);
         console.log(`ops ${ops.length} ignored ${ignored.length}`);
         return;
     }
