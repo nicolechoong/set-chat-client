@@ -408,6 +408,7 @@ async function addToChat (validMemberPubKeys, chatID) {
 
 function onRemove (chatID, chatName, fromPK) {
     // chatID : string, chatName : string, fromPK : Uint8Array
+    console.log(`on remove triggered, here is currmem ${joinedChats.get(chatID).currentMember}`);
     if (joinedChats.get(chatID).currentMember) {
         joinedChats.get(chatID).currentMember = false;
         joinedChats.get(chatID).toDispute.push(fromPK);
@@ -673,7 +674,6 @@ async function receivedOperations (ops, chatID, pk) {
                     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
                         joinedChats.get(chatID).currentMember = true;
                         updateChatOptions("add", chatID);
-
                     } else {
                         joinedChats.get(chatID).currentMember = false;
                     }
