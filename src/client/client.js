@@ -865,7 +865,7 @@ function hasCycle (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const seen = new Set([JSON.stringify(start.sig)]);
     const fromOp = new Map();
-    const stack = [start]; // TODO: rename this to stack
+    const queue = [start]; // TODO: rename this to stack
     var cur;
 
     for (const edge of edges) {
@@ -877,9 +877,9 @@ function hasCycle (ops, edges) {
         }
     }
 
-    while (stack.length > 0) {
-        cur = stack.pop();
-        console.log(`${cur.action} ${stack.length}`);
+    while (queue.length > 0) {
+        cur = queue.shift();
+        console.log(`${cur.action} ${queue.length}`);
         for (const next of fromOp.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(next.sig))) { // cycle detected
                 console.log(`cycle found`);
@@ -889,7 +889,8 @@ function hasCycle (ops, edges) {
                 console.log(`here is the number of concurrent ${conc.length}`);
                 return { cycle: true, concurrent: conc };
             }
-            stack.shift(next);
+
+            queue.push(next);
             seen.add(JSON.stringify(next.sig));
         }
     }
