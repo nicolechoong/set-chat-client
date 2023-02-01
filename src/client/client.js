@@ -848,20 +848,25 @@ function authority (ops) {
 function hasCycle (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const seen = new Set([JSON.stringify(start.sig)]);
-    const adjacency = new Map();
+    const fromOp = new Map();
+    const toOp = new Map();
     const queue = [start];
     var cur;
 
     for (const edge of edges) {
-        if (!adjacency.has(JSON.stringify(edge[0].sig))) {
-            adjacency.set(JSON.stringify(edge[0].sig), []);
+        if (!fromOp.has(JSON.stringify(edge[0].sig))) {
+            fromOp.set(JSON.stringify(edge[0].sig), []);
         }
-        adjacency.get(JSON.stringify(edge[0].sig)).push(edge);
+        if (!toOp.has(JSON.stringify(edge[1].sig))) {
+            toOp.set(JSON.stringify(edge[1].sig), []);
+        }
+        fromOp.get(JSON.stringify(edge[0].sig)).push(edge);
+        toOp.get(JSON.stringify(edge[1].sig)).push(edge);
     }
 
     while (queue.length > 0) {
         cur = queue.shift();
-        for (const edge of adjacency.get(JSON.stringify(cur.sig))) {
+        for (const edge of fromOp.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(edge[1].sig))) {
                 // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
                 // all edges caused with that as edge[0]
@@ -869,7 +874,7 @@ function hasCycle (ops, edges) {
                 for (const op of ops) {
                     console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${edge[1].action} ${keyMap.get(JSON.stringify(edge[1].pk2))}?`);
 
-                    if (op.action !== "create" && concurrent(ops, edge[1], op)) {
+                    if (op.action !== "create" && toOp.get(JSON.stringify(op)).length >= 2) {
                         console.log(`yes`);
                         conc.push(op);
                     }
