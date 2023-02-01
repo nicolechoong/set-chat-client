@@ -839,16 +839,16 @@ function authority(ops) {
     return edges;
 }
 
-function findCycle (fromOp, visited, stack) {
+function findCycle (fromOp, visited, stack, cycle) {
     // assume start is create
     const cur = stack.at(-1);
     for (const next of fromOp.get(JSON.stringify(cur.sig))) {
         if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
-            return stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)));
+            cycle.concat(stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig))));
         } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
             stack.push(next);
             visited.set(JSON.stringify(next.sig), "IN STACK");
-            return findCycle (fromOp, visited, stack);
+            findCycle(fromOp, visited, stack);
         }
     }
     visited.set(JSON.stringify(cur.sig), "DONE");
@@ -877,7 +877,16 @@ function hasCycle (ops, edges) {
         for (const next of fromOp.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(next.sig))) { // cycle detected
                 console.log(`cycle found`);
-                const conc = findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur]);
+                var conc = [];
+                findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur], conc);
+                
+                const toOp = new Map(conc.map((op) => [JSON.stringify(op.sig), 0]));
+                for (const edge of edges) {
+                    if (hasOp(conc, edge[1])) {
+                        toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
+                    }
+                }
+                conc.filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
                 // conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
 
                 console.log(`here is the number of concurrent ${conc.length}`);
