@@ -467,7 +467,7 @@ async function disputeRemoval (peer, chatID) {
         await store.setItem(chatID, chatInfo);
 
         sendToServer({
-            to: pk,
+            to: peer.peerPK,
             type: "remove",
             from: localUsername,
             fromPK: keyPair.publicKey,
