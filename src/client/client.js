@@ -864,7 +864,7 @@ function findCycle (fromOp, visited, stack) {
 
 function hasCycle (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
-    const seen = new Set();
+    const seen = new Set([JSON.stringify(start.sig)]);
     const fromOp = new Map();
     const stack = [start]; // TODO: rename this to stack
     var cur;
@@ -880,30 +880,17 @@ function hasCycle (ops, edges) {
 
     while (stack.length > 0) {
         cur = stack.pop();
-        seen.add(JSON.stringify(cur.sig));
         console.log(`${cur.action} ${stack.length}`);
-        if (seen.has(JSON.stringify(cur.sig))) { // cycle detected
-            const conc = findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur]);
-            conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
-
-            // const cycleStart = queue.findIndex((op) => arrEqual(op.sig, cur.sig));
-            // console.log(`cycle length ${queue.slice(cycleStart, -1).length}`);
-            // for (const op of ops) {
-            //     console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${cur.action} ${keyMap.get(JSON.stringify(cur.pk2))}?`);
-
-            //     if (op.action !== "create" && !arrEqual(cur.sig, op.sig) && toOp.get(JSON.stringify(op.sig)) >= 2) {
-            //         console.log(`yes`);
-            //         conc.push(op);
-            //     }
-            // }
-            console.log(`here is the number of concurrent ${conc.length}`);
-            return { cycle: true, concurrent: conc };
-        }
-
         for (const next of fromOp.get(JSON.stringify(cur.sig))) {
-            if (next.action !== "mem") {
-                stack.push(next);
+            if (seen.has(JSON.stringify(next.sig))) { // cycle detected
+                const conc = findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur]);
+                conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
+
+                console.log(`here is the number of concurrent ${conc.length}`);
+                return { cycle: true, concurrent: conc };
             }
+            stack.push(next);
+            seen.add(JSON.stringify(next.sig));
         }
     }
     return { cycle: false };
