@@ -846,42 +846,56 @@ function authority(ops) {
     return edges;
 }
 
-function hasCycle(ops, edges) {
+function findCycle (fromOp, visited, stack) {
+    // assume start is create
+    const cur = stack.at(-1);
+    for (const next of fromOp.get(JSON.stringify(cur.sig))) {
+        if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
+            return stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)));
+        } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
+            stack.push(next);
+            visited.set(JSON.stringify(next.sig), "IN STACK");
+            findCycle (fromOp, visited, stack);
+        }
+    }
+    visited.set(JSON.stringify(cur.sig), "DONE");
+    stack.pop();
+}
+
+function hasCycle (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
-    const seen = new Set();
+    const seen = [start];
     const fromOp = new Map();
-    const toOp = new Map();
-    const queue = [start];
+    const queue = [start]; // TODO: rename this to stack
     var cur;
 
     for (const edge of edges) {
-        if (!fromOp.has(JSON.stringify(edge[0].sig))) {
-            fromOp.set(JSON.stringify(edge[0].sig), []);
+        if (edge[1].action !== "mem") {
+            if (!fromOp.has(JSON.stringify(edge[0].sig))) {
+                fromOp.set(JSON.stringify(edge[0].sig), []);
+            }
+            fromOp.get(JSON.stringify(edge[0].sig)).push(edge[1]);
         }
-        if (!toOp.has(JSON.stringify(edge[1].sig))) {
-            toOp.set(JSON.stringify(edge[1].sig), 0);
-        }
-        fromOp.get(JSON.stringify(edge[0].sig)).push(edge);
-        toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig)) + 1);
     }
 
     while (queue.length > 0) {
-        cur = queue.at(-1);
+        cur = queue.pop();
         console.log(`${cur.action} ${queue.length}`);
-        if (seen.has(JSON.stringify(cur.sig))) {
-            const conc = [cur];
-            const cycleStart = queue.findIndex((op) => arrEqual(op.sig, cur.sig));
-            console.log(`cycle length ${queue.slice(cycleStart, -1).length}`);
-            for (const op of ops) {
-                console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${cur.action} ${keyMap.get(JSON.stringify(cur.pk2))}?`);
+        if (seen.includes(JSON.stringify(cur.sig))) { // cycle detected
+            const conc = findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur]);
+            conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
 
-                if (op.action !== "create" && !arrEqual(cur.sig, op.sig) && toOp.get(JSON.stringify(op.sig)) >= 2) {
-                    console.log(`yes`);
-                    conc.push(op);
-                }
-            }
+            // const cycleStart = queue.findIndex((op) => arrEqual(op.sig, cur.sig));
+            // console.log(`cycle length ${queue.slice(cycleStart, -1).length}`);
+            // for (const op of ops) {
+            //     console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${cur.action} ${keyMap.get(JSON.stringify(cur.pk2))}?`);
+
+            //     if (op.action !== "create" && !arrEqual(cur.sig, op.sig) && toOp.get(JSON.stringify(op.sig)) >= 2) {
+            //         console.log(`yes`);
+            //         conc.push(op);
+            //     }
+            // }
             console.log(`here is the number of concurrent ${conc.length}`);
-            conc.forEach(op => { console.log(`conc op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`) });
             return { cycle: true, concurrent: conc };
         }
 
