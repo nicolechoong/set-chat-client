@@ -874,7 +874,7 @@ function hasCycle (ops, edges) {
                 for (const op of ops) {
                     console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${edge[1].action} ${keyMap.get(JSON.stringify(edge[1].pk2))}?`);
 
-                    if (op.action !== "create" && toOp.get(JSON.stringify(op)).length >= 2) {
+                    if (op.action !== "create" && toOp.get(JSON.stringify(op.sig)).length >= 2) {
                         console.log(`yes`);
                         conc.push(op);
                     }
