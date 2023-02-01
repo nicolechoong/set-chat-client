@@ -864,9 +864,9 @@ function findCycle (fromOp, visited, stack) {
 
 function hasCycle (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
-    const seen = [start];
+    const seen = new Set();
     const fromOp = new Map();
-    const queue = [start]; // TODO: rename this to stack
+    const stack = [start]; // TODO: rename this to stack
     var cur;
 
     for (const edge of edges) {
@@ -878,10 +878,10 @@ function hasCycle (ops, edges) {
         }
     }
 
-    while (queue.length > 0) {
-        cur = queue.pop();
+    while (stack.length > 0) {
+        cur = stack.pop();
         seen.add(JSON.stringify(cur.sig));
-        console.log(`${cur.action} ${queue.length}`);
+        console.log(`${cur.action} ${stack.length}`);
         if (seen.includes(JSON.stringify(cur.sig))) { // cycle detected
             const conc = findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur]);
             conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
@@ -902,7 +902,7 @@ function hasCycle (ops, edges) {
 
         for (const next of fromOp.get(JSON.stringify(cur.sig))) {
             if (next.action !== "mem") {
-                queue.push(next);
+                stack.push(next);
             }
         }
     }
