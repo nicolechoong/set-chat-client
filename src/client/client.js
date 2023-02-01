@@ -409,8 +409,9 @@ async function addToChat (validMemberPubKeys, chatID) {
 function onRemove (chatID, chatName, fromPK) {
     // chatID : string, chatName : string, fromPK : Uint8Array
     joinedChats.get(chatID).currentMember = false;
-    joinedChats.get(chatID).toDispute.push(fromPK);
-    console.log(joinedChats.get(chatID).toDispute.length);
+    if (joinedChats.get(chatID).toDispute.has(JSON.stringify(fromPK))) {
+        joinedChats.get(chatID).toDispute.push(JSON.stringify(fromPK));
+    }
     console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
     store.setItem("joinedChats", joinedChats);
     for (const pk of joinedChats.get(chatID).members) {
@@ -1362,8 +1363,8 @@ removeUserBtn.addEventListener ("click", async () => {
 disputeBtn.addEventListener ("click", async () => {
     var pk, username;
     for (pk of joinedChats.get(currentChatID).toDispute) {
-        username = await getUsername(JSON.stringify(pk));
-        removeFromChat(new Map([[username, pk]]), currentChatID);
+        username = await getUsername(pk);
+        removeFromChat(new Map([[username, objToArr(JSON.parse(pk))]]), currentChatID);
     }
 });
 
