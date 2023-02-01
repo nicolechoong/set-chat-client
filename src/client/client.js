@@ -844,7 +844,7 @@ function findCycle (fromOp, visited, stack, cycle) {
     const cur = stack.at(-1);
     for (const next of fromOp.get(JSON.stringify(cur.sig))) {
         if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
-            cycle.concat(stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig))));
+            cycle.push(...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig))));
         } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
             stack.push(next);
             visited.set(JSON.stringify(next.sig), "IN STACK");
