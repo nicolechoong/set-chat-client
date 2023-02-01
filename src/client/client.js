@@ -411,7 +411,7 @@ function onRemove (chatID, chatName, fromPK) {
     // chatID : string, chatName : string, fromPK : Uint8Array
     joinedChats.get(chatID).currentMember = false;
     if (!joinedChats.get(chatID).toDispute.has(JSON.stringify(fromPK))) {
-        joinedChats.get(chatID).toDispute.push(JSON.stringify(fromPK));
+        joinedChats.get(chatID).toDispute.add(JSON.stringify(fromPK));
     }
     console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
     store.setItem("joinedChats", joinedChats);
