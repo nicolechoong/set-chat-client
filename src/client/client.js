@@ -835,6 +835,7 @@ function authority (ops) {
             if (op2.action === "create") { continue; }
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
+                printEdge(op1, op2);
                 edges.push([op1, op2]);
             }
         }
@@ -868,8 +869,6 @@ function hasCycle (ops, edges) {
         cur = queue.shift();
         for (const edge of fromOp.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(edge[1].sig))) {
-                // detect cycle, then remove each operation and run has cycle and run hasCycles on all the edges except that?
-                // all edges caused with that as edge[0]
                 const conc = [edge[1]];
                 for (const op of ops) {
                     console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${edge[1].action} ${keyMap.get(JSON.stringify(edge[1].pk2))}?`);
