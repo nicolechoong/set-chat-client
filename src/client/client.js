@@ -670,7 +670,7 @@ async function receivedOperations (ops, chatID, pk) {
                     for (const mem of memberSet) { // populating keyMap
                         await getUsername(mem);
                     }
-                    console.log(`synced with ${keyMap.get(pk)}`);
+                    console.log(`synced with ${keyMap.get(pk)} uhuh ${memberSet.has(JSON.stringify(keyPair.publicKey))}`);
                     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
                         joinedChats.get(chatID).currentMember = true;
                         updateChatOptions("add", chatID);
