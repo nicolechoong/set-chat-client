@@ -675,7 +675,7 @@ async function receivedIgnored (ignored, chatID, pk) {
             if (chatInfo.metadata.ignored.length === ignored.length) {
                 for (const ig of ignored) {
                     if (!chatInfo.metadata.ignored.has(ig)) {
-                        closeConnections(pk);
+                        sendIgnored(ignored, chatID, pk);
                         resolve(false);
                         return;
                     }
@@ -683,7 +683,6 @@ async function receivedIgnored (ignored, chatID, pk) {
                 console.log(`ignored sets same`);
                 resolve(true);
             }
-            closeConnections(pk);
             resolve(false);
         });
     });
@@ -1285,7 +1284,9 @@ function sendToMember (data, pk) {
     // data: JSON, pk: String
     if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
-    connections.get(pk).sendChannel.send(JSON.stringify(data));
+    if (connections.has(pk)) {
+        connections.get(pk).sendChannel.send(JSON.stringify(data));
+    }
     return;
 }
 
