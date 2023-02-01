@@ -411,6 +411,7 @@ function onRemove (chatID, chatName, fromPK) {
     if (joinedChats.get(chatID).currentMember) {
         joinedChats.get(chatID).currentMember = false;
         joinedChats.get(chatID).toDispute.push(fromPK);
+        console.log(joinedChats.get(chatID).toDispute.length);
         console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
         store.setItem("joinedChats", joinedChats);
         for (const pk of joinedChats.get(chatID).members) {
@@ -1015,7 +1016,7 @@ function receivedMessage (messageData) {
         case "add":
             unpackOp(messageData.op);
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                onAdd(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(from)), objToArray(messageData.from), msgID);
+                onAdd(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArray(messageData.from), msgID);
             } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res) { addPeer(messageData); }
@@ -1183,7 +1184,8 @@ async function removePeer (messageData) {
     updateChatWindow(messageData);
 
     if (pk === JSON.stringify(keyPair.publicKey)) {
-        return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, messageData.from);
+        console.log(`hi`);
+        return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, objToArray(messageData.from));
     } else {
         for (const id of joinedChats.keys()) {
             if (messageData.chatID !== id && joinedChats.get(id).members.includes(pk)) {
