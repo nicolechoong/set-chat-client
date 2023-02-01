@@ -858,10 +858,10 @@ function hasCycle (ops, edges) {
             fromOp.set(JSON.stringify(edge[0].sig), []);
         }
         if (!toOp.has(JSON.stringify(edge[1].sig))) {
-            toOp.set(JSON.stringify(edge[1].sig), []);
+            toOp.set(JSON.stringify(edge[1].sig), 0);
         }
         fromOp.get(JSON.stringify(edge[0].sig)).push(edge);
-        toOp.get(JSON.stringify(edge[1].sig)).push(edge);
+        toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
     }
 
     while (queue.length > 0) {
@@ -874,7 +874,7 @@ function hasCycle (ops, edges) {
                 for (const op of ops) {
                     console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${edge[1].action} ${keyMap.get(JSON.stringify(edge[1].pk2))}?`);
 
-                    if (op.action !== "create" && toOp.get(JSON.stringify(op.sig)).length >= 2) {
+                    if (op.action !== "create" && edge[1].sig !== op.sig && toOp.get(JSON.stringify(op.sig)) >= 2) {
                         console.log(`yes`);
                         conc.push(op);
                     }
