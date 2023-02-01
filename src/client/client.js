@@ -667,29 +667,20 @@ async function sendIgnored(ignored, chatID, pk) {
     }, pk);
 }
 
-async function receivedIgnored(ignored, chatID, pk) {
+var resolveReceivedIgnored = new Map();
+
+async function receivedIgnored (chatID, pk) {
     console.log(`receiving ignored for chatID ${chatID}`);
-    return new Promise((resolve) => {
-        if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
-        store.getItem(chatID).then(async (chatInfo) => {
-            if (chatInfo.metadata.ignored.length === ignored.length) {
-                for (const ig of ignored) {
-                    if (!chatInfo.metadata.ignored.has(ig)) {
-                        sendIgnored(ignored, chatID, pk);
-                        resolve(false);
-                        return;
-                    }
-                }
-                console.log(`ignored sets same`);
-                resolve(true);
-            }
-            resolve(false);
-        });
+    return new Promise((resolve, reject) => {
+        resolveReceivedIgnored.set(`${chatID}:${JSON.stringify(pk)}`, resolve);
+        setTimeout(() => {
+            reject(new Error("Peer timed out"));
+        }, 10000);
     });
 }
 
 // TODO: make it so that we don't add the removal/remove the removal before generating ops
-async function receivedOperations(ops, chatID, pk) {
+async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
@@ -698,13 +689,17 @@ async function receivedOperations(ops, chatID, pk) {
             ops = unionOps(chatInfo.metadata.operations, ops);
 
             if (verifyOperations(ops)) {
+                console.log(`length of ops before members ${ops.length}`);
                 const memberInfo = await members(ops, chatInfo.metadata.ignored);
+                console.log(`length of ops after members ${ops.length}`);
                 const memberSet = memberInfo.members;
 
                 if (memberInfo.ignored.length > 0) {
                     sendIgnored(memberInfo.ignored, chatID, pk);
-                    console.log(`sent ignored operations ${memberInfo.ignored}`);
-                    return;
+                    if (!opsArrEqual(memberInfo.ignored, await receivedIgnored(chatID, pk))) {
+                        closeConnections(pk);
+                        resolve(false);
+                    }
                 }
 
                 console.log(`verified true is member ${memberSet.has(pk)}`);
@@ -729,10 +724,9 @@ async function receivedOperations(ops, chatID, pk) {
                     joinedChats.get(chatID).members.sort();
                     store.setItem("joinedChats", joinedChats);
                     store.setItem(chatID, chatInfo);
-                    resolve(true);
-                    return;
+                    return resolve(true);
                 }
-                if (joinedChats.get(chatID).exMembers.includes(pk)) {
+                else if (joinedChats.get(chatID).exMembers.includes(pk)) {
                     sendChatHistory(chatID, pk); // should still close after
                     return;
                 }
@@ -1045,12 +1039,7 @@ function receivedMessage(messageData) {
             break;
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
-            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res) {
-                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-                }
-            })
+            resolveReceivedIgnored.get(`${messageData.chatID}:${JSON.stringify(messageData.from)}`)(messageData.ignored);
             break;
         case "advertisement":
             messageData.online.forEach((peer) => connectToPeer(peer));
@@ -1596,6 +1585,18 @@ function hasOp(ops, op) {
         if (arrEqual(curOp, op)) { return true; }
     }
     return false;
+}
+
+function opsArrEqual (ops1, ops2) {
+    if (ops1.length !== ops2.length) { return false; }
+
+    const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
+    for (const op of ops2) {
+        if (!sigSet.has(JSON.stringify(op.sig))) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function removeOp(ops, op) {
