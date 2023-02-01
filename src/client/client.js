@@ -835,7 +835,6 @@ function authority(ops) {
             if (op2.action === "create") { continue; }
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
-                printEdge(op1, op2);
                 edges.push([op1, op2]);
             }
         }
@@ -883,8 +882,9 @@ function hasCycle (ops, edges) {
         console.log(`${cur.action} ${stack.length}`);
         for (const next of fromOp.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(next.sig))) { // cycle detected
+                console.log(`cycle found`);
                 const conc = findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur]);
-                conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
+                // conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
 
                 console.log(`here is the number of concurrent ${conc.length}`);
                 return { cycle: true, concurrent: conc };
