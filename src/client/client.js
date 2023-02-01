@@ -640,7 +640,27 @@ async function sendIgnored (chatID, pk, ignored) {
 }
 
 async function receivedIgnored (ignored, chatID, pk) {
-
+    console.log(`receiving ignored for chatID ${chatID}`);
+    return new Promise((resolve) => {
+        if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
+        store.getItem(chatID).then(async (chatInfo) => {
+            if (chatInfo.metadata.ignored.length === ignored.length) {
+                for (const ig of ignored) {
+                    if (!chatInfo.metadata.ignored.has(ig)) {
+                        closeConnections(pk);
+                        resolve(false);
+                        return;
+                    }
+                }
+                console.log(`ignored sets same`);
+                resolve(true);
+            }
+            ops = unionOps(chatInfo.metadata.operations, ops);
+            
+            closeConnections(pk);
+            resolve(false);
+        })
+    });
 }
 
 async function receivedOperations (ops, chatID, pk) {
@@ -667,7 +687,7 @@ async function receivedOperations (ops, chatID, pk) {
                     for (const mem of memberSet) { // populating keyMap
                         await getUsername(mem);
                     }
-                    console.log(`synced with ${keyMap.get(pk)} uhuh ${memberSet.has(JSON.stringify(keyPair.publicKey))}`);
+                    console.log(`synced with ${keyMap.get(pk)}`);
                     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
                         joinedChats.get(chatID).currentMember = true;
                         updateChatOptions("add", chatID);
@@ -1341,10 +1361,9 @@ removeUserBtn.addEventListener ("click", async () => {
 
 disputeBtn.addEventListener ("click", async () => {
     var pk, username;
-    console.log(`let's dispute hoho ${joinedChats.get(currentChatID).toDispute}`)
     for (pk of joinedChats.get(currentChatID).toDispute) {
         username = await getUsername(JSON.stringify(pk));
-        removeFromChat(new Map([username, pk]), currentChatID);
+        removeFromChat(new Map([[username, pk]]), currentChatID);
     }
 });
 
