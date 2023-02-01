@@ -699,7 +699,6 @@ async function receivedOperations (ops, chatID, pk) {
         if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
-            // console.log(`merged ops ${JSON.stringify(ops)}`);
 
             if (verifyOperations(ops)) {
                 const memberInfo = await members(ops, chatInfo.metadata.ignored);
@@ -925,7 +924,6 @@ async function members (ops, ignored) {
         removeOp(ops, ignoredOp);
         console.log(`cycle!!!!`);
         console.log(`ops ${ops.length} ignored ${ignored.length}`);
-        return;
     }
     var pk;
     for (const op of ops) {
