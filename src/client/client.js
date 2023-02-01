@@ -1342,6 +1342,7 @@ removeUserBtn.addEventListener ("click", async () => {
 
 disputeBtn.addEventListener ("click", async () => {
     var pk, username;
+    console.log(`let's dispute hoho ${joinedChats.get(currentChatID).toDispute}`)
     for (pk of joinedChats.get(currentChatID).toDispute) {
         username = await getUsername(JSON.stringify(pk));
         removeFromChat(new Map([username, pk]), currentChatID);
