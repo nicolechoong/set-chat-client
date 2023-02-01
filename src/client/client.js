@@ -848,7 +848,7 @@ function findCycle (fromOp, visited, stack, cycle) {
         } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
             stack.push(next);
             visited.set(JSON.stringify(next.sig), "IN STACK");
-            findCycle(fromOp, visited, stack);
+            findCycle(fromOp, visited, stack, cycle);
         }
     }
     visited.set(JSON.stringify(cur.sig), "DONE");
