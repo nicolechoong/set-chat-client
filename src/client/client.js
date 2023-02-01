@@ -656,9 +656,9 @@ async function sendOperations (chatID, pk) {
     });
 }
 
-async function sendIgnored (chatID, pk, ignored) {
+async function sendIgnored (ignored, chatID, pk) {
     // chatID : String, pk : String
-    console.log(`sending operations to ${keyMap.get(pk)}`);
+    console.log(`sending operations to pk ${pk} ${keyMap.get(pk)}`);
     sendToMember({
         type: "ignored",
         ignored: ignored,
