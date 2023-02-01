@@ -1020,7 +1020,7 @@ function receivedMessage (messageData) {
                     chatMessages.innerHTML = "";
                     store.getItem(currentChatID).then(async (chatInfo) => {
                         for (const msg of chatInfo.history) {
-                            await updateChatWindow (msg);
+                            await updateChatWindow(msg);
                         }
                     });
                 }
@@ -1372,6 +1372,7 @@ disputeBtn.addEventListener ("click", async () => {
 acceptRemovalBtn.addEventListener ("click", async () => {
     console.log(`toDispute cleared`);
     joinedChats.get(currentChatID).toDispute = new Set();
+    updateHeading();
 });
 
 resetStoreBtn.addEventListener ("click", () => {
@@ -1569,7 +1570,7 @@ function objToArr (obj) {
 function formatDate (now) {
     const date = new Date(now);
     const intl = new Intl.DateTimeFormat('en-UK').format(date);
-    return `${intl} ${date.getHours()}:${date.getMinutes()}`;
+    return `${intl} ${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}}`;
 }
 
 function mergeJoinedChats (localChats, receivedChats) {
