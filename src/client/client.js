@@ -549,11 +549,6 @@ async function onGetOnline (online, chatID) {
     resolveGetOnline.delete(chatID);
 }
 
-// TODO: ADD PROMISE FOR GET ONLINE
-// IF NONE ONLINE, ADD TO MSG QUEUE FOR ALL MEMBERS IN THAT CHAT... (APPROXIMATION)
-// WHEN WE GET AN UPDATE, CHECK TO SEE IF THERE IS A NON-EMPTY QUEUE FOR THAT
-// then connect and send queue (first should be send ops)
-
 var resolveGetOnline = new Map();
 
 function getOnline (chatID) {
@@ -1628,6 +1623,7 @@ function mergeChatHistory (localMsg, receivedMsg) {
 }
 
 function closeConnections (pk) {
+    console.log(`connection with ${keyMap.get(pk)} closed`);
     if (connections.has(pk)) {
         connectionNames.delete(connections.get(pk).connection);
         if (connections.get(pk).sendChannel) {
