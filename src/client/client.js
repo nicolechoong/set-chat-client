@@ -920,7 +920,7 @@ async function members (ops, ignored) {
         ignored.push(ignoredOp);
         removeOp(ops, ignoredOp);
         console.log(`cycle!!!!`);
-        console.log(`ops ${ops.length} ignored ${ignored.length}`);
+        console.log(`ops ${ops.length} ignored ${ignored.length} opop ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
     }
     var pk;
     for (const op of ops) {
