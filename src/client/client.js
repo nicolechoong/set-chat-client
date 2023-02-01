@@ -880,6 +880,7 @@ function hasCycle (ops, edges) {
 
     while (queue.length > 0) {
         cur = queue.pop();
+        seen.add(JSON.stringify(cur.sig));
         console.log(`${cur.action} ${queue.length}`);
         if (seen.includes(JSON.stringify(cur.sig))) { // cycle detected
             const conc = findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur]);
@@ -899,13 +900,11 @@ function hasCycle (ops, edges) {
             return { cycle: true, concurrent: conc };
         }
 
-        for (const edge of fromOp.get(JSON.stringify(cur.sig))) {
-            if (edge[1].action !== "mem") {
-                queue.push(edge[1]);
+        for (const next of fromOp.get(JSON.stringify(cur.sig))) {
+            if (next.action !== "mem") {
+                queue.push(next);
             }
         }
-        seen.add(JSON.stringify(cur.sig));
-        queue.pop();
     }
     return { cycle: false };
 }
