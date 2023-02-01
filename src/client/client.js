@@ -1,6 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 
-var loginBtn = document.getElementById('loginBtn'); 
+var loginBtn = document.getElementById('loginBtn');
 var sendMessageBtn = document.getElementById('sendMessageBtn');
 var addUserBtn = document.getElementById('addUserBtn');
 var removeUserBtn = document.getElementById('removeUserBtn');
@@ -33,8 +33,8 @@ var keyPair;
 // connection to stringified(peerPK)
 var connectionNames = new Map();
 
-const configuration = { 
-   "iceServers": [
+const configuration = {
+    "iceServers": [
         { "urls": "stun:stun.12connect.com:3478" },
         { "urls": "stun:openrelay.metered.ca:80" },
         {
@@ -52,8 +52,8 @@ const configuration = {
             "username": "openrelayproject",
             "credential": "openrelayproject",
         }
-    ] 
-}; 
+    ]
+};
 
 var currentChatID = 0;
 
@@ -80,40 +80,40 @@ var hashedOps = new Map();
 // WebSocket to Server //
 /////////////////////////
 
-var connection = new WebSocket('wss://35.178.80.94:3000/'); 
+var connection = new WebSocket('wss://35.178.80.94:3000/');
 // var connection = new WebSocket('wss://localhost:3000');
 
-connection.onopen = function () { 
+connection.onopen = function () {
     console.log("Connected to server");
 };
-  
-connection.onerror = function (err) { 
+
+connection.onerror = function (err) {
     console.log("Error: ", err);
     alert("Please authorise wss://35.178.80.94:3000/ on your device before refreshing! ")
 };
 
 function sendToServer(message) {
     console.log(JSON.stringify(message));
-    connection.send(JSON.stringify(message)); 
+    connection.send(JSON.stringify(message));
 };
-  
+
 // Handle messages from the server 
-connection.onmessage = function (message) { 
+connection.onmessage = function (message) {
     console.log("Got message", message.data);
-    var data = JSON.parse(message.data); 
-	
-    switch(data.type) { 
-        case "login": 
-            onLogin(data.success, new Map(data.joinedChats), data.username); 
-            break; 
-        case "offer": 
-            onOffer(data.offer, data.from, objToArr(data.fromPK)); 
-            break; 
-        case "answer": 
-            onAnswer(data.answer, objToArr(data.fromPK)); 
-            break; 
-        case "candidate": 
-            onCandidate(data.candidate, objToArr(data.from)); 
+    var data = JSON.parse(message.data);
+
+    switch (data.type) {
+        case "login":
+            onLogin(data.success, new Map(data.joinedChats), data.username);
+            break;
+        case "offer":
+            onOffer(data.offer, data.from, objToArr(data.fromPK));
+            break;
+        case "answer":
+            onAnswer(data.answer, objToArr(data.fromPK));
+            break;
+        case "candidate":
+            onCandidate(data.candidate, objToArr(data.from));
             break;
         case "connectedUsers":
             onConnectedUsers(data.usernames);
@@ -142,16 +142,16 @@ connection.onmessage = function (message) {
         case "getOnline":
             onGetOnline(data.online, data.chatID);
             break;
-        default: 
-            break; 
-   } 
+        default:
+            break;
+    }
 };
-  
-// Server approves Login
-async function onLogin (success, chats, username) { 
 
-    if (success === false) { 
-        alert("oops...try a different username"); 
+// Server approves Login
+async function onLogin(success, chats, username) {
+
+    if (success === false) {
+        alert("oops...try a different username");
     } else {
         localUsername = username;
         joinedChats = mergeJoinedChats(joinedChats, new Map());
@@ -167,15 +167,15 @@ async function onLogin (success, chats, username) {
             msgQueue = storedMsgQueue === null ? new Map() : storedMsgQueue;
         });
         updateHeading();
-        
+
         for (const chatID of joinedChats.keys()) {
             updateChatOptions("add", chatID);
             getOnline(chatID);
         }
-    } 
+    }
 };
 
-async function initialiseStore (username) {
+async function initialiseStore(username) {
     // new user: creates new store
     // returning user: will just point to the same instance
     console.log(`init store local user: ${username}`);
@@ -195,16 +195,16 @@ async function initialiseStore (username) {
 // Sending Offer to Peer
 function sendOffer(peerName, peerPK) {
     // peerName: String username, peerPK: Uint8Array
-    
-    if (peerName !== null && peerPK !== null) { 
+
+    if (peerName !== null && peerPK !== null) {
         const newConnection = initPeerConnection(peerName);
         console.log(`offer pk key ${JSON.stringify(peerPK)}`);
-        connections.set(JSON.stringify(peerPK), {connection: newConnection, sendChannel: null});
+        connections.set(JSON.stringify(peerPK), { connection: newConnection, sendChannel: null });
         connectionNames.set(newConnection, JSON.stringify(peerPK));
         const peerConnection = connections.get(JSON.stringify(peerPK));
 
         const channelLabel = {
-            senderPK: JSON.stringify(keyPair.publicKey), 
+            senderPK: JSON.stringify(keyPair.publicKey),
             receiverPK: JSON.stringify(peerPK)
         };
         peerConnection.sendChannel = peerConnection.connection.createDataChannel(JSON.stringify(channelLabel));
@@ -212,7 +212,7 @@ function sendOffer(peerName, peerPK) {
         console.log(`Created sendChannel for ${localUsername}->${peerName}`);
 
         console.log(`Sending offer to ${peerName}`);
-        peerConnection.connection.createOffer(function (offer) { 
+        peerConnection.connection.createOffer(function (offer) {
             sendToServer({
                 to: peerPK,
                 fromPK: keyPair.publicKey,
@@ -220,18 +220,18 @@ function sendOffer(peerName, peerPK) {
                 type: "offer",
                 offer: offer
             });
-                
+
             peerConnection.connection.setLocalDescription(offer);
-        }, function (error) { 
-            alert("An error has occurred."); 
-        }); 
+        }, function (error) {
+            alert("An error has occurred.");
+        });
     }
-}; 
+};
 
 // Receiving Offer + Sending Answer to Peer
-async function onOffer(offer, peerName, peerPK) { 
+async function onOffer(offer, peerName, peerPK) {
     // offer: JSON, peerName: String, peerPK: Uint8Array
-    connections.set(JSON.stringify(peerPK), {connection: initPeerConnection(), sendChannel: null});
+    connections.set(JSON.stringify(peerPK), { connection: initPeerConnection(), sendChannel: null });
     const peerConnection = connections.get(JSON.stringify(peerPK));
 
     keyMap.set(JSON.stringify(peerPK), peerName);
@@ -241,28 +241,28 @@ async function onOffer(offer, peerName, peerPK) {
     console.log(`Sending answer to ${peerName}`);
     peerConnection.connection.createAnswer(function (answer) {
         peerConnection.connection.setLocalDescription(answer);
-        sendToServer({ 
+        sendToServer({
             to: peerPK,
             fromPK: keyPair.publicKey,
             from: localUsername,
-            type: "answer", 
+            type: "answer",
             answer: answer
-        }); 
-    }, function (error) { 
-        alert("oops...error"); 
+        });
+    }, function (error) {
+        alert("oops...error");
     });
 }
-  
+
 // Receiving Answer from Peer
 function onAnswer(answer, peerPK) {
     connections.get(JSON.stringify(peerPK)).connection.setRemoteDescription(answer);
-} 
- 
+}
+
 // Receiving ICE Candidate from Server
 function onCandidate(candidate, peerPK) {
     peerPK = JSON.stringify(peerPK);
     if (connections.has(peerPK)) {
-        connections.get(peerPK).connection.addIceCandidate(new RTCIceCandidate(candidate)); 
+        connections.get(peerPK).connection.addIceCandidate(new RTCIceCandidate(candidate));
     }
 }
 
@@ -279,7 +279,7 @@ function onConnectedUsers(usernames) {
 }
 
 // Depreciated: For now
-function onJoin (usernames) {
+function onJoin(usernames) {
     for (peerName of usernames) {
         if (!connections.has(peerName) && peerName !== localUsername) {
             sendOffer(peerName);
@@ -287,12 +287,12 @@ function onJoin (usernames) {
     }
 }
 
-function onLeave (peerPK) {
+function onLeave(peerPK) {
     // peerPK : string
     closeConnections(peerPK);
 }
 
-async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
+async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers) {
 
     joinedChats.set(chatID, {
         chatName: chatName,
@@ -302,12 +302,12 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         toDispute: null
     });
     store.setItem("joinedChats", joinedChats);
-    
+
     for (const name of validMemberPubKeys.keys()) {
         keyMap.set(JSON.stringify(validMemberPubKeys.get(name)), name);
     }
     store.setItem("keyMap", keyMap);
-    
+
     if (invalidMembers.length > 0) {
         alert(`The following users do not exist ${invalidMembers}`);
     }
@@ -332,7 +332,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
 }
 
 // When being added to a new chat
-function onAdd (chatID, chatName, from, fromPK, msgID) {
+function onAdd(chatID, chatName, from, fromPK, msgID) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
@@ -360,17 +360,17 @@ function onAdd (chatID, chatName, from, fromPK, msgID) {
         if (connections.has(JSON.stringify(fromPK))) {
             sendOperations(chatID, JSON.stringify(fromPK));
         } else {
-            if (!(await connectToPeer({peerName: from, peerPK: fromPK}))) {
+            if (!(await connectToPeer({ peerName: from, peerPK: fromPK }))) {
                 if (!getOnline(chatID)) {
                     console.log(`no one is online :(`);
-                    
+
                 }
             }
         }
     });
 }
 
-async function addToChat (validMemberPubKeys, chatID) {
+async function addToChat(validMemberPubKeys, chatID) {
     // members is the list of members pubkey: object
     store.getItem(chatID).then(async (chatInfo) => {
         var pk;
@@ -388,7 +388,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                 chatID: chatID,
                 chatName: chatInfo.metadata.chatName
             };
-            
+
             joinedChats.get(chatID).members.push(JSON.stringify(pk));
             await store.setItem("joinedChats", joinedChats);
             await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
@@ -407,12 +407,12 @@ async function addToChat (validMemberPubKeys, chatID) {
     });
 }
 
-function onRemove (chatID, chatName, from, fromPK) {
+function onRemove(chatID, chatName, from, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
     chatInfo.currentMember = false;
     if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
-        chatInfo.toDispute = {peerName: from, peerPK: fromPK};
+        chatInfo.toDispute = { peerName: from, peerPK: fromPK };
     }
     if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
         chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
@@ -425,14 +425,14 @@ function onRemove (chatID, chatName, from, fromPK) {
     for (const pk of chatInfo.members) {
         closeConnections(pk);
     }
-    
+
     updateHeading();
 }
 
-async function removeFromChat (validMemberPubKeys, chatID) {
+async function removeFromChat(validMemberPubKeys, chatID) {
     // validMemberPubKeys : map of string username to object public key, chatID : string
     store.getItem(chatID).then(async (chatInfo) => {
-       var pk;
+        var pk;
         for (const name of validMemberPubKeys.keys()) {
             pk = objToArr(validMemberPubKeys.get(name));
             console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations.map(op => op.action)}`);
@@ -461,7 +461,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
     });
 }
 
-async function disputeRemoval (peer, chatID) {
+async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(-1, 1)}`);
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(-1, 1));
@@ -480,7 +480,7 @@ async function disputeRemoval (peer, chatID) {
         // note that we aren't sending the remove message itself...
 
         for (const mem of joinedChats.get(chatID).members) {
-            connectToPeer({peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem))});
+            connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
 
 
@@ -490,14 +490,14 @@ async function disputeRemoval (peer, chatID) {
 var resolveGetUsername = new Map();
 var rejectGetUsername = new Map();
 
-function onGetUsername (name, success, pk) {
+function onGetUsername(name, success, pk) {
     // name: String, success: boolean, pk: string
     if (success) {
         console.log(`Received username of ${pk}, ${name}`);
         keyMap.set(pk, name);
         store.setItem("keyMap", keyMap);
         console.log(`resolveGetUsername keys ${[...resolveGetUsername.keys()]}`);
-        resolveGetUsername.get(pk)(name);   
+        resolveGetUsername.get(pk)(name);
     } else {
         rejectGetUsername.get(pk)(new Error("User does not exist"));
         console.error(`User ${name} does not exist`);
@@ -506,7 +506,7 @@ function onGetUsername (name, success, pk) {
     rejectGetUsername.delete(pk);
 }
 
-function getUsername (pk) {
+function getUsername(pk) {
     // pk: stringified(pk)
     return new Promise((resolve, reject) => {
         if (keyMap.has(pk)) {
@@ -524,7 +524,7 @@ function getUsername (pk) {
     });
 }
 
-function onGetPK (name, success, pk) {
+function onGetPK(name, success, pk) {
     // name: String, success: boolean, pk: Uint8Array
     if (success) {
         console.log(`Received pk of ${name}, ${pk}`);
@@ -539,13 +539,13 @@ function onGetPK (name, success, pk) {
     rejectGetPK.delete(name);
 }
 
-async function onGetOnline (online, chatID) {
+async function onGetOnline(online, chatID) {
     if (online.length == 0) {
         resolveGetOnline.get(chatID)(false);
     }
     for (const peer of online) {
         peer.peerPK = objToArr(peer.peerPK);
-        if (await connectToPeer(peer)) { 
+        if (await connectToPeer(peer)) {
             console.log(`Successfully connected to ${peer.peerName}`);
             sendOperations(chatID, JSON.stringify(peer.peerPK));
             resolveGetOnline.get(true); // doesn't mean that it synced
@@ -556,7 +556,7 @@ async function onGetOnline (online, chatID) {
 
 var resolveGetOnline = new Map();
 
-function getOnline (chatID) {
+function getOnline(chatID) {
     return new Promise((resolve) => {
         resolveGetOnline.set(chatID, resolve);
         sendToServer({
@@ -567,7 +567,7 @@ function getOnline (chatID) {
     });
 }
 
-async function onQueuedOnline (pk) {
+async function onQueuedOnline(pk) {
     // pk: Uint8Array
     if (await connectToPeer(pk)) {
         const queue = msgQueue.get(JSON.stringify(pk));
@@ -585,7 +585,7 @@ async function onQueuedOnline (pk) {
 var resolveGetPK = new Map();
 var rejectGetPK = new Map();
 
-function getPK (username) {
+function getPK(username) {
     return new Promise((resolve, reject) => {
         for (const pk of keyMap) {
             if (username == keyMap.get(pk)) {
@@ -603,7 +603,7 @@ function getPK (username) {
     });
 }
 
-function getDeps (operations) {
+function getDeps(operations) {
     // operations : Array of Object
     var deps = [];
     for (const op of operations) {
@@ -615,35 +615,35 @@ function getDeps (operations) {
     return deps;
 }
 
-function concatOp (op) {
+function concatOp(op) {
     return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
 }
 
-async function generateOp (action, chatID, pk2 = null, ops = []) {
+async function generateOp(action, chatID, pk2 = null, ops = []) {
     // action: String, chatID: String, pk2: Uint8Array, ops: Array of Object
-    
-    return new Promise(function(resolve) {
+
+    return new Promise(function (resolve) {
         var op;
         if (action === "create") {
             op = {
-                action: 'create', 
+                action: 'create',
                 pk: keyPair.publicKey,
                 nonce: nacl.randomBytes(64),
             };
         } else if (action === "add" || action === "remove") {
             op = {
-                action: action, 
+                action: action,
                 pk1: keyPair.publicKey,
                 pk2: pk2,
                 deps: getDeps(ops)
             };
         }
         op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
-            resolve(op);
+        resolve(op);
     });
 }
 
-async function sendOperations (chatID, pk) {
+async function sendOperations(chatID, pk) {
     // chatID : String, pk : String
     console.log(`sending operations to ${keyMap.get(pk)}`);
     store.getItem(chatID).then((chatInfo) => {
@@ -656,7 +656,7 @@ async function sendOperations (chatID, pk) {
     });
 }
 
-async function sendIgnored (ignored, chatID, pk) {
+async function sendIgnored(ignored, chatID, pk) {
     // chatID : String, pk : String
     console.log(`sending operations to pk ${pk} ${keyMap.get(pk)}`);
     sendToMember({
@@ -667,7 +667,7 @@ async function sendIgnored (ignored, chatID, pk) {
     }, pk);
 }
 
-async function receivedIgnored (ignored, chatID, pk) {
+async function receivedIgnored(ignored, chatID, pk) {
     console.log(`receiving ignored for chatID ${chatID}`);
     return new Promise((resolve) => {
         if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
@@ -689,7 +689,7 @@ async function receivedIgnored (ignored, chatID, pk) {
 }
 
 // TODO: make it so that we don't add the removal/remove the removal before generating ops
-async function receivedOperations (ops, chatID, pk) {
+async function receivedOperations(ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
@@ -724,7 +724,7 @@ async function receivedOperations (ops, chatID, pk) {
                     updateHeading();
 
                     chatInfo.metadata.operations = ops;
-                    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => {return !memberSet.has(pk)});
+                    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
                     joinedChats.get(chatID).members = [...memberSet];
                     joinedChats.get(chatID).members.sort();
                     store.setItem("joinedChats", joinedChats);
@@ -732,7 +732,7 @@ async function receivedOperations (ops, chatID, pk) {
                     resolve(true);
                     return;
                 }
-                if (joinedChats.get(chatID).exMembers.includes(pk)) {   
+                if (joinedChats.get(chatID).exMembers.includes(pk)) {
                     sendChatHistory(chatID, pk); // should still close after
                     return;
                 }
@@ -744,8 +744,8 @@ async function receivedOperations (ops, chatID, pk) {
 }
 
 // takes in set of ops
-function verifyOperations (ops) {
-    
+function verifyOperations(ops) {
+
     // only one create
     const createOps = ops.filter((op) => op.action === "create");
     if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
@@ -783,7 +783,7 @@ function getOpFromHash(ops, hashedOp) {
 }
 
 // takes in set of ops
-function precedes (ops, op1, op2) {
+function precedes(ops, op1, op2) {
     if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; } // TODO
     const toVisit = [op2];
     const target = hashOp(op1);
@@ -804,12 +804,12 @@ function precedes (ops, op1, op2) {
     return false;
 }
 
-function concurrent (ops, op1, op2) {
+function concurrent(ops, op1, op2) {
     if (!hasOp(ops, op1) || !hasOp(ops, op2) || arrEqual(op1.sig, op2.sig) || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
     return true;
 }
 
-function printEdge (op1, op2=null) {
+function printEdge(op1, op2 = null) {
     var output = "";
     if (op1.action === "create") {
         output = `op1 ${keyMap.get(JSON.stringify(op1.pk))} ${op1.action} ${JSON.stringify(op1.sig)} `;
@@ -826,7 +826,7 @@ function printEdge (op1, op2=null) {
     console.log(output);
 }
 
-function authority (ops) {
+function authority(ops) {
     const edges = [];
     var pk;
     // convert pk into strings to perform comparisons
@@ -841,12 +841,12 @@ function authority (ops) {
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        edges.push([op1, {"member": pk, "sig": pk, "action": "mem"}]);
+        edges.push([op1, { "member": pk, "sig": pk, "action": "mem" }]);
     }
     return edges;
 }
 
-function hasCycle (ops, edges) {
+function hasCycle(ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const seen = new Set();
     const fromOp = new Map();
@@ -862,12 +862,12 @@ function hasCycle (ops, edges) {
             toOp.set(JSON.stringify(edge[1].sig), 0);
         }
         fromOp.get(JSON.stringify(edge[0].sig)).push(edge);
-        toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
+        toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig)) + 1);
     }
 
     while (queue.length > 0) {
         cur = queue.at(-1);
-        console.log(`${cur.action}`);
+        console.log(`${cur.action} ${queue.length}`);
         if (seen.has(JSON.stringify(cur.sig))) {
             const conc = [cur];
             const cycleStart = queue.findIndex((op) => arrEqual(op.sig, cur.sig));
@@ -881,7 +881,7 @@ function hasCycle (ops, edges) {
                 }
             }
             console.log(`here is the number of concurrent ${conc.length}`);
-            conc.forEach(op => {console.log(`conc op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
+            conc.forEach(op => { console.log(`conc op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`) });
             return { cycle: true, concurrent: conc };
         }
 
@@ -890,12 +890,13 @@ function hasCycle (ops, edges) {
                 queue.push(edge[1]);
             }
         }
-        seen.add(queue.pop());
+        seen.add(JSON.stringify(cur.sig));
+        queue.pop();
     }
     return { cycle: false };
 }
 
-function valid (ops, ignored, op, authorityGraph) {
+function valid(ops, ignored, op, authorityGraph) {
     printEdge(op);
     ops = new Set(ops);
     if (op.action === "create") { return true; }
@@ -911,14 +912,14 @@ function valid (ops, ignored, op, authorityGraph) {
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
             if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
-                return true; 
+                return true;
             }
         }
     }
     return false;
 }
 
-async function members (ops, ignored) {
+async function members(ops, ignored) {
     const pks = new Set();
     const authorityGraph = authority(ops);
     const scan = hasCycle(ops, authorityGraph);
@@ -933,7 +934,7 @@ async function members (ops, ignored) {
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
-        if (valid(ops, ignored, {"member": pk, "sig": pk, "action": "mem"}, authorityGraph)) {
+        if (valid(ops, ignored, { "member": pk, "sig": pk, "action": "mem" }, authorityGraph)) {
             pks.add(JSON.stringify(pk));
         }
     }
@@ -946,7 +947,7 @@ async function members (ops, ignored) {
 // Peer to Peer Functions //
 ////////////////////////////
 
-function joinChat (chatID) {
+function joinChat(chatID) {
     if (currentChatID !== chatID) {
         currentChatID = chatID;
         for (peerPK of joinedChats.get(chatID).members) {
@@ -959,7 +960,7 @@ function joinChat (chatID) {
     }
 }
 
-function initPeerConnection () {
+function initPeerConnection() {
     try {
         const connection = new RTCPeerConnection(configuration);
         connection.ondatachannel = receiveChannelCallback;
@@ -969,8 +970,8 @@ function initPeerConnection () {
         connection.onicecandidate = function (event) {
             console.log("New candidate");
             if (event.candidate) {
-                sendToServer({ 
-                    type: "candidate", 
+                sendToServer({
+                    type: "candidate",
                     candidate: event.candidate,
                     name: localUsername,
                     chatroomID: currentChatID
@@ -1023,20 +1024,20 @@ function initPeerConnection () {
     }
 }
 
-function initChannel (channel) {
+function initChannel(channel) {
     channel.onopen = (event) => { onChannelOpen(event); }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = (event) => { receivedMessage(JSON.parse(event.data)) }
 }
 
-function receivedMessage (messageData) {
+function receivedMessage(messageData) {
     console.log(`received a message from the channel of type ${messageData.type}`);
     switch (messageData.type) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res) { 
-                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
+                if (res) {
+                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
             });
@@ -1044,8 +1045,8 @@ function receivedMessage (messageData) {
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res) { 
-                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
+                if (res) {
+                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
             })
@@ -1095,11 +1096,11 @@ function receivedMessage (messageData) {
     }
 }
 
-function onChannelOpen (event) {
+function onChannelOpen(event) {
     console.log(`Channel ${event.target.label} opened`);
     const channelLabel = JSON.parse(event.target.label);
     const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
-    
+
     if (resolveConnectToPeer.has(peerPK)) {
         resolveConnectToPeer.get(peerPK)(true);
         resolveConnectToPeer.delete(peerPK);
@@ -1112,7 +1113,7 @@ function onChannelOpen (event) {
     }
 }
 
-function receiveChannelCallback (event) {
+function receiveChannelCallback(event) {
     const channelLabel = JSON.parse(event.channel.label);
     console.log(`Received channel ${event.channel.label} from ${channelLabel.senderPK}`);
     const peerConnection = connections.get(channelLabel.senderPK);
@@ -1120,12 +1121,12 @@ function receiveChannelCallback (event) {
     initChannel(peerConnection.sendChannel);
 }
 
-function sendAdvertisement (chatID, pk) {
+function sendAdvertisement(chatID, pk) {
     // chatID: String, pk: stringify(pk)
     const online = [];
     for (const mem of joinedChats.get(chatID).members) {
         if (connections.has(mem) && mem !== pk) {
-            online.push({peerName: keyMap.get(mem), peerPK: objToArr(JSON.parse(mem))});
+            online.push({ peerName: keyMap.get(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
     }
 
@@ -1138,11 +1139,11 @@ function sendAdvertisement (chatID, pk) {
     }
 }
 
-async function sendChatHistory (chatID, pk) {
+async function sendChatHistory(chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         var peerHistory = [];
-        
+
         if (chatInfo.historyTable.has(pk)) {
             const intervals = chatInfo.historyTable.get(pk);
             var start, end;
@@ -1162,7 +1163,7 @@ async function sendChatHistory (chatID, pk) {
     });
 }
 
-function initChatHistoryTable (chatID, msgID) {
+function initChatHistoryTable(chatID, msgID) {
     console.log(`initialised chat history`);
     store.getItem(chatID).then((chatInfo) => {
         for (const pk of joinedChats.get(chatID).members) {
@@ -1177,7 +1178,7 @@ function initChatHistoryTable (chatID, msgID) {
 
 var resolveConnectToPeer = new Map();
 
-function connectToPeer (peer) {
+function connectToPeer(peer) {
     // peer: JSON {peerName: String, peerPK: Uint8Array}
     return new Promise((resolve) => {
         if (peer.peerName === localUsername) { resolve(false); return; }
@@ -1194,7 +1195,7 @@ function connectToPeer (peer) {
     });
 }
 
-async function addPeer (messageData) {
+async function addPeer(messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
@@ -1220,9 +1221,9 @@ async function addPeer (messageData) {
     }).then(() => console.log(`added message data to chat history`));
 }
 
-async function removePeer (messageData) {
+async function removePeer(messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
-    
+
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
             const interval = chatInfo.historyTable.get(pk).pop();
@@ -1240,7 +1241,7 @@ async function removePeer (messageData) {
         joinedChats.get(messageData.chatID).exMembers.push(pk);
     }
     store.setItem("joinedChats", joinedChats);
-    
+
     updateHeading();
     updateChatWindow(messageData);
 
@@ -1256,7 +1257,7 @@ async function removePeer (messageData) {
     }
 }
 
-async function updateChatWindow (data) {
+async function updateChatWindow(data) {
     // data: JSON
     if (data.chatID === currentChatID) {
         var message;
@@ -1279,7 +1280,7 @@ async function updateChatWindow (data) {
     }
 }
 
-async function updateChatStore (messageData) {
+async function updateChatStore(messageData) {
     store.getItem(messageData.chatID).then((chatInfo) => {
         chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
@@ -1288,7 +1289,7 @@ async function updateChatStore (messageData) {
     });
 }
 
-function sendToMember (data, pk) {
+function sendToMember(data, pk) {
     // data: JSON, pk: String
     if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
@@ -1298,7 +1299,7 @@ function sendToMember (data, pk) {
     return;
 }
 
-function broadcastToMembers (data, chatID = null) {
+function broadcastToMembers(data, chatID = null) {
     data.sentTime = Date.now();
     data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
     chatID = chatID === null ? currentChatID : chatID;
@@ -1313,7 +1314,7 @@ function broadcastToMembers (data, chatID = null) {
     return data.id;
 }
 
-function sendChatMessage (messageInput) {
+function sendChatMessage(messageInput) {
     const data = {
         type: "text",
         from: keyPair.publicKey,
@@ -1330,7 +1331,7 @@ function sendChatMessage (messageInput) {
 /////////////////////
 
 // Send Login attempt
-loginBtn.addEventListener("click", async function (event) { 
+loginBtn.addEventListener("click", async function (event) {
     const username = loginInput.value;
     console.log(username);
     if (username.length > 0 && isAlphanumeric(username)) {
@@ -1348,8 +1349,8 @@ loginBtn.addEventListener("click", async function (event) {
                 keyPair = kp;
             }
 
-            sendToServer({ 
-                type: "login", 
+            sendToServer({
+                type: "login",
                 name: username,
                 pubKey: keyPair.publicKey
             });
@@ -1379,7 +1380,7 @@ ignoredInput.addEventListener("change", selectIgnored);
 
 newChatBtn.addEventListener("click", createNewChat);
 
-addUserBtn.addEventListener ("click", async () => {
+addUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
     try {
@@ -1393,7 +1394,7 @@ addUserBtn.addEventListener ("click", async () => {
     }
 });
 
-removeUserBtn.addEventListener ("click", async () => {
+removeUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = modifyUserInput.value;
     try {
@@ -1406,19 +1407,19 @@ removeUserBtn.addEventListener ("click", async () => {
     }
 });
 
-disputeBtn.addEventListener ("click", async () => {
+disputeBtn.addEventListener("click", async () => {
     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
     joinedChats.get(currentChatID).toDispute = null;
     updateHeading();
 });
 
-acceptRemovalBtn.addEventListener ("click", async () => {
+acceptRemovalBtn.addEventListener("click", async () => {
     console.log(`toDispute cleared`);
     joinedChats.get(currentChatID).toDispute = null;
     updateHeading();
 });
 
-resetStoreBtn.addEventListener ("click", () => {
+resetStoreBtn.addEventListener("click", () => {
     console.log(`resetting store...`);
     store.keys().then((keys) => {
         for (const key of keys) {
@@ -1432,11 +1433,11 @@ resetStoreBtn.addEventListener ("click", () => {
 const ignoredOptions = [];
 var resolveGetIgnored;
 
-function getIgnored (conc) {
+function getIgnored(conc) {
     document.getElementById('universeSelection').style.display = "block";
     document.getElementById('chatBox').style.display = "none";
     var option;
-    for (let i = ignoredInput.options.length-1; i >= 0; i--) {
+    for (let i = ignoredInput.options.length - 1; i >= 0; i--) {
         ignoredInput.remove(i);
     }
     for (const op of conc) {
@@ -1451,14 +1452,14 @@ function getIgnored (conc) {
     });
 }
 
-function selectIgnored () {
+function selectIgnored() {
     console.log(`selected index ${ignoredInput.selectedIndex}`);
     resolveGetIgnored(ignoredOptions[ignoredInput.selectedIndex]);
     document.getElementById('chatBox').style.display = "block";
     document.getElementById('universeSelection').style.display = "none";
 }
 
-function getChatNames () {
+function getChatNames() {
     var chatnames = [];
     for (const chatID of joinedChats.keys()) {
         chatnames.push(joinedChats.get(chatID).chatName);
@@ -1466,7 +1467,7 @@ function getChatNames () {
     return chatnames;
 }
 
-function getChatID (chatName) {
+function getChatID(chatName) {
     for (const chatID of joinedChats.keys()) {
         if (chatName === joinedChats.get(chatID).chatName) {
             return chatID;
@@ -1475,7 +1476,7 @@ function getChatID (chatName) {
     return -1;
 }
 
-function updateHeading () {
+function updateHeading() {
     const title = document.getElementById('heading');
     title.innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
     if (joinedChats.size > 0) {
@@ -1495,7 +1496,7 @@ function updateHeading () {
     }
 }
 
-function selectChat () {
+function selectChat() {
     const index = chatNameInput.selectedIndex;
 
     if (index > 0) {
@@ -1521,7 +1522,7 @@ function updateChatOptions(operation, chatID) {
         chatOptions.add(chatID);
         return;
     }
-        
+
     if (operation === "remove" && chatOptions.has(chatID)) {
         const index = [...joinedChats.keys()].indexOf(chatID);
         chatNameInput.remove(index);
@@ -1541,8 +1542,8 @@ function createNewChat() {
         }
     }
 
-    sendToServer({ 
-        type: "createChat", 
+    sendToServer({
+        type: "createChat",
         chatName: newChatName,
         from: keyPair.publicKey,
         members: members
@@ -1553,11 +1554,11 @@ function createNewChat() {
 // UTILS //
 ///////////
 
-function isAlphanumeric (str) {
-    return str === str.replace(/[^a-z0-9]/gi,'');
+function isAlphanumeric(str) {
+    return str === str.replace(/[^a-z0-9]/gi, '');
 }
 
-function unpackOp (op) {
+function unpackOp(op) {
     op.sig = objToArr(op.sig);
     if (op.action === "create") {
         op.pk = objToArr(op.pk);
@@ -1579,7 +1580,7 @@ function arrEqual(arr1, arr2) {
     return true;
 }
 
-function unionOps (ops1, ops2) {
+function unionOps(ops1, ops2) {
     const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
     const ops = [...ops1];
     for (const op of ops2) {
@@ -1589,36 +1590,36 @@ function unionOps (ops1, ops2) {
     return ops;
 }
 
-function hasOp (ops, op) {
+function hasOp(ops, op) {
     for (const curOp of ops) {
         if (arrEqual(curOp, op)) { return true; }
     }
     return false;
 }
 
-function removeOp (ops, op) {
-    for (let i=0; i < ops.length; i++) {
+function removeOp(ops, op) {
+    for (let i = 0; i < ops.length; i++) {
         if (arrEqual(ops[i].sig, op.sig)) {
             ops.splice(i, 1);
         }
     }
 }
 
-function strToArr (str) {
+function strToArr(str) {
     return objToArr(JSON.parse(str));
 }
 
-function objToArr (obj) {
+function objToArr(obj) {
     return Uint8Array.from(Object.values(obj));
 }
 
-function formatDate (now) {
+function formatDate(now) {
     const date = new Date(now);
     const intl = new Intl.DateTimeFormat('en-UK').format(date);
     return `${intl} ${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
 }
 
-function mergeJoinedChats (localChats, receivedChats) {
+function mergeJoinedChats(localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);
     if (receivedChats.size === 0) { return mergedChats; }
     const localChatIDs = new Set([...localChats.keys()]);
@@ -1630,7 +1631,7 @@ function mergeJoinedChats (localChats, receivedChats) {
     return mergedChats;
 }
 
-function mergeChatHistory (localMsg, receivedMsg) {
+function mergeChatHistory(localMsg, receivedMsg) {
     console.log(`local length ${localMsg.length}`);
     if (receivedMsg.size === 0) { return localMsg; }
     const mergedChatHistory = localMsg;
@@ -1648,7 +1649,7 @@ function mergeChatHistory (localMsg, receivedMsg) {
     });
 }
 
-function closeConnections (pk) {
+function closeConnections(pk) {
     console.log(`connection with ${keyMap.get(pk)} closed`);
     if (connections.has(pk)) {
         connectionNames.delete(connections.get(pk).connection);
