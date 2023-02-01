@@ -462,8 +462,8 @@ async function removeFromChat (validMemberPubKeys, chatID) {
 
 async function disputeRemoval (peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
-        console.log(`we are now dispute ${peer.peerName} and the ops are ${chatInfo.metadata.operations}`);
-        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations);
+        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations}`);
+        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, -1));
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
 
@@ -473,13 +473,16 @@ async function disputeRemoval (peer, chatID) {
             from: localUsername,
             fromPK: keyPair.publicKey,
             chatID: chatID,
-            chatName: chatInfo.metadata.chatName
+            chatName: chatInfo.metadata.chatName,
+
         });
         // note that we aren't sending the remove message itself...
 
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem))});
         }
+
+
     });
 }
 
@@ -689,6 +692,7 @@ async function receivedIgnored (ignored, chatID, pk) {
     });
 }
 
+// TODO: make it so that we don't add the removal/remove the removal before generating ops
 async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
