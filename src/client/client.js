@@ -866,7 +866,7 @@ function hasCycle (ops, edges) {
     }
 
     while (queue.length > 0) {
-        cur = queue[-1];
+        cur = queue.at(-1);
         console.log(`${cur.action}`);
         if (seen.has(JSON.stringify(cur.sig))) {
             const conc = [cur];
@@ -875,7 +875,7 @@ function hasCycle (ops, edges) {
             for (const op of ops) {
                 console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${cur.action} ${keyMap.get(JSON.stringify(cur.pk2))}?`);
 
-                if (op.action !== "create" && cur.sig !== op.sig && toOp.get(JSON.stringify(op.sig)) >= 2) {
+                if (op.action !== "create" && !arrEqual(cur.sig, op.sig) && toOp.get(JSON.stringify(op.sig)) >= 2) {
                     console.log(`yes`);
                     conc.push(op);
                 }
