@@ -659,14 +659,12 @@ async function sendOperations (chatID, pk) {
 async function sendIgnored (chatID, pk, ignored) {
     // chatID : String, pk : String
     console.log(`sending operations to ${keyMap.get(pk)}`);
-    store.getItem(chatID).then((chatInfo) => {
-        sendToMember({
-            type: "ops",
-            ignored: ignored,
-            chatID: chatID,
-            from: keyPair.publicKey,
-        }, pk);
-    });
+    sendToMember({
+        type: "ops",
+        ignored: ignored,
+        chatID: chatID,
+        from: keyPair.publicKey,
+    }, pk);
 }
 
 async function receivedIgnored (ignored, chatID, pk) {
@@ -705,8 +703,8 @@ async function receivedOperations (ops, chatID, pk) {
                 const memberSet = memberInfo.members;
 
                 if (memberInfo.ignored.length > 0) {
-                    sendIgnored(chatID, pk, ignored);
-                    console.log(`sent ignored operations ${chatInfo.metadata.ignored}`);
+                    sendIgnored(chatID, pk, memberInfo.ignored);
+                    console.log(`sent ignored operations ${memberInfo.ignored}`);
                     return;
                 }
 
