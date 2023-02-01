@@ -462,8 +462,9 @@ async function removeFromChat (validMemberPubKeys, chatID) {
 
 async function disputeRemoval (peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
+        chatInfo.metadata.operations.splice(-1, 1);
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations}`);
-        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, -1));
+        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations);
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
 
@@ -474,7 +475,7 @@ async function disputeRemoval (peer, chatID) {
             fromPK: keyPair.publicKey,
             chatID: chatID,
             chatName: chatInfo.metadata.chatName,
-
+            
         });
         // note that we aren't sending the remove message itself...
 
