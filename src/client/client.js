@@ -408,19 +408,16 @@ async function addToChat (validMemberPubKeys, chatID) {
 
 function onRemove (chatID, chatName, fromPK) {
     // chatID : string, chatName : string, fromPK : Uint8Array
-    console.log(`on remove triggered, here is currmem ${joinedChats.get(chatID).currentMember}`);
-    if (joinedChats.get(chatID).currentMember) {
-        joinedChats.get(chatID).currentMember = false;
-        joinedChats.get(chatID).toDispute.push(fromPK);
-        console.log(joinedChats.get(chatID).toDispute.length);
-        console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
-        store.setItem("joinedChats", joinedChats);
-        for (const pk of joinedChats.get(chatID).members) {
-            closeConnections(pk);
-        }
-        
-        updateHeading();
+    joinedChats.get(chatID).currentMember = false;
+    joinedChats.get(chatID).toDispute.push(fromPK);
+    console.log(joinedChats.get(chatID).toDispute.length);
+    console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
+    store.setItem("joinedChats", joinedChats);
+    for (const pk of joinedChats.get(chatID).members) {
+        closeConnections(pk);
     }
+    
+    updateHeading();
 }
 
 async function removeFromChat (validMemberPubKeys, chatID) {
@@ -676,6 +673,7 @@ async function receivedOperations (ops, chatID, pk) {
                         updateChatOptions("add", chatID);
                     } else {
                         joinedChats.get(chatID).currentMember = false;
+
                     }
                     updateHeading();
 
