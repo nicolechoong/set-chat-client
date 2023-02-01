@@ -422,6 +422,7 @@ function onRemove (chatID, chatName, fromPK) {
 }
 
 async function removeFromChat (validMemberPubKeys, chatID) {
+    // validMemberPubKeys : map of string username to object public key, chatID : string
     store.getItem(chatID).then(async (chatInfo) => {
        var pk;
         for (const name of validMemberPubKeys.keys()) {
@@ -1342,7 +1343,7 @@ removeUserBtn.addEventListener ("click", async () => {
 disputeBtn.addEventListener ("click", async () => {
     var pk, username;
     for (pk of joinedChats.get(currentChatID).toDispute) {
-        username = await getUsername(pk);
+        username = await getUsername(JSON.stringify(pk));
         removeFromChat(new Map([username, pk]), currentChatID);
     }
 });
