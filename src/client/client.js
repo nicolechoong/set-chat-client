@@ -867,6 +867,7 @@ function hasCycle (ops, edges) {
 
     while (queue.length > 0) {
         cur = queue[-1];
+        console.log(`${cur.action}`);
         if (seen.has(JSON.stringify(cur.sig))) {
             const conc = [cur];
             const cycleStart = queue.findIndex((op) => arrEqual(op.sig, cur.sig));
@@ -892,7 +893,7 @@ function hasCycle (ops, edges) {
         }
         cur.pop();
     }
-    return { cycle: false};
+    return { cycle: false };
 }
 
 function valid (ops, ignored, op, authorityGraph) {
