@@ -848,7 +848,7 @@ function authority (ops) {
 
 function hasCycle (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
-    const seen = new Set([JSON.stringify(start.sig)]);
+    const seen = new Set();
     const fromOp = new Map();
     const toOp = new Map();
     const queue = [start];
@@ -888,10 +888,9 @@ function hasCycle (ops, edges) {
         for (const edge of fromOp.get(JSON.stringify(cur.sig))) {
             if (edge[1].action !== "mem") {
                 queue.push(edge[1]);
-                seen.add(JSON.stringify(edge[1].sig));
             }
         }
-        cur.pop();
+        seen.add(cur.pop());
     }
     return { cycle: false };
 }
