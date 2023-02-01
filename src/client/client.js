@@ -703,7 +703,7 @@ async function receivedOperations (ops, chatID, pk) {
                 const memberSet = memberInfo.members;
 
                 if (memberInfo.ignored.length > 0) {
-                    sendIgnored(chatID, pk, memberInfo.ignored);
+                    sendIgnored(memberInfo.ignored, chatID, pk);
                     console.log(`sent ignored operations ${memberInfo.ignored}`);
                     return;
                 }
