@@ -409,19 +409,20 @@ async function addToChat (validMemberPubKeys, chatID) {
 
 function onRemove (chatID, chatName, from, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
-    joinedChats.get(chatID).currentMember = false;
-    if (joinedChats.get(chatID).toDispute === null) {
-        joinedChats.get(chatID).toDispute = {peerName: from, peerPK: fromPK}
+    var chatInfo = joinedChats.get(chatID);
+    chatInfo.currentMember = false;
+    if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
+        chatInfo.toDispute = {peerName: from, peerPK: fromPK};
     }
-    if (joinedChats.get(chatID).members.includes(JSON.stringify(keyPair.publicKey))) {
-        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+    if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
+        chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
     }
-    if (!joinedChats.get(chatID).exMembers.includes(JSON.stringify(fromPK))) {
-        joinedChats.get(chatID).exMembers.push(JSON.stringify(fromPK));
+    if (!chatInfo.exMembers.includes(JSON.stringify(fromPK))) {
+        chatInfo.exMembers.push(JSON.stringify(fromPK));
     }
     console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
     store.setItem("joinedChats", joinedChats);
-    for (const pk of joinedChats.get(chatID).members) {
+    for (const pk of chatInfo.members) {
         closeConnections(pk);
     }
     
@@ -462,9 +463,8 @@ async function removeFromChat (validMemberPubKeys, chatID) {
 
 async function disputeRemoval (peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
-        chatInfo.metadata.operations.splice(-1, 1);
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations}`);
-        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations);
+        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(-1, 1)}`);
+        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(-1, 1));
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
 
@@ -475,7 +475,7 @@ async function disputeRemoval (peer, chatID) {
             fromPK: keyPair.publicKey,
             chatID: chatID,
             chatName: chatInfo.metadata.chatName,
-            
+
         });
         // note that we aren't sending the remove message itself...
 
@@ -1428,12 +1428,14 @@ function getIgnored (conc) {
         ignoredInput.add(option);
         ignoredOptions.push(op);
     }
+    console.log(`ignored ops length ${ignoredOptions.length}`);
     return new Promise((resolve) => {
         resolveGetIgnored = resolve;
     });
 }
 
 function selectIgnored () {
+    console.log(`selected index ${ignoredInput.selectedIndex}`);
     resolveGetIgnored(ignoredOptions[ignoredInput.selectedIndex]);
     document.getElementById('chatBox').style.display = "block";
     document.getElementById('universeSelection').style.display = "none";
