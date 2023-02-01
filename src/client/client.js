@@ -660,7 +660,7 @@ async function sendIgnored (chatID, pk, ignored) {
     // chatID : String, pk : String
     console.log(`sending operations to ${keyMap.get(pk)}`);
     sendToMember({
-        type: "ops",
+        type: "ignored",
         ignored: ignored,
         chatID: chatID,
         from: keyPair.publicKey,
@@ -1399,6 +1399,8 @@ removeUserBtn.addEventListener ("click", async () => {
 
 disputeBtn.addEventListener ("click", async () => {
     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
+    joinedChats.get(currentChatID).toDispute = null;
+    updateHeading();
 });
 
 acceptRemovalBtn.addEventListener ("click", async () => {
