@@ -1360,6 +1360,8 @@ sendMessageBtn.addEventListener("click", function () {
 
 chatNameInput.addEventListener("change", selectChat);
 
+ignoredInput.addEventListener("focus", () => { ignoredInput.selectedIndex = -1; });
+
 ignoredInput.addEventListener("change", selectIgnored);
 
 newChatBtn.addEventListener("click", createNewChat);
