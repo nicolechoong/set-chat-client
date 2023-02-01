@@ -685,11 +685,9 @@ async function receivedIgnored (ignored, chatID, pk) {
                 console.log(`ignored sets same`);
                 resolve(true);
             }
-            ops = unionOps(chatInfo.metadata.operations, ops);
-            
             closeConnections(pk);
             resolve(false);
-        })
+        });
     });
 }
 
@@ -707,10 +705,11 @@ async function receivedOperations (ops, chatID, pk) {
                 const memberInfo = await members(ops, chatInfo.metadata.ignored);
                 const memberSet = memberInfo.members;
 
-                // if (memberInfo.ignored.length > 0) {
-                //     sendIgnored(chatID, pk, ignored);
-                //     chatInfo.metadata.ignored()
-                // }
+                if (memberInfo.ignored.length > 0) {
+                    sendIgnored(chatID, pk, ignored);
+                    console.log(`sent ignored operations ${chatInfo.metadata.ignored}`);
+                    return;
+                }
 
                 console.log(`verified true is member ${memberSet.has(pk)}`);
 
@@ -1038,6 +1037,15 @@ function receivedMessage (messageData) {
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 }
             });
+            break;
+        case "ignored":
+            messageData.ignored.forEach(op => unpackOp(op));
+            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+                if (res) { 
+                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from)); 
+                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                }
+            })
             break;
         case "advertisement":
             messageData.online.forEach((peer) => connectToPeer(peer));
