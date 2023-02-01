@@ -866,27 +866,31 @@ function hasCycle (ops, edges) {
     }
 
     while (queue.length > 0) {
-        cur = queue.shift();
-        for (const edge of fromOp.get(JSON.stringify(cur.sig))) {
-            if (seen.has(JSON.stringify(edge[1].sig))) {
-                const conc = [edge[1]];
-                for (const op of ops) {
-                    console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${edge[1].action} ${keyMap.get(JSON.stringify(edge[1].pk2))}?`);
+        cur = queue[-1];
+        if (seen.has(JSON.stringify(cur.sig))) {
+            const conc = [cur];
+            const cycleStart = queue.findIndex((op) => arrEqual(op.sig, cur.sig));
+            console.log(`cycle length ${queue.slice(cycleStart, -1).length}`);
+            for (const op of ops) {
+                console.log(`is ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} concurrent with ${cur.action} ${keyMap.get(JSON.stringify(cur.pk2))}?`);
 
-                    if (op.action !== "create" && edge[1].sig !== op.sig && toOp.get(JSON.stringify(op.sig)) >= 2) {
-                        console.log(`yes`);
-                        conc.push(op);
-                    }
+                if (op.action !== "create" && cur.sig !== op.sig && toOp.get(JSON.stringify(op.sig)) >= 2) {
+                    console.log(`yes`);
+                    conc.push(op);
                 }
-                console.log(`here is the number of concurrent ${conc.length}`);
-                conc.forEach(op => {console.log(`conc op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
-                return { cycle: true, concurrent: conc };
             }
+            console.log(`here is the number of concurrent ${conc.length}`);
+            conc.forEach(op => {console.log(`conc op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
+            return { cycle: true, concurrent: conc };
+        }
+
+        for (const edge of fromOp.get(JSON.stringify(cur.sig))) {
             if (edge[1].action !== "mem") {
                 queue.push(edge[1]);
                 seen.add(JSON.stringify(edge[1].sig));
             }
         }
+        cur.pop();
     }
     return { cycle: false};
 }
