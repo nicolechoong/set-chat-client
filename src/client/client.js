@@ -869,10 +869,10 @@ function hasCycle (ops, edges) {
     var cur;
 
     for (const edge of edges) {
+        if (!fromOp.has(JSON.stringify(edge[0].sig))) {
+            fromOp.set(JSON.stringify(edge[0].sig), []);
+        }
         if (edge[1].action !== "mem") {
-            if (!fromOp.has(JSON.stringify(edge[0].sig))) {
-                fromOp.set(JSON.stringify(edge[0].sig), []);
-            }
             fromOp.get(JSON.stringify(edge[0].sig)).push(edge[1]);
         }
     }
