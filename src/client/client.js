@@ -5,6 +5,7 @@ var sendMessageBtn = document.getElementById('sendMessageBtn');
 var addUserBtn = document.getElementById('addUserBtn');
 var removeUserBtn = document.getElementById('removeUserBtn');
 var disputeBtn = document.getElementById('disputeBtn');
+var acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
 var resetStoreBtn = document.getElementById('resetStoreBtn');
 var chatMessages = document.getElementById('chatMessages');
 
@@ -298,7 +299,7 @@ async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMember
         members: [JSON.stringify(keyPair.publicKey)],
         exMembers: [],
         currentMember: true,
-        toDispute: []
+        toDispute: new Set()
     });
     store.setItem("joinedChats", joinedChats);
     
@@ -342,7 +343,7 @@ function onAdd (chatID, chatName, from, fromPK, msgID) {
         members: [JSON.stringify(fromPK)],
         exMembers: [],
         currentMember: false,
-        toDispute: []
+        toDispute: new Set()
     });
     store.setItem("joinedChats", joinedChats);
 
@@ -1366,6 +1367,11 @@ disputeBtn.addEventListener ("click", async () => {
         username = await getUsername(pk);
         removeFromChat(new Map([[username, objToArr(JSON.parse(pk))]]), currentChatID);
     }
+});
+
+acceptRemovalBtn.addEventListener ("click", async () => {
+    console.log(`toDispute cleared`);
+    joinedChats.get(currentChatID).toDispute = new Set();
 });
 
 resetStoreBtn.addEventListener ("click", () => {
