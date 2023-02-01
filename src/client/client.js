@@ -889,7 +889,7 @@ function hasCycle (ops, edges) {
                 console.log(`here is the number of concurrent ${conc.length}`);
                 return { cycle: true, concurrent: conc };
             }
-            stack.push(next);
+            stack.shift(next);
             seen.add(JSON.stringify(next.sig));
         }
     }
