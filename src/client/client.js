@@ -738,7 +738,7 @@ async function receivedOperations (ops, chatID, pk) {
 }
 
 // takes in set of ops
-function verifyOperations(ops) {
+function verifyOperations (ops) {
 
     // only one create
     const createOps = ops.filter((op) => op.action === "create");
@@ -762,7 +762,7 @@ function verifyOperations(ops) {
     return true;
 }
 
-function hashOp(op) {
+function hashOp (op) {
     return nacl.hash(enc.encode(concatOp(op)));
 }
 
@@ -777,7 +777,7 @@ function getOpFromHash(ops, hashedOp) {
 }
 
 // takes in set of ops
-function precedes(ops, op1, op2) {
+function precedes (ops, op1, op2) {
     if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; } // TODO
     const toVisit = [op2];
     const target = hashOp(op1);
@@ -798,12 +798,12 @@ function precedes(ops, op1, op2) {
     return false;
 }
 
-function concurrent(ops, op1, op2) {
+function concurrent (ops, op1, op2) {
     if (!hasOp(ops, op1) || !hasOp(ops, op2) || arrEqual(op1.sig, op2.sig) || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
     return true;
 }
 
-function printEdge(op1, op2 = null) {
+function printEdge (op1, op2 = null) {
     var output = "";
     if (op1.action === "create") {
         output = `op1 ${keyMap.get(JSON.stringify(op1.pk))} ${op1.action} ${JSON.stringify(op1.sig)} `;
@@ -820,7 +820,7 @@ function printEdge(op1, op2 = null) {
     console.log(output);
 }
 
-function authority(ops) {
+function authority (ops) {
     const edges = [];
     var pk;
     // convert pk into strings to perform comparisons
@@ -900,11 +900,10 @@ function hasCycle (ops, edges) {
     return { cycle: false };
 }
 
-function valid(ops, ignored, op, authorityGraph) {
-    printEdge(op);
+function valid (ops, ignored, op, authorityGraph) {
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (ignored.includes(op)) { return false; }
+    if (hasOp(ignored, op)) { return false; }
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
@@ -923,7 +922,7 @@ function valid(ops, ignored, op, authorityGraph) {
     return false;
 }
 
-async function members(ops, ignored) {
+async function members (ops, ignored) {
     const pks = new Set();
     const authorityGraph = authority(ops);
     const scan = hasCycle(ops, authorityGraph);
