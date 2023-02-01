@@ -882,7 +882,7 @@ function hasCycle (ops, edges) {
         cur = stack.pop();
         seen.add(JSON.stringify(cur.sig));
         console.log(`${cur.action} ${stack.length}`);
-        if (seen.includes(JSON.stringify(cur.sig))) { // cycle detected
+        if (seen.has(JSON.stringify(cur.sig))) { // cycle detected
             const conc = findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur]);
             conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
 
