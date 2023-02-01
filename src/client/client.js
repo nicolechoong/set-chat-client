@@ -1470,7 +1470,7 @@ function updateHeading () {
         chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
 
         document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
-        document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "block" : "none";
+        document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
     }
 }
 
