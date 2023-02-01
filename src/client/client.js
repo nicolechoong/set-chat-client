@@ -413,8 +413,8 @@ function onRemove (chatID, chatName, from, fromPK) {
     if (joinedChats.get(chatID).toDispute === null) {
         joinedChats.get(chatID).toDispute = {peerName: from, peerPK: fromPK}
     }
-    if (joinedChats.get(messageData.chatID).members.includes(pk)) {
-        joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+    if (joinedChats.get(chatID).members.includes(pk)) {
+        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
     }
     if (!joinedChats.get(chatID).exMembers.includes(JSON.stringify(fromPK))) {
         joinedChats.get(chatID).exMembers.push(JSON.stringify(fromPK));
