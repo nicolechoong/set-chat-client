@@ -1184,8 +1184,7 @@ async function removePeer (messageData) {
     updateChatWindow(messageData);
 
     if (pk === JSON.stringify(keyPair.publicKey)) {
-        console.log(`hi`);
-        return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, objToArray(messageData.from));
+        return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, objToArr(messageData.from));
     } else {
         for (const id of joinedChats.keys()) {
             if (messageData.chatID !== id && joinedChats.get(id).members.includes(pk)) {
