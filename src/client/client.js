@@ -4,6 +4,7 @@ var loginBtn = document.getElementById('loginBtn');
 var sendMessageBtn = document.getElementById('sendMessageBtn');
 var addUserBtn = document.getElementById('addUserBtn');
 var removeUserBtn = document.getElementById('removeUserBtn');
+var disputeBtn = document.getElementById('disputeBtn');
 var resetStoreBtn = document.getElementById('resetStoreBtn');
 var chatMessages = document.getElementById('chatMessages');
 
@@ -128,9 +129,9 @@ connection.onmessage = function (message) {
         case "add":
             onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK), data.msgID);
             break;
-        // case "remove":
-        //     onRemove(data.chatID, data.chatName, objToArr(data.fromPK));
-        //     break;
+        case "remove":
+            onRemove(data.chatID, data.chatName, objToArr(data.fromPK));
+            break;
         case "getUsername":
             onGetUsername(data.username, data.success, data.pk);
             break;
@@ -292,7 +293,13 @@ function onLeave (peerPK) {
 
 async function onCreateChat (chatID, chatName, validMemberPubKeys, invalidMembers) {
 
-    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(keyPair.publicKey)], exMembers: [], currentMember: true});
+    joinedChats.set(chatID, {
+        chatName: chatName,
+        members: [JSON.stringify(keyPair.publicKey)],
+        exMembers: [],
+        currentMember: true,
+        toDispute: []
+    });
     store.setItem("joinedChats", joinedChats);
     
     for (const name of validMemberPubKeys.keys()) {
@@ -330,7 +337,13 @@ function onAdd (chatID, chatName, from, fromPK, msgID) {
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
 
-    joinedChats.set(chatID, {chatName: chatName, members: [JSON.stringify(fromPK)], exMembers: [], currentMember: false});
+    joinedChats.set(chatID, {
+        chatName: chatName,
+        members: [JSON.stringify(fromPK)],
+        exMembers: [],
+        currentMember: false,
+        toDispute: []
+    });
     store.setItem("joinedChats", joinedChats);
 
     store.setItem(chatID, {
@@ -394,19 +407,18 @@ async function addToChat (validMemberPubKeys, chatID) {
 }
 
 function onRemove (chatID, chatName, fromPK) {
-    console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
-    // updateChatOptions("remove", chatID);
-    joinedChats.get(chatID).currentMember = false;
-    store.setItem("joinedChats", joinedChats);
-    for (const pk of joinedChats.get(chatID).members) {
-        closeConnections(pk);
+    // chatID : string, chatName : string, fromPK : Uint8Array
+    if (joinedChats.get(chatID).currentMember) {
+        joinedChats.get(chatID).currentMember = false;
+        joinedChats.get(chatID).toDispute.push(fromPK);
+        console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
+        store.setItem("joinedChats", joinedChats);
+        for (const pk of joinedChats.get(chatID).members) {
+            closeConnections(pk);
+        }
+        
+        updateHeading();
     }
-
-    updateHeading();
-
-    // should DISPUTE too
-
-    // as of now we just leave the left chats in the store
 }
 
 async function removeFromChat (validMemberPubKeys, chatID) {
@@ -1327,6 +1339,14 @@ removeUserBtn.addEventListener ("click", async () => {
     }
 });
 
+disputeBtn.addEventListener ("click", async () => {
+    var pk, username;
+    for (pk of joinedChats.get(currentChatID).toDispute) {
+        username = await getUsername(pk);
+        removeFromChat(new Map([username, pk]), currentChatID);
+    }
+});
+
 resetStoreBtn.addEventListener ("click", () => {
     console.log(`resetting store...`);
     store.keys().then((keys) => {
@@ -1397,7 +1417,8 @@ function updateHeading () {
         const chatMembers = document.getElementById('chatMembers');
         chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
 
-        document.getElementById('chatMods').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
+        document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
+        document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).currentMember ? "none" : "block";
     }
 }
 

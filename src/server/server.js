@@ -372,15 +372,15 @@ function onAdd (connection, data) {
 }
 
 function onRemove (connection, data) {
-//   const toPK = JSON.stringify(data.to);
-//   chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
+  const toPK = JSON.stringify(data.to);
+  chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
 
-  // console.log(`sending remove message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
-  // if (connectedUsers.get(toPK) == null) {
-  //   sendTo(null, data, toPK);
-  // } else {
-  //   sendTo(connectedUsers.get(toPK).connection, data);
-  // }
+  console.log(`sending remove message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
+  if (connectedUsers.get(toPK) == null) {
+    sendTo(null, data, toPK);
+  } else {
+    sendTo(connectedUsers.get(toPK).connection, data);
+  }
 }
 
 function broadcastActiveUsernames () {
