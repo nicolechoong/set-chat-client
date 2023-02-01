@@ -890,7 +890,7 @@ function hasCycle (ops, edges) {
                 queue.push(edge[1]);
             }
         }
-        seen.add(cur.pop());
+        seen.add(queue.pop());
     }
     return { cycle: false };
 }
