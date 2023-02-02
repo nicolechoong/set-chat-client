@@ -705,7 +705,6 @@ async function receivedOperations (ops, chatID, pk) {
                     console.log(`ops ${ops.length} ignored ${chatInfo.metadata.ignored.length} ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
-                        sendChatHistory(chatID, pk);
                         resolve(false);
                     }
                 }
@@ -914,7 +913,7 @@ function hasCycles (ops, edges) {
 function valid (ops, ignored, op, authorityGraph) {
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (hasOp(ignored, op)) { return false; }
+    if (hasOp(ignored, op)) { console.log(`false because ignored`); return false; }
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
@@ -930,6 +929,7 @@ function valid (ops, ignored, op, authorityGraph) {
             }
         }
     }
+    console.log(`false because removed?`);
     return false;
 }
 
