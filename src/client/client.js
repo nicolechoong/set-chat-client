@@ -701,6 +701,7 @@ async function receivedOperations (ops, chatID, pk) {
                     const peerIgnored = getPeerIgnored(chatID, pk);
                     const ignoredOp = await getIgnored(graphInfo.concurrent);
                     chatInfo.metadata.ignored.push(ignoredOp);
+                    console.log(`ops length ${ops.length}`);
                     removeOp(ops, ignoredOp);
                     console.log(`ops ${ops.length} ignored ${chatInfo.metadata.ignored.length} ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
