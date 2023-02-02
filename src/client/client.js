@@ -710,38 +710,34 @@ async function receivedOperations (ops, chatID, pk) {
                         resolve(false);
                     }
                 }
+                chatInfo.metadata.operations = ops;
+                store.setItem(chatID, chatInfo);
+                console.log(`synced with ${keyMap.get(pk)}`);
 
                 const memberSet = await members(ops, chatInfo.metadata.ignored);
 
-                if (memberSet.has(pk)) { // successfully authenticated
-                    for (const mem of memberSet) { // populating keyMap
-                        await getUsername(mem);
-                    }
-                    console.log(`synced with ${keyMap.get(pk)}`);
-                    if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-                        joinedChats.get(chatID).currentMember = true;
-                        updateChatOptions("add", chatID);
-                    } else {
-                        joinedChats.get(chatID).currentMember = false;
-            
-                    }
-                    updateHeading();
-            
-                    chatInfo.metadata.operations = ops;
-                    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
-                    joinedChats.get(chatID).members = [...memberSet];
-                    joinedChats.get(chatID).members.sort();
-                    store.setItem("joinedChats", joinedChats);
-                    store.setItem(chatID, chatInfo);
-                    resolve(true);
-                    return;
+                for (const mem of memberSet) { // populating keyMap
+                    await getUsername(mem);
                 }
-                else if (joinedChats.get(chatID).exMembers.includes(pk)) {
+                if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
+                    joinedChats.get(chatID).currentMember = true;
+                    updateChatOptions("add", chatID);
+                } else {
+                    joinedChats.get(chatID).currentMember = false;
+                }
+        
+                joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
+                joinedChats.get(chatID).members = [...memberSet];
+                joinedChats.get(chatID).members.sort();
+                store.setItem("joinedChats", joinedChats);
+                updateHeading();
+                resolve(true);
+            
+                if (joinedChats.get(chatID).exMembers.includes(pk)) {
                     sendChatHistory(chatID, pk); // should still close after
-                    return;
                 }
-
                 console.log(`verified true is member ${memberSet.has(pk)}`);
+                return;
             }
             closeConnections(pk);
             resolve(false);
