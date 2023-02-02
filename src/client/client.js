@@ -706,7 +706,7 @@ async function receivedOperations (ops, chatID, pk) {
                     console.log(`ops ${ops.length} ignored ${chatInfo.metadata.ignored.length} ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
-                        console.log(`different universe`);
+                        console.log(`different universe from ${keyMap.get(JSON.stringify(pk))}`);
                         resolve(false);
                     }
                 }
@@ -844,6 +844,8 @@ function authority (ops) {
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.push([op1, { "member": pk, "sig": pk, "action": "mem" }]);
     }
+    console.log(`original authority`);
+    edges.forEach(edge => printEdge(edge[0], edge[1]));
     return edges;
 }
 
