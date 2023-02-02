@@ -920,6 +920,8 @@ function valid (ops, ignored, op, authorityGraph) {
     const inSet = authorityGraph.filter((edge) => {
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], authorityGraph);
     }).map(edge => edge[0]);
+    console.log(`inSet for op ${keyMap.get(op.pk1)} ${op.action} ${keyMap.get(op.pk2)}`);
+    inSet.forEach(op1 => `inSet for op ${keyMap.get(op.pk1)} ${op.action} ${keyMap.get(op.pk2)} issss ${keyMap.get(op1.pk1)} ${op1.action} ${keyMap.get(op1.pk2)}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
     // ADD COMMENTS
