@@ -807,8 +807,8 @@ function precedes (ops, op1, op2) {
 }
 
 function concurrent (ops, op1, op2) {
-    if (!hasOp(ops, op1) || !hasOp(ops, op2) || arrEqual(op1.sig, op2.sig) || precedes(ops, op1, op2) || precedes(ops, op2, op1)) { return false; }
-    return true;
+    if (hasOp(ops, op1) && hasOp(ops, op2) && !arrEqual(op1.sig, op2.sig) && !precedes(ops, op1, op2) && !precedes(ops, op2, op1)) { return true; }
+    return false;
 }
 
 function printEdge (op1, op2 = null) {
@@ -838,14 +838,13 @@ function authority (ops) {
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.push([op1, op2]);
+                printEdge(op1, op2);
             }
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.push([op1, { "member": pk, "sig": pk, "action": "mem" }]);
     }
-    console.log(`original authority`);
-    edges.forEach(edge => printEdge(edge[0], edge[1]));
     return edges;
 }
 
