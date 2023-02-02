@@ -707,7 +707,7 @@ async function receivedOperations (ops, chatID, pk) {
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
                         sendChatHistory(chatID, pk);
-                        return;
+                        resolve(false);
                     }
                 }
 
@@ -733,7 +733,7 @@ async function receivedOperations (ops, chatID, pk) {
                     joinedChats.get(chatID).members.sort();
                     store.setItem("joinedChats", joinedChats);
                     store.setItem(chatID, chatInfo);
-                    return resolve(true);
+                    resolve(true);
                 }
                 else if (joinedChats.get(chatID).exMembers.includes(pk)) {
                     sendChatHistory(chatID, pk); // should still close after
