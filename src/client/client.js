@@ -1600,7 +1600,7 @@ function unionOps(ops1, ops2) {
 
 function hasOp(ops, op) {
     for (const curOp of ops) {
-        if (arrEqual(curOp, op)) { return true; }
+        if (arrEqual(curOp.sig, op.sig)) { return true; }
     }
     return false;
 }
