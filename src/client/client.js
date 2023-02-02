@@ -514,7 +514,6 @@ function getUsername(pk) {
             return;
         }
         resolveGetUsername.set(pk, resolve);
-        console.log(`resolveGetUsername ${resolveGetUsername.get(pk)}`);
         rejectGetUsername.set(pk, reject);
         console.log(`Requesting for username of ${pk}`);
         sendToServer({
@@ -734,6 +733,7 @@ async function receivedOperations (ops, chatID, pk) {
                     store.setItem("joinedChats", joinedChats);
                     store.setItem(chatID, chatInfo);
                     resolve(true);
+                    return;
                 }
                 else if (joinedChats.get(chatID).exMembers.includes(pk)) {
                     sendChatHistory(chatID, pk); // should still close after
