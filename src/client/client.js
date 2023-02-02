@@ -914,14 +914,14 @@ function hasCycles (ops, edges) {
 function valid (ops, ignored, op, authorityGraph) {
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (hasOp(ignored, op)) { console.log(`false because ignored`); return false; }
+    if (hasOp(ignored, op)) { console.log(`false because has ignored op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`); return false; }
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], authorityGraph);
     }).map(edge => edge[0]);
-    console.log(`inSet for op ${keyMap.get(op.pk1)} ${op.action} ${keyMap.get(op.pk2)}`);
-    inSet.forEach(op1 => `inSet for op ${keyMap.get(op.pk1)} ${op.action} ${keyMap.get(op.pk2)} issss ${keyMap.get(op1.pk1)} ${op1.action} ${keyMap.get(op1.pk2)}`);
+    console.log(`inSet for op ${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`);
+    inSet.forEach(op1 => `inSet for op ${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} issss ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
     // ADD COMMENTS
