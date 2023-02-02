@@ -914,7 +914,7 @@ function hasCycles (ops, edges) {
 function valid (ops, ignored, op, authorityGraph) {
     ops = new Set(ops);
     if (op.action === "create") { return true; }
-    if (hasOp(ignored, op)) { console.log(`false because has ignored op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`); return false; }
+    if (op.action !== "mem" && hasOp(ignored, op)) { console.log(`false because has ignored op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`); return false; }
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
