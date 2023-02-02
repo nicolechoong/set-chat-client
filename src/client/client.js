@@ -696,6 +696,7 @@ async function receivedOperations (ops, chatID, pk) {
 
             if (verifyOperations(ops)) {
                 const authorityGraph = authority(ops);
+                authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
                 const graphInfo = hasCycles(ops, authorityGraph);
                 if (graphInfo.cycle) {
                     const peerIgnored = getPeerIgnored(chatID, pk);
@@ -937,7 +938,6 @@ function valid (ops, ignored, op, authorityGraph) {
 async function members (ops, ignored) {
     const pks = new Set();
     const authorityGraph = authority(ops);
-    authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
     var pk;
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
