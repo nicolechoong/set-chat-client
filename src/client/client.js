@@ -665,23 +665,29 @@ async function sendIgnored(ignored, chatID, pk) {
     }, pk);
 }
 
-const resolvePeerIgnored = new Map();
+const peerIgnored = new Map();
 
-
-async function getPeerIgnored (chatID, pk) {
-    // chatID : string, pk : string
-    if (!resolvePeerIgnored.has(chatID)) {
-        resolvePeerIgnored.set(chatID, new Map());
-    }
+async function receivedIgnored (ignored, chatID, pk) {
+    // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
+    console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
     return new Promise((resolve) => {
-        resolvePeerIgnored.get(chatID).set(pk, resolve);
-    });
-}
+        store.getItem(chatID).then(async (chatInfo) => {
+            if (hasCycles(chatInfo.metadata.ops, authority(chatInfo.metadata.ops)).cycle) {
+                peerIgnored.get(chatID).set(pk, ignored);
+                resolve(false);
+                return;
+            }
 
-// assert that when this is called, local has resolved ignored
-async function onPeerIgnored (ignored, chatID, pk) {
-    resolvePeerIgnored.get(chatID).get(pk)(ignored);
-    resolvePeerIgnored.get(chatID).delete(pk);
+            if (!opsArrEqual(chatInfo.metadata.ignored, ignored)) {
+                console.log(`different universe from ${keyMap.get(pk)}`);
+                joinedChats.get(chatID).exMembers.push(pk);
+                store.setItem("joinedChats", joinedChats);
+                updateHeading();
+                return resolve(false);
+            }
+            resolve(true);
+        });
+    });
 }
 
 // TODO: make it so that we don't add the removal/remove the removal before generating ops
@@ -694,33 +700,25 @@ async function receivedOperations (ops, chatID, pk) {
             ops = unionOps(chatInfo.metadata.operations, ops);
 
             if (verifyOperations(ops)) {
-                var peerIgnored = chatInfo.metadata.ignored;
                 const authorityGraph = authority(ops);
-                authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
+
                 const graphInfo = hasCycles(ops, authorityGraph);
                 if (graphInfo.cycle) {
-                    peerIgnored = getPeerIgnored(chatID, pk);
                     const ignoredOp = await getIgnored(chatID, graphInfo.concurrent);
                     chatInfo.metadata.ignored.push(ignoredOp);
                     removeOp(ops, ignoredOp);
-                    sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
-                }
-                chatInfo.metadata.operations = ops;
-                store.setItem(chatID, chatInfo);
-                const memberSet = await members(ops, chatInfo.metadata.ignored);
+                    await store.setItem(chatID, chatInfo);
 
-                if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
-                    if (!memberSet.has(JSON.stringify(keyPair.publicKey))) {
-                        joinedChats.get(chatID).currentMember = false;
+                    sendIgnored(chatInfo.metadata.ignored, chatID, pk);
+                    if (peerIgnored.get(chatID).has(pk)) {
+                        receivedIgnored(peerIgnored.get(chatID).get(pk));
+                        peerIgnored.get(chatID).delete(pk);
                     }
-                    console.log(`different universe from ${keyMap.get(pk)}`);
-                    joinedChats.get(chatID).exMembers.push(pk);
-                    store.setItem("joinedChats", joinedChats);
-                    updateHeading();
-                    return resolve(false);
+                    return;
                 }
 
+                const memberSet = await members(ops, chatInfo.metadata.ignored);
                 if (memberSet.has(pk)) {
                     for (const mem of memberSet) { // populating keyMap
                         await getUsername(mem);
@@ -735,6 +733,8 @@ async function receivedOperations (ops, chatID, pk) {
                     joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
                     joinedChats.get(chatID).members = [...memberSet];
                     store.setItem("joinedChats", joinedChats);
+                    chatInfo.metadata.operations = ops;
+                    store.setItem(chatID, chatInfo);
                     updateHeading();
                     resolve(true);
                     console.log(`verified true is member ${memberSet.has(pk)}`);
@@ -1052,7 +1052,14 @@ function receivedMessage(messageData) {
             break;
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
-            onPeerIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from));
+            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+                if (res) {
+                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
+                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                } else {
+                    closeConnections(JSON.stringify(messageData.from));
+                }
+            });
             break;
         case "advertisement":
             messageData.online.forEach((peer) => connectToPeer(peer));
