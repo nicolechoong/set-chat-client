@@ -909,10 +909,7 @@ function findCycle (fromOp, visited, stack, cycle) {
 
 function hasCycles (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
-    const seen = new Set([JSON.stringify(start.sig)]);
     const fromOp = new Map();
-    const queue = [start];
-    var cur;
 
     for (const edge of edges) {
         if (!fromOp.has(JSON.stringify(edge[0].sig))) {
@@ -929,8 +926,9 @@ function hasCycles (ops, edges) {
     if (cycles.length === 0) {
         return { cycle: false };
     }
+    
     const toOp = new Map(cycles.flat().map((op) => [JSON.stringify(op.sig), 0]));
-    for (const i=0; i < cycles.length; i++) {
+    for (let i=0; i < cycles.length; i++) {
         for (const edge of edges) {
             if (hasOp(cycles[i], edge[1])) {
                 toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
@@ -940,32 +938,6 @@ function hasCycles (ops, edges) {
         console.log(cycles[i].length);
     }
     return { cycle: true, concurrent: cycles };
-
-    while (queue.length > 0) {
-        cur = queue.shift();
-        for (const next of fromOp.get(JSON.stringify(cur.sig))) {
-            if (seen.has(JSON.stringify(next.sig))) { // cycle detected
-                console.log(`cycle found`);
-                var conc = [];
-                findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur], conc);
-                conc.forEach((op) => console.log(`${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`));
-                
-                const toOp = new Map(conc.map((op) => [JSON.stringify(op.sig), 0]));
-                for (const edge of edges) {
-                    if (hasOp(conc, edge[1])) {
-                        toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
-                    }
-                }
-                conc.filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
-                // conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
-                return { cycle: true, concurrent: conc };
-            }
-
-            queue.push(next);
-            seen.add(JSON.stringify(next.sig));
-        }
-    }
-    return { cycle: false };
 }
 
 function valid (ops, ignored, op, authorityGraph) {
