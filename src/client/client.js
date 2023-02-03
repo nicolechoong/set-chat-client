@@ -654,15 +654,15 @@ async function sendOperations(chatID, pk) {
     });
 }
 
-async function sendIgnored(ignored, chatID, pk) {
+async function sendIgnored(ignored, chatID) {
     // chatID : String, pk : String
-    console.log(`sending ignored to pk ${pk} ${keyMap.get(pk)}`);
-    sendToMember({
+    console.log(`broadcasting ignored`);
+    broadcastToMembers({
         type: "ignored",
         ignored: ignored,
         chatID: chatID,
         from: keyPair.publicKey,
-    }, pk);
+    }, chatID);
 }
 
 const peerIgnored = new Map();
@@ -680,11 +680,13 @@ async function receivedIgnored (ignored, chatID, pk) {
 
             if (!opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`different universe from ${keyMap.get(pk)}`);
+                console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
                 joinedChats.get(chatID).exMembers.push(pk);
                 store.setItem("joinedChats", joinedChats);
                 updateHeading();
                 return resolve(false);
             }
+            console.log(`same universe naisu`);
             resolve(true);
         });
     });
@@ -710,7 +712,7 @@ async function receivedOperations (ops, chatID, pk) {
                     console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                     await store.setItem(chatID, chatInfo);
 
-                    sendIgnored(chatInfo.metadata.ignored, chatID, pk);
+                    sendIgnored(chatInfo.metadata.ignored, chatID);
                     if (peerIgnored.has(`${chatID}:${pk}`)) {
                         receivedIgnored(peerIgnored.get(`${chatID}:${pk}`));
                         peerIgnored.delete(`${chatID}:${pk}`);
@@ -738,7 +740,7 @@ async function receivedOperations (ops, chatID, pk) {
                     updateHeading();
                     resolve(true);
                     console.log(`verified true is member ${memberSet.has(pk)}`);
-                    console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`)
+                    console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
                 }
             }
             resolve(false);
@@ -842,7 +844,6 @@ function authority (ops) {
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.push([op1, op2]);
-                printEdge(op1, op2);
             }
         }
 
@@ -912,7 +913,7 @@ function hasCycles (ops, edges) {
 
 function valid (ops, ignored, op, authorityGraph) {
     if (op.action === "create") { return true; }
-    if (op.action !== "mem" && hasOp(ignored, op)) { console.log(`false because has ignored op ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`); return false; }
+    if (op.action !== "mem" && hasOp(ignored, op)) { return false; }
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
@@ -930,7 +931,6 @@ function valid (ops, ignored, op, authorityGraph) {
             }
         }
     }
-    console.log(`false because removed?`);
     return false;
 }
 
@@ -1066,7 +1066,6 @@ function receivedMessage(messageData) {
             break;
         case "history":
             store.getItem(messageData.chatID).then((chatInfo) => {
-                console.log(`received history is ${JSON.stringify(messageData.history)}`);
                 chatInfo.history = mergeChatHistory(chatInfo.history, messageData.history);
                 if (messageData.chatID === currentChatID) {
                     chatMessages.innerHTML = "";
@@ -1456,7 +1455,6 @@ function getIgnored(conc) {
         ignoredInput.add(option);
         ignoredOptions.push(op);
     }
-    console.log(`ignored ops length ${ignoredOptions.length}`);
     return new Promise((resolve) => {
         resolveGetIgnored = resolve;
     });
@@ -1596,7 +1594,6 @@ function unionOps(ops1, ops2) {
     for (const op of ops2) {
         if (!sigSet.has(JSON.stringify(op.sig))) { ops.push(op); }
     }
-    console.log(`ops1 length ${ops1.length}   ops2 length ${ops2.length}    ops length ${ops.length}`);
     return ops;
 }
 
