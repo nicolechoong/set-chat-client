@@ -1436,6 +1436,13 @@ removeUserBtn.addEventListener("click", async () => {
 
 disputeBtn.addEventListener("click", async () => {
     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
+    joinedChats.get(currentChatID).currentMember = true;
+    if (chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
+        chatInfo.exMembers.splice(chatInfo.exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+    }
+    if (!chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
+        chatInfo.members.push(JSON.stringify(keyPair.publicKey));
+    }
     joinedChats.get(currentChatID).toDispute = null;
     updateHeading();
 });
