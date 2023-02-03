@@ -695,11 +695,12 @@ async function receivedOperations (ops, chatID, pk) {
             ops = unionOps(chatInfo.metadata.operations, ops);
 
             if (verifyOperations(ops)) {
+                var peerIgnored;
                 const authorityGraph = authority(ops);
                 authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
                 const graphInfo = hasCycles(ops, authorityGraph);
                 if (graphInfo.cycle) {
-                    const peerIgnored = getPeerIgnored(chatID, pk);
+                    peerIgnored = getPeerIgnored(chatID, pk);
                     const ignoredOp = await getIgnored(graphInfo.concurrent);
                     chatInfo.metadata.ignored.push(ignoredOp);
                     removeOp(ops, ignoredOp);
@@ -732,14 +733,9 @@ async function receivedOperations (ops, chatID, pk) {
                 store.setItem("joinedChats", joinedChats);
                 updateHeading();
                 resolve(true);
-            
-                if (joinedChats.get(chatID).exMembers.includes(pk)) {
-                    sendChatHistory(chatID, pk); // should still close after
-                }
+                sendChatHistory(chatID, pk);
                 console.log(`verified true is member ${memberSet.has(pk)}`);
-                return;
             }
-            closeConnections(pk);
             resolve(false);
         })
     });
@@ -917,8 +913,8 @@ function valid (ops, ignored, op, authorityGraph) {
     const inSet = authorityGraph.filter((edge) => {
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], authorityGraph);
     }).map(edge => edge[0]);
-    console.log(`inSet for op ${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} has length ${inSet.length}`);
-    inSet.forEach(op1 => `inSet for op ${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} issss ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))}`);
+    // console.log(`inSet for op ${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} has length ${inSet.length}`);
+    // inSet.forEach(op1 => `inSet for op ${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} issss ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
     // ADD COMMENTS
@@ -1045,6 +1041,8 @@ function receivedMessage(messageData) {
                 if (res) {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                } else {
+                    closeConnections(JSON.stringify(messageData.from));
                 }
             });
             break;
