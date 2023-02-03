@@ -671,16 +671,16 @@ async function receivedIgnored (ignored, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     await store.getItem(chatID).then(async (chatInfo) => {
         console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
                 peerIgnored.set(`${chatID}:${pk}`, ignored);
                 return resolve(null);
             }
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
-
-            }
-            if (!opsArrEqual(chatInfo.metadata.ignored, ignored)) {
+                console.log(`same universe naisu`);
+                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored), pk));
+            } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
                 joinedChats.get(chatID).exMembers.push(pk);
@@ -688,8 +688,6 @@ async function receivedIgnored (ignored, chatID, pk) {
                 updateHeading();
                 return resolve(false);
             }
-            console.log(`same universe naisu`);
-            resolve(true);
         });
     });
 }
@@ -724,14 +722,14 @@ async function receivedOperations (ops, chatID, pk) {
                     return resolve(null);
                 }
 
-                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored)));
+                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored), pk));
             }
             resolve(false);
         })
     });
 }
 
-async function checkMembers (memberSet) {
+async function checkMembers (memberSet, pk) {
     return new Promise(async (resolve) => {
         if (!memberSet.has(pk)) { return resolve(false); }
 
