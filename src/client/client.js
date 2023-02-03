@@ -673,7 +673,7 @@ async function receivedIgnored (ignored, chatID, pk) {
     return new Promise((resolve) => {
         store.getItem(chatID).then(async (chatInfo) => {
             if (hasCycles(chatInfo.metadata.ops, authority(chatInfo.metadata.ops)).cycle) {
-                peerIgnored.get(chatID).set(pk, ignored);
+                peerIgnored.set(`${chatID}:${pk}`, ignored);
                 resolve(false);
                 return;
             }
@@ -711,9 +711,9 @@ async function receivedOperations (ops, chatID, pk) {
                     await store.setItem(chatID, chatInfo);
 
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
-                    if (peerIgnored.get(chatID).has(pk)) {
-                        receivedIgnored(peerIgnored.get(chatID).get(pk));
-                        peerIgnored.get(chatID).delete(pk);
+                    if (peerIgnored.has(`${chatID}:${pk}`)) {
+                        receivedIgnored(peerIgnored.get(`${chatID}:${pk}`));
+                        peerIgnored.delete(`${chatID}:${pk}`);
                     }
                     return;
                 }
