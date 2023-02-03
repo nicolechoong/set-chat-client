@@ -672,7 +672,7 @@ async function receivedIgnored (ignored, chatID, pk) {
     console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
     return new Promise((resolve) => {
         store.getItem(chatID).then(async (chatInfo) => {
-            if (hasCycles(chatInfo.metadata.ops, authority(chatInfo.metadata.ops)).cycle) {
+            if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
                 peerIgnored.set(`${chatID}:${pk}`, ignored);
                 resolve(false);
                 return;
@@ -704,7 +704,7 @@ async function receivedOperations (ops, chatID, pk) {
 
                 const graphInfo = hasCycles(ops, authorityGraph);
                 if (graphInfo.cycle) {
-                    const ignoredOp = await getIgnored(chatID, graphInfo.concurrent);
+                    const ignoredOp = await getIgnored(graphInfo.concurrent);
                     chatInfo.metadata.ignored.push(ignoredOp);
                     removeOp(ops, ignoredOp);
                     console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
@@ -1443,7 +1443,7 @@ resetStoreBtn.addEventListener("click", () => {
 const ignoredOptions = [];
 var resolveGetIgnored;
 
-function getIgnored(chatID, conc) {
+function getIgnored(conc) {
     document.getElementById('universeSelection').style.display = "block";
     document.getElementById('chatBox').style.display = "none";
     var option;
