@@ -414,11 +414,11 @@ function onRemove(chatID, chatName, from, fromPK) {
     if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
         chatInfo.toDispute = { peerName: from, peerPK: fromPK };
     }
-    // if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-    //     chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-    // }
-    if (!chatInfo.exMembers.includes(JSON.stringify(fromPK))) {
-        chatInfo.exMembers.push(JSON.stringify(fromPK));
+    if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
+        chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+    }
+    if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
+        chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
     }
     console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
     store.setItem("joinedChats", joinedChats);
@@ -1091,9 +1091,13 @@ function receivedMessage(messageData) {
             break;
         case "remove":
             unpackOp(messageData.op);
-            receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                if (res) { removePeer(messageData); }
-            });
+            if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
+                onRemove(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArray(messageData.from));
+            } else {
+                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                    if (res) { removePeer(messageData); }
+                });
+            }
             break;
         case "add":
             unpackOp(messageData.op);
@@ -1254,9 +1258,9 @@ async function removePeer(messageData) {
         store.setItem(messageData.chatID, chatInfo);
     });
 
-    // if (joinedChats.get(messageData.chatID).members.includes(pk)) {
-    //     joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
-    // }
+    if (joinedChats.get(messageData.chatID).members.includes(pk)) {
+        joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+    }
     if (!joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
         joinedChats.get(messageData.chatID).exMembers.push(pk);
     }
@@ -1265,16 +1269,12 @@ async function removePeer(messageData) {
     updateHeading();
     updateChatWindow(messageData);
 
-    if (pk === JSON.stringify(keyPair.publicKey)) {
-        return onRemove(messageData.chatID, joinedChats.get(messageData.chatID).chatName, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
-    } else {
-        for (const id of joinedChats.keys()) {
-            if (messageData.chatID !== id && joinedChats.get(id).members.includes(pk)) {
-                return;
-            }
+    for (const id of joinedChats.keys()) {
+        if (messageData.chatID !== id && joinedChats.get(id).members.includes(pk)) {
+            return;
         }
-        closeConnections(pk);
     }
+    closeConnections(pk);
 }
 
 async function updateChatWindow(data) {
