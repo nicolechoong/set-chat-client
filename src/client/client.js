@@ -1108,7 +1108,7 @@ function receivedMessage(messageData) {
         case "remove":
             unpackOp(messageData.op);
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                onRemove(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArray(messageData.from));
+                onRemove(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
             } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res) { removePeer(messageData); }
@@ -1118,7 +1118,7 @@ function receivedMessage(messageData) {
         case "add":
             unpackOp(messageData.op);
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                onAdd(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArray(messageData.from), msgID);
+                onAdd(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from), msgID);
             } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res) { addPeer(messageData); }
