@@ -1060,12 +1060,15 @@ function receivedMessage(messageData) {
             messageData.ignored.forEach(op => unpackOp(op));
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res !== null) {
+                    console.log(`res not null ${res}`);
                     if (res) {
                         sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                         sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                     } else {
                         closeConnections(JSON.stringify(messageData.from));
                     }
+                } else {
+                    console.log(`res is null because we are waiting on operations`);
                 }
             });
             break;
