@@ -682,7 +682,7 @@ async function receivedIgnored (ignored, chatID, pk) {
     await store.getItem(chatID).then(async (chatInfo) => {
         console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
         return new Promise(async (resolve) => {
-            if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
+            if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
                 joinedChats.get(chatID).peerIgnored.set(pk, {
                     type: "ignored",
@@ -690,7 +690,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                     chatID: chatID,
                     from: objToArr(JSON.parse(pk)),
                 });
-                return resolve("HELLO");
+                return resolve("WAITING FOR LOCAL IGNORED");
             }
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
@@ -750,7 +750,7 @@ async function receivedOperations (ops, chatID, pk) {
 
                 return graphInfo.cycle ? resolve("HI") : resolve(pkInMembers ? "ACCEPT" : "REJECT");
             }
-            resolve("REJECT");
+            return resolve("REJECT");
         });
     });
 }
