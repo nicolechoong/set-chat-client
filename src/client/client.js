@@ -469,18 +469,18 @@ async function disputeRemoval(peer, chatID) {
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, -1));
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
-
-        joinedChats.get(chatID).currentMember = true;
-        if (joinedChats.get(chatID).exMembers.includes(JSON.stringify(keyPair.publicKey))) {
-            joinedChats.get(chatID).exMembers.splice(joinedChats.get(chatID).exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-        }
-        if (!joinedChats.get(chatID).members.includes(JSON.stringify(keyPair.publicKey))) {
-            joinedChats.get(chatID).members.push(JSON.stringify(keyPair.publicKey));
-        }
-        joinedChats.get(chatID).toDispute = null;
+        await checkMembers(members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, JSON.stringify(keyPair.publicKey));
         
         await store.setItem("joinedChats", joinedChats);
 
+        const removeMessage = {
+            type: "remove",
+            op: op,
+            username: peer.peerName,
+            from: keyPair.publicKey,
+            chatID: chatID
+        };
+        broadcastToMembers(removeMessage, chatID);
         sendToServer({
             to: peer.peerPK,
             type: "remove",
