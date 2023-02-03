@@ -481,7 +481,7 @@ async function disputeRemoval(peer, chatID) {
             from: keyPair.publicKey,
             chatID: chatID
         };
-        broadcastToMembers(removeMessage, chatID);
+        sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
         sendToServer({
             to: peer.peerPK,
             type: "remove",
@@ -492,6 +492,7 @@ async function disputeRemoval(peer, chatID) {
         });
         // note that we aren't sending the remove message itself...
 
+        connectToPeer(peer);
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
