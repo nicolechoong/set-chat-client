@@ -694,45 +694,46 @@ async function receivedOperations (ops, chatID, pk) {
             ops = unionOps(chatInfo.metadata.operations, ops);
 
             if (verifyOperations(ops)) {
-                var peerIgnored;
-                const authorityGraph = authority(ops);
-                authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
-                const graphInfo = hasCycles(ops, authorityGraph);
-                if (graphInfo.cycle) {
-                    peerIgnored = getPeerIgnored(chatID, pk);
-                    const ignoredOp = await getIgnored(graphInfo.concurrent);
-                    chatInfo.metadata.ignored.push(ignoredOp);
-                    removeOp(ops, ignoredOp);
-                    sendIgnored(chatInfo.metadata.ignored, chatID, pk);
+                const memberSet = await members(ops, chatInfo.metadata.ignored);
+                if (memberSet.has(pk)) {
+                    var peerIgnored = chatInfo.metadata.ignored;
+                    const authorityGraph = authority(ops);
+                    authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
+                    const graphInfo = hasCycles(ops, authorityGraph);
+                    if (graphInfo.cycle) {
+                        peerIgnored = getPeerIgnored(chatID, pk);
+                        const ignoredOp = await getIgnored(graphInfo.concurrent);
+                        chatInfo.metadata.ignored.push(ignoredOp);
+                        removeOp(ops, ignoredOp);
+                        sendIgnored(chatInfo.metadata.ignored, chatID, pk);
+                        console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
+                    }
+                    chatInfo.metadata.operations = ops;
+                    store.setItem(chatID, chatInfo);
+                    console.log(`synced with ${keyMap.get(pk)}`);
+
+                    for (const mem of memberSet) { // populating keyMap
+                        await getUsername(mem);
+                    }
+                    if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
+                        joinedChats.get(chatID).currentMember = true;
+                        updateChatOptions("add", chatID);
+                    } else {
+                        joinedChats.get(chatID).currentMember = false;
+                    }
+            
+                    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
+                    joinedChats.get(chatID).members = [...memberSet];
+                    store.setItem("joinedChats", joinedChats);
+                    updateHeading();
                     if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
                         console.log(`different universe from ${keyMap.get(pk)}`);
                         resolve(false);
                     }
-                    console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
+                    resolve(true);
+                    console.log(`verified true is member ${memberSet.has(pk)}`);
+                    console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`)
                 }
-                chatInfo.metadata.operations = ops;
-                store.setItem(chatID, chatInfo);
-                console.log(`synced with ${keyMap.get(pk)}`);
-
-                const memberSet = await members(ops, chatInfo.metadata.ignored);
-
-                for (const mem of memberSet) { // populating keyMap
-                    await getUsername(mem);
-                }
-                if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-                    joinedChats.get(chatID).currentMember = true;
-                    updateChatOptions("add", chatID);
-                } else {
-                    joinedChats.get(chatID).currentMember = false;
-                }
-        
-                joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
-                joinedChats.get(chatID).members = [...memberSet];
-                store.setItem("joinedChats", joinedChats);
-                updateHeading();
-                resolve(true);
-                console.log(`verified true is member ${memberSet.has(pk)}`);
-                console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`)
             }
             resolve(false);
         })
