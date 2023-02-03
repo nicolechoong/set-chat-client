@@ -671,11 +671,12 @@ async function receivedIgnored (ignored, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     await store.getItem(chatID).then(async (chatInfo) => {
         console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
-        if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
-            peerIgnored.set(`${chatID}:${pk}`, ignored);
-            return null;
-        }
         return new Promise((resolve) => {
+            if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
+            if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
+                peerIgnored.set(`${chatID}:${pk}`, ignored);
+                return resolve(null);
+            }
             if (!opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
@@ -836,9 +837,6 @@ function authority (ops) {
     for (const op1 of ops) {
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
-            if (op2.action === "remove" && op1.action === "create") {
-                console.log(`very weird create ${JSON.stringify(op1.pk)} remove ${JSON.stringify(op2.pk1)}`);
-            }
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.push([op1, op2]);
