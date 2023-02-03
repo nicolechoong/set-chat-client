@@ -745,7 +745,7 @@ async function checkMembers (memberSet, chatID, pk) {
         }
 
         joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
-        joinedChats.get(chatID).members = memberSet;
+        joinedChats.get(chatID).members = [...memberSet];
         store.setItem("joinedChats", joinedChats);
         updateHeading();
         console.log(`verified true is member ${memberSet.has(pk)}`);
