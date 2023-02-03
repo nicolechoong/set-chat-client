@@ -463,8 +463,8 @@ async function removeFromChat(validMemberPubKeys, chatID) {
 
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(-1, 1)}`);
-        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(-1, 1));
+        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, -1)}`);
+        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, -1));
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
 
