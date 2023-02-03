@@ -1023,6 +1023,7 @@ function receivedMessage(messageData) {
             messageData.ignored.forEach(op => unpackOp(op));
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res === "ACCEPT") {
+                    console.log(`sending stuff now`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
