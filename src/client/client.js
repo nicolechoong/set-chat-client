@@ -836,6 +836,9 @@ function authority (ops) {
     for (const op1 of ops) {
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
+            if (op2.action === "remove" && op1.action === "create") {
+                console.log(`very weird create ${JSON.stringify(op1.pk)} remove ${JSON.stringify(op2.pk1)}`);
+            }
             if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.push([op1, op2]);
