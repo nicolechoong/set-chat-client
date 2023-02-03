@@ -695,23 +695,30 @@ async function receivedOperations (ops, chatID, pk) {
 
             if (verifyOperations(ops)) {
                 const memberSet = await members(ops, chatInfo.metadata.ignored);
-                if (memberSet.has(pk)) {
-                    var peerIgnored = chatInfo.metadata.ignored;
-                    const authorityGraph = authority(ops);
-                    authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
-                    const graphInfo = hasCycles(ops, authorityGraph);
-                    if (graphInfo.cycle) {
-                        peerIgnored = getPeerIgnored(chatID, pk);
-                        const ignoredOp = await getIgnored(graphInfo.concurrent);
-                        chatInfo.metadata.ignored.push(ignoredOp);
-                        removeOp(ops, ignoredOp);
-                        sendIgnored(chatInfo.metadata.ignored, chatID, pk);
-                        console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
-                    }
-                    chatInfo.metadata.operations = ops;
-                    store.setItem(chatID, chatInfo);
-                    console.log(`synced with ${keyMap.get(pk)}`);
+                var peerIgnored = chatInfo.metadata.ignored;
+                const authorityGraph = authority(ops);
+                authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
+                const graphInfo = hasCycles(ops, authorityGraph);
+                if (graphInfo.cycle) {
+                    peerIgnored = getPeerIgnored(chatID, pk);
+                    const ignoredOp = await getIgnored(chatID, graphInfo.concurrent);
+                    chatInfo.metadata.ignored.push(ignoredOp);
+                    removeOp(ops, ignoredOp);
+                    sendIgnored(chatInfo.metadata.ignored, chatID, pk);
+                    console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
+                }
+                chatInfo.metadata.operations = ops;
+                store.setItem(chatID, chatInfo);
 
+                if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
+                    console.log(`different universe from ${keyMap.get(pk)}`);
+                    joinedChats.get(chatID).exMembers.push(pk);
+                    store.setItem("joinedChats", joinedChats);
+                    updateHeading();
+                    return resolve(false);
+                }
+
+                if (memberSet.has(pk)) {
                     for (const mem of memberSet) { // populating keyMap
                         await getUsername(mem);
                     }
@@ -726,10 +733,6 @@ async function receivedOperations (ops, chatID, pk) {
                     joinedChats.get(chatID).members = [...memberSet];
                     store.setItem("joinedChats", joinedChats);
                     updateHeading();
-                    if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
-                        console.log(`different universe from ${keyMap.get(pk)}`);
-                        resolve(false);
-                    }
                     resolve(true);
                     console.log(`verified true is member ${memberSet.has(pk)}`);
                     console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`)
@@ -1430,7 +1433,7 @@ resetStoreBtn.addEventListener("click", () => {
 const ignoredOptions = [];
 var resolveGetIgnored;
 
-function getIgnored(conc) {
+function getIgnored(chatID, conc) {
     document.getElementById('universeSelection').style.display = "block";
     document.getElementById('chatBox').style.display = "none";
     var option;
@@ -1486,7 +1489,7 @@ function updateHeading() {
         chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
 
         const chatMembers = document.getElementById('chatMembers');
-        chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
+        chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.filter(pk => !joinedChats.get(currentChatID).exMembers.includes(pk)).map(pk => keyMap.get(pk)).join(", ")}`;
 
         document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
         document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
