@@ -1011,7 +1011,8 @@ function receivedMessage(messageData) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res === "ACCEPT") {
+                console.log(`what is ${res}`);
+                if (res == "ACCEPT") {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
@@ -1022,7 +1023,8 @@ function receivedMessage(messageData) {
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res === "ACCEPT") {
+                console.log(`what is ${res}`);
+                if (res == "ACCEPT") {
                     console.log(`sending stuff now`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
