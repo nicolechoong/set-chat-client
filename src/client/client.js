@@ -470,6 +470,17 @@ async function disputeRemoval(peer, chatID) {
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
 
+        joinedChats.get(currentChatID).currentMember = true;
+        if (chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
+            chatInfo.exMembers.splice(chatInfo.exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+        }
+        if (!chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
+            chatInfo.members.push(JSON.stringify(keyPair.publicKey));
+        }
+        joinedChats.get(currentChatID).toDispute = null;
+        
+        await store.setItem("joinedChats", joinedChats);
+
         sendToServer({
             to: peer.peerPK,
             type: "remove",
@@ -483,8 +494,6 @@ async function disputeRemoval(peer, chatID) {
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
-
-
     });
 }
 
@@ -1436,13 +1445,6 @@ removeUserBtn.addEventListener("click", async () => {
 
 disputeBtn.addEventListener("click", async () => {
     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
-    joinedChats.get(currentChatID).currentMember = true;
-    if (chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
-        chatInfo.exMembers.splice(chatInfo.exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-    }
-    if (!chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-        chatInfo.members.push(JSON.stringify(keyPair.publicKey));
-    }
     joinedChats.get(currentChatID).toDispute = null;
     updateHeading();
 });
