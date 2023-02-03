@@ -669,13 +669,13 @@ const peerIgnored = new Map();
 
 async function receivedIgnored (ignored, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
-    console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
-    if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
-        peerIgnored.set(`${chatID}:${pk}`, ignored);
-        return null;
-    }
-    return new Promise((resolve) => {
-        store.getItem(chatID).then(async (chatInfo) => {
+    await store.getItem(chatID).then(async (chatInfo) => {
+        console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
+        if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
+            peerIgnored.set(`${chatID}:${pk}`, ignored);
+            return null;
+        }
+        return new Promise((resolve) => {
             if (!opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
