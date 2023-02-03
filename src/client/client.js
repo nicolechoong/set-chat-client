@@ -690,14 +690,15 @@ async function receivedIgnored (ignored, chatID, pk) {
                     chatID: chatID,
                     from: objToArr(JSON.parse(pk)),
                 });
-                return resolve(null);
+                return resolve("HELLO");
             }
-            console.log(`members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
-            console.log(`exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
-                const validMember = await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, pk);
-                return resolve(validMember ? "ACCEPT" : "REJECT");
+                const pkInMembers = await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, pk);
+                console.log(pkInMembers);
+                console.log(`members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
+                console.log(`exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
+                return resolve(pkInMembers ? "ACCEPT" : "REJECT");
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 if (!joinedChats.get(chatID).exMembers.includes(pk)) {
@@ -747,7 +748,7 @@ async function receivedOperations (ops, chatID, pk) {
                 console.log(pkInMembers);
                 updateHeading();
 
-                return graphInfo.cycle ? resolve(null) : resolve(pkInMembers ? "ACCEPT" : "REJECT");
+                return graphInfo.cycle ? resolve("HI") : resolve(pkInMembers ? "ACCEPT" : "REJECT");
             }
             resolve("REJECT");
         });
@@ -771,7 +772,7 @@ async function checkMembers (memberSet, chatID, pk) {
 
         joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
         joinedChats.get(chatID).members = [...memberSet];
-        store.setItem("joinedChats", joinedChats);
+        await store.setItem("joinedChats", joinedChats);
         updateHeading();
         console.log(`verified true is member ${memberSet.has(pk)}`);
         console.log(`current members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
