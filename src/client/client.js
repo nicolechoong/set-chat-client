@@ -690,13 +690,14 @@ async function receivedIgnored (ignored, chatID, pk) {
                     chatID: chatID,
                     from: objToArr(JSON.parse(pk)),
                 });
-                return null;
+                return resolve(null);
             }
             console.log(`members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
             console.log(`exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
-                return resolve(await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, pk));
+                const validMember = await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, pk);
+                return resolve(validMember ? "ACCEPT" : "REJECT");
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 if (!joinedChats.get(chatID).exMembers.includes(pk)) {
@@ -704,7 +705,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 }
                 store.setItem("joinedChats", joinedChats);
                 updateHeading();
-                return resolve(false);
+                return resolve("REJECT");
             }
         });
     });
@@ -715,7 +716,7 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
-        if (pk === JSON.stringify(keyPair.publicKey)) { return resolve(true); }
+        if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
 
@@ -746,9 +747,9 @@ async function receivedOperations (ops, chatID, pk) {
                 console.log(pkInMembers);
                 updateHeading();
 
-                return graphInfo.cycle ? null : resolve(pkInMembers);
+                return graphInfo.cycle ? resolve(null) : resolve(pkInMembers ? "ACCEPT" : "REJECT");
             }
-            resolve(false);
+            resolve("REJECT");
         });
     });
 }
@@ -1010,29 +1011,22 @@ function receivedMessage(messageData) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res !== null) {
-                    if (res) {
-                        sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                        sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-                    } else {
-                        closeConnections(JSON.stringify(messageData.from));
-                    }
+                if (res === "ACCEPT") {
+                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
+                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                } else if (res === "REJECT") {
+                    closeConnections(JSON.stringify(messageData.from));
                 }
             });
             break;
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res !== null) {
-                    console.log(`res not null ${res}`);
-                    if (res) {
-                        sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                        sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-                    } else {
-                        closeConnections(JSON.stringify(messageData.from));
-                    }
-                } else {
-                    console.log(`res is null because we are waiting on operations`);
+                if (res === "ACCEPT") {
+                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
+                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                } else if (res === "REJECT") {
+                    closeConnections(JSON.stringify(messageData.from));
                 }
             });
             break;
@@ -1059,7 +1053,7 @@ function receivedMessage(messageData) {
                 onRemove(messageData.chatID, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
             } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) { removePeer(messageData); }
+                    if (res === "ACCEPT") { removePeer(messageData); }
                 });
             }
             break;
@@ -1069,7 +1063,7 @@ function receivedMessage(messageData) {
                 onAdd(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from), msgID);
             } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res) { addPeer(messageData); }
+                    if (res === "ACCEPT") { addPeer(messageData); }
                 });
             }
             break;
