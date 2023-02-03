@@ -298,6 +298,7 @@ async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers
         chatName: chatName,
         members: [JSON.stringify(keyPair.publicKey)],
         exMembers: [],
+        peerIgnored: new Map(),
         currentMember: true,
         toDispute: null
     });
@@ -342,6 +343,7 @@ function onAdd(chatID, chatName, from, fromPK, msgID) {
         chatName: chatName,
         members: [JSON.stringify(fromPK)],
         exMembers: [],
+        peerIgnored: new Map(),
         currentMember: false,
         toDispute: null
     });
@@ -665,8 +667,6 @@ async function sendIgnored(ignored, chatID) {
     }, chatID);
 }
 
-const peerIgnored = new Map();
-
 async function receivedIgnored (ignored, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     await store.getItem(chatID).then(async (chatInfo) => {
@@ -674,7 +674,7 @@ async function receivedIgnored (ignored, chatID, pk) {
         return new Promise(async (resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
-                peerIgnored.set(`${chatID}:${pk}`, ignored);
+                joinedChats.get(chatID).peerIgnored.set(pk, ignored);
                 return resolve(null);
             }
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
@@ -715,10 +715,11 @@ async function receivedOperations (ops, chatID, pk) {
                     console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
 
                     sendIgnored(chatInfo.metadata.ignored, chatID);
-                    if (peerIgnored.has(`${chatID}:${pk}`)) {
-                        receivedIgnored(peerIgnored.get(`${chatID}:${pk}`));
-                        peerIgnored.delete(`${chatID}:${pk}`);
+                    if (joinedChats.get(chatID).peerIgnored.has(pk)) {
+                        receivedIgnored(joinedChats.get(chatID).peerIgnored.get(pk), chatID, pk);
+                        joinedChats.get(chatID).peerIgnored.delete(pk)
                     }
+                    await store.setItem("joinedChats", joinedChats);
                     return resolve(null);
                 }
 
@@ -1453,22 +1454,24 @@ resetStoreBtn.addEventListener("click", () => {
 const ignoredOptions = [];
 var resolveGetIgnored;
 
-function getIgnored(conc) {
-    document.getElementById('universeSelection').style.display = "block";
-    document.getElementById('chatBox').style.display = "none";
-    var option;
-    for (let i = ignoredInput.options.length - 1; i >= 0; i--) {
-        ignoredInput.remove(i);
+function getIgnored(chatID, conc) {
+    if (chatID === currentChatID) {
+        document.getElementById('universeSelection').style.display = "block";
+        document.getElementById('chatBox').style.display = "none";
+        var option;
+        for (let i = ignoredInput.options.length - 1; i >= 0; i--) {
+            ignoredInput.remove(i);
+        }
+        for (const op of conc) {
+            option = document.createElement("option");
+            option.text = `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`;
+            ignoredInput.add(option);
+            ignoredOptions.push(op);
+        }
+        return new Promise((resolve) => {
+            resolveGetIgnored = resolve;
+        });
     }
-    for (const op of conc) {
-        option = document.createElement("option");
-        option.text = `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`;
-        ignoredInput.add(option);
-        ignoredOptions.push(op);
-    }
-    return new Promise((resolve) => {
-        resolveGetIgnored = resolve;
-    });
 }
 
 function selectIgnored() {
