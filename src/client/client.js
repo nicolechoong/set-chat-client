@@ -724,12 +724,12 @@ async function receivedOperations (ops, chatID, pk) {
                         sendToMember(joinedChats.get(chatID).peerIgnored.get(pk), JSON.stringify(keyPair.publicKey));
                         joinedChats.get(chatID).peerIgnored.delete(pk)
                     }
-                    updateHeading();
                     await store.setItem("joinedChats", joinedChats);
-                    return null;
                 }
+                const pkInMembers = await checkMembers(await members(ops, chatInfo.metadata.ignored), chatID, pk);
+                updateHeading();
 
-                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored), chatID, pk));
+                return graphInfo.cycle ? null : resolve(pkInMembers);
             }
             resolve(false);
         })
