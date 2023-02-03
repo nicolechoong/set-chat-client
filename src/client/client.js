@@ -704,7 +704,10 @@ async function receivedOperations (ops, chatID, pk) {
                     chatInfo.metadata.ignored.push(ignoredOp);
                     removeOp(ops, ignoredOp);
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
-
+                    if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
+                        console.log(`different universe from ${keyMap.get(pk)}`);
+                        resolve(false);
+                    }
                     console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                 }
                 chatInfo.metadata.operations = ops;
@@ -730,12 +733,6 @@ async function receivedOperations (ops, chatID, pk) {
                 updateHeading();
                 resolve(true);
             
-                if (graphInfo.cycle) {
-                    if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
-                        console.log(`different universe from ${keyMap.get(pk)}`);
-                        resolve(false);
-                    }
-                }
                 if (joinedChats.get(chatID).exMembers.includes(pk)) {
                     sendChatHistory(chatID, pk); // should still close after
                 }
