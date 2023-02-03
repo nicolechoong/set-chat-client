@@ -1064,7 +1064,7 @@ function receivedMessage(messageData) {
             break;
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
-            receivedIgnored(messageData).then(async (res) => {
+            receivedIgnored(messageData.ignored, messageData.chatID, messageData.pk).then(async (res) => {
                 if (res !== null) {
                     console.log(`res not null ${res}`);
                     if (res) {
