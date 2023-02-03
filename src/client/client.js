@@ -469,7 +469,7 @@ async function disputeRemoval(peer, chatID) {
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, -1));
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
-        await checkMembers(members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, JSON.stringify(keyPair.publicKey));
+        await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, JSON.stringify(keyPair.publicKey));
         
         await store.setItem("joinedChats", joinedChats);
 
