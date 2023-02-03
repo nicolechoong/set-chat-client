@@ -914,7 +914,18 @@ function hasCycles (ops, edges) {
 
     const cycleMaybe = [];
     findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [start], cycleMaybe);
+    if (cycleMaybe.length === 0) {
+        return { cycle: false };
+    }
+    const toOp = new Map(cycleMaybe.map((op) => [JSON.stringify(op.sig), 0]));
+    for (const edge of edges) {
+        if (hasOp(cycleMaybe, edge[1])) {
+            toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
+        }
+    }
+    cycleMaybe.filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
     console.log(cycleMaybe.length);
+    return { cycle: true, concurrent: cycleMaybe };
 
     while (queue.length > 0) {
         cur = queue.shift();
