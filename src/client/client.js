@@ -675,7 +675,7 @@ async function receivedIgnored (ignored, chatID, pk) {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
                 joinedChats.get(chatID).peerIgnored.set(pk, ignored);
-                return resolve(null);
+                return null;
             }
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
@@ -720,7 +720,7 @@ async function receivedOperations (ops, chatID, pk) {
                         joinedChats.get(chatID).peerIgnored.delete(pk)
                     }
                     await store.setItem("joinedChats", joinedChats);
-                    return resolve(null);
+                    return null;
                 }
 
                 return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored), chatID, pk));
