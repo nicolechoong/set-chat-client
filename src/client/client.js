@@ -670,14 +670,12 @@ const peerIgnored = new Map();
 async function receivedIgnored (ignored, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
+    if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
+        peerIgnored.set(`${chatID}:${pk}`, ignored);
+        return null;
+    }
     return new Promise((resolve) => {
         store.getItem(chatID).then(async (chatInfo) => {
-            if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
-                peerIgnored.set(`${chatID}:${pk}`, ignored);
-                resolve(false);
-                return;
-            }
-
             if (!opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
@@ -1053,11 +1051,13 @@ function receivedMessage(messageData) {
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res) {
-                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-                } else {
-                    closeConnections(JSON.stringify(messageData.from));
+                if (res !== null) {
+                    if (res) {
+                        sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
+                        sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                    } else {
+                        closeConnections(JSON.stringify(messageData.from));
+                    }
                 }
             });
             break;
