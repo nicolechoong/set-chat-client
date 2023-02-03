@@ -409,26 +409,27 @@ async function addToChat(validMemberPubKeys, chatID) {
     });
 }
 
-function onRemove(chatID, chatName, from, fromPK) {
+function onRemove (chatID, chatName, from, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
-    chatInfo.currentMember = false;
-    if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
-        chatInfo.toDispute = { peerName: from, peerPK: fromPK };
+    if (chatInfo.members.has(JSON.stringify(fromPK))) {
+        chatInfo.currentMember = false;
+        if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
+            chatInfo.toDispute = { peerName: from, peerPK: fromPK };
+        }
+        if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
+            chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+        }
+        if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
+            chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
+        }
+        console.log(`you've been removed from chat ${chatInfo.chatName} by ${fromPK}`);
+        store.setItem("joinedChats", joinedChats);
+        for (const pk of chatInfo.members) {
+            closeConnections(pk);
+        }
+        updateHeading();
     }
-    if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-        chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-    }
-    if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
-        chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
-    }
-    console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
-    store.setItem("joinedChats", joinedChats);
-    for (const pk of chatInfo.members) {
-        closeConnections(pk);
-    }
-
-    updateHeading();
 }
 
 async function removeFromChat(validMemberPubKeys, chatID) {
@@ -726,7 +727,7 @@ async function receivedOperations (ops, chatID, pk) {
                 if (graphInfo.cycle) {
                     if (unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         for (const cycle of graphInfo.concurrent) {
-                            ignoredOp = await getIgnored(cycle);
+                            const ignoredOp = await getIgnored(cycle);
                             chatInfo.metadata.ignored.push(ignoredOp);
                             removeOp(ops, ignoredOp);
                             console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
@@ -926,7 +927,7 @@ function hasCycles (ops, edges) {
     if (cycles.length === 0) {
         return { cycle: false };
     }
-    
+
     const toOp = new Map(cycles.flat().map((op) => [JSON.stringify(op.sig), 0]));
     for (let i=0; i < cycles.length; i++) {
         for (const edge of edges) {
