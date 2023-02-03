@@ -674,7 +674,12 @@ async function receivedIgnored (ignored, chatID, pk) {
         return new Promise(async (resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
-                joinedChats.get(chatID).peerIgnored.set(pk, ignored);
+                joinedChats.get(chatID).peerIgnored.set(pk, {
+                    type: "ignored",
+                    ignored: ignored,
+                    chatID: chatID,
+                    from: objToArr(JSON.parse(pk)),
+                });
                 return null;
             }
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
@@ -716,7 +721,7 @@ async function receivedOperations (ops, chatID, pk) {
 
                     sendIgnored(chatInfo.metadata.ignored, chatID);
                     if (joinedChats.get(chatID).peerIgnored.has(pk)) {
-                        receivedIgnored(joinedChats.get(chatID).peerIgnored.get(pk), chatID, pk);
+                        sendToMember(joinedChats.get(chatID).peerIgnored.get(pk), JSON.stringify(keyPair.publicKey));
                         joinedChats.get(chatID).peerIgnored.delete(pk)
                     }
                     await store.setItem("joinedChats", joinedChats);
@@ -1059,7 +1064,7 @@ function receivedMessage(messageData) {
             break;
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
-            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+            receivedIgnored(messageData).then(async (res) => {
                 if (res !== null) {
                     console.log(`res not null ${res}`);
                     if (res) {
