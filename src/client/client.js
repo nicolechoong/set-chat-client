@@ -702,14 +702,10 @@ async function receivedOperations (ops, chatID, pk) {
                     const peerIgnored = getPeerIgnored(chatID, pk);
                     const ignoredOp = await getIgnored(graphInfo.concurrent);
                     chatInfo.metadata.ignored.push(ignoredOp);
-                    console.log(`ops length ${ops.length}`);
                     removeOp(ops, ignoredOp);
-                    console.log(`ops ${ops.length} ignored ${chatInfo.metadata.ignored.length} ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
-                    if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
-                        console.log(`different universe from ${keyMap.get(JSON.stringify(pk))}`);
-                        resolve(false);
-                    }
+
+                    console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                 }
                 chatInfo.metadata.operations = ops;
                 store.setItem(chatID, chatInfo);
@@ -734,6 +730,12 @@ async function receivedOperations (ops, chatID, pk) {
                 updateHeading();
                 resolve(true);
             
+                if (graphInfo.cycle) {
+                    if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
+                        console.log(`different universe from ${keyMap.get(pk)}`);
+                        resolve(false);
+                    }
+                }
                 if (joinedChats.get(chatID).exMembers.includes(pk)) {
                     sendChatHistory(chatID, pk); // should still close after
                 }
@@ -886,7 +888,6 @@ function hasCycles (ops, edges) {
 
     while (queue.length > 0) {
         cur = queue.shift();
-        console.log(`${cur.action} ${queue.length}`);
         for (const next of fromOp.get(JSON.stringify(cur.sig))) {
             if (seen.has(JSON.stringify(next.sig))) { // cycle detected
                 console.log(`cycle found`);
@@ -901,8 +902,6 @@ function hasCycles (ops, edges) {
                 }
                 conc.filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
                 // conc.forEach((op) => {console.log(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)});
-
-                console.log(`here is the number of concurrent ${conc.length}`);
                 return { cycle: true, concurrent: conc };
             }
 
