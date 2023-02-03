@@ -414,9 +414,9 @@ function onRemove(chatID, chatName, from, fromPK) {
     if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
         chatInfo.toDispute = { peerName: from, peerPK: fromPK };
     }
-    if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-        chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-    }
+    // if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
+    //     chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+    // }
     if (!chatInfo.exMembers.includes(JSON.stringify(fromPK))) {
         chatInfo.exMembers.push(JSON.stringify(fromPK));
     }
@@ -677,6 +677,9 @@ async function receivedIgnored (ignored, chatID, pk) {
                 peerIgnored.set(`${chatID}:${pk}`, ignored);
                 return resolve(null);
             }
+            if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
+
+            }
             if (!opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
@@ -696,54 +699,61 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
-        if (pk === JSON.stringify(keyPair.publicKey)) { resolve(true); return; }
+        if (pk === JSON.stringify(keyPair.publicKey)) { return resolve(true); }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
 
             if (verifyOperations(ops)) {
                 const authorityGraph = authority(ops);
+                chatInfo.metadata.operations = ops;
+                await store.setItem(chatID, chatInfo);
 
                 const graphInfo = hasCycles(ops, authorityGraph);
                 if (graphInfo.cycle) {
                     const ignoredOp = await getIgnored(graphInfo.concurrent);
                     chatInfo.metadata.ignored.push(ignoredOp);
                     removeOp(ops, ignoredOp);
-                    console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                     await store.setItem(chatID, chatInfo);
+                    console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
 
                     sendIgnored(chatInfo.metadata.ignored, chatID);
                     if (peerIgnored.has(`${chatID}:${pk}`)) {
                         receivedIgnored(peerIgnored.get(`${chatID}:${pk}`));
                         peerIgnored.delete(`${chatID}:${pk}`);
                     }
-                    return;
+                    return resolve(null);
                 }
 
-                const memberSet = await members(ops, chatInfo.metadata.ignored);
-                if (memberSet.has(pk)) {
-                    for (const mem of memberSet) { // populating keyMap
-                        await getUsername(mem);
-                    }
-                    if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-                        joinedChats.get(chatID).currentMember = true;
-                        updateChatOptions("add", chatID);
-                    } else {
-                        joinedChats.get(chatID).currentMember = false;
-                    }
-            
-                    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
-                    joinedChats.get(chatID).members = [...memberSet];
-                    store.setItem("joinedChats", joinedChats);
-                    chatInfo.metadata.operations = ops;
-                    store.setItem(chatID, chatInfo);
-                    updateHeading();
-                    resolve(true);
-                    console.log(`verified true is member ${memberSet.has(pk)}`);
-                    console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
-                }
+                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored)));
             }
             resolve(false);
         })
+    });
+}
+
+async function checkMembers (memberSet) {
+    return new Promise(async (resolve) => {
+        if (!memberSet.has(pk)) { return resolve(false); }
+
+        for (const mem of memberSet) { // populating keyMap
+            await getUsername(mem);
+        }
+
+        if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
+            joinedChats.get(chatID).currentMember = true;
+            updateChatOptions("add", chatID);
+        } else {
+            joinedChats.get(chatID).currentMember = false;
+        }
+
+        joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
+        joinedChats.get(chatID).members = memberSet;
+        store.setItem("joinedChats", joinedChats);
+        updateHeading();
+        console.log(`verified true is member ${memberSet.has(pk)}`);
+        console.log(`current members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
+        console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
+        resolve(true);
     });
 }
 
@@ -1038,11 +1048,13 @@ function receivedMessage(messageData) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res) {
-                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-                } else {
-                    closeConnections(JSON.stringify(messageData.from));
+                if (res !== null) {
+                    if (res) {
+                        sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
+                        sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                    } else {
+                        closeConnections(JSON.stringify(messageData.from));
+                    }
                 }
             });
             break;
@@ -1241,9 +1253,9 @@ async function removePeer(messageData) {
         store.setItem(messageData.chatID, chatInfo);
     });
 
-    if (joinedChats.get(messageData.chatID).members.includes(pk)) {
-        joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
-    }
+    // if (joinedChats.get(messageData.chatID).members.includes(pk)) {
+    //     joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+    // }
     if (!joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
         joinedChats.get(messageData.chatID).exMembers.push(pk);
     }
@@ -1459,7 +1471,6 @@ function getIgnored(conc) {
 }
 
 function selectIgnored() {
-    console.log(`selected index ${ignoredInput.selectedIndex}`);
     resolveGetIgnored(ignoredOptions[ignoredInput.selectedIndex]);
     document.getElementById('chatBox').style.display = "block";
     document.getElementById('universeSelection').style.display = "none";
