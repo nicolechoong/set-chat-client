@@ -422,9 +422,9 @@ function onRemove(chatID, chatName, from, fromPK) {
     }
     console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
     store.setItem("joinedChats", joinedChats);
-    for (const pk of chatInfo.members) {
-        closeConnections(pk);
-    }
+    // for (const pk of chatInfo.members) {
+    //     closeConnections(pk);
+    // }
 
     updateHeading();
 }
@@ -921,7 +921,6 @@ function valid (ops, ignored, op, authorityGraph) {
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
             if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
-                console.log(`has not been removed`);
                 return true;
             }
         }
@@ -1045,9 +1044,6 @@ function receivedMessage(messageData) {
                     closeConnections(JSON.stringify(messageData.from));
                 }
             });
-            break;
-        case "reqIgnored":
-            sendIgnored()
             break;
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
