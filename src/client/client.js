@@ -131,7 +131,7 @@ connection.onmessage = function (message) {
             onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK), data.msgID);
             break;
         case "remove":
-            onRemove(data.chatID, data.chatName, data.from, objToArr(data.fromPK));
+            onRemove(data.chatID, data.from, objToArr(data.fromPK));
             break;
         case "getUsername":
             onGetUsername(data.username, data.success, data.pk);
@@ -409,10 +409,10 @@ async function addToChat(validMemberPubKeys, chatID) {
     });
 }
 
-function onRemove (chatID, chatName, from, fromPK) {
+function onRemove (chatID, from, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
-    if (chatInfo.members.has(JSON.stringify(fromPK))) {
+    if (chatInfo.members.includes(JSON.stringify(fromPK))) {
         chatInfo.currentMember = false;
         if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
@@ -1118,7 +1118,7 @@ function receivedMessage(messageData) {
         case "remove":
             unpackOp(messageData.op);
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                onRemove(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
+                onRemove(messageData.chatID, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
             } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res) { removePeer(messageData); }
