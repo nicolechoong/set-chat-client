@@ -470,14 +470,14 @@ async function disputeRemoval(peer, chatID) {
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
 
-        joinedChats.get(currentChatID).currentMember = true;
-        if (chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
-            chatInfo.exMembers.splice(chatInfo.exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+        joinedChats.get(chatID).currentMember = true;
+        if (joinedChats.get(chatID).exMembers.includes(JSON.stringify(keyPair.publicKey))) {
+            joinedChats.get(chatID).exMembers.splice(joinedChats.get(chatID).exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
         }
-        if (!chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-            chatInfo.members.push(JSON.stringify(keyPair.publicKey));
+        if (!joinedChats.get(chatID).members.includes(JSON.stringify(keyPair.publicKey))) {
+            joinedChats.get(chatID).members.push(JSON.stringify(keyPair.publicKey));
         }
-        joinedChats.get(currentChatID).toDispute = null;
+        joinedChats.get(chatID).toDispute = null;
         
         await store.setItem("joinedChats", joinedChats);
 
