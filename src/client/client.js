@@ -912,6 +912,7 @@ function hasCycles (ops, edges) {
                 console.log(`cycle found`);
                 var conc = [];
                 findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [cur], conc);
+                conc.forEach((op) => console.log(`${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`));
                 
                 const toOp = new Map(conc.map((op) => [JSON.stringify(op.sig), 0]));
                 for (const edge of edges) {
