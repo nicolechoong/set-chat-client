@@ -679,7 +679,7 @@ async function receivedIgnored (ignored, chatID, pk) {
             }
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
-                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored), pk));
+                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored), chatID, pk));
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
@@ -722,14 +722,14 @@ async function receivedOperations (ops, chatID, pk) {
                     return resolve(null);
                 }
 
-                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored), pk));
+                return resolve(await checkMembers(await members(ops, chatInfo.metadata.ignored), chatID, pk));
             }
             resolve(false);
         })
     });
 }
 
-async function checkMembers (memberSet, pk) {
+async function checkMembers (memberSet, chatID, pk) {
     return new Promise(async (resolve) => {
         if (!memberSet.has(pk)) { return resolve(false); }
 
