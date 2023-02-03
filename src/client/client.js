@@ -470,9 +470,6 @@ async function disputeRemoval(peer, chatID) {
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, -1));
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo);
-        await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, JSON.stringify(keyPair.publicKey));
-        
-        await store.setItem("joinedChats", joinedChats);
 
         const removeMessage = {
             type: "remove",
@@ -492,10 +489,12 @@ async function disputeRemoval(peer, chatID) {
         });
         // note that we aren't sending the remove message itself...
 
-        connectToPeer(peer);
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
+
+        await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, JSON.stringify(keyPair.publicKey));
+        await store.setItem("joinedChats", joinedChats);
     });
 }
 
