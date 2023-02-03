@@ -422,9 +422,9 @@ function onRemove(chatID, chatName, from, fromPK) {
     }
     console.log(`you've been removed from chat ${chatName} by ${fromPK}`);
     store.setItem("joinedChats", joinedChats);
-    // for (const pk of chatInfo.members) {
-    //     closeConnections(pk);
-    // }
+    for (const pk of chatInfo.members) {
+        closeConnections(pk);
+    }
 
     updateHeading();
 }
@@ -475,7 +475,6 @@ async function disputeRemoval(peer, chatID) {
             fromPK: keyPair.publicKey,
             chatID: chatID,
             chatName: chatInfo.metadata.chatName,
-
         });
         // note that we aren't sending the remove message itself...
 
@@ -729,12 +728,11 @@ async function receivedOperations (ops, chatID, pk) {
         
                 joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
                 joinedChats.get(chatID).members = [...memberSet];
-                joinedChats.get(chatID).members.sort();
                 store.setItem("joinedChats", joinedChats);
                 updateHeading();
                 resolve(true);
-                sendChatHistory(chatID, pk);
                 console.log(`verified true is member ${memberSet.has(pk)}`);
+                console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`)
             }
             resolve(false);
         })
