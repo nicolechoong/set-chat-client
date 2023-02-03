@@ -698,8 +698,8 @@ async function receivedIgnored (ignored, chatID, pk) {
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
-                if (!joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
-                    joinedChats.get(messageData.chatID).exMembers.push(pk);
+                if (!joinedChats.get(chatID).exMembers.includes(pk)) {
+                    joinedChats.get(chatID).exMembers.push(pk);
                 }
                 store.setItem("joinedChats", joinedChats);
                 updateHeading();
