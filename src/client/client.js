@@ -1277,7 +1277,7 @@ async function updateChatStore(messageData) {
 
 function sendToMember(data, pk) {
     // data: JSON, pk: String
-    if (!data.has("id")) {
+    if (data.id === undefined) {
         data.sentTime = Date.now();
         data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
     }
