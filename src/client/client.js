@@ -694,7 +694,6 @@ async function receivedOperations (ops, chatID, pk) {
             ops = unionOps(chatInfo.metadata.operations, ops);
 
             if (verifyOperations(ops)) {
-                const memberSet = await members(ops, chatInfo.metadata.ignored);
                 var peerIgnored = chatInfo.metadata.ignored;
                 const authorityGraph = authority(ops);
                 authorityGraph.forEach(edge => printEdge(edge[0], edge[1]));
@@ -709,8 +708,12 @@ async function receivedOperations (ops, chatID, pk) {
                 }
                 chatInfo.metadata.operations = ops;
                 store.setItem(chatID, chatInfo);
+                const memberSet = await members(ops, chatInfo.metadata.ignored);
 
                 if (!opsArrEqual(chatInfo.metadata.ignored, await peerIgnored)) {
+                    if (!memberSet.has(JSON.stringify(keyPair.publicKey))) {
+                        joinedChats.get(chatID).currentMember = false;
+                    }
                     console.log(`different universe from ${keyMap.get(pk)}`);
                     joinedChats.get(chatID).exMembers.push(pk);
                     store.setItem("joinedChats", joinedChats);
