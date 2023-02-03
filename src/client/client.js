@@ -692,12 +692,13 @@ async function receivedIgnored (ignored, chatID, pk) {
                 });
                 return null;
             }
+            console.log(`members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
+            console.log(`exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
                 return resolve(await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, pk));
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
-                console.log(`joinedChats ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
                 if (!joinedChats.get(chatID).exMembers.includes(pk)) {
                     joinedChats.get(chatID).exMembers.push(pk);
                 }
@@ -742,6 +743,7 @@ async function receivedOperations (ops, chatID, pk) {
                     await store.setItem("joinedChats", joinedChats);
                 }
                 const pkInMembers = await checkMembers(await members(ops, chatInfo.metadata.ignored), chatID, pk);
+                console.log(pkInMembers);
                 updateHeading();
 
                 return graphInfo.cycle ? null : resolve(pkInMembers);
@@ -749,19 +751,6 @@ async function receivedOperations (ops, chatID, pk) {
             resolve(false);
         });
     });
-}
-
-function unresolvedCycles (cycles, ignored) {
-    cycleloop:
-    for (const cycle of cycles) {
-        for (const op of cycle) {
-            if (hasOp(ignored, op)) {
-                continue cycleloop;
-            }
-        }
-        return true;
-    }
-    return false;
 }
 
 async function checkMembers (memberSet, chatID, pk) {
@@ -786,7 +775,7 @@ async function checkMembers (memberSet, chatID, pk) {
         console.log(`verified true is member ${memberSet.has(pk)}`);
         console.log(`current members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
         console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
-        resolve(true);
+        return resolve(true);
     });
 }
 
@@ -892,55 +881,6 @@ function authority (ops) {
     return edges;
 }
 
-function findCycle (fromOp, visited, stack, cycle) {
-    // assume start is create
-    const cur = stack.at(-1);
-    for (const next of fromOp.get(JSON.stringify(cur.sig))) {
-        if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
-            cycle.push([...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)))]);
-        } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
-            stack.push(next);
-            visited.set(JSON.stringify(next.sig), "IN STACK");
-            findCycle(fromOp, visited, stack, cycle);
-        }
-    }
-    visited.set(JSON.stringify(cur.sig), "DONE");
-    stack.pop();
-}
-
-function hasCycles (ops, edges) {
-    const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
-    const fromOp = new Map();
-
-    for (const edge of edges) {
-        if (!fromOp.has(JSON.stringify(edge[0].sig))) {
-            fromOp.set(JSON.stringify(edge[0].sig), []);
-        }
-        if (edge[1].action !== "mem") {
-            fromOp.get(JSON.stringify(edge[0].sig)).push(edge[1]);
-        }
-    }
-
-    const cycles = [];
-    findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [start], cycles);
-    cycles.forEach((arr) => { console.log(`a cycle`); arr.forEach((op) => console.log(`${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`)); });
-    if (cycles.length === 0) {
-        return { cycle: false };
-    }
-
-    const toOp = new Map(cycles.flat().map((op) => [JSON.stringify(op.sig), 0]));
-    for (let i=0; i < cycles.length; i++) {
-        for (const edge of edges) {
-            if (hasOp(cycles[i], edge[1])) {
-                toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
-            }
-        }
-        cycles[i] = cycles[i].filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
-        console.log(cycles[i].length);
-    }
-    return { cycle: true, concurrent: cycles };
-}
-
 function valid (ops, ignored, op, authorityGraph) {
     if (op.action === "create") { return true; }
     if (op.action !== "mem" && hasOp(ignored, op)) { return false; }
@@ -949,8 +889,6 @@ function valid (ops, ignored, op, authorityGraph) {
     const inSet = authorityGraph.filter((edge) => {
         return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], authorityGraph);
     }).map(edge => edge[0]);
-    // console.log(`inSet for op ${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} has length ${inSet.length}`);
-    // inSet.forEach(op1 => `inSet for op ${keyMap.get(JSON.stringify(op.pk1))} ${op.action} ${keyMap.get(JSON.stringify(op.pk2))} issss ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))}`);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
     // ADD COMMENTS
@@ -1718,4 +1656,64 @@ function closeConnections(pk) {
         }
         connections.delete(pk);
     }
+}
+
+function unresolvedCycles (cycles, ignored) {
+    cycleloop:
+    for (const cycle of cycles) {
+        for (const op of cycle) {
+            if (hasOp(ignored, op)) {
+                continue cycleloop;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+function findCycle (fromOp, visited, stack, cycle) {
+    // assume start is create
+    const cur = stack.at(-1);
+    for (const next of fromOp.get(JSON.stringify(cur.sig))) {
+        if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
+            cycle.push([...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)))]);
+        } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
+            stack.push(next);
+            visited.set(JSON.stringify(next.sig), "IN STACK");
+            findCycle(fromOp, visited, stack, cycle);
+        }
+    }
+    visited.set(JSON.stringify(cur.sig), "DONE");
+    stack.pop();
+}
+
+function hasCycles (ops, edges) {
+    const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
+    const fromOp = new Map();
+
+    for (const edge of edges) {
+        if (!fromOp.has(JSON.stringify(edge[0].sig))) {
+            fromOp.set(JSON.stringify(edge[0].sig), []);
+        }
+        if (edge[1].action !== "mem") {
+            fromOp.get(JSON.stringify(edge[0].sig)).push(edge[1]);
+        }
+    }
+
+    const cycles = [];
+    findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [start], cycles);
+    if (cycles.length === 0) {
+        return { cycle: false };
+    }
+
+    const toOp = new Map(cycles.flat().map((op) => [JSON.stringify(op.sig), 0]));
+    for (let i=0; i < cycles.length; i++) {
+        for (const edge of edges) {
+            if (hasOp(cycles[i], edge[1])) {
+                toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
+            }
+        }
+        cycles[i] = cycles[i].filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
+    }
+    return { cycle: true, concurrent: cycles };
 }
