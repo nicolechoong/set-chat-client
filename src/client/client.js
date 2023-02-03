@@ -466,6 +466,7 @@ async function removeFromChat(validMemberPubKeys, chatID) {
 
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
+        // TODO: FIX THE SLICE!!!!!!!!!!!!
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, -1)}`);
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, -1));
         chatInfo.metadata.operations.push(op);
@@ -478,7 +479,7 @@ async function disputeRemoval(peer, chatID) {
             from: keyPair.publicKey,
             chatID: chatID
         };
-        broadcastToMembers(removeMessage, chatID);
+        sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
         sendToServer({
             to: peer.peerPK,
             type: "remove",
@@ -696,9 +697,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 console.log(`same universe naisu`);
                 const pkInMembers = await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, pk);
                 console.log(pkInMembers);
-                console.log(`members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
-                console.log(`exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
-                return resolve(pkInMembers ? "ACCEPT" : "REJECT");
+                return pkInMembers ? resolve("ACCEPT") : resolve("REJECT");
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 if (!joinedChats.get(chatID).exMembers.includes(pk)) {
@@ -706,6 +705,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 }
                 store.setItem("joinedChats", joinedChats);
                 updateHeading();
+                console.log(`going to resolve reject?`);
                 return resolve("REJECT");
             }
         });
@@ -748,7 +748,11 @@ async function receivedOperations (ops, chatID, pk) {
                 console.log(pkInMembers);
                 updateHeading();
 
-                return graphInfo.cycle ? resolve("HI") : resolve(pkInMembers ? "ACCEPT" : "REJECT");
+                if (graphInfo.cycle) {
+                    return resolve("WAITING FOR PEER IGNORED");
+                } else {
+                    return pkInMembers ? resolve("ACCEPT") : resolve("REJECT");
+                }
             }
             return resolve("REJECT");
         });
@@ -1273,6 +1277,10 @@ async function updateChatStore(messageData) {
 
 function sendToMember(data, pk) {
     // data: JSON, pk: String
+    if (!data.has("id")) {
+        data.sentTime = Date.now();
+        data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
+    }
     if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     if (connections.has(pk)) {
