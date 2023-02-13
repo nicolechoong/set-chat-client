@@ -799,7 +799,7 @@ async function checkMembers (memberSet, chatID, pk) {
         }
 
         joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers).filter(pk => { return !memberSet.has(pk) });
-        joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
+        joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.includes(pk));
         joinedChats.get(chatID).validMembers = [...memberSet];
         await store.setItem("joinedChats", joinedChats);
         updateHeading();
