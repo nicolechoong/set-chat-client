@@ -475,6 +475,7 @@ async function disputeRemoval(peer, chatID) {
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
+        store.setItem(chatID, chatInfo);
 
         const removeMessage = addMsgID({
             type: "remove",
@@ -721,6 +722,7 @@ async function receivedOperations (ops, chatID, pk) {
         if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
+            console.log(ops.length);
 
             if (verifyOperations(ops)) {
                 const authorityGraph = authority(ops);
