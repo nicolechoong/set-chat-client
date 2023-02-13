@@ -693,6 +693,7 @@ async function receivedIgnored (ignored, chatID, pk) {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
             console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
+                console.log(`not resolved?`);
                 joinedChats.get(chatID).peerIgnored.set(pk, {
                     type: "ignored",
                     ignored: ignored,
