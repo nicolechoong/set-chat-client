@@ -790,7 +790,7 @@ async function checkMembers (memberSet, chatID, pk) {
         console.log(`verified true is member ${memberSet.has(pk)}`);
         console.log(`current members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
         console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
-        return resolve(true);
+        return resolve(joinedChats.get(chatID).currentMember);
     });
 }
 
