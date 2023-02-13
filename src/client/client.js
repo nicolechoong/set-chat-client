@@ -692,6 +692,7 @@ async function receivedIgnored (ignored, chatID, pk) {
         return new Promise(async (resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
             console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
+            console.log(hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle);
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
                 console.log(`not resolved?`);
                 joinedChats.get(chatID).peerIgnored.set(pk, {
@@ -746,7 +747,7 @@ async function receivedOperations (ops, chatID, pk) {
                                 ignoredOp = await getIgnored(cycle);
                             }
                             chatInfo.metadata.ignored.push(ignoredOp);
-                            removeOp(ops, ignoredOp);
+                            removeOp(chatInfo.metadata.operations, ignoredOp);
                             console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                             await store.setItem(chatID, chatInfo);
                         }
