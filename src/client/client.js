@@ -413,15 +413,13 @@ async function addToChat(validMemberPubKeys, chatID) {
 function onRemove (chatID, from, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
-    if (chatInfo.members.includes(JSON.stringify(fromPK))) {
+    if (chatInfo.currentMember && chatInfo.members.includes(JSON.stringify(fromPK))) {
         chatInfo.currentMember = false;
         if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-            console.log(`did it splice ${joinedChats.get(chatID).members.length}`);
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-            console.log(`did it splice ${joinedChats.get(chatID).members.length}`);
         }
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
@@ -471,8 +469,8 @@ async function removeFromChat(validMemberPubKeys, chatID) {
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end-1)}`);
-        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end-1));
+        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end)}`);
+        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
 
