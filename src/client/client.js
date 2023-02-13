@@ -716,8 +716,8 @@ async function receivedIgnored (ignored, chatID, pk) {
                 return pkInMembers ? resolve("ACCEPT") : resolve("REJECT");
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
-                if (joinedChats.get(messageData.chatID).members.includes(pk)) {
-                    joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+                if (joinedChats.get(chatID).members.includes(pk)) {
+                    joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
                 }
                 if (!joinedChats.get(chatID).exMembers.includes(pk)) {
                     joinedChats.get(chatID).exMembers.push(pk);
