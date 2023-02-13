@@ -419,15 +419,16 @@ function onRemove (chatID, from, fromPK) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-            console.log(`did it splice ${joinedChats.get(chatID).length}`);
+            console.log(`did it splice ${joinedChats.get(chatID).size}`);
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-            console.log(`did it splice ${joinedChats.get(chatID).length}`);
+            console.log(`did it splice ${joinedChats.get(chatID).size}`);
         }
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
         }
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${fromPK}`);
         store.setItem("joinedChats", joinedChats);
+
         for (const pk of chatInfo.members) {
             closeConnections(pk);
         }
@@ -476,11 +477,6 @@ async function disputeRemoval(peer, chatID) {
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
         await store.setItem(chatID, chatInfo);
 
-        console.log(`is this null ${peer.peerPK}`);
-        joinedChats.get(chatID).exMembers.push(peer.peerPK);
-        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(JSON.stringify(peer.peerPK)), 1);
-        await store.setItem("joinedChats", joinedChats);
-
         const removeMessage = {
             type: "remove",
             op: op,
@@ -496,8 +492,8 @@ async function disputeRemoval(peer, chatID) {
             fromPK: keyPair.publicKey,
             chatID: chatID,
             chatName: chatInfo.metadata.chatName,
+            msg: removeMessage
         });
-        // note that we aren't sending the remove message itself...
 
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
