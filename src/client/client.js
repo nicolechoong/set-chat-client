@@ -255,6 +255,7 @@ async function onOffer(offer, peerName, peerPK) {
 
 // Receiving Answer from Peer
 function onAnswer(answer, peerPK) {
+    console.log(`onAnswer connections ${[...connections.keys]}`);
     connections.get(JSON.stringify(peerPK)).connection.setRemoteDescription(answer);
 }
 
@@ -472,6 +473,10 @@ async function disputeRemoval(peer, chatID) {
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
         await store.setItem(chatID, chatInfo);
+
+        joinedChats.get(chatID).exMembers.push(peer.peerPK);
+        joinedChats.get(chatID).members.remove(JSON.stringify(peer.peerPK));
+        await store.setItem("joinedChats", joinedChats);
 
         const removeMessage = {
             type: "remove",
@@ -697,7 +702,6 @@ async function receivedIgnored (ignored, chatID, pk) {
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
                 const pkInMembers = await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, pk);
-                console.log(pkInMembers);
                 return pkInMembers ? resolve("ACCEPT") : resolve("REJECT");
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
@@ -1023,7 +1027,6 @@ function receivedMessage(messageData) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                console.log(`what is ${res}`);
                 if (res == "ACCEPT") {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
@@ -1035,9 +1038,7 @@ function receivedMessage(messageData) {
         case "ignored":
             messageData.ignored.forEach(op => unpackOp(op));
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                console.log(`what is ${res}`);
                 if (res == "ACCEPT") {
-                    console.log(`sending stuff now`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
