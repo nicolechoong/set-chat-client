@@ -692,9 +692,13 @@ async function receivedIgnored (ignored, chatID, pk) {
         return new Promise(async (resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
             console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
-            console.log(hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle);
-            if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
+
+            const graphInfo = hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations));
+            if (graphInfo.cycle) {
                 console.log(`not resolved?`);
+                graphInfo.concurrent.forEach((cyc) => {
+                    console.log(cyc.map((op) => `${op.action} ${keyMap.get(op.pk2)}`).join(" "));
+                })
                 joinedChats.get(chatID).peerIgnored.set(pk, {
                     type: "ignored",
                     ignored: ignored,
