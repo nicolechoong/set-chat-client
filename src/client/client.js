@@ -450,7 +450,8 @@ async function removeFromChat(validMemberPubKeys, chatID) {
                 op: op,
                 username: name,
                 from: keyPair.publicKey,
-                chatID: chatID
+                chatID: chatID,
+                dispute: false
             });
             broadcastToMembers(removeMessage, chatID);
             sendToServer({
@@ -469,7 +470,7 @@ async function removeFromChat(validMemberPubKeys, chatID) {
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end)}`);
+        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
@@ -479,21 +480,10 @@ async function disputeRemoval(peer, chatID) {
             op: op,
             username: peer.peerName,
             from: keyPair.publicKey,
-            chatID: chatID
+            chatID: chatID,
+            dispute: true,
         });
-        
-        const pk = JSON.stringify(peer.peerPK);
-        if (chatInfo.historyTable.has(pk)) {
-            const interval = chatInfo.historyTable.get(pk).pop();
-            interval[1] = removeMessage.id;
-            chatInfo.historyTable.get(pk).push(interval);
-        }
-        chatInfo.history.push(removeMessage);
-        await store.setItem(chatID, chatInfo);
-    
-        updateHeading();
-        updateChatWindow(removeMessage);
-
+        sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
         sendToServer({
             to: peer.peerPK,
             type: "remove",
@@ -501,7 +491,6 @@ async function disputeRemoval(peer, chatID) {
             fromPK: keyPair.publicKey,
             chatID: chatID,
             chatName: chatInfo.metadata.chatName,
-            msg: removeMessage
         });
 
         console.log(`these are the mems ${joinedChats.get(chatID).members}`);
@@ -1251,12 +1240,13 @@ async function removePeer (messageData) {
     updateHeading();
     updateChatWindow(messageData);
 
+    if (messageData.dispute) { return; }
     for (const id of joinedChats.keys()) {
         if (messageData.chatID !== id && joinedChats.get(id).members.includes(pk)) {
             return;
         }
     }
-    console.log(`closing from removePerr ${keyMap.get(pk)}`);
+    console.log(`closing from removePeer ${keyMap.get(pk)}`);
     closeConnections(pk);
 }
 
