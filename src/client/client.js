@@ -297,6 +297,7 @@ async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers
 
     joinedChats.set(chatID, {
         chatName: chatName,
+        validMembers: [JSON.stringify(keyPair.publicKey)],
         members: [JSON.stringify(keyPair.publicKey)],
         exMembers: [],
         peerIgnored: new Map(),
@@ -342,6 +343,7 @@ function onAdd(chatID, chatName, from, fromPK, msgID) {
 
     joinedChats.set(chatID, {
         chatName: chatName,
+        validMembers: [JSON.stringify(fromPK)],
         members: [JSON.stringify(fromPK)],
         exMembers: [],
         peerIgnored: new Map(),
@@ -392,6 +394,7 @@ async function addToChat(validMemberPubKeys, chatID) {
                 chatName: chatInfo.metadata.chatName
             });
 
+            joinedChats.get(chatID).validMembers.push(JSON.stringify(pk));
             joinedChats.get(chatID).members.push(JSON.stringify(pk));
             await store.setItem("joinedChats", joinedChats);
             await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
@@ -413,9 +416,9 @@ async function addToChat(validMemberPubKeys, chatID) {
 function onRemove (chatID, from, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
-    if (chatInfo.currentMember && chatInfo.members.includes(JSON.stringify(fromPK))) {
+    if (chatInfo.currentMember && chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
         chatInfo.currentMember = false;
-        if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
+        if (chatInfo.toDispute === null && chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
@@ -713,6 +716,9 @@ async function receivedIgnored (ignored, chatID, pk) {
                 return pkInMembers ? resolve("ACCEPT") : resolve("REJECT");
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
+                if (joinedChats.get(messageData.chatID).members.includes(pk)) {
+                    joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+                }
                 if (!joinedChats.get(chatID).exMembers.includes(pk)) {
                     joinedChats.get(chatID).exMembers.push(pk);
                 }
@@ -792,12 +798,13 @@ async function checkMembers (memberSet, chatID, pk) {
             joinedChats.get(chatID).currentMember = false;
         }
 
-        joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).members).filter(pk => { return !memberSet.has(pk) });
-        joinedChats.get(chatID).members = [...memberSet];
+        joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers).filter(pk => { return !memberSet.has(pk) });
+        joinedChats.get(chatID).validMembers = [...memberSet];
         await store.setItem("joinedChats", joinedChats);
         updateHeading();
         console.log(`verified true is member ${memberSet.has(pk)}`);
-        console.log(`current members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
+        console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
+        console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
         console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
         return resolve(joinedChats.get(chatID).currentMember);
     });
@@ -1424,7 +1431,8 @@ addUserBtn.addEventListener("click", async () => {
     try {
         const pk = await getPK(username);
         modifyUserInput.value = "";
-        if (joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`User has already been added`); return; }
+        // as long as you are in some universe
+        if (joinedChats.get(currentChatID).validMembers.includes(JSON.stringify(pk))) { alert(`User has already been added`); return; }
         addToChat(new Map([[username, pk]]), currentChatID);
     } catch (err) {
         alert(`User does not exist`);
@@ -1525,7 +1533,7 @@ function updateHeading() {
         chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
 
         const chatMembers = document.getElementById('chatMembers');
-        chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.filter(pk => !joinedChats.get(currentChatID).exMembers.includes(pk)).map(pk => keyMap.get(pk)).join(", ")}`;
+        chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
 
         document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
         document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
