@@ -1717,7 +1717,9 @@ function hasCycles (ops, edges) {
     const fromOp = new Map();
 
     ops.forEach((op) => {
-        console.log(`${op.action} ${op.pk2} ${op.deps.length}`);
+        if (op.action !== "create") {
+            console.log(`${op.action} ${op.pk2} ${op.deps.length}`);
+        }
     });
 
     for (const edge of edges) {
