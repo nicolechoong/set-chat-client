@@ -495,6 +495,7 @@ async function disputeRemoval(peer, chatID) {
             msg: removeMessage
         });
 
+        console.log(`these are the mems ${joinedChats.get(chatID).members}`);
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
@@ -686,7 +687,7 @@ async function sendIgnored(ignored, chatID) {
 async function receivedIgnored (ignored, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     await store.getItem(chatID).then(async (chatInfo) => {
-        console.log(`receiving ignored ${ignored.length} for chatID ${chatID}`);
+        console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
         return new Promise(async (resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
@@ -709,7 +710,6 @@ async function receivedIgnored (ignored, chatID, pk) {
                 }
                 store.setItem("joinedChats", joinedChats);
                 updateHeading();
-                console.log(`going to resolve reject?`);
                 return resolve("REJECT");
             }
         });
