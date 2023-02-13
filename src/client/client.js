@@ -671,23 +671,27 @@ async function sendOperations(chatID, pk) {
     });
 }
 
-async function sendIgnored(ignored, chatID) {
+async function sendIgnored (ignored, chatID, pk) {
     // chatID : String, pk : String
     console.log(`broadcasting ignored`);
-    broadcastToMembers(addMsgID({
+    const ignoredMessage = addMsgID({
         type: "ignored",
         ignored: ignored,
         chatID: chatID,
         from: keyPair.publicKey,
-    }), chatID);
+    });
+    broadcastToMembers(ignoredMessage, chatID);
+    if (!joinedChats.get(chatID).members.includes(pk)) {
+        sendToMember(ignoredMessage, pk)
+    }
 }
 
 async function receivedIgnored (ignored, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     await store.getItem(chatID).then(async (chatInfo) => {
-        console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
         return new Promise(async (resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
+            console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
             if (hasCycles(chatInfo.metadata.operations, authority(chatInfo.metadata.operations)).cycle) {
                 joinedChats.get(chatID).peerIgnored.set(pk, {
                     type: "ignored",
@@ -722,7 +726,6 @@ async function receivedOperations (ops, chatID, pk) {
         if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
-            console.log(ops.length);
 
             if (verifyOperations(ops)) {
                 const authorityGraph = authority(ops);
@@ -735,7 +738,6 @@ async function receivedOperations (ops, chatID, pk) {
                     if (unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         for (const cycle of graphInfo.concurrent) { // each of unresolved
                             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-                            console.log(`removeSelfIndex ${removeSelfIndex}`);
                             var ignoredOp;
                             if (removeSelfIndex > -1) {
                                 ignoredOp = cycle.at(removeSelfIndex);
@@ -748,7 +750,7 @@ async function receivedOperations (ops, chatID, pk) {
                             await store.setItem(chatID, chatInfo);
                         }
                     }
-                    sendIgnored(chatInfo.metadata.ignored, chatID);
+                    sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     if (joinedChats.get(chatID).peerIgnored.has(pk)) {
                         sendToMember(addMsgID(joinedChats.get(chatID).peerIgnored.get(pk)), JSON.stringify(keyPair.publicKey));
                         joinedChats.get(chatID).peerIgnored.delete(pk)
@@ -1027,9 +1029,9 @@ function receivedMessage(messageData) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+                sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 if (res == "ACCEPT") {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
                     closeConnections(JSON.stringify(messageData.from));
                 }
@@ -1149,7 +1151,7 @@ function sendAdvertisement(chatID, pk) {
     }
 }
 
-async function sendChatHistory(chatID, pk) {
+async function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         var peerHistory = [];
@@ -1173,7 +1175,7 @@ async function sendChatHistory(chatID, pk) {
     });
 }
 
-function initChatHistoryTable(chatID, msgID) {
+function initChatHistoryTable (chatID, msgID) {
     console.log(`initialised chat history`);
     store.getItem(chatID).then((chatInfo) => {
         for (const pk of joinedChats.get(chatID).members) {
@@ -1186,9 +1188,29 @@ function initChatHistoryTable(chatID, msgID) {
     });
 }
 
+function startChatHistory (chatID, pk, msgID) {
+    store.getItem(chatID).then((chatInfo) => {
+        if (chatInfo.historyTable.has(pk)) {
+            chatInfo.historyTable.set(pk, [msgID, 0]);
+            store.setItem(chatID, chatInfo);
+        }
+    });
+}
+
+function endChatHistory (chatID, pk, msgID) {
+    store.getItem(chatID).then((chatInfo) => {
+        if (chatInfo.historyTable.has(pk)) {
+            const interval = chatInfo.historyTable.get(pk).pop();
+            interval[1] = messageData.id;
+            chatInfo.historyTable.get(pk).push(interval);
+            store.setItem(chatID, chatInfo);
+        }
+    });
+}
+
 var resolveConnectToPeer = new Map();
 
-function connectToPeer(peer) {
+function connectToPeer (peer) {
     // peer: JSON {peerName: String, peerPK: Uint8Array}
     return new Promise((resolve) => {
         if (peer.peerName === localUsername) { resolve(false); return; }
@@ -1717,12 +1739,6 @@ function findCycle (fromOp, visited, stack, cycle) {
 function hasCycles (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const fromOp = new Map();
-
-    ops.forEach((op) => {
-        if (op.action !== "create") {
-            console.log(`${op.action} ${op.pk2} ${op.deps.length}`);
-        }
-    });
 
     for (const edge of edges) {
         if (!fromOp.has(JSON.stringify(edge[0].sig))) {
