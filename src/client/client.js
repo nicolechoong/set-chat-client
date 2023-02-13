@@ -1064,13 +1064,25 @@ function receivedMessage(messageData) {
             break;
         case "remove":
             unpackOp(messageData.op);
-            if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                onRemove(messageData.chatID, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
-            } else {
-                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res === "ACCEPT") { removePeer(messageData); }
-                });
-            }
+            receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                if (res === "ACCEPT") { 
+                    if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
+                        onRemove(messageData.chatID, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
+                    } else {
+                        removePeer(messageData); 
+                    }
+                } else {
+                    console.log(`remove reject`);
+                }
+            });
+
+            // if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
+            //     onRemove(messageData.chatID, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
+            // } else {
+            //     receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+            //         if (res === "ACCEPT") { removePeer(messageData); }
+            //     });
+            // }
             break;
         case "add":
             unpackOp(messageData.op);
