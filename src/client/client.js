@@ -467,9 +467,11 @@ async function removeFromChat(validMemberPubKeys, chatID) {
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         // TODO: FIX THE SLICE!!!!!!!!!!!!
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, -1)}`);
-        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, -1));
+        const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end-1)}`);
+        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end-1));
         chatInfo.metadata.operations.push(op);
+        chatInfo.metadata.ignored.add(chatInfo.metadata.operations.get(end));
         await store.setItem(chatID, chatInfo);
 
         const removeMessage = {
@@ -729,8 +731,14 @@ async function receivedOperations (ops, chatID, pk) {
                 const graphInfo = hasCycles(ops, authorityGraph);
                 if (graphInfo.cycle) {
                     if (unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
-                        for (const cycle of graphInfo.concurrent) {
-                            const ignoredOp = await getIgnored(cycle);
+                        for (const cycle of graphInfo.concurrent) { // each of unresolved
+                            const removeSelfIndex = cycle.find((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+                            var ignoredOp;
+                            if (removeSelfIndex > -1) {
+                                ignoredOp = cycle.at(removeSelfIndex);
+                            } else {
+                                ignoredOp = await getIgnored(cycle);
+                            }
                             chatInfo.metadata.ignored.push(ignoredOp);
                             removeOp(ops, ignoredOp);
                             console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
