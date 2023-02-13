@@ -419,7 +419,9 @@ function onRemove (chatID, from, fromPK) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
+            console.log(`did it splice ${joinedChats.get(chatID).length}`);
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+            console.log(`did it splice ${joinedChats.get(chatID).length}`);
         }
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
@@ -474,6 +476,7 @@ async function disputeRemoval(peer, chatID) {
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
         await store.setItem(chatID, chatInfo);
 
+        console.log(`is this null ${peer.peerPK}`);
         joinedChats.get(chatID).exMembers.push(peer.peerPK);
         joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(JSON.stringify(peer.peerPK)), 1);
         await store.setItem("joinedChats", joinedChats);
@@ -736,6 +739,7 @@ async function receivedOperations (ops, chatID, pk) {
                     if (unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         for (const cycle of graphInfo.concurrent) { // each of unresolved
                             const removeSelfIndex = cycle.find((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+                            console.log(`removeSelfIndex ${removeSelfIndex}`);
                             var ignoredOp;
                             if (removeSelfIndex > -1) {
                                 ignoredOp = cycle.at(removeSelfIndex);
