@@ -470,6 +470,7 @@ async function removeFromChat(validMemberPubKeys, chatID) {
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+        console.log(chatInfo.metadata.operations.map(op => op.action));
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
