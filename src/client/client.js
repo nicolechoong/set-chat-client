@@ -383,19 +383,19 @@ async function addToChat(validMemberPubKeys, chatID) {
             const op = await generateOp("add", chatID, pk, chatInfo.metadata.operations);
             chatInfo.metadata.operations.push(op);
 
-            const addMessage = {
+            const addMessage = addMsgID({
                 type: "add",
                 op: op,
                 from: keyPair.publicKey,
                 username: name,
                 chatID: chatID,
                 chatName: chatInfo.metadata.chatName
-            };
+            });
 
             joinedChats.get(chatID).members.push(JSON.stringify(pk));
             await store.setItem("joinedChats", joinedChats);
             await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
-            const msgID = broadcastToMembers(addMessage, chatID);
+            broadcastToMembers(addMessage, chatID);
             sendToServer({
                 to: pk,
                 type: "add",
@@ -403,7 +403,7 @@ async function addToChat(validMemberPubKeys, chatID) {
                 fromPK: keyPair.publicKey,
                 chatID: chatID,
                 chatName: chatInfo.metadata.chatName,
-                msgID: msgID,
+                msgID: addMessage.id,
             });
             console.log(`added ${name}`);
         }
@@ -419,9 +419,9 @@ function onRemove (chatID, from, fromPK) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-            console.log(`did it splice ${joinedChats.get(chatID).members.size}`);
+            console.log(`did it splice ${joinedChats.get(chatID).members.length}`);
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-            console.log(`did it splice ${joinedChats.get(chatID).members.size}`);
+            console.log(`did it splice ${joinedChats.get(chatID).members.length}`);
         }
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
@@ -447,13 +447,13 @@ async function removeFromChat(validMemberPubKeys, chatID) {
             chatInfo.metadata.operations.push(op);
             await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
 
-            const removeMessage = {
+            const removeMessage = addMsgID({
                 type: "remove",
                 op: op,
                 username: name,
                 from: keyPair.publicKey,
                 chatID: chatID
-            };
+            });
             broadcastToMembers(removeMessage, chatID);
             sendToServer({
                 to: pk,
@@ -477,14 +477,25 @@ async function disputeRemoval(peer, chatID) {
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
         await store.setItem(chatID, chatInfo);
 
-        const removeMessage = {
+        const removeMessage = addMsgID({
             type: "remove",
             op: op,
             username: peer.peerName,
             from: keyPair.publicKey,
             chatID: chatID
-        };
-        sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
+        });
+        
+        if (chatInfo.historyTable.has(pk)) {
+            const interval = chatInfo.historyTable.get(pk).pop();
+            interval[1] = removeMessage.id;
+            chatInfo.historyTable.get(pk).push(interval);
+        }
+        chatInfo.history.push(removeMessage);
+        await store.setItem(chatID, chatInfo);
+    
+        updateHeading();
+        updateChatWindow(removeMessage);
+
         sendToServer({
             to: peer.peerPK,
             type: "remove",
@@ -676,12 +687,12 @@ async function sendOperations(chatID, pk) {
 async function sendIgnored(ignored, chatID) {
     // chatID : String, pk : String
     console.log(`broadcasting ignored`);
-    broadcastToMembers({
+    broadcastToMembers(addMsgID({
         type: "ignored",
         ignored: ignored,
         chatID: chatID,
         from: keyPair.publicKey,
-    }, chatID);
+    }), chatID);
 }
 
 async function receivedIgnored (ignored, chatID, pk) {
@@ -750,7 +761,7 @@ async function receivedOperations (ops, chatID, pk) {
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID);
                     if (joinedChats.get(chatID).peerIgnored.has(pk)) {
-                        sendToMember(joinedChats.get(chatID).peerIgnored.get(pk), JSON.stringify(keyPair.publicKey));
+                        sendToMember(addMsgID(joinedChats.get(chatID).peerIgnored.get(pk)), JSON.stringify(keyPair.publicKey));
                         joinedChats.get(chatID).peerIgnored.delete(pk)
                     }
                     await store.setItem("joinedChats", joinedChats);
@@ -1130,10 +1141,10 @@ function sendAdvertisement(chatID, pk) {
 
     if (online.length > 0) {
         console.log(`sending an advertistment to ${pk} of ${JSON.stringify(online)}`)
-        sendToMember({
+        sendToMember(addMsgID({
             type: "advertisement",
             online: online
-        }, pk);
+        }), pk);
     }
 }
 
@@ -1153,11 +1164,11 @@ async function sendChatHistory(chatID, pk) {
             }
         }
 
-        sendToMember({
+        sendToMember(addMsgID({
             type: "history",
             history: peerHistory,
             chatID: chatID
-        }, pk);
+        }), pk);
     });
 }
 
@@ -1285,10 +1296,6 @@ async function updateChatStore(messageData) {
 
 function sendToMember(data, pk) {
     // data: JSON, pk: String
-    if (data.id === undefined) {
-        data.sentTime = Date.now();
-        data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
-    }
     if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     if (connections.has(pk)) {
@@ -1297,9 +1304,13 @@ function sendToMember(data, pk) {
     return;
 }
 
-function broadcastToMembers(data, chatID = null) {
+function addMsgID (data) {
     data.sentTime = Date.now();
     data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
+    return data;
+}
+
+function broadcastToMembers (data, chatID = null) {
     chatID = chatID === null ? currentChatID : chatID;
     console.log(`username broadcast ${joinedChats.get(chatID).members}`);
     for (const pk of joinedChats.get(chatID).members) {
@@ -1309,16 +1320,15 @@ function broadcastToMembers(data, chatID = null) {
             continue;
         }
     }
-    return data.id;
 }
 
-function sendChatMessage(messageInput) {
-    const data = {
+function sendChatMessage (messageInput) {
+    const data = addMsgID({
         type: "text",
         from: keyPair.publicKey,
         message: messageInput,
         chatID: currentChatID
-    };
+    });
 
     broadcastToMembers(data);
 }
