@@ -424,7 +424,7 @@ function onRemove (chatID, from, fromPK) {
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
         }
-        console.log(`you've been removed from chat ${chatInfo.chatName} by ${fromPK}`);
+        console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
         store.setItem("joinedChats", joinedChats);
 
         for (const pk of chatInfo.members) {
@@ -493,8 +493,6 @@ async function disputeRemoval(peer, chatID) {
             chatID: chatID,
             chatName: chatInfo.metadata.chatName,
         });
-
-        console.log(`these are the mems ${joinedChats.get(chatID).members}`);
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
@@ -730,6 +728,7 @@ async function receivedOperations (ops, chatID, pk) {
                 await store.setItem(chatID, chatInfo);
 
                 const graphInfo = hasCycles(ops, authorityGraph);
+                console.log(graphInfo.cycle);
                 if (graphInfo.cycle) {
                     if (unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         for (const cycle of graphInfo.concurrent) { // each of unresolved
@@ -1716,6 +1715,10 @@ function findCycle (fromOp, visited, stack, cycle) {
 function hasCycles (ops, edges) {
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const fromOp = new Map();
+
+    ops.forEach((op) => {
+        console.log(`${op.action} ${op.pk2} ${op.deps.length}`);
+    });
 
     for (const edge of edges) {
         if (!fromOp.has(JSON.stringify(edge[0].sig))) {
