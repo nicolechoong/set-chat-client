@@ -419,9 +419,9 @@ function onRemove (chatID, from, fromPK) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-            console.log(`did it splice ${joinedChats.get(chatID).size}`);
+            console.log(`did it splice ${joinedChats.get(chatID).members.size}`);
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
-            console.log(`did it splice ${joinedChats.get(chatID).size}`);
+            console.log(`did it splice ${joinedChats.get(chatID).members.size}`);
         }
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
@@ -955,6 +955,7 @@ function initPeerConnection() {
         const connection = new RTCPeerConnection(configuration);
         connection.ondatachannel = receiveChannelCallback;
         connection.onclose = function (event) {
+            console.log(`received onclose`);
             closeConnections(connectionNames.get(connection));
         };
         connection.onicecandidate = function (event) {
@@ -1182,7 +1183,6 @@ function connectToPeer(peer) {
         if (connections.has(JSON.stringify(peer.peerPK))) { resolve(true); return; }
 
         resolveConnectToPeer.set(JSON.stringify(peer.peerPK), resolve);
-        console.log(`adding peer ${peer.peerName} to the keyMap ${JSON.stringify(peer.peerPK)}`)
         keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
         store.setItem("keyMap", keyMap);
         sendOffer(peer.peerName, peer.peerPK);
@@ -1218,7 +1218,7 @@ async function addPeer(messageData) {
     }).then(() => console.log(`added message data to chat history`));
 }
 
-async function removePeer(messageData) {
+async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
 
     await store.getItem(messageData.chatID).then((chatInfo) => {
@@ -1247,6 +1247,7 @@ async function removePeer(messageData) {
             return;
         }
     }
+    console.log(`closing from removePerr ${keyMap.get(pk)}`);
     closeConnections(pk);
 }
 
@@ -1655,7 +1656,7 @@ function mergeChatHistory(localMsg, receivedMsg) {
     });
 }
 
-function closeConnections(pk) {
+function closeConnections (pk) {
     console.log(`connection with ${keyMap.get(pk)} closed`);
     if (connections.has(pk)) {
         connectionNames.delete(connections.get(pk).connection);
