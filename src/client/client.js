@@ -738,7 +738,7 @@ async function receivedOperations (ops, chatID, pk) {
                 if (graphInfo.cycle) {
                     if (unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         for (const cycle of graphInfo.concurrent) { // each of unresolved
-                            const removeSelfIndex = cycle.find((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+                            const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
                             console.log(`removeSelfIndex ${removeSelfIndex}`);
                             var ignoredOp;
                             if (removeSelfIndex > -1) {
