@@ -475,7 +475,7 @@ async function disputeRemoval(peer, chatID) {
         await store.setItem(chatID, chatInfo);
 
         joinedChats.get(chatID).exMembers.push(peer.peerPK);
-        joinedChats.get(chatID).members.remove(JSON.stringify(peer.peerPK));
+        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(JSON.stringify(peer.peerPK)), 1);
         await store.setItem("joinedChats", joinedChats);
 
         const removeMessage = {
@@ -756,7 +756,6 @@ async function receivedOperations (ops, chatID, pk) {
                     await store.setItem("joinedChats", joinedChats);
                 }
                 const pkInMembers = await checkMembers(await members(ops, chatInfo.metadata.ignored), chatID, pk);
-                console.log(pkInMembers);
                 updateHeading();
 
                 if (graphInfo.cycle) {
@@ -1670,6 +1669,7 @@ function closeConnections(pk) {
         }
         connections.delete(pk);
     }
+    console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
 }
 
 function unresolvedCycles (cycles, ignored) {
