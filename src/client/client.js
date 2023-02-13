@@ -471,7 +471,7 @@ async function disputeRemoval(peer, chatID) {
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end-1)}`);
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end-1));
         chatInfo.metadata.operations.push(op);
-        chatInfo.metadata.ignored.add(chatInfo.metadata.operations.get(end));
+        chatInfo.metadata.ignored.add(chatInfo.metadata.operations.at(end));
         await store.setItem(chatID, chatInfo);
 
         const removeMessage = {
