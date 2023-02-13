@@ -475,7 +475,6 @@ async function disputeRemoval(peer, chatID) {
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end-1));
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
-        await store.setItem(chatID, chatInfo);
 
         const removeMessage = addMsgID({
             type: "remove",
@@ -485,6 +484,7 @@ async function disputeRemoval(peer, chatID) {
             chatID: chatID
         });
         
+        const pk = JSON.stringify(peer.peerPK);
         if (chatInfo.historyTable.has(pk)) {
             const interval = chatInfo.historyTable.get(pk).pop();
             interval[1] = removeMessage.id;
