@@ -290,7 +290,7 @@ function onJoin(usernames) {
 
 function onLeave(peerPK) {
     // peerPK : string
-    closeConnections(peerPK);
+    closeConnections(peerPK, 0);
 }
 
 async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers) {
@@ -413,12 +413,13 @@ async function addToChat(validMemberPubKeys, chatID) {
     });
 }
 
+// TODO: ensure that our member paths are being updated everywhere correctly
 function onRemove (chatID, from, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
     if (chatInfo.currentMember && chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
         chatInfo.currentMember = false;
-        if (chatInfo.toDispute === null && chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
+        if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
@@ -431,7 +432,7 @@ function onRemove (chatID, from, fromPK) {
         store.setItem("joinedChats", joinedChats);
 
         for (const pk of chatInfo.members) {
-            closeConnections(pk);
+            closeConnections(pk, chatID);
         }
         updateHeading();
     }
@@ -798,7 +799,7 @@ async function checkMembers (memberSet, chatID, pk) {
             joinedChats.get(chatID).currentMember = false;
         }
 
-        joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers).filter(pk => { return !memberSet.has(pk) });
+        joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers).filter(pk => !memberSet.has(pk) && !joinedChats.get(chatID).exMembers.includes(pk));
         joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.includes(pk));
         joinedChats.get(chatID).validMembers = [...memberSet];
         await store.setItem("joinedChats", joinedChats);
@@ -972,7 +973,7 @@ function initPeerConnection() {
         connection.ondatachannel = receiveChannelCallback;
         connection.onclose = function (event) {
             console.log(`received onclose`);
-            closeConnections(connectionNames.get(connection));
+            closeConnections(connectionNames.get(connection), 0);
         };
         connection.onicecandidate = function (event) {
             console.log("New candidate");
@@ -1047,7 +1048,7 @@ function receivedMessage(messageData) {
                 if (res == "ACCEPT") {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
-                    closeConnections(JSON.stringify(messageData.from));
+                    closeConnections(JSON.stringify(messageData.from), messageData.chatID);
                 }
             });
             break;
@@ -1058,7 +1059,7 @@ function receivedMessage(messageData) {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
-                    closeConnections(JSON.stringify(messageData.from));
+                    closeConnections(JSON.stringify(messageData.from), messageData.chatID);
                 }
             });
             break;
@@ -1290,14 +1291,8 @@ async function removePeer (messageData) {
     updateHeading();
     updateChatWindow(messageData);
 
-    if (messageData.dispute) { return; }
-    for (const id of joinedChats.keys()) {
-        if (messageData.chatID !== id && joinedChats.get(id).members.includes(pk)) {
-            return;
-        }
-    }
     console.log(`closing from removePeer ${keyMap.get(pk)}`);
-    closeConnections(pk);
+    closeConnections(pk, messageData.chatID);
 }
 
 async function updateChatWindow(data) {
@@ -1705,8 +1700,13 @@ function mergeChatHistory(localMsg, receivedMsg) {
     });
 }
 
-function closeConnections (pk) {
+function closeConnections (pk, chatID) {
     console.log(`connection with ${keyMap.get(pk)} closed`);
+    for (const id of joinedChats.keys()) {
+        if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
+            return;
+        }
+    }
     if (connections.has(pk)) {
         connectionNames.delete(connections.get(pk).connection);
         if (connections.get(pk).sendChannel) {
