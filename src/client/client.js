@@ -427,10 +427,11 @@ async function onRemove (chatID, fromPK) {
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
             console.log(`pushed self to exMembers`);
+            console.log(joinedChats.get(chatID).map((pk) => keyMap.get(pk)));
         }
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
-        store.setItem("joinedChats", joinedChats);
+        await store.setItem("joinedChats", joinedChats);
 
         for (const pk of chatInfo.members) {
             closeConnections(pk, chatID);
@@ -472,7 +473,6 @@ async function removeFromChat (validMemberPubKeys, chatID) {
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-        console.log(chatInfo.metadata.operations.map(op => op.action));
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
         const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
@@ -1036,7 +1036,7 @@ function initChannel(channel) {
 }
 
 function receivedMessage(messageData) {
-    console.log(`received a message from the channel of type ${messageData.type}`);
+    console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
     switch (messageData.type) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
