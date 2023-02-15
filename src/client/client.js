@@ -788,6 +788,7 @@ async function updateMembers (memberSet, chatID) {
 
     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
         updateChatOptions("add", chatID);
+        joinedChats.get(chatID).currentMember = true;
     }
 
     joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers).filter(pk => !memberSet.has(pk) && !joinedChats.get(chatID).exMembers.includes(pk));
