@@ -756,12 +756,12 @@ async function receivedOperations (ops, chatID, pk) {
                         }
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
-                    for (const pkIg of joinedChats.get(chatID).peerIgnored) {
-                        console.log(`resolving ignored from ${pkIg} ${joinedChats.get(chatID).peerIgnored.get(pkIg)}`);
-                        receivedIgnored(joinedChats.get(chatID).peerIgnored.get(pkIg), chatID, pkIg);
-                        joinedChats.get(chatID).peerIgnored.delete(pkIg);
+                    for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
+                        console.log(`resolving ignored from ${keyMap.get(peerPK)}`);
+                        receivedIgnored(queuedIg, chatID, queuedPk);
+                        joinedChats.get(chatID).peerIgnored.delete(queuedPk);
+                        await store.setItem("joinedChats", joinedChats);
                     }
-                    await store.setItem("joinedChats", joinedChats);
                 }
                 const memberSet = await members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
                 if (memberSet.has(pk)) {
