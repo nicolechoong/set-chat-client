@@ -687,7 +687,7 @@ async function sendIgnored (ignored, chatID, pk) {
 }
 
 async function receivedIgnored (ignored, chatID, pk) {
-    // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
+    // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
     await store.getItem(chatID).then(async (chatInfo) => {
         return new Promise(async (resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
@@ -760,9 +760,9 @@ async function receivedOperations (ops, chatID, pk) {
                         }
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
-                    if (joinedChats.get(chatID).peerIgnored.has(pk)) {
-                        sendToMember(addMsgID(joinedChats.get(chatID).peerIgnored.get(pk)), JSON.stringify(keyPair.publicKey));
-                        joinedChats.get(chatID).peerIgnored.delete(pk);
+                    for (toResolve of joinedChats.get(chatID).peerIgnored) {
+                        receivedIgnored(joinedChats.get(chatID).peerIgnored.get(toResolve), chatID, toResolve);
+                        joinedChats.get(chatID).peerIgnored.delete(toResolve);
                     }
                     await store.setItem("joinedChats", joinedChats);
                 }
