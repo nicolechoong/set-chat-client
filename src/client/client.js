@@ -1090,6 +1090,7 @@ function receivedMessage(messageData) {
                     console.log(`remove reject`);
                 }
             });
+            break;
         case "add":
             unpackOp(messageData.op);
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
