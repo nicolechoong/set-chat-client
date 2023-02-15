@@ -428,7 +428,7 @@ async function onRemove (chatID, fromPK) {
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
             console.log(`pushed self to exMembers`);
-            console.log(joinedChats.get(chatID).map((pk) => keyMap.get(pk)));
+            console.log(joinedChats.get(chatID).exMembers.map((pk) => keyMap.get(pk)));
         }
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
@@ -494,6 +494,7 @@ async function disputeRemoval(peer, chatID) {
             type: "remove",
             msg: removeMessage
         });
+        
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
