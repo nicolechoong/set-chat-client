@@ -131,7 +131,7 @@ connection.onmessage = function (message) {
             onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK), data.msgID);
             break;
         case "remove":
-            onRemove(data.messageData.chatID, objToArr(messageData.from));
+            onRemove(data.chatID, objToArr(data.from));
             break;
         case "getUsername":
             onGetUsername(data.username, data.success, data.pk);
