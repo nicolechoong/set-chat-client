@@ -410,15 +410,16 @@ async function addToChat (validMemberPubKeys, chatID) {
     });
 }
 
-// TODO: ensure that our member paths are being updated everywhere correctly
+
 async function onRemove (chatID, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
     console.log(chatInfo.validMembers.map((pk) => keyMap.get(pk)));
-    if (chatInfo.currentMember && chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
+    if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
         const from = await getUsername(JSON.stringify(fromPK));
         chatInfo.currentMember = false;
         if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
+            console.log(`disputable`);
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
@@ -497,8 +498,7 @@ async function disputeRemoval(peer, chatID) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
 
-        await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, JSON.stringify(keyPair.publicKey));
-        await store.setItem("joinedChats", joinedChats);
+        updateMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
     });
 }
 
@@ -708,8 +708,11 @@ async function receivedIgnored (ignored, chatID, pk) {
             }
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
-                const pkInMembers = await checkMembers(await members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID, pk);
-                return pkInMembers ? resolve("ACCEPT") : resolve("REJECT");
+                const memberSet = await members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
+                if (memberSet.has(pk)) {
+                    updateMembers(memberSet, chatID);
+                }
+                return memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 if (joinedChats.get(chatID).members.includes(pk)) {
@@ -745,10 +748,8 @@ async function receivedOperations (ops, chatID, pk) {
                     if (unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         for (const cycle of graphInfo.concurrent) { // each of unresolved
                             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-                            var ignoredOp;
-                            if (removeSelfIndex > -1) {
-                                ignoredOp = cycle.at(removeSelfIndex);
-                            } else {
+                            var ignoredOp = cycle.at(removeSelfIndex);
+                            if (removeSelfIndex == -1) {
                                 ignoredOp = await getIgnored(cycle);
                             }
                             chatInfo.metadata.ignored.push(ignoredOp);
@@ -760,17 +761,19 @@ async function receivedOperations (ops, chatID, pk) {
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     if (joinedChats.get(chatID).peerIgnored.has(pk)) {
                         sendToMember(addMsgID(joinedChats.get(chatID).peerIgnored.get(pk)), JSON.stringify(keyPair.publicKey));
-                        joinedChats.get(chatID).peerIgnored.delete(pk)
+                        joinedChats.get(chatID).peerIgnored.delete(pk);
                     }
                     await store.setItem("joinedChats", joinedChats);
                 }
-                const pkInMembers = await checkMembers(await members(ops, chatInfo.metadata.ignored), chatID, pk);
-                updateHeading();
+                const memberSet = await members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
+                if (memberSet.has(pk)) {
+                    updateMembers(memberSet, chatID);
+                }
 
                 if (graphInfo.cycle) {
                     return resolve("WAITING FOR PEER IGNORED");
                 } else {
-                    return pkInMembers ? resolve("ACCEPT") : resolve("REJECT");
+                    return memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
                 }
             }
             return resolve("REJECT");
@@ -778,32 +781,23 @@ async function receivedOperations (ops, chatID, pk) {
     });
 }
 
-async function checkMembers (memberSet, chatID, pk) {
-    return new Promise(async (resolve) => {
-        if (!memberSet.has(pk)) { return resolve(false); }
+async function updateMembers (memberSet, chatID) {
+    for (const mem of memberSet) { // populating keyMap
+        await getUsername(mem);
+    }
 
-        for (const mem of memberSet) { // populating keyMap
-            await getUsername(mem);
-        }
+    if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
+        updateChatOptions("add", chatID);
+    }
 
-        if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-            joinedChats.get(chatID).currentMember = true;
-            updateChatOptions("add", chatID);
-        } else {
-            joinedChats.get(chatID).currentMember = false;
-        }
-
-        joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers).filter(pk => !memberSet.has(pk) && !joinedChats.get(chatID).exMembers.includes(pk));
-        joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.includes(pk));
-        joinedChats.get(chatID).validMembers = [...memberSet];
-        await store.setItem("joinedChats", joinedChats);
-        updateHeading();
-        console.log(`verified true is member ${memberSet.has(pk)}`);
-        console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
-        console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
-        console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
-        return resolve(joinedChats.get(chatID).currentMember);
-    });
+    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers).filter(pk => !memberSet.has(pk) && !joinedChats.get(chatID).exMembers.includes(pk));
+    joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.includes(pk));
+    joinedChats.get(chatID).validMembers = [...memberSet];
+    await store.setItem("joinedChats", joinedChats);
+    updateHeading();
+    console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
+    console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
+    console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
 }
 
 // takes in set of ops
