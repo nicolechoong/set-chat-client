@@ -360,14 +360,14 @@ function onAdd (connection, data) {
   console.log(JSON.stringify(data));
   const toPK = JSON.stringify(data.to);
 
-  console.log(`adding member ${toPK} to chats store ${data.chatID} ${chats.has(data.chatID)} ${[...chats.keys()]}`);
-  chats.get(data.chatID).members.push(toPK);
+  console.log(`adding member ${toPK} to chats store ${data.msg.chatID} ${chats.has(data.msg.chatID)} ${[...chats.keys()]}`);
+  chats.get(data.msg.chatID).members.push(toPK);
 
-  console.log(`sending add message for chat ${data.chatID} to ${allUsers.get(toPK).username}`);
+  console.log(`sending add message for chat ${data.msg.chatID} to ${allUsers.get(toPK).username}`);
   if (connectedUsers.get(toPK) == null) {
-    sendTo(null, data, toPK);
+    sendTo(null, data.msg, toPK);
   } else {
-    sendTo(connectedUsers.get(toPK).connection, data);
+    sendTo(connectedUsers.get(toPK).connection, data.msg);
   }
 }
 

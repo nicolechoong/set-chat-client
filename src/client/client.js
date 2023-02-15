@@ -128,7 +128,7 @@ connection.onmessage = function (message) {
             onCreateChat(data.chatID, data.chatName, new Map(JSON.parse(data.validMemberPubKeys)), data.invalidMembers);
             break;
         case "add":
-            onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK), data.msgID);
+            onAdd(data.chatID, data.chatName, objToArr(data.from), data.id);
             break;
         case "remove":
             onRemove(data.chatID, objToArr(data.from));
@@ -335,11 +335,12 @@ async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers
 }
 
 // When being added to a new chat
-function onAdd(chatID, chatName, from, fromPK, msgID) {
+async function onAdd(chatID, chatName, fromPK, msgID) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
+    const from = await getUsername(JSON.stringify(fromPK));
 
     joinedChats.set(chatID, {
         chatName: chatName,
@@ -375,7 +376,7 @@ function onAdd(chatID, chatName, from, fromPK, msgID) {
     });
 }
 
-async function addToChat(validMemberPubKeys, chatID) {
+async function addToChat (validMemberPubKeys, chatID) {
     // members is the list of members pubkey: object
     store.getItem(chatID).then(async (chatInfo) => {
         var pk;
@@ -402,11 +403,7 @@ async function addToChat(validMemberPubKeys, chatID) {
             sendToServer({
                 to: pk,
                 type: "add",
-                from: localUsername,
-                fromPK: keyPair.publicKey,
-                chatID: chatID,
-                chatName: chatInfo.metadata.chatName,
-                msgID: addMessage.id,
+                msg: addMessage
             });
             console.log(`added ${name}`);
         }
@@ -419,7 +416,7 @@ async function onRemove (chatID, fromPK) {
     var chatInfo = joinedChats.get(chatID);
     console.log(chatInfo.validMembers.map((pk) => keyMap.get(pk)));
     if (chatInfo.currentMember && chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
-        const from = await getUsername(fromPK);
+        const from = await getUsername(JSON.stringify(fromPK));
         chatInfo.currentMember = false;
         if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
@@ -1096,7 +1093,7 @@ function receivedMessage(messageData) {
         case "add":
             unpackOp(messageData.op);
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                onAdd(messageData.chatID, messageData.chatName, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from), msgID);
+                onAdd(messageData.chatID, messageData.chatName, objToArr(messageData.from), messageData.msgID);
             } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res === "ACCEPT") { addPeer(messageData); }
