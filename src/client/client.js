@@ -131,7 +131,7 @@ connection.onmessage = function (message) {
             onAdd(data.chatID, data.chatName, data.from, objToArr(data.fromPK), data.msgID);
             break;
         case "remove":
-            onRemove(data.chatID, data.from, objToArr(data.fromPK));
+            onRemove(data.messageData.chatID, objToArr(messageData.from));
             break;
         case "getUsername":
             onGetUsername(data.username, data.success, data.pk);
@@ -414,10 +414,12 @@ async function addToChat(validMemberPubKeys, chatID) {
 }
 
 // TODO: ensure that our member paths are being updated everywhere correctly
-function onRemove (chatID, from, fromPK) {
+async function onRemove (chatID, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
+    console.log(chatInfo.validMembers.map((pk) => keyMap.get(pk)));
     if (chatInfo.currentMember && chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
+        const from = await getUsername(fromPK);
         chatInfo.currentMember = false;
         if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
@@ -427,7 +429,9 @@ function onRemove (chatID, from, fromPK) {
         }
         if (!chatInfo.exMembers.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.exMembers.push(JSON.stringify(keyPair.publicKey));
+            console.log(`pushed self to exMembers`);
         }
+        
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
         store.setItem("joinedChats", joinedChats);
 
@@ -438,7 +442,7 @@ function onRemove (chatID, from, fromPK) {
     }
 }
 
-async function removeFromChat(validMemberPubKeys, chatID) {
+async function removeFromChat (validMemberPubKeys, chatID) {
     // validMemberPubKeys : map of string username to object public key, chatID : string
     store.getItem(chatID).then(async (chatInfo) => {
         var pk;
@@ -461,10 +465,7 @@ async function removeFromChat(validMemberPubKeys, chatID) {
             sendToServer({
                 to: pk,
                 type: "remove",
-                from: localUsername,
-                fromPK: keyPair.publicKey,
-                chatID: chatID,
-                chatName: chatInfo.metadata.chatName
+                msg: removeMessage
             });
             console.log(`removed ${name}`);
         }
@@ -731,7 +732,6 @@ async function receivedIgnored (ignored, chatID, pk) {
     });
 }
 
-// TODO: make it so that we don't add the removal/remove the removal before generating ops
 async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
@@ -1085,7 +1085,7 @@ function receivedMessage(messageData) {
             receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                 if (res === "ACCEPT") { 
                     if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                        onRemove(messageData.chatID, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
+                        onRemove(messageData.chatID, objToArr(messageData.from));
                     } else {
                         removePeer(messageData); 
                     }
@@ -1093,15 +1093,6 @@ function receivedMessage(messageData) {
                     console.log(`remove reject`);
                 }
             });
-
-            // if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-            //     onRemove(messageData.chatID, keyMap.get(JSON.stringify(messageData.from)), objToArr(messageData.from));
-            // } else {
-            //     receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-            //         if (res === "ACCEPT") { removePeer(messageData); }
-            //     });
-            // }
-            break;
         case "add":
             unpackOp(messageData.op);
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
@@ -1248,7 +1239,9 @@ async function addPeer(messageData) {
 
     if (!joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.push(pk);
-        joinedChats.get(messageData.chatID).members.sort();
+    }
+    if (!joinedChats.get(messageData.chatID).validMembers.includes(pk)) {
+        joinedChats.get(messageData.chatID).validMembers.push(pk);
     }
     if (joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
         joinedChats.get(messageData.chatID).exMembers.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
@@ -1282,6 +1275,9 @@ async function removePeer (messageData) {
 
     if (joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+    }
+    if (joinedChats.get(messageData.chatID).validMembers.includes(pk)) {
+        joinedChats.get(messageData.chatID).validMembers.splice(joinedChats.get(messageData.chatID).validMembers.indexOf(pk), 1);
     }
     if (!joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
         joinedChats.get(messageData.chatID).exMembers.push(pk);
