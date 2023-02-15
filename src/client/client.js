@@ -432,6 +432,9 @@ async function onRemove (chatID, fromPK) {
         }
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
+        console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
+        console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
+        console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
         await store.setItem("joinedChats", joinedChats);
 
         for (const pk of chatInfo.members) {
@@ -757,7 +760,7 @@ async function receivedOperations (ops, chatID, pk) {
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
-                        console.log(`resolving ignored from ${keyMap.get(peerPK)}`);
+                        console.log(`resolving ignored from ${keyMap.get(queuedPk)}`);
                         receivedIgnored(queuedIg, chatID, queuedPk);
                         joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                         await store.setItem("joinedChats", joinedChats);
@@ -789,7 +792,7 @@ async function updateMembers (memberSet, chatID) {
         joinedChats.get(chatID).currentMember = true;
     }
 
-    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers).filter(pk => !memberSet.has(pk) && !joinedChats.get(chatID).exMembers.includes(pk));
+    joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk) && !joinedChats.get(chatID).exMembers.includes(pk)));
     joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.includes(pk));
     joinedChats.get(chatID).validMembers = [...memberSet];
     await store.setItem("joinedChats", joinedChats);
