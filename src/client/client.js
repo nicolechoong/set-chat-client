@@ -339,8 +339,8 @@ async function onAdd(chatID, chatName, fromPK, msgID) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
-    console.log(`you've been added to chat ${chatName} by ${from}`);
     const from = await getUsername(JSON.stringify(fromPK));
+    console.log(`you've been added to chat ${chatName} by ${from}`);
 
     joinedChats.set(chatID, {
         chatName: chatName,
