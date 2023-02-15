@@ -761,6 +761,7 @@ async function receivedOperations (ops, chatID, pk) {
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     for (const pkIg of joinedChats.get(chatID).peerIgnored) {
+                        console.log(`resolving ignored from ${keyMap.get(pkIg)} ${joinedChats.get(chatID).peerIgnored.get(pkIg)}`);
                         receivedIgnored(joinedChats.get(chatID).peerIgnored.get(pkIg), chatID, pkIg);
                         joinedChats.get(chatID).peerIgnored.delete(pkIg);
                     }
