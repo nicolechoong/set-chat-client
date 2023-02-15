@@ -760,9 +760,9 @@ async function receivedOperations (ops, chatID, pk) {
                         }
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
-                    for (toResolve of joinedChats.get(chatID).peerIgnored) {
-                        receivedIgnored(joinedChats.get(chatID).peerIgnored.get(toResolve), chatID, toResolve);
-                        joinedChats.get(chatID).peerIgnored.delete(toResolve);
+                    for (const pkIg of joinedChats.get(chatID).peerIgnored) {
+                        receivedIgnored(joinedChats.get(chatID).peerIgnored.get(pkIg), chatID, pkIg);
+                        joinedChats.get(chatID).peerIgnored.delete(pkIg);
                     }
                     await store.setItem("joinedChats", joinedChats);
                 }
