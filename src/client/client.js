@@ -1203,7 +1203,7 @@ function endChatHistory (chatID, pk, msgID) {
     store.getItem(chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
             const interval = chatInfo.historyTable.get(pk).pop();
-            interval[1] = messageData.id;
+            interval[1] = msgID;
             chatInfo.historyTable.get(pk).push(interval);
             store.setItem(chatID, chatInfo);
         }
@@ -1253,6 +1253,7 @@ async function addPeer(messageData) {
         chatInfo.historyTable.get(pk).push([messageData.id, 0]);
         chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
+        console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
     }).then(() => console.log(`added message data to chat history`));
 }
 
@@ -1266,8 +1267,9 @@ async function removePeer (messageData) {
             chatInfo.historyTable.get(pk).push(interval);
         }
         chatInfo.history.push(messageData);
+        console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
         store.setItem(messageData.chatID, chatInfo);
-    });
+    }).then(() => console.log(`added removal message data to chat history`));
 
     if (joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
@@ -1730,6 +1732,7 @@ function unresolvedCycles (cycles, ignored) {
 function findCycle (fromOp, visited, stack, cycle) {
     // assume start is create
     const cur = stack.at(-1);
+    console.log(JSON.stringify(cur));
     for (const next of fromOp.get(JSON.stringify(cur.sig))) {
         if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
             cycle.push([...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)))]);
