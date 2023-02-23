@@ -192,6 +192,8 @@ async function initialiseStore(username) {
     });
 }
 
+var offerSent = new Set()
+
 // Sending Offer to Peer
 function sendOffer(peerName, peerPK) {
     // peerName: String username, peerPK: Uint8Array
@@ -225,6 +227,7 @@ function sendOffer(peerName, peerPK) {
         }, function (error) {
             alert("An error has occurred.");
         });
+        offerSent.add(JSON.stringify(peerPK));
     }
 };
 
@@ -257,6 +260,7 @@ async function onOffer(offer, peerName, peerPK) {
 function onAnswer(answer, peerPK) {
     console.log(`onAnswer connections ${[...connections.keys()]}`);
     connections.get(JSON.stringify(peerPK)).connection.setRemoteDescription(answer);
+    offerSent.delete(JSON.stringify(peerPK));
 }
 
 // Receiving ICE Candidate from Server
@@ -1695,7 +1699,7 @@ function closeConnections (pk, chatID) {
             return;
         }
     }
-    if (connections.has(pk)) {
+    if (connections.has(pk) && !offerSent.has(pk)) {
         connectionNames.delete(connections.get(pk).connection);
         if (connections.get(pk).sendChannel) {
             connections.get(pk).sendChannel.close();
