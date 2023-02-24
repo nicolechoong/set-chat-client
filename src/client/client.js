@@ -792,7 +792,7 @@ async function updateMembers (memberSet, chatID) {
         joinedChats.get(chatID).exMembers.delete(JSON.stringify(keyPair.publicKey));
     }
 
-    joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk)).forEach(joinedChats.get(chatID).exMembers.add(pk));
+    joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk)).forEach(pk => joinedChats.get(chatID).exMembers.add(pk));
     joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.includes(pk));
     joinedChats.get(chatID).validMembers = [...memberSet];
     await store.setItem("joinedChats", joinedChats);
