@@ -794,6 +794,7 @@ async function updateMembers (memberSet, chatID) {
     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
         updateChatOptions("add", chatID);
         joinedChats.get(chatID).currentMember = true;
+        console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
         joinedChats.get(chatID).exMembers.splice(joinedChats.get(chatID).members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
     }
 
@@ -1732,7 +1733,7 @@ function unresolvedCycles (cycles, ignored) {
 function findCycle (fromOp, visited, stack, cycle) {
     // assume start is create
     const cur = stack.at(-1);
-    console.log(JSON.stringify(cur));
+    console.log(stack);
     for (const next of fromOp.get(JSON.stringify(cur.sig))) {
         if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
             cycle.push([...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)))]);
