@@ -1149,7 +1149,8 @@ function sendAdvertisement(chatID, pk) {
         console.log(`sending an advertistment to ${pk} of ${JSON.stringify(online)}`)
         sendToMember(addMsgID({
             type: "advertisement",
-            online: online
+            online: online,
+            from: keyPair.publicKey
         }), pk);
     }
 }
@@ -1173,7 +1174,8 @@ async function sendChatHistory (chatID, pk) {
         sendToMember(addMsgID({
             type: "history",
             history: peerHistory,
-            chatID: chatID
+            chatID: chatID,
+            from: keyPair.publicKey
         }), pk);
     });
 }
