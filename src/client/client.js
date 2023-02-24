@@ -795,7 +795,9 @@ async function updateMembers (memberSet, chatID) {
         updateChatOptions("add", chatID);
         joinedChats.get(chatID).currentMember = true;
         console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
-        joinedChats.get(chatID).exMembers.splice(joinedChats.get(chatID).exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+        if (joinedChats.get(chatID).exMembers.has(JSON.stringify(keyPair.publicKey))) {
+            joinedChats.get(chatID).exMembers.splice(joinedChats.get(chatID).exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+        }
     }
 
     joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk) && !joinedChats.get(chatID).exMembers.includes(pk)));
@@ -1749,6 +1751,7 @@ function findCycle (fromOp, visited, stack, cycle) {
 }
 
 function hasCycles (ops, edges) {
+    console.log(ops.map(op => op.action));
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const fromOp = new Map();
 
@@ -1762,7 +1765,6 @@ function hasCycles (ops, edges) {
     }
 
     const cycles = [];
-    console.log(JSON.stringify(start));
     findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [start], cycles);
     if (cycles.length === 0) {
         return { cycle: false };
