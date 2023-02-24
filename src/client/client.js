@@ -795,7 +795,7 @@ async function updateMembers (memberSet, chatID) {
         updateChatOptions("add", chatID);
         joinedChats.get(chatID).currentMember = true;
         console.log(`current exmembers ${joinedChats.get(chatID).exMembers.map(pk => keyMap.get(pk))}`);
-        joinedChats.get(chatID).exMembers.splice(joinedChats.get(chatID).members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+        joinedChats.get(chatID).exMembers.splice(joinedChats.get(chatID).exMembers.indexOf(JSON.stringify(keyPair.publicKey)), 1);
     }
 
     joinedChats.get(chatID).exMembers = joinedChats.get(chatID).exMembers.concat(joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk) && !joinedChats.get(chatID).exMembers.includes(pk)));
@@ -1241,7 +1241,7 @@ async function addPeer(messageData) {
         joinedChats.get(messageData.chatID).validMembers.push(pk);
     }
     if (joinedChats.get(messageData.chatID).exMembers.includes(pk)) {
-        joinedChats.get(messageData.chatID).exMembers.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+        joinedChats.get(messageData.chatID).exMembers.splice(joinedChats.get(messageData.chatID).exMembers.indexOf(pk), 1);
     }
     store.setItem("joinedChats", joinedChats);
 
@@ -1662,7 +1662,7 @@ function objToArr(obj) {
 function formatDate(now) {
     const date = new Date(now);
     const intl = new Intl.DateTimeFormat('en-UK').format(date);
-    return `${intl} ${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
+    return `${intl} ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
 }
 
 function mergeJoinedChats(localChats, receivedChats) {
@@ -1733,7 +1733,6 @@ function unresolvedCycles (cycles, ignored) {
 function findCycle (fromOp, visited, stack, cycle) {
     // assume start is create
     const cur = stack.at(-1);
-    console.log(stack);
     for (const next of fromOp.get(JSON.stringify(cur.sig))) {
         if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
             cycle.push([...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)))]);
@@ -1761,6 +1760,7 @@ function hasCycles (ops, edges) {
     }
 
     const cycles = [];
+    console.log(JSON.stringify(start));
     findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [start], cycles);
     if (cycles.length === 0) {
         return { cycle: false };
