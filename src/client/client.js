@@ -1,5 +1,5 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
-import * as access from "accessControl.js";
+import * as access from "./accessControl.js";
 
 var loginBtn = document.getElementById('loginBtn');
 var sendMessageBtn = document.getElementById('sendMessageBtn');
