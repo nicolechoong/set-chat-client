@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Testing</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <script type="module">
+            const logger = document.getElementById('log');
+
+            function toString(message){
+                if (typeof message == 'object' && JSON && JSON.stringify) {
+                    return JSON.stringify(message, undefined, 2);
+                } else {
+                    return message;
+                }
+            }
+
+            function toErrorString(message){
+                if (typeof message == 'object' && JSON && JSON.stringify ) {
+                    return JSON.stringify(message, ["message", "arguments", "type", "name"], 2);
+                } else {
+                    return message;
+                }
+            }
+
+            function printToPage(type, message, style){
+                let row = style != undefined ? '<div style="'+style+';">':'<div>';
+                row += type == undefined ? "" : type+ ": ";
+                row += toString(message)
+                logger.innerHTML += row+'</div>';
+            }
+
+            function wrapConsolePrint(oldPrinter, type, style) {
+                return function(message){
+                    oldPrinter(message)
+                    printToPage(type, message, style);
+                }   
+            }
+
+            function noPath(file){
+                const fileParts = file.split('.');
+                const validCharacters = "^[a-zA-Z\-]+$";
+                return fileParts.length == 2 && fileParts[0].match(validCharacters) && fileParts[1].match(validCharacters)
+            }
+
+            async function run(){
+                const queryString = window.location.search;
+                const urlParams = new URLSearchParams(queryString)
+                if (!urlParams.has('file')){
+                    console.warn("No files to run");
+                }
+                console.log("Start");
+                for (const file of urlParams.get('file').split(',')) {
+                    if (!noPath(file)){
+                        console.warn(file+' is not a valid file.');
+                        continue ;
+                    }
+                    console.log('Run file '+file);
+
+                    // Warning: Do not use await on initialization in sub modules.
+                    // Causes problem on iOS browsers and perhaps more. 
+                    await import('./'+file)
+                }
+            }
+
+            console.log = wrapConsolePrint(console.log);
+            console.debug = wrapConsolePrint(console.debug, "Debug", "color:MediumSeaGreen");
+            console.warn = wrapConsolePrint(console.warn, "Warning", "color:Orange");
+            console.error = wrapConsolePrint(console.error, "Error", "color:Tomato");
+            console.trace = wrapConsolePrint(console.trace, "Trace", "color:Tomato");
+            console.assert = wrapConsolePrint(console.assert, "Assert", "color:Tomato");
+            
+            window.onerror = function(message, source, lineno) {
+                printToPage("Browser error",
+                    "File: "+source+" Line: "+lineno+"\nMessage: "+message,
+                    "color:Tomato");
+            };
+            window.addEventListener("unhandledrejection", function(reason, promise) { 
+                printToPage("Unhandled rejection",
+                    "More info in console\n"+toErrorString(reason),
+                    "color:Tomato");                
+            });
+
+            window.onload = run();
+
+        </script>
+    </head>
+    <body>
+        <p>Run JS files</p>
+        <hr>
+        <pre id='log'></pre>
+    </body>
+</html>

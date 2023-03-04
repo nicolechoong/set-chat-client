@@ -1,5 +1,5 @@
 import { arrEqual } from "./utils.js";
-import * as nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 
 export const enc = new TextEncoder();
 var hashedOps = new Map();
@@ -97,7 +97,7 @@ export async function generateOp (action, keyPair, pk2 = null, ops = []) {
             op = {
                 action: 'create',
                 pk: keyPair.publicKey,
-                nonce: randomBytes(64),
+                nonce: nacl.randomBytes(64),
             };
         } else if (action === "add" || action === "remove") {
             op = {
