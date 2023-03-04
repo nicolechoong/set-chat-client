@@ -6,7 +6,6 @@
   "directories": {
     "test": "test"
   },
-  "type": "module",
   "scripts": {
     "test": "jest --silent"
   },
