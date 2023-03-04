@@ -29,6 +29,10 @@ app.get('/src/client/fonts/SpaceGrotesk-Regular.ttf', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'fonts', 'SpaceGrotesk-Regular.ttf'));
 });
 
+app.get('/node_modules/tweetnacl/nacl-fast.js', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', '..', 'node_modules', 'tweetnacl', 'nacl-fast.js'));
+});
+
 const server = https.createServer({ key, cert }, app);
 
 const port = 3000;
