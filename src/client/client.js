@@ -1,4 +1,5 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
+import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 console.log(nacl);
 import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
