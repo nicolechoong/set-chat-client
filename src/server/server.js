@@ -25,6 +25,10 @@ app.get('/src/client/utils.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'utils.js'));
 });
 
+app.get('/src/client/chatroom.css', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'chatroom.css'));
+});
+
 app.get('/src/client/fonts/SpaceGrotesk-Regular.ttf', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'fonts', 'SpaceGrotesk-Regular.ttf'));
 });
