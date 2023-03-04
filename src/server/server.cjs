@@ -33,9 +33,9 @@ app.get('/src/client/fonts/SpaceGrotesk-Regular.woff', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'fonts', 'SpaceGrotesk-Regular.woff'));
 });
 
-app.get('/node_modules/tweetnacl/nacl-fast.js', (req, res, next) => {
+app.get('/node_modules/tweetnacl-es6/nacl-fast-es.js', (req, res, next) => {
   console.log(`imported nacl-fast`);
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'node_modules', 'tweetnacl', 'nacl-fast.js'));
+  res.status(200).sendFile(path.join(__dirname, '..', '..', 'node_modules', 'tweetnacl-es6', 'nacl-fast-es.js'));
 });
 
 const server = https.createServer({ key, cert }, app);
