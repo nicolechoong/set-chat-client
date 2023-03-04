@@ -1,5 +1,4 @@
 import { arrEqual } from "./utils.js";
-import * as nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 console.log(nacl);
 
 export const enc = new TextEncoder();
