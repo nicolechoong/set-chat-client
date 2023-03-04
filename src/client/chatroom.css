@@ -1,11 +1,10 @@
 @font-face {
     font-family: spaceGrotesk;
-    src: url(https://35.178.80.94:3000/client/fonts/SpaceGrotesk-Regular.woff);
+    src: url(https://35.178.80.94:3000/src/client/fonts/SpaceGrotesk-Regular.woff);
     font-weight: regular;
   }
 
 body {
-    margin: 0;
     font-family: spaceGrotesk;
 }
 
