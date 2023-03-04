@@ -1194,6 +1194,8 @@ loginBtn.addEventListener("click", async function (event) {
                 store.setItem("msgQueue", msgQueue);
             } else {
                 console.log(`keypair ${JSON.stringify(kp)}`);
+                const test = nacl.randomBytes(64);
+                console.log(test);
                 keyPair = kp;
             }
 
