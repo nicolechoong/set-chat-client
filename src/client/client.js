@@ -1,5 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 import * as access from "./accessControl.js";
+import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
 
 var loginBtn = document.getElementById('loginBtn');
 var sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -16,7 +17,6 @@ var ignoredInput = document.getElementById('ignoredInput');
 var messageInput = document.getElementById('messageInput');
 var modifyUserInput = document.getElementById('modifyUserInput');
 
-var connectedUser, localConnection, sendChannel;
 var localUsername;
 
 // TODO: massive fucking techdebt of modularising
@@ -26,7 +26,7 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var enc = new TextEncoder();
+const enc = new TextEncoder();
 
 // private keypair for the client
 var keyPair;
@@ -72,9 +72,6 @@ var keyMap = new Map();
 
 // map from public key : stringify(pk) to array of JSON object representing the message data
 var msgQueue = new Map();
-
-// caching deps
-var hashedOps = new Map();
 
 
 /////////////////////////
@@ -320,7 +317,7 @@ async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers
         alert(`The following users do not exist ${invalidMembers}`);
     }
 
-    const createOp = await generateOp("create", chatID);
+    const createOp = await access.generateOp("create", keyPair);
     const operations = [createOp];
 
     store.setItem(chatID, {
@@ -388,7 +385,7 @@ async function addToChat (validMemberPubKeys, chatID) {
         for (const name of validMemberPubKeys.keys()) {
             pk = objToArr(validMemberPubKeys.get(name));
             console.log(`we are now adding ${name} who has pk ${pk} and the ops are ${chatInfo.metadata.operations}`);
-            const op = await generateOp("add", chatID, pk, chatInfo.metadata.operations);
+            const op = await access.generateOp("add", keyPair, pk, chatInfo.metadata.operations);
             chatInfo.metadata.operations.push(op);
 
             const addMessage = addMsgID({
@@ -452,7 +449,7 @@ async function removeFromChat (validMemberPubKeys, chatID) {
         for (const name of validMemberPubKeys.keys()) {
             pk = objToArr(validMemberPubKeys.get(name));
             console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations.map(op => op.action)}`);
-            const op = await generateOp("remove", chatID, pk, chatInfo.metadata.operations);
+            const op = await access.generateOp("remove", keyPair, pk, chatInfo.metadata.operations);
             chatInfo.metadata.operations.push(op);
             await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
 
@@ -479,7 +476,7 @@ async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-        const op = await generateOp("remove", chatID, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
+        const op = await access.generateOp("remove", keyPair,peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
         store.setItem(chatID, chatInfo);
@@ -622,45 +619,45 @@ function getPK(username) {
     });
 }
 
-function getDeps(operations) {
-    // operations : Array of Object
-    var deps = [];
-    for (const op of operations) {
-        const hashedOp = access.hashOp(op);
-        if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
-            deps.push(hashedOp);
-        }
-    }
-    return deps;
-}
+// function getDeps (operations) {
+//     // operations : Array of Object
+//     var deps = [];
+//     for (const op of operations) {
+//         const hashedOp = access.hashOp(op);
+//         if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
+//             deps.push(hashedOp);
+//         }
+//     }
+//     return deps;
+// }
 
-function concatOp(op) {
-    return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
-}
+// function concatOp(op) {
+//     return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
+// }
 
-async function generateOp(action, chatID, pk2 = null, ops = []) {
-    // action: String, chatID: String, pk2: Uint8Array, ops: Array of Object
+// async function generateOp (action, pk2 = null, ops = []) {
+//     // action: String, chatID: String, pk2: Uint8Array, ops: Array of Object
 
-    return new Promise(function (resolve) {
-        var op;
-        if (action === "create") {
-            op = {
-                action: 'create',
-                pk: keyPair.publicKey,
-                nonce: nacl.randomBytes(64),
-            };
-        } else if (action === "add" || action === "remove") {
-            op = {
-                action: action,
-                pk1: keyPair.publicKey,
-                pk2: pk2,
-                deps: getDeps(ops)
-            };
-        }
-        op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
-        resolve(op);
-    });
-}
+//     return new Promise(function (resolve) {
+//         var op;
+//         if (action === "create") {
+//             op = {
+//                 action: 'create',
+//                 pk: keyPair.publicKey,
+//                 nonce: nacl.randomBytes(64),
+//             };
+//         } else if (action === "add" || action === "remove") {
+//             op = {
+//                 action: action,
+//                 pk1: keyPair.publicKey,
+//                 pk2: pk2,
+//                 deps: getDeps(ops)
+//             };
+//         }
+//         op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
+//         resolve(op);
+//     });
+// }
 
 async function sendOperations(chatID, pk) {
     // chatID : String, pk : String
@@ -697,8 +694,8 @@ async function receivedIgnored (ignored, chatID, pk) {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
             console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
 
-            const graphInfo = hasCycles(chatInfo.metadata.operations, access.authority(chatInfo.metadata.operations));
-            if (graphInfo.cycle && unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
+            const graphInfo = access.hasCycles(chatInfo.metadata.operations);
+            if (graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                 console.log(`not resolved?`);
                 graphInfo.concurrent.forEach((cyc) => {
                     console.log(cyc.map((op) => `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`).join(" "));
@@ -737,14 +734,13 @@ async function receivedOperations (ops, chatID, pk) {
             ops = unionOps(chatInfo.metadata.operations, ops);
 
             if (access.verifyOperations(ops)) {
-                const authorityGraph = access.authority(ops);
                 chatInfo.metadata.operations = ops;
                 await store.setItem(chatID, chatInfo);
 
-                const graphInfo = hasCycles(ops, authorityGraph);
+                const graphInfo = access.hasCycles(ops);
                 console.log(graphInfo.cycle);
                 if (graphInfo.cycle) {
-                    if (unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
+                    if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         for (const cycle of graphInfo.concurrent) { // each of unresolved
                             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
                             var ignoredOp = cycle.at(removeSelfIndex);
@@ -1582,9 +1578,9 @@ function createNewChat() {
 // UTILS //
 ///////////
 
-function isAlphanumeric(str) {
-    return str === str.replace(/[^a-z0-9]/gi, '');
-}
+// function isAlphanumeric(str) {
+//     return str === str.replace(/[^a-z0-9]/gi, '');
+// }
 
 function unpackOp(op) {
     op.sig = objToArr(op.sig);
@@ -1598,15 +1594,15 @@ function unpackOp(op) {
     }
 }
 
-function arrEqual(arr1, arr2) {
-    if (arr1.length !== arr2.length) { return false; }
-    let index = 0;
-    while (index < arr1.length) {
-        if (arr1[index] !== arr2[index]) { return false; }
-        index++;
-    }
-    return true;
-}
+// function arrEqual(arr1, arr2) {
+//     if (arr1.length !== arr2.length) { return false; }
+//     let index = 0;
+//     while (index < arr1.length) {
+//         if (arr1[index] !== arr2[index]) { return false; }
+//         index++;
+//     }
+//     return true;
+// }
 
 function unionOps(ops1, ops2) {
     const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
@@ -1615,13 +1611,6 @@ function unionOps(ops1, ops2) {
         if (!sigSet.has(JSON.stringify(op.sig))) { ops.push(op); }
     }
     return ops;
-}
-
-function hasOp(ops, op) {
-    for (const curOp of ops) {
-        if (arrEqual(curOp.sig, op.sig)) { return true; }
-    }
-    return false;
 }
 
 function opsArrEqual (ops1, ops2) {
@@ -1644,19 +1633,19 @@ function removeOp(ops, op) {
     }
 }
 
-function strToArr(str) {
-    return objToArr(JSON.parse(str));
-}
+// function strToArr(str) {
+//     return objToArr(JSON.parse(str));
+// }
 
-function objToArr(obj) {
-    return Uint8Array.from(Object.values(obj));
-}
+// function objToArr(obj) {
+//     return Uint8Array.from(Object.values(obj));
+// }
 
-function formatDate(now) {
-    const date = new Date(now);
-    const intl = new Intl.DateTimeFormat('en-UK').format(date);
-    return `${intl} ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
-}
+// function formatDate(now) {
+//     const date = new Date(now);
+//     const intl = new Intl.DateTimeFormat('en-UK').format(date);
+//     return `${intl} ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
+// }
 
 function mergeJoinedChats(localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);
@@ -1708,65 +1697,4 @@ function closeConnections (pk, chatID) {
         connections.delete(pk);
     }
     console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
-}
-
-function unresolvedCycles (cycles, ignored) {
-    cycleloop:
-    for (const cycle of cycles) {
-        for (const op of cycle) {
-            if (hasOp(ignored, op)) {
-                continue cycleloop;
-            }
-        }
-        return true;
-    }
-    return false;
-}
-
-function findCycle (fromOp, visited, stack, cycle) {
-    // assume start is create
-    const cur = stack.at(-1);
-    for (const next of fromOp.get(JSON.stringify(cur.sig))) {
-        if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
-            cycle.push([...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)))]);
-        } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
-            stack.push(next);
-            visited.set(JSON.stringify(next.sig), "IN STACK");
-            findCycle(fromOp, visited, stack, cycle);
-        }
-    }
-    visited.set(JSON.stringify(cur.sig), "DONE");
-    stack.pop();
-}
-
-function hasCycles (ops, edges) {
-    console.log(ops.map(op => op.action));
-    const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
-    const fromOp = new Map();
-
-    for (const edge of edges) {
-        if (!fromOp.has(JSON.stringify(edge[0].sig))) {
-            fromOp.set(JSON.stringify(edge[0].sig), []);
-        }
-        if (edge[1].action !== "mem") {
-            fromOp.get(JSON.stringify(edge[0].sig)).push(edge[1]);
-        }
-    }
-
-    const cycles = [];
-    findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [start], cycles);
-    if (cycles.length === 0) {
-        return { cycle: false };
-    }
-
-    const toOp = new Map(cycles.flat().map((op) => [JSON.stringify(op.sig), 0]));
-    for (let i=0; i < cycles.length; i++) {
-        for (const edge of edges) {
-            if (hasOp(cycles[i], edge[1])) {
-                toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
-            }
-        }
-        cycles[i] = cycles[i].filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
-    }
-    return { cycle: true, concurrent: cycles };
 }

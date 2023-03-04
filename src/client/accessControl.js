@@ -1,9 +1,124 @@
+import * as nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+import { arrEqual } from "./utils.js";
+
+export const enc = new TextEncoder();
+var hashedOps = new Map();
+
+export function unresolvedCycles (cycles, ignored) {
+    cycleloop:
+    for (const cycle of cycles) {
+        for (const op of cycle) {
+            if (hasOp(ignored, op)) {
+                continue cycleloop;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+function findCycle (fromOp, visited, stack, cycle) {
+    // assume start is create
+    const cur = stack.at(-1);
+    for (const next of fromOp.get(JSON.stringify(cur.sig))) {
+        if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
+            cycle.push([...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)))]);
+        } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
+            stack.push(next);
+            visited.set(JSON.stringify(next.sig), "IN STACK");
+            findCycle(fromOp, visited, stack, cycle);
+        }
+    }
+    visited.set(JSON.stringify(cur.sig), "DONE");
+    stack.pop();
+}
+
+export function hasCycles (ops) {
+    console.log(ops.map(op => op.action));
+    const edges = authority(ops);
+    const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
+    const fromOp = new Map();
+
+    for (const edge of edges) {
+        if (!fromOp.has(JSON.stringify(edge[0].sig))) {
+            fromOp.set(JSON.stringify(edge[0].sig), []);
+        }
+        if (edge[1].action !== "mem") {
+            fromOp.get(JSON.stringify(edge[0].sig)).push(edge[1]);
+        }
+    }
+
+    const cycles = [];
+    findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [start], cycles);
+    if (cycles.length === 0) {
+        return { cycle: false };
+    }
+
+    const toOp = new Map(cycles.flat().map((op) => [JSON.stringify(op.sig), 0]));
+    for (let i=0; i < cycles.length; i++) {
+        for (const edge of edges) {
+            if (hasOp(cycles[i], edge[1])) {
+                toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
+            }
+        }
+        cycles[i] = cycles[i].filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
+    }
+    return { cycle: true, concurrent: cycles };
+}
+
+function getDeps (operations) {
+    // operations : Array of Object
+    var deps = [];
+    for (const op of operations) {
+        const hashedOp = hashOp(op);
+        if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
+            deps.push(hashedOp);
+        }
+    }
+    return deps;
+}
+
+function concatOp (op) {
+    return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
+}
+
+export function hasOp(ops, op) {
+    for (const curOp of ops) {
+        if (arrEqual(curOp.sig, op.sig)) { return true; }
+    }
+    return false;
+}
+
+export async function generateOp (action, keyPair, pk2 = null, ops = []) {
+    // action: String, chatID: String, pk2: Uint8Array, ops: Array of Object
+
+    return new Promise(function (resolve) {
+        var op;
+        if (action === "create") {
+            op = {
+                action: 'create',
+                pk: keyPair.publicKey,
+                nonce: nacl.randomBytes(64),
+            };
+        } else if (action === "add" || action === "remove") {
+            op = {
+                action: action,
+                pk1: keyPair.publicKey,
+                pk2: pk2,
+                deps: getDeps(ops)
+            };
+        }
+        op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
+        resolve(op);
+    });
+}
+
 // takes in set of ops
 export function verifyOperations (ops) {
 
     // only one create
     const createOps = ops.filter((op) => op.action === "create");
-    if (createOps.length != 1) { console.log("op verification failed: more than one create"); return false; }
+    if (createOps.length != 1) { console.log("op verification failed: not one create"); return false; }
     const createOp = createOps[0];
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
@@ -122,6 +237,7 @@ function valid (ops, ignored, op, authorityGraph) {
 }
 
 export async function members (ops, ignored) {
+    // assert that there are no cycles
     const pks = new Set();
     const authorityGraph = authority(ops);
     var pk;

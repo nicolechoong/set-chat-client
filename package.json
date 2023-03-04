@@ -3,15 +3,24 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --silent"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nicolechoong/nicolechoong.github.io"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    }
+  },
+  "babel": {
+    "presets": ["@babel/preset-env"]
   },
   "keywords": [],
   "author": "",
@@ -33,5 +42,8 @@
     "uuid": "^9.0.0",
     "webpack": "^5.75.0",
     "ws": "^8.10.0"
+  },
+  "devDependencies": {
+    "jest": "^29.4.3"
   }
 }

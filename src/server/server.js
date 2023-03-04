@@ -21,6 +21,14 @@ app.get('/src/client/accessControl.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'accessControl.js'));
 });
 
+app.get('/src/client/utils.js', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'utils.js'));
+});
+
+app.get('/src/client/fonts/SpaceGrotesk-Regular.ttf', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'fonts', 'SpaceGrotesk-Regular.ttf'));
+});
+
 const server = https.createServer({ key, cert }, app);
 
 const port = 3000;
