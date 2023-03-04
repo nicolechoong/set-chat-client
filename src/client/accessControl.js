@@ -91,7 +91,7 @@ export function hasOp(ops, op) {
 
 export async function generateOp (action, keyPair, pk2 = null, ops = []) {
     // action: String, chatID: String, pk2: Uint8Array, ops: Array of Object
-
+    console.log(nacl.hash(keyPair.publicKey));
     return new Promise(function (resolve) {
         var op;
         if (action === "create") {
