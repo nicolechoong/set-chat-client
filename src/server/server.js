@@ -29,8 +29,8 @@ app.get('/src/client/chatroom.css', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'chatroom.css'));
 });
 
-app.get('/src/client/fonts/SpaceGrotesk-Regular.ttf', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'fonts', 'SpaceGrotesk-Regular.ttf'));
+app.get('/src/client/fonts/SpaceGrotesk-Regular.woff', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'fonts', 'SpaceGrotesk-Regular.woff'));
 });
 
 app.get('/node_modules/tweetnacl/nacl-fast.js', (req, res, next) => {
