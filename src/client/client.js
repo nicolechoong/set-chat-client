@@ -666,7 +666,8 @@ async function receivedIgnored (ignored, chatID, pk) {
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
                 const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
-                console.log([...memberSet].map(mem => keyMap.get(mem)));
+                joinedChats.get(chatID).exMembers.delete(pk);
+                store.setItem("joinedChats", joinedChats);
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
                 }
@@ -751,9 +752,7 @@ async function updateMembers (memberSet, chatID) {
     // add all the users which are no longer valid to exMembers
     joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk)).forEach(pk => joinedChats.get(chatID).exMembers.add(pk));
     joinedChats.get(chatID).validMembers = [...memberSet];
-    joinedChats.get(chatID).validMembers.forEach(pk => joinedChats.get(chatID).exMembers.delete(pk));
     joinedChats.get(chatID).members = joinedChats.get(chatID).validMembers.filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
-    joinedChats.get(chatID).validMembers = [...memberSet];
     await store.setItem("joinedChats", joinedChats);
     updateHeading();
     console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
