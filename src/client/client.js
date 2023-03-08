@@ -666,7 +666,7 @@ async function receivedIgnored (ignored, chatID, pk) {
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
                 const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
-                console.log(memberSet.map(mem => keyMap.get(mem)));
+                console.log([...memberSet].map(mem => keyMap.get(mem)));
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
                 }
