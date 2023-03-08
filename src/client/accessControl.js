@@ -1,6 +1,6 @@
 import { arrEqual } from "./utils.js";
-// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+// import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
 export const enc = new TextEncoder();
 var hashedOps = new Map();

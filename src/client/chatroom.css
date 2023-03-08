@@ -6,13 +6,25 @@
 
 body {
     font-family: spaceGrotesk;
+    color: #121212;
 }
 
 button {
     font-family: spaceGrotesk;
-    color: white;
+    color: #121212;
+    background-color: white;
     border: 2px solid;
-    border-color: black;
+    border-color: #121212;
+}
+
+button :hover {
+    background-color: #fc5c65;
+    border-color: #fc5c65;
+}
+
+button :hover {
+    background-color: #eb3b5a;
+    border-color: #eb3b5a;
 }
 
 .container {
