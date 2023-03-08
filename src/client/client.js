@@ -751,7 +751,7 @@ async function updateMembers (memberSet, chatID) {
     // add all the users which are no longer valid to exMembers
     joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk)).forEach(pk => joinedChats.get(chatID).exMembers.add(pk));
     joinedChats.get(chatID).validMembers = [...memberSet];
-    joinedChats.get(chatID).validMembers.forEach(pk => joinedChats.get(ID).exMembers.delete(pk));
+    joinedChats.get(chatID).validMembers.forEach(pk => joinedChats.get(chatID).exMembers.delete(pk));
     joinedChats.get(chatID).members = joinedChats.get(chatID).validMembers.filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
     joinedChats.get(chatID).validMembers = [...memberSet];
     await store.setItem("joinedChats", joinedChats);
