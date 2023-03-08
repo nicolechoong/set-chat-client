@@ -275,7 +275,6 @@ function onConnectedUsers(usernames) {
 
     if (localUsername) {
         const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap.get(entry[0]))).map(entry => entry[0]);
-        console.log(`online from queued ${toSend}`);
         for (const pk of toSend) {
             onQueuedOnline(objToArr(pk));
         }
@@ -417,7 +416,6 @@ async function addToChat (validMemberPubKeys, chatID) {
 async function onRemove (chatID, fromPK) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
-    console.log(chatInfo.validMembers.map((pk) => keyMap.get(pk)));
     if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
         const from = await getUsername(JSON.stringify(fromPK));
         chatInfo.currentMember = false;
@@ -668,6 +666,7 @@ async function receivedIgnored (ignored, chatID, pk) {
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
                 const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
+                console.log(memberSet.map(mem => keyMap.get(mem)));
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
                 }
@@ -699,7 +698,6 @@ async function receivedOperations (ops, chatID, pk) {
                 await store.setItem(chatID, chatInfo);
 
                 const graphInfo = access.hasCycles(ops);
-                console.log(graphInfo.cycle);
                 if (graphInfo.cycle) {
                     if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         for (const cycle of graphInfo.concurrent) { // each of unresolved
@@ -752,6 +750,7 @@ async function updateMembers (memberSet, chatID) {
 
     joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk)).forEach(pk => joinedChats.get(chatID).exMembers.add(pk));
     joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
+    joinedChats.get(chatID).members.sort((a, b) => ('' + keyMap.get(a).attr).localeCompare(keyMap.get(b).attr))
     joinedChats.get(chatID).validMembers = [...memberSet];
     await store.setItem("joinedChats", joinedChats);
     updateHeading();
@@ -1195,8 +1194,6 @@ loginBtn.addEventListener("click", async function (event) {
                 store.setItem("msgQueue", msgQueue);
             } else {
                 console.log(`keypair ${JSON.stringify(kp)}`);
-                const test = nacl.randomBytes(64);
-                console.log(test);
                 keyPair = kp;
             }
 
