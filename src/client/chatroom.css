@@ -17,12 +17,12 @@ button {
     border-color: #121212;
 }
 
-button :hover {
+button:hover {
     background-color: #fc5c65;
     border-color: #fc5c65;
 }
 
-button :hover {
+button:active {
     background-color: #eb3b5a;
     border-color: #eb3b5a;
 }
