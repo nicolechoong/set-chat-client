@@ -663,6 +663,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 store.setItem("joinedChats", joinedChats);
                 return resolve("WAITING FOR LOCAL IGNORED");
             }
+        
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
                 console.log(`same universe naisu`);
                 const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
@@ -671,7 +672,15 @@ async function receivedIgnored (ignored, chatID, pk) {
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
                 }
+                if (chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
+                    const interval = chatInfo.historyTable.get(pk).pop();
+                    interval[1] = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; }) - 1;
+                    chatInfo.historyTable.get(pk).push(interval);
+                    await store.setItem(chatID, chatInfo);
+                }
+
                 return memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
+
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
                 if (joinedChats.get(chatID).members.includes(pk)) {
@@ -707,8 +716,20 @@ async function receivedOperations (ops, chatID, pk) {
                             if (removeSelfIndex == -1) {
                                 ignoredOp = await getIgnored(cycle);
                             }
+                            
+                            const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+                            if (ignoredOpIndex > -1) {
+                                const interval = chatInfo.historyTable.get(pk).pop();
+                                if (ignoredOp.action == "add") {
+                                    interval[1] = 0;
+                                } else if (ignoredOp.action == "remove") {
+                                    interval[1] = chatInfo.history.at(ignoredOpIndex).id;
+                                }
+                                chatInfo.historyTable.get(pk).push(interval);
+                            }
                             chatInfo.metadata.ignored.push(ignoredOp);
                             removeOp(chatInfo.metadata.operations, ignoredOp);
+
                             console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
                             await store.setItem(chatID, chatInfo);
                         }
@@ -878,8 +899,8 @@ function receivedMessage(messageData) {
             messageData.online.forEach((peer) => connectToPeer(peer));
             break;
         case "history":
-            store.getItem(messageData.chatID).then((chatInfo) => {
-                chatInfo.history = mergeChatHistory(chatInfo.history, messageData.history);
+            store.getItem(messageData.chatID).then(async (chatInfo) => {
+                await mergeChatHistory(chatInfo.history, messageData.history);
                 if (messageData.chatID === currentChatID) {
                     chatMessages.innerHTML = "";
                     store.getItem(currentChatID).then(async (chatInfo) => {
@@ -1017,7 +1038,7 @@ function startChatHistory (chatID, pk, msgID) {
     });
 }
 
-function endChatHistory (chatID, pk, msgID) {
+function decChatHistoryInterval (chatID, pk) {
     store.getItem(chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
             const interval = chatInfo.historyTable.get(pk).pop();
@@ -1130,8 +1151,6 @@ async function updateChatStore(messageData) {
     store.getItem(messageData.chatID).then((chatInfo) => {
         chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
-    }).then(() => {
-        console.log("updated chat store");
     });
 }
 
@@ -1457,21 +1476,31 @@ function mergeJoinedChats(localChats, receivedChats) {
     return mergedChats;
 }
 
-function mergeChatHistory(localMsg, receivedMsg) {
-    console.log(`local length ${localMsg.length}`);
-    if (receivedMsg.size === 0) { return localMsg; }
-    const mergedChatHistory = localMsg;
-    const localMsgIDs = new Set(localMsg.map(msg => msg.id));
-    for (const msg of receivedMsg) {
-        if (!localMsgIDs.has(msg.id)) {
-            mergedChatHistory.push(msg);
+async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
+    store.get(chatID).then(async (chatInfo) => {
+        console.log(`local length ${localMsgs.length}`);
+        const lastLocalID = localMsgs.at(-1).id;
+        if (receivedMsgs.size === 0) { return localMsgs; }
+        const mergedChatHistory = localMsgs;
+        const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
+        for (const msg of receivedMsgs) {
+            if (!localMsgIDs.has(msg.id)) {
+                mergedChatHistory.push(msg);
+            }
         }
-    }
-    return mergedChatHistory.sort((a, b) => {
-        if (a.sentTime > b.sentTime) { return 1; }
-        if (a.sentTime < b.sentTime) { return -1; }
-        if (a.username > b.username) { return 1; }
-        else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
+        mergedChatHistory.sort((a, b) => {
+            if (a.sentTime > b.sentTime) { return 1; }
+            if (a.sentTime < b.sentTime) { return -1; }
+            if (a.username > b.username) { return 1; }
+            else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
+        });
+
+        chatInfo.history = mergedChatHistory;
+        if (joinedChats.get(chatID).members.includes(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
+            const lastLocalIDIndex = mergedChatHistory.findIndex(msg => msg.id == lastLocalID);
+            chatInfo.historyTable.get(pk).push([lastLocalIDIndex + 1, 0]);
+        }
+        await store.set(chatID, chatInfo);
     });
 }
 
