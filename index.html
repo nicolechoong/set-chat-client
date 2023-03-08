@@ -37,7 +37,7 @@
                 </select>
             </div>
 
-            <div>
+            <div id="chat">
                 <h2 id="chatHeading">Chat</h2>
                 <div id="universeSelection" style="display:none">
                     Select an operation to IGNORE!!!!
@@ -45,7 +45,7 @@
                     </select>
                     <br>
                 </div>
-                <div id="chatBox">
+                <div id="chatBox" style="display:none">
                     <p id="chatMembers"></p>
                     <div id="chatModsAdded">
                         <input type = "text" id = "modifyUserInput" />
@@ -53,13 +53,13 @@
                         <button id = "removeUserBtn">Remove</button> 
                     </div>
                     <div id="chatModsRemoved" style="display:none">
-                        <button id = "disputeBtn">Dispute</button>
-                        <button id = "acceptRemovalBtn">Accept</button>
+                        <button id = "disputeBtn" style="font-family:spaceGrotesk">Dispute</button>
+                        <button id = "acceptRemovalBtn" style="font-family:spaceGrotesk">Accept</button>
                     </div>
                     <div id="chatWindow" style="overflow-y:scroll; max-height:400px;"></div>
                         <p id="chatMessages"></p>
-                        <input type = "text" id = "messageInput" style="width:75%"/>
-                        <button id = "sendMessageBtn">Send</button> 
+                        <input type = "text" id = "messageInput" style="font-family:spaceGrotesk; width:75%;"/>
+                        <button id = "sendMessageBtn" style="font-family:spaceGrotesk">Send</button> 
                     </div>
                 </div>
             </div>

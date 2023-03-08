@@ -8,6 +8,13 @@ body {
     font-family: spaceGrotesk;
 }
 
+button {
+    font-family: spaceGrotesk;
+    color: white;
+    border: 2px solid;
+    border-color: black;
+}
+
 .container {
     padding: 0 50px;
     height: 100vh;

@@ -1,5 +1,6 @@
 import { arrEqual } from "./utils.js";
-import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
 export const enc = new TextEncoder();
 var hashedOps = new Map();
@@ -34,7 +35,6 @@ function findCycle (fromOp, visited, stack, cycle) {
 }
 
 export function hasCycles (ops) {
-    console.log(ops.map(op => op.action));
     const edges = authority(ops);
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const fromOp = new Map();

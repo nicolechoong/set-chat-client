@@ -1,7 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
-console.log(nacl);
 import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
 
 var loginBtn = document.getElementById('loginBtn');
@@ -1342,6 +1341,7 @@ function updateHeading() {
         const chatMembers = document.getElementById('chatMembers');
         chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
 
+        document.getElementById('chatBox').style.display = "block";
         document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
         document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
     }
@@ -1405,10 +1405,6 @@ function createNewChat() {
 // UTILS //
 ///////////
 
-// function isAlphanumeric(str) {
-//     return str === str.replace(/[^a-z0-9]/gi, '');
-// }
-
 function unpackOp(op) {
     op.sig = objToArr(op.sig);
     if (op.action === "create") {
@@ -1420,16 +1416,6 @@ function unpackOp(op) {
         op.deps = op.deps.map(dep => objToArr(dep));
     }
 }
-
-// function arrEqual(arr1, arr2) {
-//     if (arr1.length !== arr2.length) { return false; }
-//     let index = 0;
-//     while (index < arr1.length) {
-//         if (arr1[index] !== arr2[index]) { return false; }
-//         index++;
-//     }
-//     return true;
-// }
 
 function unionOps(ops1, ops2) {
     const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
@@ -1459,20 +1445,6 @@ function removeOp(ops, op) {
         }
     }
 }
-
-// function strToArr(str) {
-//     return objToArr(JSON.parse(str));
-// }
-
-// function objToArr(obj) {
-//     return Uint8Array.from(Object.values(obj));
-// }
-
-// function formatDate(now) {
-//     const date = new Date(now);
-//     const intl = new Intl.DateTimeFormat('en-UK').format(date);
-//     return `${intl} ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
-// }
 
 function mergeJoinedChats(localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);

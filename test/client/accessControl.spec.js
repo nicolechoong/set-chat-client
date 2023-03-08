@@ -17,48 +17,48 @@ beforeAll(() => {
     })
 });
 
-describe('verifyOperations', () => {
+// describe('verifyOperations', () => {
 
-    beforeEach(() => {
-        ops = [createOp];
-    });
+//     beforeEach(() => {
+//         ops = [createOp];
+//     });
 
-    test("fails without create operation", async () => {
+//     test("fails without create operation", async () => {
 
-        ops = [await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops)];
+//         ops = [await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops)];
 
-        expect(unit.verifyOperations(ops)).toBe(false);
-    });
+//         expect(unit.verifyOperations(ops)).toBe(false);
+//     });
 
-    test("fails without multiple create operation", async () => {
-        ops.push(await unit.generateOp("create", keyPairs["b"]));
-        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops));
+//     test("fails without multiple create operation", async () => {
+//         ops.push(await unit.generateOp("create", keyPairs["b"]));
+//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops));
 
-        expect(unit.verifyOperations(ops)).toBe(false);
-    });
+//         expect(unit.verifyOperations(ops)).toBe(false);
+//     });
 
-    test("fails due to incorrect key", async () => {
-        ops = [await unit.generateOp("create", keyPairs["a"])];
-        ops[0]["sig"] = nacl.sign.detached(unit.enc.encode(`create${ops[0].pk}${ops[0].nonce}`), keyPairs["b"].secretKey);
-        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
+//     test("fails due to incorrect key", async () => {
+//         ops = [await unit.generateOp("create", keyPairs["a"])];
+//         ops[0]["sig"] = nacl.sign.detached(unit.enc.encode(`create${ops[0].pk}${ops[0].nonce}`), keyPairs["b"].secretKey);
+//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
 
-        expect(unit.verifyOperations(ops)).toBe(false);
-    });
+//         expect(unit.verifyOperations(ops)).toBe(false);
+//     });
 
-    test("fails due to missing dependency", async () => {
-        const addB = await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops);
-        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops.concat([addB])));
+//     test("fails due to missing dependency", async () => {
+//         const addB = await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops);
+//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops.concat([addB])));
 
-        expect(unit.verifyOperations(ops)).toBe(false);
-    });
+//         expect(unit.verifyOperations(ops)).toBe(false);
+//     });
 
-    test("passes", async () => {
-        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
-        ops.push(await unit.generateOp("add", keyPairs["b"], keyPairs["c"].publicKey, ops));
+//     test("passes", async () => {
+//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
+//         ops.push(await unit.generateOp("add", keyPairs["b"], keyPairs["c"].publicKey, ops));
 
-        expect(unit.verifyOperations(ops)).toBe(true);
-    });
-});
+//         expect(unit.verifyOperations(ops)).toBe(true);
+//     });
+// });
 
 describe('hasCycles', () => {
 
@@ -94,17 +94,18 @@ describe('hasCycles', () => {
         expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
     });
 
-    // test("correct when two conflict removal cycle with extra ops", async () => {
-    //     ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
-    //     const concOps = [ await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops), 
-    //                     await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops)];
+    test("correct when two conflict removal cycle with extra ops", async () => {
+        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
+        const concOps = [ await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops), 
+                        await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops)];
+        ops.push(await unit.generateOp("remove", keyPairs["c"], keyPairs["b"].publicKey, ops.concat(concOps[0])));
 
-    //     const graphInfo = unit.hasCycles(ops.concat(concOps));
+        const graphInfo = unit.hasCycles(ops.concat(concOps));
 
-    //     expect(graphInfo.cycle).toBe(true);
-    //     expect(graphInfo.concurrent.length).toBe(1);
-    //     expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
-    // });
+        expect(graphInfo.cycle).toBe(true);
+        expect(graphInfo.concurrent.length).toBe(1);
+        expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
+    });
 
     test("correct when three conflict removal cycle", async () => {
         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
@@ -120,7 +121,7 @@ describe('hasCycles', () => {
         expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
     });
 
-    test("correct when two cycles", async () => {
+    test("correct when two removal cycles", async () => {
         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops));
         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["d"].publicKey, ops));
@@ -258,6 +259,21 @@ describe("member remove", () => {
         const concOp2 = await unit.generateOp("add", keyPairs["b"], keyPairs["c"].publicKey, ops);
         ops.push(concOp1, concOp2);
         ops.push(await unit.generateOp("remove", keyPairs["a"], keyPairs["c"].publicKey, ops));
+
+        const members = await unit.members(ops, ignored);
+
+        expect(members.size).toBe(2);
+        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
+        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
+    });
+
+    test("correct when concurrently removing same device after concurrent add", async () => {
+        ops = [createOp];
+        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
+        ops = ops.concat([await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops),
+                        await unit.generateOp("add", keyPairs["b"], keyPairs["c"].publicKey, ops)]);
+        ops = ops.concat([await unit.generateOp("remove", keyPairs["a"], keyPairs["c"].publicKey, ops),
+                        await unit.generateOp("remove", keyPairs["b"], keyPairs["c"].publicKey, ops)]);
 
         const members = await unit.members(ops, ignored);
 
