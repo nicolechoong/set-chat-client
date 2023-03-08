@@ -748,9 +748,11 @@ async function updateMembers (memberSet, chatID) {
         joinedChats.get(chatID).exMembers.delete(JSON.stringify(keyPair.publicKey));
     }
 
+    // add all the users which are no longer valid to exMembers
     joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk)).forEach(pk => joinedChats.get(chatID).exMembers.add(pk));
-    joinedChats.get(chatID).members = [...memberSet].filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
-    joinedChats.get(chatID).members.sort((a, b) => ('' + keyMap.get(a).attr).localeCompare(keyMap.get(b).attr))
+    joinedChats.get(chatID).validMembers = [...memberSet];
+    joinedChats.get(chatID).validMembers.forEach(pk => joinedChats.get(ID).exMembers.delete(pk));
+    joinedChats.get(chatID).members = joinedChats.get(chatID).validMembers.filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
     joinedChats.get(chatID).validMembers = [...memberSet];
     await store.setItem("joinedChats", joinedChats);
     updateHeading();
@@ -1338,7 +1340,7 @@ function updateHeading() {
         const chatMembers = document.getElementById('chatMembers');
         chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
 
-        document.getElementById('chatBox').style.display = "block";
+        document.getElementById('chatBox').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
         document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
         document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
     }
