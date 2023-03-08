@@ -1340,7 +1340,7 @@ function updateHeading() {
         const chatMembers = document.getElementById('chatMembers');
         chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
 
-        document.getElementById('chatBox').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
+        document.getElementById('chatWindow').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
         document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
         document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
     }
