@@ -1478,29 +1478,35 @@ function mergeJoinedChats(localChats, receivedChats) {
 
 async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
     store.getItem(chatID).then(async (chatInfo) => {
-        console.log(`local length ${localMsgs.size}`);
-        const lastLocalID = localMsgs.at(-1).id;
-        if (receivedMsgs.size === 0) { return localMsgs; }
-        const mergedChatHistory = localMsgs;
-        const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
-        for (const msg of receivedMsgs) {
-            if (!localMsgIDs.has(msg.id)) {
-                mergedChatHistory.push(msg);
-            }
-        }
-        mergedChatHistory.sort((a, b) => {
-            if (a.sentTime > b.sentTime) { return 1; }
-            if (a.sentTime < b.sentTime) { return -1; }
-            if (a.username > b.username) { return 1; }
-            else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
-        });
+        console.log(`local length ${localMsgs.length}`);
 
-        chatInfo.history = mergedChatHistory;
-        if (joinedChats.get(chatID).members.includes(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
-            const lastLocalIDIndex = mergedChatHistory.findIndex(msg => msg.id == lastLocalID);
-            chatInfo.historyTable.get(pk).push([lastLocalIDIndex + 1, 0]);
+        if (receivedMsgs.length > 0) {
+            if (localMsgs.length > 0) {
+                const mergedChatHistory = localMsgs;
+
+                const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
+                for (const msg of receivedMsgs) {
+                    if (!localMsgIDs.has(msg.id)) {
+                        mergedChatHistory.push(msg);
+                    }
+                }
+                mergedChatHistory.sort((a, b) => {
+                    if (a.sentTime > b.sentTime) { return 1; }
+                    if (a.sentTime < b.sentTime) { return -1; }
+                    if (a.username > b.username) { return 1; }
+                    else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
+                });
+
+                chatInfo.history = mergedChatHistory;
+                if (joinedChats.get(chatID).members.includes(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
+                    const lastLocalIDIndex = mergedChatHistory.findIndex(msg => msg.id == lastLocalID);
+                    chatInfo.historyTable.get(pk).push([lastLocalIDIndex + 1, 0]);
+                }
+            } else {
+                chatInfo.history = receivedMsgs;
+            }
+            await store.setItem(chatID, chatInfo);
         }
-        await store.setItem(chatID, chatInfo);
     });
 }
 
