@@ -1500,7 +1500,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
             const lastLocalIDIndex = mergedChatHistory.findIndex(msg => msg.id == lastLocalID);
             chatInfo.historyTable.get(pk).push([lastLocalIDIndex + 1, 0]);
         }
-        await store.set(chatID, chatInfo);
+        await store.setItem(chatID, chatInfo);
     });
 }
 
