@@ -900,7 +900,7 @@ function receivedMessage(messageData) {
             break;
         case "history":
             store.getItem(messageData.chatID).then(async (chatInfo) => {
-                await mergeChatHistory(chatInfo.history, messageData.history);
+                await mergeChatHistory(messageData.chatID, JSON.stringify(messageData.from), chatInfo.history, messageData.history);
                 if (messageData.chatID === currentChatID) {
                     chatMessages.innerHTML = "";
                     store.getItem(currentChatID).then(async (chatInfo) => {
@@ -1478,7 +1478,7 @@ function mergeJoinedChats(localChats, receivedChats) {
 
 async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
     store.getItem(chatID).then(async (chatInfo) => {
-        console.log(`local length ${localMsgs.length}`);
+        console.log(`local length ${localMsgs.size}`);
         const lastLocalID = localMsgs.at(-1).id;
         if (receivedMsgs.size === 0) { return localMsgs; }
         const mergedChatHistory = localMsgs;
