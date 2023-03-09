@@ -1477,7 +1477,7 @@ function mergeJoinedChats(localChats, receivedChats) {
 }
 
 async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
-    store.get(chatID).then(async (chatInfo) => {
+    store.getItem(chatID).then(async (chatInfo) => {
         console.log(`local length ${localMsgs.length}`);
         const lastLocalID = localMsgs.at(-1).id;
         if (receivedMsgs.size === 0) { return localMsgs; }
