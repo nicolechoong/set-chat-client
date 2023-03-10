@@ -1487,15 +1487,25 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
         if (receivedMsgs.length > 0) {
             if (localMsgs.length > 0) {
                 const mergedChatHistory = localMsgs;
-
+                const modifiedHistoryTable = new Set();
+                
                 const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
                 for (const msg of receivedMsgs) {
                     if (!localMsgIDs.has(msg.id)) {
                         if (msg.type === "add") {
-
+                            modifiedHistoryTable.add(JSON.stringify(msg.op.pk2));
+                            chatInfo.historyTable.get(JSON.stringify(msg.op.pk2)).push([msg.id, 0]);
+                        } else if (msg.type === "remove") {
+                            modifiedHistoryTable.add(JSON.stringify(msg.op.pk2));
+                            const interval = chatInfo.historyTable.get(JSON.stringify(msg.op.pk2)).pop();
+                            interval[1] = msg.id;
+                            chatInfo.historyTable.get(JSON.stringify(msg.op.pk2)).push(interval);
                         }
                         mergedChatHistory.push(msg);
                     }
+                }
+                for (pk of modifiedHistoryTable) {
+                    chatInfo.historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
                 }
                 mergedChatHistory.sort((a, b) => {
                     if (a.sentTime > b.sentTime) { return 1; }
@@ -1504,11 +1514,6 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                     else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
                 });
 
-                chatInfo.history = mergedChatHistory;
-                if (chatInfo.historyTable.has(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
-                    const lastLocalIDIndex = mergedChatHistory.findIndex(msg => msg.id == lastLocalID);
-                    chatInfo.historyTable.get(pk).push([lastLocalIDIndex + 1, 0]);
-                }
             } else {
                 chatInfo.history = receivedMsgs;
             }

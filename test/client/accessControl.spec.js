@@ -282,3 +282,73 @@ describe("member remove", () => {
         expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
     });
 });
+
+describe("member ignore", () => {
+    var populatedOps;
+
+    beforeAll(() => {
+        return new Promise(async (resolve) => {
+            populatedOps = [await unit.generateOp("create", keyPairs["a"])];
+            populatedOps.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, populatedOps));
+            populatedOps.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, populatedOps));
+            resolve();
+        })
+    });
+
+    beforeEach(() => {
+        ops = [...populatedOps];
+        ignored = [];
+    });
+
+    test("correct when ignoring member of two device removal cycle", async () => {
+        ignored.push(await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops));
+        ops.push(await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops));
+        
+        const members = await unit.members(ops, ignored);
+
+        expect(members.size).toBe(2);
+        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
+        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+    });
+
+    test("correct when ignoring member from two device removal cycle with extra ops", async () => {
+        const concOps = [await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops)];
+        concOps.push(await unit.generateOp("remove", keyPairs["c"], keyPairs["b"].publicKey, ops.concat(concOps[0])));
+
+        ignored.push(await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops));
+
+        const members = await unit.members(ops.concat(concOps), ignored);
+
+        expect(members.size).toBe(2);
+        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
+        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+    });
+
+    test("correct when ignoring member of three device removal cycle", async () => {
+        ignored.push(await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops));
+        const concOps = [await unit.generateOp("remove", keyPairs["b"], keyPairs["c"].publicKey, ops),
+                        await unit.generateOp("remove", keyPairs["c"], keyPairs["a"].publicKey, ops)];
+
+        const members = await unit.members(ops.concat(concOps), ignored);
+
+        console.log(members);
+        expect(members.size).toBe(2);
+        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
+        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
+    });
+
+    test("correct when two removal cycles", async () => {
+        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["d"].publicKey, ops));
+        const concOps = [ await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops),
+                        await unit.generateOp("remove", keyPairs["c"], keyPairs["d"].publicKey, ops)];
+        ignored.push(await unit.generateOp("remove", keyPairs["d"], keyPairs["c"].publicKey, ops),
+                    await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops));
+
+        const members = await unit.members(ops.concat(concOps), ignored);
+
+        console.log(members);
+        expect(members.size).toBe(2);
+        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
+        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+    });
+});
