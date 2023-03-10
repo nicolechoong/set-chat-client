@@ -676,7 +676,11 @@ async function receivedIgnored (ignored, chatID, pk) {
                     updateMembers(memberSet, chatID);
                 }
 
-                return memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
+                if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
+                    return resolve("ACCEPT");
+                } else {
+                    return resolve("REJECT");
+                }
 
             } else {
                 console.log(`different universe from ${keyMap.get(pk)}`);
@@ -734,7 +738,12 @@ async function receivedOperations (ops, chatID, pk) {
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
                         console.log(`resolving ignored from ${keyMap.get(queuedPk)}`);
-                        receivedIgnored(queuedIg, chatID, queuedPk);
+                        receivedMessage({
+                            type: "ignored",
+                            ignored: queuedIg,
+                            chatID: chatID,
+                            from: queuedPk
+                        });
                         joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                         await store.setItem("joinedChats", joinedChats);
                     }
