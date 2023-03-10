@@ -723,7 +723,8 @@ async function receivedOperations (ops, chatID, pk) {
                             }
                             
                             const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
-                            chatInfo.history.splice(ignoredOpIndex, 1);
+                            chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
+                            refreshChatWindow(chatID);
                             if (ignoredOpIndex > -1) {
                                 const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
                                 if (ignoredOp.action == "remove") {
@@ -990,7 +991,7 @@ async function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         var peerHistory = [];
-
+        console.log(`we currently store history of ${[...chatInfo.historyTable.keys()].map(pk => keyMap.get(pk))}`);
         if (chatInfo.historyTable.has(pk)) {
             const intervals = chatInfo.historyTable.get(pk);
             var start, end;
@@ -1001,6 +1002,7 @@ async function sendChatHistory (chatID, pk) {
                 peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
             }
         }
+        
 
         sendToMember(addMsgID({
             type: "history",
@@ -1120,7 +1122,18 @@ async function removePeer (messageData) {
     closeConnections(pk, messageData.chatID);
 }
 
-async function updateChatWindow(data) {
+async function refreshChatWindow (chatID) {
+    if (chatID === currentChatID) {
+        chatMessages.innerHTML = "";
+        store.getItem(currentChatID).then(async (chatInfo) => {
+            for (const msg of chatInfo.history) {
+                await updateChatWindow(msg);
+            }
+        });
+    }
+}
+
+async function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
         var message;
@@ -1521,14 +1534,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
             await store.setItem(chatID, chatInfo);
         }
 
-        if (chatID === currentChatID) {
-            chatMessages.innerHTML = "";
-            store.getItem(currentChatID).then(async (chatInfo) => {
-                for (const msg of chatInfo.history) {
-                    await updateChatWindow(msg);
-                }
-            });
-        }
+        await refreshChatWindow();
     });
 }
 
