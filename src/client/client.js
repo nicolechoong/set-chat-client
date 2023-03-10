@@ -1489,7 +1489,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                 for (const msg of receivedMsgs) {
                     if (!localMsgIDs.has(msg.id)) {
                         if (msg.type === "add") {
-                            
+
                         }
                         mergedChatHistory.push(msg);
                     }
@@ -1502,7 +1502,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                 });
 
                 chatInfo.history = mergedChatHistory;
-                if (joinedChats.get(chatID).members.includes(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
+                if (chatInfo.historyTable.has(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
                     const lastLocalIDIndex = mergedChatHistory.findIndex(msg => msg.id == lastLocalID);
                     chatInfo.historyTable.get(pk).push([lastLocalIDIndex + 1, 0]);
                 }
