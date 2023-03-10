@@ -740,7 +740,7 @@ async function receivedOperations (ops, chatID, pk) {
                         console.log(`resolving ignored from ${keyMap.get(queuedPk)}`);
                         receivedMessage({
                             type: "ignored",
-                            ignored: queuedIg,
+                            ignored: JSON.parse(JSON.stringify(queuedIg)),
                             chatID: chatID,
                             from: strToArr(pk)
                         });
