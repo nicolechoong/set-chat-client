@@ -344,38 +344,41 @@ async function onAdd(chatID, chatName, fromPK, msgID) {
     const from = await getUsername(JSON.stringify(fromPK));
     console.log(`you've been added to chat ${chatName} by ${from}`);
 
-    joinedChats.set(chatID, {
-        chatName: chatName,
-        validMembers: [JSON.stringify(fromPK)],
-        members: [JSON.stringify(fromPK)],
-        exMembers: new Set(),
-        peerIgnored: new Map(),
-        currentMember: false,
-        toDispute: null
-    });
-    store.setItem("joinedChats", joinedChats);
-
-    store.setItem(chatID, {
-        metadata: {
+    if (!joinedChats.has(chatID)) {
+        joinedChats.set(chatID, {
             chatName: chatName,
-            operations: [],
-            ignored: []
-        },
-        history: [],
-        historyTable: new Map(),
-    }).then(async () => {
-        initChatHistoryTable(chatID, msgID);
-        if (connections.has(JSON.stringify(fromPK))) {
-            sendOperations(chatID, JSON.stringify(fromPK));
-        } else {
-            if (!(await connectToPeer({ peerName: from, peerPK: fromPK }))) {
-                if (!getOnline(chatID)) {
-                    console.log(`no one is online :(`);
+            validMembers: [JSON.stringify(fromPK)],
+            members: [JSON.stringify(fromPK)],
+            exMembers: new Set(),
+            peerIgnored: new Map(),
+            currentMember: false,
+            toDispute: null
+        });
+        await store.setItem("joinedChats", joinedChats);
 
-                }
+        await store.setItem(chatID, {
+            metadata: {
+                chatName: chatName,
+                operations: [],
+                ignored: []
+            },
+            history: [],
+            historyTable: new Map(),
+        });
+
+        initChatHistoryTable(chatID, msgID);
+    }
+
+    if (connections.has(JSON.stringify(fromPK))) {
+        sendOperations(chatID, JSON.stringify(fromPK));
+    } else {
+        if (!(await connectToPeer({ peerName: from, peerPK: fromPK }))) {
+            if (!getOnline(chatID)) {
+                console.log(`no one is online :(`);
+
             }
         }
-    });
+    }
 }
 
 async function addToChat (validMemberPubKeys, chatID) {
