@@ -1493,10 +1493,16 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                 for (const msg of receivedMsgs) {
                     if (!localMsgIDs.has(msg.id)) {
                         if (msg.type === "add") {
+                            if (!chatInfo.historyTable.has(JSON.stringify(msg.op.pk2))) {
+                                chatInfo.historyTable.set(JSON.stringify(msg.op.pk2), []);
+                            }
                             modifiedHistoryTable.add(JSON.stringify(msg.op.pk2));
                             chatInfo.historyTable.get(JSON.stringify(msg.op.pk2)).push([msg.id, 0]);
                         } else if (msg.type === "remove") {
                             modifiedHistoryTable.add(JSON.stringify(msg.op.pk2));
+                            if (!chatInfo.historyTable.has(JSON.stringify(msg.op.pk2))) {
+                                chatInfo.historyTable.set(JSON.stringify(msg.op.pk2), [[localMsgs[0].id, 0]]);
+                            }
                             const interval = chatInfo.historyTable.get(JSON.stringify(msg.op.pk2)).pop();
                             interval[1] = msg.id;
                             chatInfo.historyTable.get(JSON.stringify(msg.op.pk2)).push(interval);
