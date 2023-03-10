@@ -1493,13 +1493,13 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                 const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
                 for (const msg of receivedMsgs) {
                     if (!localMsgIDs.has(msg.id)) {
-                        if (msg.type === "add") {
+                        if (msg.type === "add" && !arrEqual(msg.op.pk2, keyPair.publicKey)) {
                             if (!chatInfo.historyTable.has(JSON.stringify(msg.op.pk2))) {
                                 chatInfo.historyTable.set(JSON.stringify(msg.op.pk2), []);
                             }
                             modifiedHistoryTable.add(JSON.stringify(msg.op.pk2));
                             chatInfo.historyTable.get(JSON.stringify(msg.op.pk2)).push([msg.id, 0]);
-                        } else if (msg.type === "remove") {
+                        } else if (msg.type === "remove" && !arrEqual(msg.op.pk2, keyPair.publicKey)) {
                             modifiedHistoryTable.add(JSON.stringify(msg.op.pk2));
                             if (!chatInfo.historyTable.has(JSON.stringify(msg.op.pk2))) {
                                 chatInfo.historyTable.set(JSON.stringify(msg.op.pk2), [[localMsgs[0].id, 0]]);
@@ -1521,6 +1521,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                     if (a.username > b.username) { return 1; }
                     else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
                 });
+                chatInfo.history = mergedChatHistory;
 
             } else {
                 chatInfo.history = receivedMsgs;
