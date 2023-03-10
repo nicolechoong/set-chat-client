@@ -992,18 +992,18 @@ async function sendChatHistory (chatID, pk) {
     store.getItem(chatID).then((chatInfo) => {
         var peerHistory = [];
         console.log(`we currently store history of ${[...chatInfo.historyTable.keys()].map(pk => keyMap.get(pk))}`);
-        if (chatInfo.historyTable.has(pk)) {
-            const intervals = chatInfo.historyTable.get(pk);
-            var start, end;
-            for (const interval of intervals) {
-                start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
-                end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-                end = end < 0 ? chatInfo.history.length : end + 1;
-                peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
-            }
+        if (!chatInfo.historyTable.has(pk)) {
+            chatInfo.historyTable.set(pk, [[chatInfo.history[0].id, 0]]);
+        }
+        const intervals = chatInfo.historyTable.get(pk);
+        var start, end;
+        for (const interval of intervals) {
+            start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
+            end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
+            end = end < 0 ? chatInfo.history.length : end + 1;
+            peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
         }
         
-
         sendToMember(addMsgID({
             type: "history",
             history: peerHistory,
