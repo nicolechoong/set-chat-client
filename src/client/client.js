@@ -674,14 +674,6 @@ async function receivedIgnored (ignored, chatID, pk) {
                 store.setItem("joinedChats", joinedChats);
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
-
-                    if (chatInfo.historyTable.has(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
-                        console.log(`decrementing interval?`);
-                        const interval = chatInfo.historyTable.get(pk).pop();
-                        interval[1] = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; }) - 1;
-                        chatInfo.historyTable.get(pk).push(interval);
-                        await store.setItem(chatID, chatInfo);
-                    }
                 }
 
                 return memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
@@ -991,10 +983,10 @@ async function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     store.getItem(chatID).then((chatInfo) => {
         var peerHistory = [];
-        console.log(`we currently store history of ${[...chatInfo.historyTable.keys()].map(pk => keyMap.get(pk))}`);
         if (!chatInfo.historyTable.has(pk)) {
             chatInfo.historyTable.set(pk, [[chatInfo.history[0].id, 0]]);
         }
+        console.log(`we currently store history of ${[...chatInfo.historyTable.keys()].map(pk => keyMap.get(pk))}`);
         const intervals = chatInfo.historyTable.get(pk);
         var start, end;
         for (const interval of intervals) {
@@ -1025,27 +1017,7 @@ function initChatHistoryTable (chatID, msgID) {
         }
         await store.setItem(chatID, chatInfo);
     });
-}
-
-function startChatHistory (chatID, pk, msgID) {
-    store.getItem(chatID).then((chatInfo) => {
-        if (chatInfo.historyTable.has(pk)) {
-            chatInfo.historyTable.set(pk, [msgID, 0]);
-            store.setItem(chatID, chatInfo);
-        }
-    });
-}
-
-function decChatHistoryInterval (chatID, pk) {
-    store.getItem(chatID).then((chatInfo) => {
-        if (chatInfo.historyTable.has(pk)) {
-            const interval = chatInfo.historyTable.get(pk).pop();
-            interval[1] = msgID;
-            chatInfo.historyTable.get(pk).push(interval);
-            store.setItem(chatID, chatInfo);
-        }
-    });
-}
+} 
 
 var resolveConnectToPeer = new Map();
 
