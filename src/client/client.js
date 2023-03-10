@@ -672,7 +672,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
                 }
-                if (chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
+                if (chatInfo.historyTable.has(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
                     const interval = chatInfo.historyTable.get(pk).pop();
                     interval[1] = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; }) - 1;
                     chatInfo.historyTable.get(pk).push(interval);
@@ -1018,6 +1018,7 @@ async function sendChatHistory (chatID, pk) {
 
 function initChatHistoryTable (chatID, msgID) {
     console.log(`initialised chat history`);
+    console.log(joinedChats.get(chatID).members.map(pk => keyMap.get(pk)));
     store.getItem(chatID).then((chatInfo) => {
         for (const pk of joinedChats.get(chatID).members) {
             if (!chatInfo.historyTable.has(pk)) {
