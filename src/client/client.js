@@ -743,7 +743,7 @@ async function receivedOperations (ops, chatID, pk) {
                             type: "ignored",
                             ignored: queuedIg,
                             chatID: chatID,
-                            from: strToArr(pk),
+                            from: strToArr(queuedPk),
                             replay: true
                         });
                         joinedChats.get(chatID).peerIgnored.delete(queuedPk);
