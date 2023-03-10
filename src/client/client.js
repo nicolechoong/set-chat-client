@@ -873,11 +873,13 @@ function receivedMessage(messageData) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-                if (res == "ACCEPT") {
-                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                } else if (res === "REJECT") {
-                    closeConnections(JSON.stringify(messageData.from), messageData.chatID);
+                if (res === "ACCEPT" || res === "REJECT") {
+                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                    if (res == "ACCEPT") {
+                        sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
+                    } else {
+                        closeConnections(JSON.stringify(messageData.from), messageData.chatID);
+                    }
                 }
             });
             break;
