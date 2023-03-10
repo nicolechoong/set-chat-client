@@ -674,12 +674,14 @@ async function receivedIgnored (ignored, chatID, pk) {
                 store.setItem("joinedChats", joinedChats);
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
-                }
-                if (chatInfo.historyTable.has(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
-                    const interval = chatInfo.historyTable.get(pk).pop();
-                    interval[1] = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; }) - 1;
-                    chatInfo.historyTable.get(pk).push(interval);
-                    await store.setItem(chatID, chatInfo);
+
+                    if (chatInfo.historyTable.has(pk) && chatInfo.historyTable.get(pk).at(-1)[1] > 0) {
+                        console.log(`decrementing interval?`);
+                        const interval = chatInfo.historyTable.get(pk).pop();
+                        interval[1] = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; }) - 1;
+                        chatInfo.historyTable.get(pk).push(interval);
+                        await store.setItem(chatID, chatInfo);
+                    }
                 }
 
                 return memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
@@ -721,14 +723,13 @@ async function receivedOperations (ops, chatID, pk) {
                             }
                             
                             const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+                            chatInfo.history.splice(ignoredOpIndex, 1);
                             if (ignoredOpIndex > -1) {
-                                const interval = chatInfo.historyTable.get(pk).pop();
-                                if (ignoredOp.action == "add") {
+                                const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
+                                if (ignoredOp.action == "remove") {
                                     interval[1] = 0;
-                                } else if (ignoredOp.action == "remove") {
-                                    interval[1] = chatInfo.history.at(ignoredOpIndex).id;
+                                    chatInfo.historyTable.get(pk).push(interval);
                                 }
-                                chatInfo.historyTable.get(pk).push(interval);
                             }
                             chatInfo.metadata.ignored.push(ignoredOp);
                             removeOp(chatInfo.metadata.operations, ignoredOp);
@@ -904,15 +905,6 @@ function receivedMessage(messageData) {
         case "history":
             store.getItem(messageData.chatID).then(async (chatInfo) => {
                 await mergeChatHistory(messageData.chatID, JSON.stringify(messageData.from), chatInfo.history, messageData.history);
-                if (messageData.chatID === currentChatID) {
-                    chatMessages.innerHTML = "";
-                    store.getItem(currentChatID).then(async (chatInfo) => {
-                        for (const msg of chatInfo.history) {
-                            await updateChatWindow(msg);
-                        }
-                    });
-                }
-                store.setItem(messageData.chatID, chatInfo);
             });
             break;
         case "remove":
@@ -1527,6 +1519,15 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                 chatInfo.history = receivedMsgs;
             }
             await store.setItem(chatID, chatInfo);
+        }
+
+        if (chatID === currentChatID) {
+            chatMessages.innerHTML = "";
+            store.getItem(currentChatID).then(async (chatInfo) => {
+                for (const msg of chatInfo.history) {
+                    await updateChatWindow(msg);
+                }
+            });
         }
     });
 }
