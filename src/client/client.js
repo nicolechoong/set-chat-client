@@ -1483,6 +1483,7 @@ function mergeJoinedChats(localChats, receivedChats) {
 async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
     store.getItem(chatID).then(async (chatInfo) => {
         console.log(`local length ${localMsgs.length}`);
+        console.log(`received length ${receivedMsgs.length}`);
 
         if (receivedMsgs.length > 0) {
             if (localMsgs.length > 0) {
@@ -1511,6 +1512,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                     }
                 }
                 for (pk of modifiedHistoryTable) {
+                    console.log(chatInfo.historyTable.get(pk));
                     chatInfo.historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
                 }
                 mergedChatHistory.sort((a, b) => {
