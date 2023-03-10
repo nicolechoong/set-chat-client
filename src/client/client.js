@@ -642,6 +642,7 @@ async function sendIgnored (ignored, chatID, pk) {
         ignored: ignored,
         chatID: chatID,
         from: keyPair.publicKey,
+        replay: false
     });
     broadcastToMembers(ignoredMessage, chatID);
     if (!joinedChats.get(chatID).members.includes(pk)) {
@@ -740,9 +741,10 @@ async function receivedOperations (ops, chatID, pk) {
                         console.log(`resolving ignored from ${keyMap.get(queuedPk)}`);
                         receivedMessage({
                             type: "ignored",
-                            ignored: JSON.parse(JSON.stringify(queuedIg)),
+                            ignored: queuedIg,
                             chatID: chatID,
-                            from: strToArr(pk)
+                            from: strToArr(pk),
+                            replay: true
                         });
                         joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                         await store.setItem("joinedChats", joinedChats);
@@ -893,7 +895,9 @@ function receivedMessage(messageData) {
             });
             break;
         case "ignored":
-            messageData.ignored.forEach(op => unpackOp(op));
+            if (!messageData.replay) {
+                messageData.ignored.forEach(op => unpackOp(op));
+            }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res == "ACCEPT") {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
