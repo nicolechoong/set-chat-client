@@ -1019,14 +1019,14 @@ async function sendChatHistory (chatID, pk) {
 function initChatHistoryTable (chatID, msgID) {
     console.log(`initialised chat history`);
     console.log(joinedChats.get(chatID).members.map(pk => keyMap.get(pk)));
-    store.getItem(chatID).then((chatInfo) => {
+    store.getItem(chatID).then(async (chatInfo) => {
         for (const pk of joinedChats.get(chatID).members) {
             if (!chatInfo.historyTable.has(pk)) {
                 chatInfo.historyTable.set(pk, []);
             }
             chatInfo.historyTable.get(pk).push([msgID, 0]);
         }
-        store.setItem(chatID, chatInfo);
+        await store.setItem(chatID, chatInfo);
     });
 }
 
@@ -1488,6 +1488,9 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                 const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
                 for (const msg of receivedMsgs) {
                     if (!localMsgIDs.has(msg.id)) {
+                        if (msg.type === "add") {
+                            
+                        }
                         mergedChatHistory.push(msg);
                     }
                 }
