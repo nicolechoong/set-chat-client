@@ -7,60 +7,45 @@
         
     <body>
         <main>
-            <h1 id="heading">Hello I am a Chat</h1>
-            <button id = "resetStoreBtn">Reset Store</button>
-
-            <p id="usernames"></p>
-            <p id="availableChats"></p>
-
-            <div> 
-                <h2>Login</h2>
-                <input type = "text" id = "loginInput" /> 
-                <button id = "loginBtn">Login</button> 
-            </div> 
-
-            <div>
-                <h2>Create Chat</h2>
-                <label>Chat name:</label>
-                <input type = "text" id = "newChatName" /> 
-                <label><br />Add member 1:</label>
-                <input type = "text" id = "member1" />
-                <label><br />Add member 2:</label>
-                <input type = "text" id = "member2" /> 
-                <button id = "newChatBtn">Create</button> 
+            <div id="topBar">
+                <h1 id="heading">Hello I am a Chat</h1>
+                <button id = "resetStoreBtn">Reset Store</button>
             </div>
 
-            <div> 
-                <h2>Join Chat</h2>
-                <select name="chatName" id="chatNameInput" style="width:200px">
-                    <option>Select a chat!</option>
-                </select>
-            </div>
-
-            <div id="chat">
-                <h2 id="chatHeading">Chat</h2>
-                <div id="universeSelection" style="display:none">
-                    Select an operation to IGNORE!!!!
-                    <select name="toIgnore" id="ignoredInput" style="width:200px">
-                    </select>
-                    <br>
+            <div class="flex-container panels">
+                <div id="chatOptions">
+                    <div id="chatOptionsHeader">
+                        <h2>Chats</h2>
+                    </div>
                 </div>
-                <div id="chatBox" style="display:none">
-                    <p id="chatMembers"></p>
-                    <div id="chatModsAdded">
-                        <input type = "text" id = "modifyUserInput" />
-                        <button id = "addUserBtn">Add</button>
-                        <button id = "removeUserBtn">Remove</button> 
+                <div id="chat">
+                    <h2 id="chatHeading">Chat</h2>
+                    <div id="universeSelection" style="display:none">
+                        Select an operation to IGNORE!!!!
+                        <select name="toIgnore" id="ignoredInput" style="width:200px">
+                        </select>
+                        <br>
                     </div>
-                    <div id="chatModsRemoved" style="display:none">
-                        <button id = "disputeBtn">Dispute</button>
-                        <button id = "acceptRemovalBtn">Accept</button>
+                    <div id="chatBox">
+                        <p id="chatMembers"></p>
+                        <div id="chatModsAdded">
+                            <input type = "text" id = "modifyUserInput" />
+                            <button id = "addUserBtn">Add</button>
+                            <button id = "removeUserBtn">Remove</button> 
+                        </div>
+                        <div id="chatModsRemoved" style="display:none">
+                            <button id = "disputeBtn">Dispute</button>
+                            <button id = "acceptRemovalBtn">Accept</button>
+                        </div>
+                        <div id="chatWindow" style="overflow-y:scroll; max-height:400px;"></div>
+                            <p id="chatMessages"></p>
+                            <input type = "text" id = "messageInput" style="width:75%;"/>
+                            <button id = "sendMessageBtn">Send</button> 
+                        </div>
                     </div>
-                    <div id="chatWindow" style="overflow-y:scroll; max-height:400px;"></div>
-                        <p id="chatMessages"></p>
-                        <input type = "text" id = "messageInput" style="width:75%;"/>
-                        <button id = "sendMessageBtn">Send</button> 
-                    </div>
+                </div>
+                <div id="chatInfo">
+                    <h2>Chat Info</h2>
                 </div>
             </div>
                

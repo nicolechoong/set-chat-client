@@ -37,3 +37,19 @@ button:active {
     background-color: #d9d2c2;
     padding: 2px;
 }
+
+.panels {
+    flex-direction: row;
+}
+
+#chatOptions {
+    width:300px;
+}
+
+#chatBox {
+    width: 100%;
+}
+
+#chatInfo {
+    width: 10%;
+}

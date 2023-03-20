@@ -41,6 +41,8 @@
     "localforage": "^1.10.0",
     "node": "^19.0.0",
     "path": "^0.12.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "tweetnacl": "^1.0.3",
     "tweetnacl-es6": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
