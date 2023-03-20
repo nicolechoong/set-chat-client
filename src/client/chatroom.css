@@ -60,14 +60,8 @@ input {
     border-color: #121212;
 }
 
-button:hover {
-    background-color: #fc5c65;
-    border-color: #fc5c65;
-}
-
-button:active {
-    background-color: #eb3b5a;
-    border-color: #eb3b5a;
+button:hover > i {
+    color: #fc5c65;
 }
 
 .top-bar {
@@ -96,17 +90,30 @@ button:active {
     background-color: #ffffff;
 }
 
+.chatHeading {
+    margin: 16px;
+    display: flex;
+    flex-flow: row;
+    flex: 0 1 auto;
+}
+
 #chatBox {
     flex-grow: 4;
     height: 100%;
     display: flex;
     flex-flow: column;
-    gap: 16px;
 }
 
-#chatHeading {
-    flex: 0 1 auto;
+.chatHeading > h2 {
+    margin: 8px;
 }
+
+.chatHeading > button {
+    height: 36px;
+    align-self: center;
+    margin-left: auto;
+    border: none;
+} 
 
 #chatWindow {
     height: 100%;

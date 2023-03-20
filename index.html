@@ -7,6 +7,7 @@
         <script type="module" src="src/client/accessControl.js"></script>
         <script type="module" src="src/client/client.js"></script> -->
         <script src="https://kit.fontawesome.com/47205e58b7.js" crossorigin="anonymous"></script>
+        <script type="module" src="./src/client/components.jsx"></script>
     </head>
         
     <body>
@@ -16,13 +17,19 @@
         </div>
         <main class="container panels">
             <div id="chatOptions" class="chat-panel col-2">
-                <div id="chatOptionsHeader">
+                <div class="row chatHeading">
                     <h2>Chats</h2>
+                    <button id="newChatBtn">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
                 </div>
             </div>
             <div id="chatBox" class="chat-panel col-8">
-                <div id="chatHeading" class="row">
-                    <h2>Chat</h2>
+                <div class="row chatHeading">
+                    <h2>Chat Title</h2>
+                    <button id="showChatInfoBtn">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
                 </div>
                 <div id="chatWindow" class="row">
                     <p id="chatMessages">
@@ -96,7 +103,12 @@
                 </div>
             </div>
             <div id="chatInfo" class="chat-panel col-2">
-                <h2>Chat Info</h2>
+                <div class="row chatHeading">
+                    <h2>Chat Info</h2>
+                    <button id="closeChatInfo">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             </div>
         </main>
             
