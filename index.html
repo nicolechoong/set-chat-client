@@ -3,56 +3,103 @@
     <head> 
         <meta charset = "utf-8" /> 
         <link rel="stylesheet" href="./src/client/chatroom.css">
+        <!-- <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
+        <script type="module" src="src/client/accessControl.js"></script>
+        <script type="module" src="src/client/client.js"></script> -->
+        <script src="https://kit.fontawesome.com/47205e58b7.js" crossorigin="anonymous"></script>
     </head>
         
     <body>
-        <main>
-            <div id="topBar">
-                <h1 id="heading">Hello I am a Chat</h1>
-                <button id = "resetStoreBtn">Reset Store</button>
-            </div>
-
-            <div class="flex-container panels">
-                <div id="chatOptions" class="chat-panel">
-                    <div id="chatOptionsHeader">
-                        <h2>Chats</h2>
-                    </div>
-                </div>
-                <div id="chat" class="chat-panel">
-                    <h2 id="chatHeading">Chat</h2>
-                    <div id="universeSelection" style="display:none">
-                        Select an operation to IGNORE!!!!
-                        <select name="toIgnore" id="ignoredInput" style="width:200px">
-                        </select>
-                        <br>
-                    </div>
-                    <div id="chatBox">
-                        <p id="chatMembers"></p>
-                        <div id="chatModsAdded">
-                            <input type = "text" id = "modifyUserInput" />
-                            <button id = "addUserBtn">Add</button>
-                            <button id = "removeUserBtn">Remove</button> 
-                        </div>
-                        <div id="chatModsRemoved" style="display:none">
-                            <button id = "disputeBtn">Dispute</button>
-                            <button id = "acceptRemovalBtn">Accept</button>
-                        </div>
-                        <div id="chatWindow" style="overflow-y:scroll; max-height:400px;"></div>
-                            <p id="chatMessages"></p>
-                            <input type = "text" id = "messageInput" style="width:75%;"/>
-                            <button id = "sendMessageBtn">Send</button> 
-                        </div>
-                    </div>
-                </div>
-                <div id="chatInfo" class="chat-panel">
-                    <h2>Chat Info</h2>
+        <div class="top-bar">
+            <h1 id="heading">Hello I am a Chat</h1>
+            <button id = "resetStoreBtn">Reset Store</button>
+        </div>
+        <main class="container panels">
+            <div id="chatOptions" class="chat-panel col-2">
+                <div id="chatOptionsHeader">
+                    <h2>Chats</h2>
                 </div>
             </div>
-               
-            <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
-            <script type="module" src="src/client/accessControl.js"></script>
-            <script type="module" src="src/client/client.js"></script>
+            <div id="chatBox" class="chat-panel col-8">
+                <div id="chatHeading" class="row">
+                    <h2>Chat</h2>
+                </div>
+                <div id="chatWindow" class="row">
+                    <p id="chatMessages">
+                        a <br>
+                        ddsd<br>
+                        ds<br>
+                        ds<br>
+                        ds<br>
+                        ds<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        a <br>
+                        ddsd<br>
+                        ds<br>
+                        ds<br>
+                        ds<br>
+                        ds<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        a <br>
+                        ddsd<br>
+                        ds<br>
+                        ds<br>
+                        ds<br>
+                        ds<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                        aa<br>
+                    </p>
+                </div>
+                <div id="chatBar" class="row">
+                    <input type="text" id="messageInput">
+                    <button id="sendMessageBtn">
+                        <i class="fa-regular fa-paper-plane"></i>
+                    </button> 
+                </div>
+            </div>
+            <div id="chatInfo" class="chat-panel col-2">
+                <h2>Chat Info</h2>
+            </div>
         </main>
+            
     </body>
 	
 </html>

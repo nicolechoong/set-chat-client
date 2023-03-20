@@ -4,15 +4,58 @@
     font-weight: regular;
   }
 
+::-webkit-scrollbar {
+    width: 16px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #121212;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #121212;
+    border-radius: 20px;
+    border: 6px solid transparent;
+    background-clip: content-box;
+}
+
+html {
+    height: 100%;
+}
+
 body {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-flow: column;
+    /* overflow: hidden; */
     font-family: spaceGrotesk;
     color: #121212;
+    margin: 0;
+    background-color: #121212;
+    gap:2px;
+}
+
+main {
+    height: 100%;
+    flex-grow: 2;
 }
 
 button {
     font-family: spaceGrotesk;
     color: #121212;
-    background-color: white;
+    background-color: #ffffff;
+    border: 2px solid;
+    border-color: #121212;
+}
+
+input {
+    height: 24px;
+    padding: 4px 8px;
     border: 2px solid;
     border-color: #121212;
 }
@@ -27,40 +70,78 @@ button:active {
     border-color: #eb3b5a;
 }
 
-.container {
-    padding: 0 50px;
-    height: 100vh;
-    background-color: #fdf6e3;
-}
-
-.header {
-    background-color: #d9d2c2;
-    padding: 2px;
+.top-bar {
+    flex-grow: 0;
+    display: flex;
+    flex-direction: row;
+    padding: 24px;
+    background-color: #ffffff;
 }
 
 .panels {
+    height: 100%;
+    width: 100%;
+    padding: 0;
     display: flex;
     flex-direction: row;
-    row-gap: 2px;
+    gap: 2px;
     background-color: #121212;
+    overflow-y: auto;
 }
 
 .chat-panel {
-    padding: 10px;
+    min-width: 0;
+    height: 100%;
+    flex-grow: 1.5;
+    background-color: #ffffff;
 }
 
-#chatOptions {
-    width:300px;
+#chatBox {
+    flex-grow: 4;
+    height: 100%;
+    display: flex;
+    flex-flow: column;
+    gap: 16px;
 }
 
-#chat {
+#chatHeading {
+    flex: 0 1 auto;
+}
+
+#chatWindow {
+    height: 100%;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    margin: 16px;
+}
+
+#chatMessages {
+    margin: 0;
+    padding: 0 16px;
+}
+
+#chatBar {
+    margin: auto 16px 16px;
+    display: flex;
+    flex-direction: row;
+    flex: 0 1 auto;
+    justify-self: flex-end;
+}
+
+#messageInput {
     width: 100%;
+    margin-right: 16px;
 }
 
 #chatInfo {
-    width: 10%;
+    flex-grow: 2;
 }
 
 #heading {
     align-self: start;
+}
+
+#sendMessageBtn {
+    height: 36px;
+    width: 36px;
 }
