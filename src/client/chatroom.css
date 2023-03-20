@@ -39,6 +39,7 @@ button:active {
 }
 
 .panels {
+    display: flex;
     flex-direction: row;
 }
 
@@ -52,4 +53,8 @@ button:active {
 
 #chatInfo {
     width: 10%;
+}
+
+#heading {
+    align-self: start;
 }
