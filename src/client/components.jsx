@@ -20,7 +20,7 @@ function ChatCardList (props) {
     );
 }
 
-const domNode = document.getElementById('chatCards');
+const domNode = document.getElementById('chatCardList');
 const root = createRoot(domNode);
 const test = [
     {chatID: 1, chatname: 'hello', newMessage: false},
