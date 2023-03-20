@@ -41,13 +41,19 @@ button:active {
 .panels {
     display: flex;
     flex-direction: row;
+    row-gap: 2px;
+    background-color: #121212;
+}
+
+.chat-panel {
+    padding: 10px;
 }
 
 #chatOptions {
     width:300px;
 }
 
-#chatBox {
+#chat {
     width: 100%;
 }
 
