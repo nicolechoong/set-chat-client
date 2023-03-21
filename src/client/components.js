@@ -97,9 +97,14 @@ export function generateUserCard (user) {
     card.appendChild(button);
 }
 
-export function showCreatePopup() {
+
+document.getElementById('createChatBtn').onclick = (() => {
     createChat.style.display = "flex";
-}
+});
+
+document.getElementsByClassName('close-popup').map((elem) => {
+    elem.onclick = closePopup;
+})
 
 export function closePopup() {
     if (loginPopup.style.display === "none" && createPopup.style.display === "flex") {

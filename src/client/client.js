@@ -10,7 +10,6 @@ const addUserBtn = document.getElementById('addUserBtn');
 const removeUserBtn = document.getElementById('removeUserBtn');
 // const disputeBtn = document.getElementById('disputeBtn');
 // const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
-const createChatBtn = document.getElementById('createChatBtn');
 const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
@@ -1392,7 +1391,7 @@ function updateChatOptions(operation, chatID) {
 }
 
 function createNewChat() {
-    let newChatName = document.getElementById('newChatName').value;
+    let newChatName = chatNameInput.value;
     var member;
     var members = [];
 
