@@ -29,10 +29,6 @@ app.get('/src/client/chatroom.css', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'chatroom.css'));
 });
 
-app.get('/src/client/components.jsx', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'components.jsx'));
-});
-
 app.get('/src/client/fonts/SpaceGrotesk-Regular.woff', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'fonts', 'SpaceGrotesk-Regular.woff'));
 });

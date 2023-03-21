@@ -25,6 +25,7 @@
 
 html {
     height: 100%;
+    width: 100%;
 }
 
 body {
@@ -32,7 +33,6 @@ body {
     width: 100%;
     display: flex;
     flex-flow: column;
-    /* overflow: hidden; */
     font-family: spaceGrotesk;
     color: #121212;
     margin: 0;
@@ -42,26 +42,69 @@ body {
 
 main {
     height: 100%;
+    width: 100%;
     flex-grow: 2;
 }
 
 button {
     font-family: spaceGrotesk;
     color: #121212;
-    background-color: #ffffff;
-    border: 2px solid;
-    border-color: #121212;
+    border: none;
+    background-color: transparent;
 }
 
 input {
     height: 24px;
     padding: 4px 8px;
-    border: 2px solid;
-    border-color: #121212;
+    border: none;
+    background-color: #e8ecf1;
+    /* border: 2px solid #121212; */
+    border: none;
 }
 
 button:hover > i {
     color: #fc5c65;
+}
+
+option {
+    padding: 0;
+}
+
+.popup {
+    position: absolute;
+    z-index: 1004;
+    width: 300px;
+    top: 50%;
+    left: 50%;
+    display: none;
+    flex-flow: column;
+    border: 2px solid #121212;
+    background-color: #ffffff;
+    transform: translate(-50%, -50%);
+}
+
+.popup > input {
+    border: none;
+    padding: 4px 8px;
+    background-color: #e8ecf1;
+    margin: auto 16px 8px;
+}
+
+.popup > button {
+    width: 20%;
+    padding: 4px;
+    margin: 8px 16px 16px;
+    align-self: center;
+}
+
+.dim {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .top-bar {
@@ -72,6 +115,10 @@ button:hover > i {
     background-color: #ffffff;
 }
 
+.top-bar > button {
+    width: 32px;
+}
+
 .panels {
     height: 100%;
     width: 100%;
@@ -80,6 +127,7 @@ button:hover > i {
     flex-direction: row;
     gap: 2px;
     background-color: #121212;
+    overflow-x: auto;
     overflow-y: auto;
 }
 
@@ -88,6 +136,8 @@ button:hover > i {
     height: 100%;
     flex-grow: 1.5;
     background-color: #ffffff;
+    display: flex;
+    flex-flow: column;
 }
 
 .chatHeading {
@@ -100,8 +150,6 @@ button:hover > i {
 #chatBox {
     flex-grow: 4;
     height: 100%;
-    display: flex;
-    flex-flow: column;
 }
 
 .chatHeading > h2 {
@@ -109,17 +157,102 @@ button:hover > i {
 }
 
 .chatHeading > button {
-    height: 36px;
+    height: 32px;
     align-self: center;
     margin-left: auto;
+    margin-right: 8px;
     border: none;
-} 
+}
+
+.card-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-list > h2 {
+    margin: 16px 24px;
+}
+
+.card {
+    width: 100%;
+    display: flex;
+    flex-flow: row;
+    border-width: 2px 0 0;
+    justify-content: space-between;
+    border-style: solid;
+    padding: 0;
+}
+
+.card:last-child {
+    border-width: 2px 0 2px;
+}
+
+.card h3 {
+    font-size: 16px;
+    text-align: left;
+    margin: 16px 24px;
+}
+
+.card button {
+    height: 32px;
+    width: 32px;
+    margin-left: auto;
+    margin-right: 16px;
+    align-self: center;
+    flex: 0 0 auto;
+}
+
+.card input {
+    width: 100%;
+    flex: 1 2 auto;
+    margin-left: 16px;
+    margin-right: 16px;
+}
+
+.card-input {
+    flex-flow: column;
+}
+
+.card > div {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.card > div:last-child {
+    margin-bottom: 16px;
+}
+
+.card-conflict {
+    flex-flow: column;
+}
+
+.notif {
+    height: 8px;
+    width: 8px;
+    line-height: 1em !important;
+    align-self: center;
+    margin-right: 32px;
+    color: #121212 !important;
+}
+
+button.card:hover {
+    background-color: #e8ecf1;
+}
 
 #chatWindow {
     height: 100%;
     overflow-y: auto;
     flex: 1 1 auto;
-    margin: 16px;
+    margin: 0 24px 16px;
+    padding-top: 16px;
+    border-top: 2px solid #121212;
+}
+
+#chatOptions {
+    max-width: 300px;
 }
 
 #chatMessages {
@@ -133,6 +266,7 @@ button:hover > i {
     flex-direction: row;
     flex: 0 1 auto;
     justify-self: flex-end;
+    justify-content: space-between;
 }
 
 #messageInput {
@@ -141,6 +275,8 @@ button:hover > i {
 }
 
 #chatInfo {
+    display: none;
+    max-width: 350px;
     flex-grow: 2;
 }
 
@@ -149,6 +285,23 @@ button:hover > i {
 }
 
 #sendMessageBtn {
-    height: 36px;
-    width: 36px;
+    height: 32px;
+    width: 32px;
+    /* border: 2px solid;
+    border-color: #121212; */
+    background-color: #ffffff;
+}
+
+#connectBtn {
+    margin-left: auto;
+    margin-right: 16px;
+}
+
+#conflictIcon {
+    margin-right: 16px;
+    color: #fc5c65;
+}
+
+#loginPopup {
+    display: flex;
 }

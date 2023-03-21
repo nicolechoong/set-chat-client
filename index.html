@@ -13,9 +13,39 @@
     </head>
         
     <body>
+        <div id="loginPopup" class="popup">
+            <div class="row chatHeading">
+                <h2>Login</h2>
+            </div>
+            <input type = "text" id = "loginInput" /> 
+            <button id = "loginBtn">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button> 
+        </div>
+        <div id="createPopup" class="popup popup-create">
+            <div class="row chatHeading">
+                <h2>Create Chat</h2>
+                <button id="newChatBtn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <input type = "text" id = "newChatName" /> 
+            <button id = "newChatBtn">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button> 
+        </div>
+        <div id="dim" class="dim"></div>
         <div class="top-bar">
             <h1 id="heading">Hello I am a Chat</h1>
-            <button id = "resetStoreBtn">Reset Store</button>
+            <button id = "resetStoreBtn">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+            <button id="connectBtn">
+                <i class="fa-solid fa-wifi"></i>
+            </button>
+            <button id="logoutBtn">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
         </div>
         <main class="container panels">
             <div id="chatOptions" class="chat-panel col-2">
@@ -25,14 +55,18 @@
                         <i class="fa-solid fa-plus"></i>
                     </button>
                 </div>
-                <div class="chatCardList">
-
+                <div id="chatList" class="cardList">
+                    <button class="card">
+                        <h3>Chat Name</h3>
+                        <i class="fa-solid fa-circle fa-2xs notif"></i>
+                    </button>
                 </div>
             </div>
             <div id="chatBox" class="chat-panel col-8">
                 <div class="row chatHeading">
                     <h2>Chat Title</h2>
                     <button id="showChatInfoBtn">
+                        <i id="conflictIcon" class="fa-solid fa-triangle-exclamation"></i>
                         <i class="fa-solid fa-ellipsis-vertical"></i>
                     </button>
                 </div>
@@ -104,15 +138,47 @@
                     <input type="text" id="messageInput">
                     <button id="sendMessageBtn">
                         <i class="fa-regular fa-paper-plane"></i>
-                    </button> 
+                    </button>
                 </div>
             </div>
             <div id="chatInfo" class="chat-panel col-2">
                 <div class="row chatHeading">
-                    <h2>Chat Info</h2>
+                    <h2>Members</h2>
                     <button id="closeChatInfo">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
+                </div>
+                <div class="card-list">
+                    <div class="card card-conflict">
+                        <h3>Please select an operation to ignore</h3>
+                        <div class="opOption">
+                            <h3>A removed B</h3>
+                            <button id="addUserBtn">
+                                <i class="fa-solid fa-ban"></i>
+                            </button>
+                        </div>
+                        <div class="opOption">
+                            <h3>B removed A</h3>
+                            <button id="addUserBtn">
+                                <i class="fa-solid fa-ban"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="addUserCard" class="card card-input">
+                        <h3>Add new member</h3>
+                        <div>
+                            <input type="text" id="modifyUserInput">
+                            <button id="addUserBtn">
+                                <i class="fa-solid fa-user-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Username</h3>
+                        <button id="removeUserBtn">
+                            <i class="fa-solid fa-user-xmark"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>

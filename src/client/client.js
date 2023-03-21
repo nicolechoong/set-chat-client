@@ -1,22 +1,25 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
+import * as elem from "./components.js";
 import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
 
-var loginBtn = document.getElementById('loginBtn');
-var sendMessageBtn = document.getElementById('sendMessageBtn');
-var addUserBtn = document.getElementById('addUserBtn');
-var removeUserBtn = document.getElementById('removeUserBtn');
-var disputeBtn = document.getElementById('disputeBtn');
-var acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
-var resetStoreBtn = document.getElementById('resetStoreBtn');
-var chatMessages = document.getElementById('chatMessages');
+const loginBtn = document.getElementById('loginBtn');
+const sendMessageBtn = document.getElementById('sendMessageBtn');
+const addUserBtn = document.getElementById('addUserBtn');
+const removeUserBtn = document.getElementById('removeUserBtn');
+const disputeBtn = document.getElementById('disputeBtn');
+const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
+const resetStoreBtn = document.getElementById('resetStoreBtn');
+const chatMessages = document.getElementById('chatMessages');
+const dim = document.getElementById('dim');
+const chatList = document.getElementById('chatList');
 
-var loginInput = document.getElementById('loginInput');
-var chatNameInput = document.getElementById('chatNameInput');
-var ignoredInput = document.getElementById('ignoredInput');
-var messageInput = document.getElementById('messageInput');
-var modifyUserInput = document.getElementById('modifyUserInput');
+const loginInput = document.getElementById('loginInput');
+const chatNameInput = document.getElementById('chatNameInput');
+const ignoredInput = document.getElementById('ignoredInput');
+const messageInput = document.getElementById('messageInput');
+const modifyUserInput = document.getElementById('modifyUserInput');
 
 var localUsername;
 
@@ -165,6 +168,10 @@ async function onLogin(success, chats, username) {
         store.getItem("msgQueue").then((storedMsgQueue) => {
             msgQueue = storedMsgQueue === null ? new Map() : storedMsgQueue;
         });
+
+        document.getElementById('loginPopup').style.display = "none";
+        dim.style.display = "none";
+        
         updateHeading();
 
         for (const chatID of joinedChats.keys()) {
@@ -333,6 +340,7 @@ async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers
     });
 
     updateChatOptions("add", chatID);
+    chatList.insertBefore(elem.generateChatCard(chatID, chatName, false), chatList.firstElementChild);
     updateHeading();
 }
 
@@ -1339,42 +1347,38 @@ function getChatID(chatName) {
     return -1;
 }
 
-function updateHeading() {
+function updateHeading () {
     const title = document.getElementById('heading');
+    
     title.innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
-    if (joinedChats.size > 0) {
-        const availableChats = document.getElementById('availableChats');
-        availableChats.innerHTML = `Chats: ${getChatNames().join(", ")}`;
-    }
+    // if (joinedChats.size > 0) {
+    //     const availableChats = document.getElementById('availableChats');
+    //     availableChats.innerHTML = `Chats: ${getChatNames().join(", ")}`;
+    // }
 
-    if (currentChatID > 0) {
-        const chatTitle = document.getElementById('chatHeading');
-        chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
+    // if (currentChatID > 0) {
+    //     const chatTitle = document.getElementById('chatHeading');
+    //     chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
 
-        const chatMembers = document.getElementById('chatMembers');
-        chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
+    //     const chatMembers = document.getElementById('chatMembers');
+    //     chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
 
-        document.getElementById('chatBox').style.display = "block";
-        document.getElementById('chatWindow').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
-        document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
-        document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
-    }
+    //     document.getElementById('chatBox').style.display = "block";
+    //     document.getElementById('chatWindow').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
+    //     document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
+    //     document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
+    // }
 }
 
-function selectChat() {
-    const index = chatNameInput.selectedIndex;
-
-    if (index > 0) {
-        const chatName = chatNameInput.options.item(index).text;
-        currentChatID = getChatID(chatName);
-        updateHeading();
-        chatMessages.innerHTML = "";
-        store.getItem(currentChatID).then(async (chatInfo) => {
-            for (const data of chatInfo.history) {
-                await updateChatWindow(data);
-            }
-        });
-    }
+function selectChat(chatID) {
+    currentChatID = getChatID(chatName);
+    updateHeading();
+    chatMessages.innerHTML = "";
+    store.getItem(currentChatID).then(async (chatInfo) => {
+        for (const data of chatInfo.history) {
+            await updateChatWindow(data);
+        }
+    });
 }
 
 const chatOptions = new Set();
