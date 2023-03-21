@@ -128,7 +128,7 @@ connection.onmessage = function (message) {
             onLeave(JSON.stringify(data.from));
             break;
         case "createChat":
-            onCreateChat(data.chatID, data.chatName, new Map(JSON.parse(data.validMemberPubKeys)), data.invalidMembers);
+            onCreateChat(data.chatID, data.chatName);
             break;
         case "add":
             onAdd(data.chatID, data.chatName, objToArr(data.from), data.id);
@@ -301,7 +301,7 @@ function onLeave(peerPK) {
     closeConnections(peerPK, 0);
 }
 
-async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers) {
+async function onCreateChat(chatID, chatName) {
 
     joinedChats.set(chatID, {
         chatName: chatName,
@@ -314,14 +314,14 @@ async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers
     });
     store.setItem("joinedChats", joinedChats);
 
-    for (const name of validMemberPubKeys.keys()) {
-        keyMap.set(JSON.stringify(validMemberPubKeys.get(name)), name);
-    }
-    store.setItem("keyMap", keyMap);
+    // for (const name of validMemberPubKeys.keys()) {
+    //     keyMap.set(JSON.stringify(validMemberPubKeys.get(name)), name);
+    // }
+    // store.setItem("keyMap", keyMap);
 
-    if (invalidMembers.length > 0) {
-        alert(`The following users do not exist ${invalidMembers}`);
-    }
+    // if (invalidMembers.length > 0) {
+    //     alert(`The following users do not exist ${invalidMembers}`);
+    // }
 
     const createOp = await access.generateOp("create", keyPair);
     const operations = [createOp];
@@ -335,7 +335,7 @@ async function onCreateChat(chatID, chatName, validMemberPubKeys, invalidMembers
         history: [],
         historyTable: new Map(),
     }).then(() => {
-        addToChat(validMemberPubKeys, chatID);
+        // addToChat(validMemberPubKeys, chatID);
     });
 
     updateChatOptions("add", chatID);
@@ -1391,22 +1391,10 @@ function updateChatOptions(operation, chatID) {
 }
 
 function createNewChat() {
-    let newChatName = chatNameInput.value;
-    var member;
-    var members = [];
-
-    for (let i = 1; i < 3; i++) {
-        member = document.getElementById(`member${i}`).value;
-        if (member !== "" && member !== localUsername && !members.includes(member)) {
-            members.push(member);
-        }
-    }
-
     sendToServer({
         type: "createChat",
-        chatName: newChatName,
+        chatName: chatNameInput.value,
         from: keyPair.publicKey,
-        members: members
     });
 }
 

@@ -290,27 +290,27 @@ function generateUID () {
 function onCreateChat (connection, data) {
   // data = {type: 'createChat', chatName: chat title, members: [list of users]}
   const chatID = generateUID();
-  const validMembers = data.members.filter(mem => usernameToPK.has(mem)).map(mem => JSON.parse(usernameToPK.get(mem)));
+  // const validMembers = data.members.filter(mem => usernameToPK.has(mem)).map(mem => JSON.parse(usernameToPK.get(mem)));
 
-  const validMemberPubKeys = new Map();
-  for (const pk of validMembers) {
-    // pk: Object
-    validMemberPubKeys.set(allUsers.get(JSON.stringify(pk)).username, pk);
-  }
+  // const validMemberPubKeys = new Map();
+  // for (const pk of validMembers) {
+  //   // pk: Object
+  //   validMemberPubKeys.set(allUsers.get(JSON.stringify(pk)).username, pk);
+  // }
 
-  const invalidMembers = data.members.filter(mem => !usernameToPK.has(mem));
+  // const invalidMembers = data.members.filter(mem => !usernameToPK.has(mem));
 
   // add to list of chats
   chats.set(chatID, {chatName: data.chatName, members: [JSON.stringify(data.from)]});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
-  console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
+  // console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
   const createChatMessage = {
     type: "createChat",
     chatID: chatID,
     chatName: data.chatName,
-    validMemberPubKeys: JSON.stringify(Array.from(validMemberPubKeys)),
-    invalidMembers: invalidMembers
+    // validMemberPubKeys: JSON.stringify(Array.from(validMemberPubKeys)),
+    // invalidMembers: invalidMembers
   };
 
   sendTo(connection, createChatMessage, connection.pk);
