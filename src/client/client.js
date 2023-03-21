@@ -451,7 +451,7 @@ async function onRemove (chatID, fromPK) {
     }
 }
 
-async function removeFromChat (validMemberPubKeys, chatID) {
+export async function removeFromChat (validMemberPubKeys, chatID) {
     // validMemberPubKeys : map of string username to object public key, chatID : string
     store.getItem(chatID).then(async (chatInfo) => {
         var pk;
@@ -1370,7 +1370,7 @@ function updateHeading () {
     // }
 }
 
-function selectChat(chatID) {
+export function selectChat(chatID) {
     currentChatID = getChatID(chatName);
     updateHeading();
     chatMessages.innerHTML = "";
