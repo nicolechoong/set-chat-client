@@ -2,7 +2,7 @@
     font-family: spaceGrotesk;
     src: url(https://35.178.80.94:3000/src/client/fonts/SpaceGrotesk-Regular.woff);
     font-weight: regular;
-  }
+}
 
 ::-webkit-scrollbar {
     width: 16px;
@@ -62,12 +62,14 @@ input {
     border: none;
 }
 
-i {
-    color: #121212;
+svg {
+    fill: #121212;
+    height: 16px;
+    width: 16px;
 }
 
-button:hover > i {
-    color: #fc5c65;
+button:hover > svg {
+    fill: #fc5c65;
 }
 
 option {
@@ -102,6 +104,7 @@ option {
 }
 
 .dim {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -184,6 +187,7 @@ option {
     flex-flow: row;
     border-width: 2px 0 0;
     justify-content: space-between;
+    align-items: center;
     border-style: solid;
     padding: 0;
 }
@@ -238,7 +242,7 @@ option {
     width: 8px;
     line-height: 1em !important;
     align-self: center;
-    margin-right: 32px;
+    margin-right: 34px;
     color: #121212 !important;
 }
 
@@ -279,7 +283,7 @@ button.card:hover {
 }
 
 #chatInfo {
-    display: none;
+    /* display: none; */
     max-width: 350px;
     flex-grow: 2;
 }
@@ -303,9 +307,9 @@ button.card:hover {
 
 #conflictIcon {
     margin-right: 16px;
-    color: #fc5c65;
+    fill: #fc5c65;
 }
 
-#loginPopup {
+/* #loginPopup {
     display: flex;
-}
+} */
