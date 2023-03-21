@@ -1,3 +1,7 @@
+const createPopup = document.getElementById('createPopup');
+const loginPopup = document.getElementById('loginPopup');
+const dim = document.getElementById('dim');
+
 export function generateCardHTML (type, text, userID=null, notif=false, ops=null) {
     var card;
     const h3 = document.createElement("h3");
@@ -91,4 +95,15 @@ export function generateUserCard (user) {
     });
 
     card.appendChild(button);
+}
+
+export function showCreatePopup() {
+    createChat.style.display = "flex";
+}
+
+export function closePopup() {
+    if (loginPopup.style.display === "none" && createPopup.style.display === "flex") {
+        dim.style.display = "none";
+        createPopup.style.display = "none";
+    }
 }

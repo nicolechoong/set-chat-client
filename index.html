@@ -5,6 +5,7 @@
         <link rel="stylesheet" href="./src/client/chatroom.css">
         <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
         <script type="module" src="src/client/accessControl.js"></script>
+        <script type="module" src="src/client/components.js"></script>
         <script type="module" src="src/client/client.js"></script>
         <script src="https://kit.fontawesome.com/e37cc35a05.js" crossorigin="anonymous"></script>
     </head>
@@ -24,7 +25,7 @@
         <div id="createPopup" class="popup popup-create">
             <div class="row chatHeading">
                 <h2>Create Chat</h2>
-                <button id="newChatBtn">
+                <button onclick="closePopup()">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Pro 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
                         <path d="M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z"/>
                     </svg>
@@ -37,7 +38,7 @@
                 </svg>
             </button> 
         </div>
-        <div id="dim" class="dim"></div>
+        <div id="dim" class="dim" onclick="closePopup()"></div>
         <div class="top-bar">
             <h1 id="heading">Hello I am a Chat</h1>
             <button id = "resetStoreBtn">
@@ -61,7 +62,7 @@
             <div id="chatOptions" class="chat-panel col-2">
                 <div class="row chatHeading">
                     <h2>Chats</h2>
-                    <button id="newChatBtn">
+                    <button id="createChatBtn" onclick="showCreatePopup()">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Pro 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
                             <path d="M240 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H32c-17.7 0-32 14.3-32 32s14.3 32 32 32H176V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H240V80z"/>
                         </svg>

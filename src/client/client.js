@@ -10,10 +10,10 @@ const addUserBtn = document.getElementById('addUserBtn');
 const removeUserBtn = document.getElementById('removeUserBtn');
 // const disputeBtn = document.getElementById('disputeBtn');
 // const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
+const createChatBtn = document.getElementById('createChatBtn');
 const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
-const dim = document.getElementById('dim');
 const chatList = document.getElementById('chatList');
 
 const loginInput = document.getElementById('loginInput');
@@ -88,7 +88,7 @@ var connection = new WebSocket('wss://35.178.80.94:3000/');
 connection.onopen = function () {
     console.log("Connected to server");
     dim.style.display = "block";
-    document.getElementById('loginPopup').style.display = "flex";
+    loginPopup.style.display = "flex";
 };
 
 connection.onerror = function (err) {
@@ -171,7 +171,7 @@ async function onLogin(success, chats, username) {
             msgQueue = storedMsgQueue === null ? new Map() : storedMsgQueue;
         });
 
-        document.getElementById('loginPopup').style.display = "none";
+        loginPopup.style.display = "none";
         dim.style.display = "none";
         
         updateHeading();
