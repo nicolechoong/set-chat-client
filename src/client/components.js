@@ -102,7 +102,7 @@ document.getElementById('createChatBtn').onclick = (() => {
     createChat.style.display = "flex";
 });
 
-document.getElementsByClassName('close-popup').map((elem) => {
+[...document.getElementsByClassName('close-popup')].map((elem) => {
     elem.onclick = closePopup;
 })
 
