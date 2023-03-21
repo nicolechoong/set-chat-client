@@ -104,7 +104,6 @@ option {
 }
 
 .dim {
-    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -283,7 +282,7 @@ button.card:hover {
 }
 
 #chatInfo {
-    /* display: none; */
+    display: none;
     max-width: 350px;
     flex-grow: 2;
 }
@@ -309,7 +308,3 @@ button.card:hover {
     margin-right: 16px;
     fill: #fc5c65;
 }
-
-/* #loginPopup {
-    display: flex;
-} */
