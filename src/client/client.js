@@ -278,8 +278,6 @@ function onCandidate(candidate, peerPK) {
 }
 
 function onConnectedUsers(usernames) {
-    document.getElementById('usernames').innerHTML = `Currently Online: ${usernames.join(", ")}`;
-
     if (localUsername) {
         const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap.get(entry[0]))).map(entry => entry[0]);
         for (const pk of toSend) {
@@ -1245,8 +1243,6 @@ sendMessageBtn.addEventListener("click", function () {
 })
 
 chatNameInput.addEventListener("change", selectChat);
-
-ignoredInput.addEventListener("focus", () => { ignoredInput.selectedIndex = -1; });
 
 ignoredInput.addEventListener("change", selectIgnored);
 
