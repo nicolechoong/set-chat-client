@@ -1229,6 +1229,13 @@ loginBtn.addEventListener("click", async function (event) {
     }
 });
 
+chatNameInput.addEventListener("keypress", ((event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        newChatBtn.click();
+    }
+}));
+
 messageInput.addEventListener("keypress", function (event) {
     if (event.key === "Enter") {
         event.preventDefault();

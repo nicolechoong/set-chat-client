@@ -1,3 +1,5 @@
+import { selectChat, removeFromChat } from './client.js';
+
 const createPopup = document.getElementById('createPopup');
 const loginPopup = document.getElementById('loginPopup');
 const dim = document.getElementById('dim');

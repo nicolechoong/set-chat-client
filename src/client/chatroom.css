@@ -242,7 +242,7 @@ option {
     line-height: 1em !important;
     align-self: center;
     margin-right: 34px;
-    color: #121212 !important;
+    fill: #121212 !important;
 }
 
 button.card:hover {
