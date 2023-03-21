@@ -8,8 +8,9 @@ const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
 const addUserBtn = document.getElementById('addUserBtn');
 const removeUserBtn = document.getElementById('removeUserBtn');
-const disputeBtn = document.getElementById('disputeBtn');
-const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
+// const disputeBtn = document.getElementById('disputeBtn');
+// const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
+const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
 const dim = document.getElementById('dim');
@@ -17,9 +18,8 @@ const chatList = document.getElementById('chatList');
 
 const loginInput = document.getElementById('loginInput');
 const chatNameInput = document.getElementById('chatNameInput');
-const ignoredInput = document.getElementById('ignoredInput');
 const messageInput = document.getElementById('messageInput');
-const modifyUserInput = document.getElementById('modifyUserInput');
+const addUserInput = document.getElementById('addUserInput');
 
 var localUsername;
 
@@ -1242,18 +1242,14 @@ sendMessageBtn.addEventListener("click", function () {
     }
 })
 
-chatNameInput.addEventListener("change", selectChat);
-
-ignoredInput.addEventListener("change", selectIgnored);
-
 newChatBtn.addEventListener("click", createNewChat);
 
 addUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
-    const username = modifyUserInput.value;
+    const username = addUserInput.value;
     try {
         const pk = await getPK(username);
-        modifyUserInput.value = "";
+        addUserInput.value = "";
         // as long as you are in some universe
         if (joinedChats.get(currentChatID).validMembers.includes(JSON.stringify(pk))) { alert(`User has already been added`); return; }
         addToChat(new Map([[username, pk]]), currentChatID);
@@ -1263,30 +1259,30 @@ addUserBtn.addEventListener("click", async () => {
     }
 });
 
-removeUserBtn.addEventListener("click", async () => {
-    if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
-    const username = modifyUserInput.value;
-    try {
-        const pk = await getPK(username);
-        modifyUserInput.value = "";
-        if (!joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`Invalid username`); return; };
-        removeFromChat(new Map([[username, pk]]), currentChatID);
-    } catch (err) {
-        alert(`User does not exist`);
-    }
-});
+// removeUserBtn.addEventListener("click", async () => {
+//     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
+//     const username = modifyUserInput.value;
+//     try {
+//         const pk = await getPK(username);
+//         modifyUserInput.value = "";
+//         if (!joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`Invalid username`); return; };
+//         removeFromChat(new Map([[username, pk]]), currentChatID);
+//     } catch (err) {
+//         alert(`User does not exist`);
+//     }
+// });
 
-disputeBtn.addEventListener("click", async () => {
-    disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
-    joinedChats.get(currentChatID).toDispute = null;
-    updateHeading();
-});
+// disputeBtn.addEventListener("click", async () => {
+//     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
+//     joinedChats.get(currentChatID).toDispute = null;
+//     updateHeading();
+// });
 
-acceptRemovalBtn.addEventListener("click", async () => {
-    console.log(`toDispute cleared`);
-    joinedChats.get(currentChatID).toDispute = null;
-    updateHeading();
-});
+// acceptRemovalBtn.addEventListener("click", async () => {
+//     console.log(`toDispute cleared`);
+//     joinedChats.get(currentChatID).toDispute = null;
+//     updateHeading();
+// });
 
 resetStoreBtn.addEventListener("click", () => {
     console.log(`resetting store...`);
