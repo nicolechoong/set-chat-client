@@ -1371,7 +1371,7 @@ function updateHeading () {
 }
 
 export function selectChat(chatID) {
-    currentChatID = getChatID(chatName);
+    currentChatID = chatID;
     updateHeading();
     chatMessages.innerHTML = "";
     store.getItem(currentChatID).then(async (chatInfo) => {
@@ -1398,6 +1398,7 @@ function updateChatOptions(operation, chatID) {
 }
 
 function createNewChat() {
+    elem.closePopup();
     sendToServer({
         type: "createChat",
         chatName: chatNameInput.value,
