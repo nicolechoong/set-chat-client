@@ -1379,14 +1379,12 @@ function updateChatOptions(operation, chatID) {
     var option = document.createElement("option");
     if (operation === "add" && !chatOptions.has(chatID)) {
         option.text = joinedChats.get(chatID).chatName;
-        chatNameInput.add(option);
         chatOptions.add(chatID);
         return;
     }
 
     if (operation === "remove" && chatOptions.has(chatID)) {
         const index = [...joinedChats.keys()].indexOf(chatID);
-        chatNameInput.remove(index);
         chatOptions.delete(chatID);
     }
 }
