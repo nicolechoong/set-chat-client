@@ -62,6 +62,10 @@ input {
     border: none;
 }
 
+i {
+    color: #121212;
+}
+
 button:hover > i {
     color: #fc5c65;
 }
