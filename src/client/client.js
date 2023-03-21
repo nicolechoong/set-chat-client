@@ -88,7 +88,7 @@ var connection = new WebSocket('wss://35.178.80.94:3000/');
 connection.onopen = function () {
     console.log("Connected to server");
     dim.style.display = "block";
-    document.getElementById('loginPopup').style.display = "flex !important";
+    document.getElementById('loginPopup').style.display = "flex";
 };
 
 connection.onerror = function (err) {
