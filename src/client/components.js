@@ -60,7 +60,7 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
     return card;
 }
 
-export function generateChatCard (chatID, chatName, notif) {
+export function generateChatCard (chatID, chatName) {
     const card = document.createElement("button");
     card.id = `chatCard${chatID}`;
     card.className = "card";
@@ -71,16 +71,13 @@ export function generateChatCard (chatID, chatName, notif) {
     h3.appendChild(h3Text);
     card.appendChild(h3);
 
-    if (notif) {
-        const path = document.createElement("path");
-        path.d = "M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256S114.6 512 256 512z";
-        const svg = document.createElement("svg");
-        svg.className = "notif";
-        svg.xmlns = "http://www.w3.org/2000/svg";
-        svg.view = "0 0 512 512";
-        svg.appendChild(path);
-        card.appendChild(svg);
-    }
+    const path = document.createElement("path");
+    path.d = "M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256S114.6 512 256 512z";
+    const svg = document.createElement("svg");
+    svg.xmlns = "http://www.w3.org/2000/svg";
+    svg.view = "0 0 512 512";
+    svg.appendChild(path);
+    card.appendChild(svg);
 
     return card;
 }

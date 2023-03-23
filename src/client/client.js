@@ -948,6 +948,9 @@ function receivedMessage(messageData) {
             break;
         case "text":
             if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
+                if (messageData.chatID !== currentChatID) {
+                    document.getElementById(`chatCard${chatID}`).card.className = "card notif";
+                }
                 updateChatWindow(messageData);
                 updateChatStore(messageData);
             }
@@ -1381,6 +1384,7 @@ export function selectChat(chatID) {
     currentChatID = chatID;
     updateHeading();
     chatMessages.innerHTML = "";
+    document.getElementById(`chatCard${chatID}`).card.className = "card";
     store.getItem(currentChatID).then(async (chatInfo) => {
         for (const data of chatInfo.history) {
             await updateChatWindow(data);
@@ -1392,7 +1396,7 @@ const chatOptions = new Set();
 
 function updateChatOptions(operation, chatID) {
     if (operation === "add" && !chatOptions.has(chatID)) {
-        chatList.insertBefore(elem.generateChatCard(chatID, chatName, false), chatList.firstElementChild);
+        chatList.insertBefore(elem.generateChatCard(chatID, joinedChats.get(chatID).chatName, false), chatList.firstElementChild);
         chatOptions.add(chatID);
         return;
     }
@@ -1472,6 +1476,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
     store.getItem(chatID).then(async (chatInfo) => {
         console.log(`local length ${localMsgs.length}`);
         console.log(`received length ${receivedMsgs.length}`);
+        const newMessage = false;
 
         if (receivedMsgs.length > 0) {
             if (localMsgs.length > 0) {
@@ -1481,6 +1486,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
                 const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
                 for (const msg of receivedMsgs) {
                     if (!localMsgIDs.has(msg.id)) {
+                        newMessage = true;
                         if (msg.type === "add" && !arrEqual(msg.op.pk2, keyPair.publicKey)) {
                             if (!chatInfo.historyTable.has(JSON.stringify(msg.op.pk2))) {
                                 chatInfo.historyTable.set(JSON.stringify(msg.op.pk2), []);
@@ -1517,6 +1523,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
             await store.setItem(chatID, chatInfo);
         }
 
+        if (newMessage) { document.getElementById(`chatCard${chatID}`).card.className = "card notif"; }
         await refreshChatWindow();
     });
 }

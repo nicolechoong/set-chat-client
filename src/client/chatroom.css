@@ -236,7 +236,7 @@ option {
     flex-flow: column;
 }
 
-.notif {
+.notif > svg {
     height: 8px;
     width: 8px;
     line-height: 1em !important;
