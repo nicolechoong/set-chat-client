@@ -4,6 +4,8 @@ const createPopup = document.getElementById('createPopup');
 const loginPopup = document.getElementById('loginPopup');
 const dim = document.getElementById('dim');
 
+const chatInfo = document.getElementById('chatInfo');
+const chatNameInput = document.getElementById('chatNameInput');
 const showChatInfoBtn = document.getElementById('showChatInfoBtn');
 
 export function generateCardHTML (type, text, userID=null, notif=false, ops=null) {
@@ -88,7 +90,7 @@ export function generateUserCard (pk, username) {
     card.className = "card";
 
     const h3 = document.createElement("h3");
-    const h3Text = document.createTextNode(user);
+    const h3Text = document.createTextNode(username);
     h3.appendChild(h3Text);
     card.appendChild(h3);
 
@@ -113,14 +115,16 @@ export function generateUserCard (pk, username) {
 
 document.getElementById('createChatBtn').onclick = (() => {
     createPopup.style.display = "flex";
+    chatNameInput.focus();
+    chatNameInput.select();
 });
 
 document.getElementById('showChatInfoBtn').onclick = (() => {
-    document.getElementById('chatInfo').style.display = "flex";
+    chatInfo.style.display = chatInfo.style.display === "flex" ? "none" : "flex";
 });
 
 document.getElementById('closeChatInfo').onclick = (() => {
-    document.getElementById('chatInfo').style.display = "none";
+    chatInfo.style.display = "none";
 });
 
 [...document.getElementsByClassName('close-popup')].map((elem) => {

@@ -18,7 +18,6 @@ const memberList = document.getElementById('memberList');
 const chatBar = document.getElementById('chatBar');
 
 const loginInput = document.getElementById('loginInput');
-const chatNameInput = document.getElementById('chatNameInput');
 const messageInput = document.getElementById('messageInput');
 const addUserInput = document.getElementById('addUserInput');
 
@@ -340,6 +339,7 @@ async function onCreateChat(chatID, chatName) {
     });
 
     updateChatOptions("add", chatID);
+    if (currentChatID === 0) { selectChat(chatID); }
 }
 
 // When being added to a new chat
