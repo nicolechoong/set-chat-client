@@ -84,6 +84,7 @@ export function generateChatCard (chatID, chatName) {
 
 export function generateUserCard (pk, username) {
     const card = document.createElement("div");
+    card.id = `userCard${username}`;
     card.className = "card";
 
     const h3 = document.createElement("h3");

@@ -15,6 +15,7 @@ const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
 const chatList = document.getElementById('chatList');
 const memberList = document.getElementById('memberList');
+const chatBar = document.getElementById('chatBar');
 
 const loginInput = document.getElementById('loginInput');
 const chatNameInput = document.getElementById('chatNameInput');
@@ -173,8 +174,7 @@ async function onLogin(success, chats, username) {
 
         loginPopup.style.display = "none";
         dim.style.display = "none";
-        
-        updateHeading();
+        document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
 
         for (const chatID of joinedChats.keys()) {
             updateChatOptions("add", chatID);
@@ -340,7 +340,6 @@ async function onCreateChat(chatID, chatName) {
     });
 
     updateChatOptions("add", chatID);
-    updateHeading();
 }
 
 // When being added to a new chat
@@ -429,14 +428,19 @@ async function onRemove (chatID, fromPK) {
     if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
         const from = await getUsername(JSON.stringify(fromPK));
         chatInfo.currentMember = false;
+
+        // if the removal is disputable
         if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
             console.log(`disputable`);
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
+
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
         }
         chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
+        document.getElementById(`userCard${localUsername}`).remove();
+        chatBar.style.display = "none";
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
         console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
@@ -447,7 +451,6 @@ async function onRemove (chatID, fromPK) {
         for (const pk of chatInfo.members) {
             closeConnections(pk, chatID);
         }
-        updateHeading();
     }
 }
 
@@ -1076,7 +1079,7 @@ async function addPeer(messageData) {
     joinedChats.get(messageData.chatID).exMembers.delete(pk);
     store.setItem("joinedChats", joinedChats);
 
-    updateHeading();
+    memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (!chatInfo.historyTable.has(pk)) {
@@ -1112,7 +1115,8 @@ async function removePeer (messageData) {
     joinedChats.get(messageData.chatID).exMembers.add(pk);
     store.setItem("joinedChats", joinedChats);
 
-    updateHeading();
+    document.getElementById(`userCard${keyMap.get(pk)}`).remove();
+
     updateChatWindow(messageData);
 
     console.log(`closing from removePeer ${keyMap.get(pk)}`);
@@ -1354,35 +1358,29 @@ function getChatID(chatName) {
     return -1;
 }
 
+
 function updateHeading () {
-    const title = document.getElementById('heading');
-    
-    title.innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
-    if (joinedChats.size > 0) {
-        [...joinedChats.keys()].forEach((chatID) => {
-            updateChatOptions("add", chatID);
-        });
-    }
+    const chatTitle = document.getElementById('chatTitle');
+    chatTitle.innerHTML = joinedChats.get(currentChatID).chatName;
 
-    if (currentChatID > 0) {
-        const chatTitle = document.getElementById('chatHeading');
-        chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
+    memberList.innerHTML = "";
+    joinedChats.get(currentChatID).members.forEach((pk) => {
+        memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
+    });
 
-        memberList.innerHTML = "";
-        joinedChats.get(currentChatID).members.forEach((pk) => {
-            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
-        });
-
-        document.getElementById('chatBox').style.display = "block";
-        document.getElementById('chatWindow').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
-        document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
-        document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
-    }
+    chatBar.style.display = (joinedChats.get(currentChatID).currentMember) ? "flex" : "none";
 }
 
 export function selectChat(chatID) {
     currentChatID = chatID;
-    updateHeading();
+    const chatTitle = document.getElementById('chatTitle');
+    chatTitle.innerHTML = joinedChats.get(currentChatID).chatName;
+
+    memberList.innerHTML = "";
+    joinedChats.get(currentChatID).members.forEach((pk) => {
+        memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
+    });
+
     chatMessages.innerHTML = "";
     document.getElementById(`chatCard${chatID}`).card.className = "card";
     store.getItem(currentChatID).then(async (chatInfo) => {
