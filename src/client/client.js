@@ -1360,15 +1360,16 @@ function getChatID(chatName) {
 
 
 function updateHeading () {
-    const chatTitle = document.getElementById('chatTitle');
-    chatTitle.innerHTML = joinedChats.get(currentChatID).chatName;
+    if (currentChatID > 0) {
+        document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
 
-    memberList.innerHTML = "";
-    joinedChats.get(currentChatID).members.forEach((pk) => {
-        memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
-    });
+        memberList.innerHTML = "";
+        joinedChats.get(currentChatID).members.forEach((pk) => {
+            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
+        });
 
-    chatBar.style.display = (joinedChats.get(currentChatID).currentMember) ? "flex" : "none";
+        chatBar.style.display = (joinedChats.get(currentChatID).currentMember) ? "flex" : "none";
+    }
 }
 
 export function selectChat(chatID) {
