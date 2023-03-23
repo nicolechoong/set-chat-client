@@ -14,6 +14,7 @@ const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
 const chatList = document.getElementById('chatList');
+const memberList = document.getElementById('memberList');
 
 const loginInput = document.getElementById('loginInput');
 const chatNameInput = document.getElementById('chatNameInput');
@@ -339,7 +340,6 @@ async function onCreateChat(chatID, chatName) {
     });
 
     updateChatOptions("add", chatID);
-    chatList.insertBefore(elem.generateChatCard(chatID, chatName, false), chatList.firstElementChild);
     updateHeading();
 }
 
@@ -1250,7 +1250,11 @@ sendMessageBtn.addEventListener("click", function () {
     }
 })
 
-newChatBtn.addEventListener("click", createNewChat);
+newChatBtn.addEventListener("click", () => {
+    createNewChat();
+    elem.closePopup();
+    chatNameInput.value = "";
+});
 
 addUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
@@ -1351,23 +1355,26 @@ function updateHeading () {
     const title = document.getElementById('heading');
     
     title.innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
-    // if (joinedChats.size > 0) {
-    //     const availableChats = document.getElementById('availableChats');
-    //     availableChats.innerHTML = `Chats: ${getChatNames().join(", ")}`;
-    // }
+    if (joinedChats.size > 0) {
+        [...joinedChats.keys()].forEach((chatID) => {
+            updateChatOptions("add", chatID);
+        });
+    }
 
-    // if (currentChatID > 0) {
-    //     const chatTitle = document.getElementById('chatHeading');
-    //     chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
+    if (currentChatID > 0) {
+        const chatTitle = document.getElementById('chatHeading');
+        chatTitle.innerHTML = `Chat: ${chatNameInput.value}`;
 
-    //     const chatMembers = document.getElementById('chatMembers');
-    //     chatMembers.innerHTML = `Members: ${joinedChats.get(currentChatID).members.map(pk => keyMap.get(pk)).join(", ")}`;
+        memberList.innerHTML = "";
+        joinedChats.get(currentChatID).members.forEach((pk) => {
+            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
+        });
 
-    //     document.getElementById('chatBox').style.display = "block";
-    //     document.getElementById('chatWindow').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
-    //     document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
-    //     document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
-    // }
+        document.getElementById('chatBox').style.display = "block";
+        document.getElementById('chatWindow').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
+        document.getElementById('chatModsAdded').style.display = joinedChats.get(currentChatID).currentMember ? "block" : "none";
+        document.getElementById('chatModsRemoved').style.display = joinedChats.get(currentChatID).toDispute === null ? "none" : "block";
+    }
 }
 
 export function selectChat(chatID) {
@@ -1384,21 +1391,19 @@ export function selectChat(chatID) {
 const chatOptions = new Set();
 
 function updateChatOptions(operation, chatID) {
-    var option = document.createElement("option");
     if (operation === "add" && !chatOptions.has(chatID)) {
-        option.text = joinedChats.get(chatID).chatName;
+        chatList.insertBefore(elem.generateChatCard(chatID, chatName, false), chatList.firstElementChild);
         chatOptions.add(chatID);
         return;
     }
 
     if (operation === "remove" && chatOptions.has(chatID)) {
-        const index = [...joinedChats.keys()].indexOf(chatID);
         chatOptions.delete(chatID);
+        document.getElementById(`chatCard${chatID}`).remove();
     }
 }
 
 function createNewChat() {
-    elem.closePopup();
     sendToServer({
         type: "createChat",
         chatName: chatNameInput.value,
