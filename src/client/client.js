@@ -312,7 +312,7 @@ async function onCreateChat(chatID, chatName) {
         currentMember: true,
         toDispute: null
     });
-    store.setItem("joinedChats", joinedChats);
+    await store.setItem("joinedChats", joinedChats);
 
     // for (const name of validMemberPubKeys.keys()) {
     //     keyMap.set(JSON.stringify(validMemberPubKeys.get(name)), name);
@@ -326,7 +326,7 @@ async function onCreateChat(chatID, chatName) {
     const createOp = await access.generateOp("create", keyPair);
     const operations = [createOp];
 
-    store.setItem(chatID, {
+    await store.setItem(chatID, {
         metadata: {
             chatName: chatName,
             operations: operations,
@@ -336,10 +336,9 @@ async function onCreateChat(chatID, chatName) {
         historyTable: new Map(),
     }).then(() => {
         // addToChat(validMemberPubKeys, chatID);
-    });
-
-    updateChatOptions("add", chatID);
+        updateChatOptions("add", chatID);
     if (currentChatID === 0) { selectChat(chatID); }
+    });
 }
 
 // When being added to a new chat
