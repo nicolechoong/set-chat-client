@@ -84,7 +84,7 @@ export function generateChatCard (chatID, chatName) {
     return card;
 }
 
-export function generateUserCard (pk, username) {
+export function generateUserCard (pk, username, chatID) {
     const card = document.createElement("div");
     card.id = `userCard${username}`;
     card.className = "card";
@@ -97,19 +97,20 @@ export function generateUserCard (pk, username) {
     const button = document.createElement("button");
     button.className = "removeUserBtn";
     button.onclick = (async () => {
-        removeFromChat(new Map([[username, pk]]), currentChatID);
+        removeFromChat(new Map([[username, pk]]), chatID);
         console.log(`click`);
     });
     console.log(`set onclick`);
-    card.appendChild(button);
 
     const path = document.createElement("path");
     path.d = "M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM471 143c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z";
+    console.log(`set path`)
     const svg = document.createElement("svg");
     svg.xmlns = "http://www.w3.org/2000/svg";
     svg.viewBox = "0 0 640 512";
     svg.appendChild(path);
     button.appendChild(svg);
+    card.appendChild(button);
 
     return card;
 }

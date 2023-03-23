@@ -700,7 +700,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 }
                 joinedChats.get(chatID).exMembers.add(pk);
                 store.setItem("joinedChats", joinedChats);
-                updateHeading();
+                updateChatInfo();
                 return resolve("REJECT");
             }
         });
@@ -793,7 +793,7 @@ async function updateMembers (memberSet, chatID) {
     joinedChats.get(chatID).validMembers = [...memberSet];
     joinedChats.get(chatID).members = joinedChats.get(chatID).validMembers.filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
     await store.setItem("joinedChats", joinedChats);
-    updateHeading();
+    updateChatInfo();
     console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
     console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
     console.log(`current exmembers ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
@@ -1079,7 +1079,7 @@ async function addPeer(messageData) {
     joinedChats.get(messageData.chatID).exMembers.delete(pk);
     store.setItem("joinedChats", joinedChats);
 
-    memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
+    updateChatInfo();
     updateChatWindow(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (!chatInfo.historyTable.has(pk)) {
@@ -1115,8 +1115,7 @@ async function removePeer (messageData) {
     joinedChats.get(messageData.chatID).exMembers.add(pk);
     store.setItem("joinedChats", joinedChats);
 
-    document.getElementById(`userCard${keyMap.get(pk)}`).remove();
-
+    updateChatInfo();
     updateChatWindow(messageData);
 
     console.log(`closing from removePeer ${keyMap.get(pk)}`);
@@ -1294,13 +1293,13 @@ addUserBtn.addEventListener("click", async () => {
 // disputeBtn.addEventListener("click", async () => {
 //     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
 //     joinedChats.get(currentChatID).toDispute = null;
-//     updateHeading();
+//     updateChatInfo();
 // });
 
 // acceptRemovalBtn.addEventListener("click", async () => {
 //     console.log(`toDispute cleared`);
 //     joinedChats.get(currentChatID).toDispute = null;
-//     updateHeading();
+//     updateChatInfo();
 // });
 
 resetStoreBtn.addEventListener("click", () => {
@@ -1359,13 +1358,13 @@ function getChatID(chatName) {
 }
 
 
-function updateHeading () {
+function updateChatInfo () {
     if (currentChatID > 0) {
         document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
 
         memberList.innerHTML = "";
         joinedChats.get(currentChatID).members.forEach((pk) => {
-            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
+            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)), currentChatID);
         });
 
         chatBar.style.display = (joinedChats.get(currentChatID).currentMember) ? "flex" : "none";
@@ -1379,7 +1378,7 @@ export function selectChat(chatID) {
 
     memberList.innerHTML = "";
     joinedChats.get(currentChatID).members.forEach((pk) => {
-        memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)));
+        memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), chatID));
     });
 
     chatMessages.innerHTML = "";
