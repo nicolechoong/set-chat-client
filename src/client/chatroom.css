@@ -305,6 +305,7 @@ button.card:hover {
 }
 
 #conflictIcon {
+    display: none;
     margin-right: 16px;
     fill: #fc5c65;
 }

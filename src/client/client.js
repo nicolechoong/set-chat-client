@@ -89,6 +89,8 @@ connection.onopen = function () {
     console.log("Connected to server");
     dim.style.display = "block";
     loginPopup.style.display = "flex";
+    loginInput.focus();
+    loginInput.select();
 };
 
 connection.onerror = function (err) {
@@ -1206,6 +1208,13 @@ function sendChatMessage (messageInput) {
 // Event Listeners //
 /////////////////////
 
+loginInput.addEventListener("keypress", ((event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        loginBtn.click();
+    }
+}));
+
 // Send Login attempt
 loginBtn.addEventListener("click", async function (event) {
     const username = loginInput.value;
@@ -1234,19 +1243,26 @@ loginBtn.addEventListener("click", async function (event) {
     }
 });
 
-chatNameInput.addEventListener("keypress", ((event) => {
+chatNameInput.addEventListener("keypress", function (event) {
     if (event.key === "Enter") {
         event.preventDefault();
         newChatBtn.click();
     }
-}));
+});
 
 messageInput.addEventListener("keypress", function (event) {
     if (event.key === "Enter") {
         event.preventDefault();
         sendMessageBtn.click();
     }
-})
+});
+
+addUserInput.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        addUserBtn.click();
+    }
+});
 
 sendMessageBtn.addEventListener("click", function () {
     if (messageInput.value.length > 0) {
