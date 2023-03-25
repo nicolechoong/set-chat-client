@@ -29,6 +29,14 @@ app.get('/src/client/chatroom.css', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'chatroom.css'));
 });
 
+app.get('/assets/css/fontawesome.min.css', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','fontawesome.min.css'));
+});
+
+app.get('/assets/css/solid.min.css', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','solid.min.css'));
+});
+
 app.get('/src/client/components.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'components.js'));
 });
