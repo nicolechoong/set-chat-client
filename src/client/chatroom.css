@@ -4,6 +4,12 @@
     font-weight: regular;
 }
 
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    src: url(https://35.178.80.94:3000/assets/webfonts/fa-solid-900.woff2);
+    font-weight: regular;
+}
+
 ::-webkit-scrollbar {
     width: 16px;
 }
