@@ -37,8 +37,8 @@ app.get('/assets/css/solid.min.css', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','solid.min.css'));
 });
 
-app.get('/assets/webfont/fa-solid-900.woff2', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','webfont','fa-solid-900.woff2'));
+app.get('/assets/webfonts/fa-solid-900.woff2', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','webfonts','fa-solid-900.woff2'));
 });
 
 app.get('/src/client/components.js', (req, res, next) => {
