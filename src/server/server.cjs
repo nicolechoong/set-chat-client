@@ -33,8 +33,8 @@ app.get('/assets/css/fontawesome.min.css', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','fontawesome.min.css'));
 });
 
-app.get('/assets/css/solid.min.css', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','solid.min.css'));
+app.get('/assets/css/solid.css', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','solid.css'));
 });
 
 app.get('/assets/webfonts/fa-solid-900.woff2', (req, res, next) => {
