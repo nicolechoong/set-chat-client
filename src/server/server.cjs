@@ -45,8 +45,8 @@ app.get('/src/client/components.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'components.js'));
 });
 
-app.get('/src/client/fonts/SpaceGrotesk-Regular.woff', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'fonts', 'SpaceGrotesk-Regular.woff'));
+app.get('/assets/fonts/SpaceGrotesk-Regular.woff', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets', 'fonts', 'SpaceGrotesk-Regular.woff'));
 });
 
 app.get('/node_modules/tweetnacl-es6/nacl-fast-es.js', (req, res, next) => {
