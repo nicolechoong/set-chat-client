@@ -87,32 +87,17 @@ export function generateChatCard (chatID, chatName) {
 }
 
 export function generateUserCard (pk, username, chatID) {
-    const card = document.createElement("div");
+    const card = document.cloneNode(userCardTemplate);
     card.id = `userCard${username}`;
-    card.className = "card";
+    const children = card.childNodes;
 
-    const h3 = document.createElement("h3");
-    const h3Text = document.createTextNode(username);
-    h3.appendChild(h3Text);
-    card.appendChild(h3);
+    const h3 = children[1];
+    h3.innerHTML("username");
 
-    const button = document.createElement("button");
-    button.className = "removeUserBtn";
+    const button = children[3];
     button.onclick = (async () => {
         removeFromChat(new Map([[username, pk]]), chatID);
-        console.log(`click`);
     });
-    console.log(`set onclick`);
-
-    const path = document.createElementNS(ns, "path");
-    path.setAttribute("d", "M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304h91.4C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7H29.7C13.3 512 0 498.7 0 482.3zM471 143c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z");
-    path.setAttribute("fill", "#121212")
-    const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("xmlns", ns);
-    svg.setAttributeNS(ns, "viewBox", "0 0 640 512");
-    svg.appendChild(path);
-    button.appendChild(svg);
-    card.appendChild(button);
 
     return card;
 }

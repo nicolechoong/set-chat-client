@@ -315,3 +315,7 @@ button.card:hover {
     margin-right: 16px;
     fill: #fc5c65;
 }
+
+#userCardTemplate {
+    display: none;
+}
