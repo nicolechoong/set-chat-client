@@ -10,6 +10,8 @@ const chatInfo = document.getElementById('chatInfo');
 const chatNameInput = document.getElementById('chatNameInput');
 const showChatInfoBtn = document.getElementById('showChatInfoBtn');
 
+const userCardTemplate = document.getElementById('userCardTemplate');
+
 export function generateCardHTML (type, text, userID=null, notif=false, ops=null) {
     var card;
     const h3 = document.createElement("h3");
