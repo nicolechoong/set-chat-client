@@ -1083,8 +1083,7 @@ async function addPeer(messageData) {
 }
 
 async function removePeer (messageData) {
-    const pk = messageData.op.pk2;
-    console.log(`type ${typeof pk}`);
+    const pk = JSON.stringify(messageData.op.pk2);
 
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
