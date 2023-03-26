@@ -1387,6 +1387,7 @@ function updateChatInfo () {
 }
 
 export function selectChat(chatID) {
+    console.log(`loading chat ${chatID}`);
     currentChatID = chatID;
     const chatTitle = document.getElementById('chatTitle');
     chatTitle.innerHTML = joinedChats.get(currentChatID).chatName;
