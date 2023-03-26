@@ -758,7 +758,7 @@ async function receivedOperations (ops, chatID, pk) {
                 if (graphInfo.cycle) {
                     return resolve("WAITING FOR PEER IGNORED");
                 } else {
-                    return memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
+                    return memberSet.has(pk) ? resolve("ACCEPT") : resolve("REJECT");
                 }
             }
             return resolve("REJECT");
