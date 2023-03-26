@@ -242,7 +242,12 @@ option {
     flex-flow: column;
 }
 
+.no-notif > svg {
+    display: none;
+}
+
 .notif > svg {
+    display: block;
     height: 8px;
     width: 8px;
     line-height: 1em !important;

@@ -74,28 +74,32 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 export function generateChatCard (chatID, chatName) {
     const cardCopy = chatCardTemplate.cloneNode(true);
     cardCopy.id = `chatCard${chatID}`;
+    cardCopy.className = `class`
     chatList.insertBefore(cardCopy, chatList.firstElementChild);
 
     const card = document.getElementById(`chatCard${chatID}`);
     console.log(`card found ${card.childNodes.length}`);
     card.addEventListener("click", () => selectChat(chatID));
-    // card.onclick(() => selectChat(chatID));
 
     const h3 = card.childNodes[1];
     const text = document.createTextNode(chatName);
     h3.appendChild(text);
+
+    return card;
 }
 
 export function generateUserCard (pk, username, chatID) {
     var card = userCardTemplate.cloneNode(true);
     card.id = `userCard${username}`;
-    memberList.appendChild(card);
 
     const h3 = card.childNodes[1];
     const text = document.createTextNode(username);
     h3.appendChild(text);
 
-    card.getElementsByClassName("removeUserBtn")[0].setAttribute("onclick", removeFromChat.bind(new Map([[username, pk]]), chatID));
+    const button = card.getElementsByClassName("removeUserBtn")[0];
+    button.addEventListener("click", () => removeFromChat.bind(new Map([[username, pk]]), chatID));
+
+    return card;
 }
 
 

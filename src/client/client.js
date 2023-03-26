@@ -952,7 +952,7 @@ function receivedMessage(messageData) {
         case "text":
             if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
                 if (messageData.chatID !== currentChatID) {
-                    document.getElementById(`chatCard${chatID}`).className = "card notif";
+                    document.getElementById(`chatCard${chatID}`).className = "card no-notif";
                 }
                 updateChatWindow(messageData);
                 updateChatStore(messageData);
@@ -1393,7 +1393,7 @@ export function selectChat(chatID) {
 
     memberList.innerHTML = "";
     joinedChats.get(currentChatID).members.forEach((pk) => {
-        elem.generateUserCard(pk, keyMap.get(pk), chatID);
+        memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)), chatID);
     });
 
     chatMessages.innerHTML = "";
@@ -1409,7 +1409,7 @@ const chatOptions = new Set();
 
 function updateChatOptions(operation, chatID) {
     if (operation === "add" && !chatOptions.has(chatID)) {
-        elem.generateChatCard(chatID, joinedChats.get(chatID).chatName, false);
+        elem.generateChatCard(chatID, joinedChats.get(chatID).chatName);
         chatOptions.add(chatID);
         return;
     }
@@ -1536,7 +1536,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
             await store.setItem(chatID, chatInfo);
         }
 
-        if (newMessage) { document.getElementById(`chatCard${chatID}`).className = "card notif"; }
+        if (newMessage) { document.getElementById(`chatCard${chatID}`).className = "card no-notif"; }
         await refreshChatWindow();
     });
 }
