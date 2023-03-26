@@ -13,6 +13,10 @@ const showChatInfoBtn = document.getElementById('showChatInfoBtn');
 const chatCardTemplate = document.getElementById('chatCardTemplate');
 const userCardTemplate = document.getElementById('userCardTemplate');
 
+const memberList = document.getElementById('memberList');
+const chatList = document.getElementById('chatList');
+
+
 export function generateCardHTML (type, text, userID=null, notif=false, ops=null) {
     var card;
     const h3 = document.createElement("h3");
@@ -70,28 +74,26 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 export function generateChatCard (chatID, chatName) {
     var card = chatCardTemplate.cloneNode(true);
     card.id = `chatCard${chatID}`;
+    chatList.insertBefore(card, chatList.firstElementChild);
+
     card = document.getElementById(`chatCard${chatID}`);
     card.onclick(() => selectChat(chatID));
 
     const h3 = card.childNodes[1];
     const text = document.createTextNode(chatName);
     h3.appendChild(text);
-
-    return card;
 }
 
 export function generateUserCard (pk, username, chatID) {
-    const card = userCardTemplate.cloneNode(true);
+    var card = userCardTemplate.cloneNode(true);
     card.id = `userCard${username}`;
+    memberList.appendChild(card);
 
     const h3 = card.childNodes[1];
     const text = document.createTextNode(username);
     h3.appendChild(text);
 
-    const button = card.childNodes[3];
-    button.setAttribute("onclick", removeFromChat.bind(new Map([[username, pk]]), chatID));
-
-    return card;
+    card.getElementsByClassName("removeUserBtn")[0].setAttribute("onclick", removeFromChat.bind(new Map([[username, pk]]), chatID));
 }
 
 

@@ -13,7 +13,6 @@ const removeUserBtn = document.getElementById('removeUserBtn');
 const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
-const chatList = document.getElementById('chatList');
 const memberList = document.getElementById('memberList');
 const chatBar = document.getElementById('chatBar');
 
@@ -1394,7 +1393,7 @@ export function selectChat(chatID) {
 
     memberList.innerHTML = "";
     joinedChats.get(currentChatID).members.forEach((pk) => {
-        memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), chatID));
+        elem.generateUserCard(pk, keyMap.get(pk), chatID);
     });
 
     chatMessages.innerHTML = "";
@@ -1410,7 +1409,7 @@ const chatOptions = new Set();
 
 function updateChatOptions(operation, chatID) {
     if (operation === "add" && !chatOptions.has(chatID)) {
-        chatList.insertBefore(elem.generateChatCard(chatID, joinedChats.get(chatID).chatName, false), chatList.firstElementChild);
+        elem.generateChatCard(chatID, joinedChats.get(chatID).chatName, false);
         chatOptions.add(chatID);
         return;
     }
