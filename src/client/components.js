@@ -94,7 +94,8 @@ export function generateUserCard (pk, username, chatID) {
     const children = card.childNodes;
 
     const h3 = children[1];
-    h3.innerHTML("username");
+    const text = createTextNode(username);
+    h3.appendChild(text);
 
     const button = children[3];
     button.onclick = (async () => {
