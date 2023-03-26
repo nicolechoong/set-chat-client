@@ -68,7 +68,7 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 }
 
 export function generateChatCard (chatID, chatName) {
-    const card = document.cloneNode(chatCardTemplate);
+    const card = chatCardTemplate.cloneNode(true);
     card.id = `chatCard${chatID}`;
     card.setAttribute("onclick", (async () => selectChat(chatID)));
 
@@ -80,7 +80,7 @@ export function generateChatCard (chatID, chatName) {
 }
 
 export function generateUserCard (pk, username, chatID) {
-    const card = document.cloneNode(userCardTemplate);
+    const card = userCardTemplate.cloneNode(true);
     card.id = `userCard${username}`;
 
     const h3 = card.childNodes[1];
