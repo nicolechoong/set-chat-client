@@ -74,7 +74,7 @@ export function generateChatCard (chatID, chatName) {
     const cardCopy = chatCardTemplate.cloneNode(true);
     cardCopy.id = `chatCard${chatID}`;
     cardCopy.className = `card card-chat`
-    chatList.insertBefore(cardCopy, chatCardTemplate);
+    chatCardTemplate.insertAdjacentElement("beforebegin", cardCopy);
 
     const card = document.getElementById(`chatCard${chatID}`);
     card.addEventListener("click", () => selectChat(chatID));
@@ -96,7 +96,7 @@ export function generateUserCard (pk, username, chatID) {
 
     const button = card.getElementsByClassName("removeUserBtn")[0];
     button.addEventListener("click", () => {
-        console.log('click clack');
+        console.log(`usr ${username}, pk ${pk}, chatID ${chatID}`);
         removeFromChat(new Map([[username, pk]]), chatID)
     });
 
