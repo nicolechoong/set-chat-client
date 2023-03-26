@@ -10,6 +10,7 @@ const chatInfo = document.getElementById('chatInfo');
 const chatNameInput = document.getElementById('chatNameInput');
 const showChatInfoBtn = document.getElementById('showChatInfoBtn');
 
+const chatCardTemplate = document.getElementById('chatCardTemplate');
 const userCardTemplate = document.getElementById('userCardTemplate');
 
 export function generateCardHTML (type, text, userID=null, notif=false, ops=null) {
@@ -67,23 +68,13 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 }
 
 export function generateChatCard (chatID, chatName) {
-    const card = document.createElement("button");
+    const card = document.cloneNode(chatCardTemplate);
     card.id = `chatCard${chatID}`;
-    card.className = "card";
-    card.onclick = (async () => selectChat(chatID));
+    card.setAttribute("onclick", (async () => selectChat(chatID)));
 
-    const h3 = document.createElement("h3");
-    const h3Text = document.createTextNode(chatName);
-    h3.appendChild(h3Text);
-    card.appendChild(h3);
-
-    const path = document.createElementNS(ns, "path");
-    path.setAttribute("d", "M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256S114.6 512 256 512z");
-    const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("xmlns", ns);
-    svg.setAttributeNS(ns, "viewBox", "0 0 512 512");
-    svg.appendChild(path);
-    card.appendChild(svg);
+    const h3 = card.childNodes[1];
+    const text = document.createTextNode(chatName);
+    h3.appendChild(text);
 
     return card;
 }
@@ -91,16 +82,13 @@ export function generateChatCard (chatID, chatName) {
 export function generateUserCard (pk, username, chatID) {
     const card = document.cloneNode(userCardTemplate);
     card.id = `userCard${username}`;
-    const children = card.childNodes;
 
-    const h3 = children[1];
+    const h3 = card.childNodes[1];
     const text = document.createTextNode(username);
     h3.appendChild(text);
 
-    const button = children[3];
-    button.onclick = (async () => {
-        removeFromChat(new Map([[username, pk]]), chatID);
-    });
+    const button = card.childNodes[3];
+    button.setAttribute("onclick", (async () => removeFromChat(new Map([[username, pk]]), chatID) ));
 
     return card;
 }
