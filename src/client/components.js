@@ -72,11 +72,11 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 }
 
 export function generateChatCard (chatID, chatName) {
-    var card = chatCardTemplate.cloneNode(true);
-    card.id = `chatCard${chatID}`;
-    chatList.insertBefore(card, chatList.firstElementChild);
+    const cardCopy = chatCardTemplate.cloneNode(true);
+    cardCopy.id = `chatCard${chatID}`;
+    chatList.insertBefore(cardCopy, chatList.firstElementChild);
 
-    card = document.getElementById(`chatCard${chatID}`);
+    const card = document.getElementById(`chatCard${chatID}`);
     card.onclick(() => selectChat(chatID));
 
     const h3 = card.childNodes[1];
