@@ -316,17 +316,14 @@ async function onCreateChat(chatID, chatName) {
     });
     await store.setItem("joinedChats", joinedChats);
 
-    // for (const name of validMemberPubKeys.keys()) {
-    //     keyMap.set(JSON.stringify(validMemberPubKeys.get(name)), name);
-    // }
-    // store.setItem("keyMap", keyMap);
-
-    // if (invalidMembers.length > 0) {
-    //     alert(`The following users do not exist ${invalidMembers}`);
-    // }
-
     const createOp = await access.generateOp("create", keyPair);
     const operations = [createOp];
+
+    const createMsg = addMsgID({
+        type: "create",
+        from: keyPair.publicKey,
+        chatID: currentChatID
+    });
 
     await store.setItem(chatID, {
         metadata: {
@@ -334,7 +331,7 @@ async function onCreateChat(chatID, chatName) {
             operations: operations,
             ignored: []
         },
-        history: [],
+        history: [createMsg],
         historyTable: new Map(),
     }).then(() => {
         // addToChat(validMemberPubKeys, chatID);
@@ -1128,6 +1125,9 @@ async function updateChatWindow (data) {
     if (data.chatID === currentChatID) {
         var message;
         switch (data.type) {
+            case "create":
+                message = `chat created by ${keyMap.get(JSON.stringify(data.from))}`;
+                break;
             case "text":
                 message = `${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
                 break;
@@ -1288,7 +1288,7 @@ export function disableChatMods (chatID) {
         disabledChatBar.style.display = "flex";
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute ? "flex" : "none";
 
-        memberList.getElementById(`userCard${localUsername}`).remove();
+        document.getElementById(`userCard${localUsername}`).remove();
         [...memberList.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = true;
         });
@@ -1302,7 +1302,7 @@ export function enableChatMods (chatID) {
         disabledChatBar.style.display = "none";
         document.getElementById('disputeCard').style.display = "none";
 
-        [...memberList.getElementsByClassName('removeUserBtn')].map((elem) => {
+        [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = false;
         });
     }
