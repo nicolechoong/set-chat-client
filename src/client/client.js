@@ -15,6 +15,7 @@ const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
 const memberList = document.getElementById('memberList');
 const chatBar = document.getElementById('chatBar');
+const disabledChatBar = document.getElementById('disabledChatBar');
 
 const loginInput = document.getElementById('loginInput');
 const messageInput = document.getElementById('messageInput');
@@ -439,10 +440,10 @@ async function onRemove (chatID, fromPK) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
         }
         chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
-        document.getElementById(`userCard${localUsername}`).remove();
-        chatBar.style.display = "none";
+        disableChatMods(chatID);
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
+
         console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
         console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
         console.log(`current exmembers ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
@@ -952,7 +953,7 @@ function receivedMessage(messageData) {
         case "text":
             if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
                 if (messageData.chatID !== currentChatID) {
-                    document.getElementById(`chatCard${chatID}`).className = "card chatCard notif";
+                    document.getElementById(`chatCard${messageData.chatID}`).className = "card chatCard notif";
                 }
                 updateChatWindow(messageData);
                 updateChatStore(messageData);
@@ -1291,6 +1292,31 @@ addUserBtn.addEventListener("click", async () => {
     }
 });
 
+export function disableChatMods (chatID) {
+    if (chatID == currentChatID) {
+        chatInfo.getElementById('addUserCard').style.display = "none";
+        chatBar.style.display = "none";
+        disabledChatBar.style.display = "flex";
+
+        memberList.getElementById(`userCard${localUsername}`).remove();
+        [...memberList.getElementsByClassName('removeUserBtn')].map((elem) => {
+            elem.disabled = true;
+        });
+    }
+}
+
+export function enableChatMods (chatID) {
+    if (chatID == currentChatID) {
+        chatInfo.getElementById('addUserCard').style.display = "flex";
+        chatBar.style.display = "flex";
+        disabledChatBar.style.display = "none";
+
+        [...memberList.getElementsByClassName('removeUserBtn')].map((elem) => {
+            elem.disabled = false;
+        });
+    }
+}
+
 // removeUserBtn.addEventListener("click", async () => {
 //     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
 //     const username = modifyUserInput.value;
@@ -1381,20 +1407,17 @@ function updateChatInfo () {
             memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)), currentChatID);
         });
 
-        chatBar.style.display = (joinedChats.get(currentChatID).currentMember) ? "flex" : "none";
+        if (joinedChats.get(currentChatID).currentMember) {
+            enableChatMods(chatID);
+        } else {
+            disableChatMods(chatID);
+        }
     }
 }
 
 export function selectChat(chatID) {
-    console.log(`loading chat ${chatID}`);
     currentChatID = chatID;
-    const chatTitle = document.getElementById('chatTitle');
-    chatTitle.innerHTML = joinedChats.get(currentChatID).chatName;
-
-    memberList.innerHTML = "";
-    joinedChats.get(currentChatID).members.forEach((pk) => {
-        memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk)), chatID);
-    });
+    updateChatInfo();
 
     chatMessages.innerHTML = "";
     document.getElementById(`chatCard${chatID}`).className = "card chatCard";

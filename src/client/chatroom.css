@@ -78,6 +78,10 @@ button:hover > svg {
     fill: #fc5c65;
 }
 
+button:disabled {
+    fill: #e8ecf1;
+}
+
 option {
     padding: 0;
 }
@@ -270,6 +274,7 @@ button.card:hover {
 }
 
 #chatOptions {
+    min-width: 250px;
     max-width: 300px;
 }
 
@@ -285,6 +290,12 @@ button.card:hover {
     flex: 0 1 auto;
     justify-self: flex-end;
     justify-content: space-between;
+}
+
+#disabledChatBar {
+    display: flex;
+    align-items: center;
+    background-color: #e8ecf1;
 }
 
 #messageInput {

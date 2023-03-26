@@ -13,7 +13,6 @@ const showChatInfoBtn = document.getElementById('showChatInfoBtn');
 const chatCardTemplate = document.getElementById('chatCardTemplate');
 const userCardTemplate = document.getElementById('userCardTemplate');
 
-const memberList = document.getElementById('memberList');
 const chatList = document.getElementById('chatList');
 
 
@@ -75,10 +74,9 @@ export function generateChatCard (chatID, chatName) {
     const cardCopy = chatCardTemplate.cloneNode(true);
     cardCopy.id = `chatCard${chatID}`;
     cardCopy.className = `card no-notif`
-    chatList.insertBefore(cardCopy, chatList.firstElementChild);
+    chatList.insertBefore(cardCopy, chatCardTemplate);
 
     const card = document.getElementById(`chatCard${chatID}`);
-    console.log(`card found ${card.childNodes.length}`);
     card.addEventListener("click", () => selectChat(chatID));
 
     const h3 = card.childNodes[1];
@@ -97,7 +95,11 @@ export function generateUserCard (pk, username, chatID) {
     h3.appendChild(text);
 
     const button = card.getElementsByClassName("removeUserBtn")[0];
-    button.addEventListener("click", () => removeFromChat.bind(new Map([[username, pk]]), chatID));
+    console.log(`button ${button}`);
+    button.addEventListener("click", () => {
+        console.log('click clack');
+        removeFromChat(new Map([[username, pk]]), chatID)
+    });
 
     return card;
 }
@@ -121,7 +123,7 @@ document.getElementById('closeChatInfo').onclick = (() => {
     elem.onclick = closePopup;
 });
 
-export function closePopup() {
+export function closePopup () {
     if (loginPopup.style.display === "none" && createPopup.style.display === "flex") {
         dim.style.display = "none";
         createPopup.style.display = "none";
