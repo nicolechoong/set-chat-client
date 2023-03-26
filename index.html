@@ -3,25 +3,10 @@
     <head> 
         <meta charset="UTF-8">
         <link rel="stylesheet" href="./src/client/chatroom.css">
-        <link rel="stylesheet" href="./assets/css/fontawesome.min.css">
-        <link rel="stylesheet" href="./assets/css/solid.css">
         <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
         <script type="module" src="src/client/accessControl.js"></script>
         <script type="module" src="src/client/components.js"></script>
         <script type="module" src="src/client/client.js"></script>
-        <script>
-            window.onload = function () {
-              var span = document.createElement('span');
-            
-              span.className = 'fa';
-              span.style.display = 'none';
-              document.body.insertBefore(span, document.body.firstChild);
-              
-              alert(window.getComputedStyle(span, null).getPropertyValue('font-family'));
-                
-              document.body.removeChild(span);
-            };
-        </script>
         <script src="https://kit.fontawesome.com/e37cc35a05.js" crossorigin="anonymous"></script>
     </head>
         
