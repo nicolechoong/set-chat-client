@@ -77,7 +77,9 @@ export function generateChatCard (chatID, chatName) {
     chatList.insertBefore(cardCopy, chatList.firstElementChild);
 
     const card = document.getElementById(`chatCard${chatID}`);
-    card.onclick(() => selectChat(chatID));
+    console.log(`card found ${card.childNodes.length}`);
+    card.addEventListener("click", () => selectChat(chatID));
+    // card.onclick(() => selectChat(chatID));
 
     const h3 = card.childNodes[1];
     const text = document.createTextNode(chatName);
