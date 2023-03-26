@@ -423,7 +423,7 @@ async function addToChat (validMemberPubKeys, chatID) {
 }
 
 
-async function onRemove (chatID, fromPK) {
+async function onRemove (chatID, fromPK, dispute) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
     if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
@@ -431,10 +431,7 @@ async function onRemove (chatID, fromPK) {
         chatInfo.currentMember = false;
 
         // if the removal is disputable
-        if (chatInfo.toDispute === null && chatInfo.members.includes(JSON.stringify(fromPK))) {
-            console.log(`disputable`);
-            chatInfo.toDispute = { peerName: from, peerPK: fromPK };
-        }
+        if (dispute) { chatInfo.toDispute = { peerName: from, peerPK: fromPK }; }
 
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
@@ -443,10 +440,6 @@ async function onRemove (chatID, fromPK) {
         disableChatMods(chatID);
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
-
-        console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
-        console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
-        console.log(`current exmembers ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
         await store.setItem("joinedChats", joinedChats);
 
         for (const pk of chatInfo.members) {
@@ -931,7 +924,7 @@ function receivedMessage(messageData) {
             receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                 if (res === "ACCEPT") { 
                     if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                        onRemove(messageData.chatID, objToArr(messageData.from));
+                        onRemove(messageData.chatID, objToArr(messageData.from), messageData.dispute);
                     } else {
                         removePeer(messageData); 
                     }
@@ -953,7 +946,7 @@ function receivedMessage(messageData) {
         case "text":
             if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
                 if (messageData.chatID !== currentChatID) {
-                    document.getElementById(`chatCard${messageData.chatID}`).className = "card chatCard notif";
+                    document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
                 }
                 updateChatWindow(messageData);
                 updateChatStore(messageData);
@@ -1294,9 +1287,10 @@ addUserBtn.addEventListener("click", async () => {
 
 export function disableChatMods (chatID) {
     if (chatID == currentChatID) {
-        chatInfo.getElementById('addUserCard').style.display = "none";
+        document.getElementById('addUserCard').style.display = "none";
         chatBar.style.display = "none";
         disabledChatBar.style.display = "flex";
+        document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute ? "flex" : "none";
 
         memberList.getElementById(`userCard${localUsername}`).remove();
         [...memberList.getElementsByClassName('removeUserBtn')].map((elem) => {
@@ -1307,9 +1301,10 @@ export function disableChatMods (chatID) {
 
 export function enableChatMods (chatID) {
     if (chatID == currentChatID) {
-        chatInfo.getElementById('addUserCard').style.display = "flex";
+        document.getElementById('addUserCard').style.display = "flex";
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
+        document.getElementById('disputeCard').style.display = "none";
 
         [...memberList.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = false;
@@ -1330,11 +1325,11 @@ export function enableChatMods (chatID) {
 //     }
 // });
 
-// disputeBtn.addEventListener("click", async () => {
-//     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
-//     joinedChats.get(currentChatID).toDispute = null;
-//     updateChatInfo();
-// });
+disputeBtn.addEventListener("click", async () => {
+    disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
+    joinedChats.get(currentChatID).toDispute = null;
+    updateChatInfo();
+});
 
 // acceptRemovalBtn.addEventListener("click", async () => {
 //     console.log(`toDispute cleared`);
@@ -1408,9 +1403,9 @@ function updateChatInfo () {
         });
 
         if (joinedChats.get(currentChatID).currentMember) {
-            enableChatMods(chatID);
+            enableChatMods(currentChatID);
         } else {
-            disableChatMods(chatID);
+            disableChatMods(currentChatID);
         }
     }
 }
@@ -1420,7 +1415,7 @@ export function selectChat(chatID) {
     updateChatInfo();
 
     chatMessages.innerHTML = "";
-    document.getElementById(`chatCard${chatID}`).className = "card chatCard";
+    document.getElementById(`chatCard${chatID}`).className = "card card-chat";
     store.getItem(currentChatID).then(async (chatInfo) => {
         for (const data of chatInfo.history) {
             await updateChatWindow(data);
@@ -1559,7 +1554,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
             await store.setItem(chatID, chatInfo);
         }
 
-        if (newMessage) { document.getElementById(`chatCard${chatID}`).className = "card chatCard notif"; }
+        if (newMessage) { document.getElementById(`chatCard${chatID}`).className = "card card-chat notif"; }
         await refreshChatWindow();
     });
 }

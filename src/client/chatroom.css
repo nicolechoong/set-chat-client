@@ -86,6 +86,12 @@ option {
     padding: 0;
 }
 
+h4 {
+    font-size: 12px;
+    margin: 16px;
+    text-align: center;
+}
+
 .popup {
     position: absolute;
     z-index: 1004;
@@ -114,6 +120,7 @@ option {
 }
 
 .dim {
+    /* display: none; */
     position: fixed;
     top: 0;
     left: 0;
@@ -214,10 +221,14 @@ option {
 .card button {
     height: 32px;
     width: 32px;
-    margin-left: auto;
+    margin-left: 0;
     margin-right: 16px;
     align-self: center;
     flex: 0 0 auto;
+}
+
+.card > button:first-of-type {
+    margin-left: auto;
 }
 
 .card input {
@@ -227,7 +238,7 @@ option {
     margin-right: 16px;
 }
 
-.card-input {
+.card-input, .card-conflict {
     flex-flow: column;
 }
 
@@ -242,11 +253,7 @@ option {
     margin-bottom: 16px;
 }
 
-.card-conflict {
-    flex-flow: column;
-}
-
-.chatCard > svg {
+.card-chat > svg {
     display: none;
 }
 
@@ -262,6 +269,10 @@ option {
 
 button.card:hover {
     background-color: #e8ecf1;
+}
+
+#disputeCard {
+    display: none;
 }
 
 #chatWindow {
@@ -293,7 +304,7 @@ button.card:hover {
 }
 
 #disabledChatBar {
-    display: flex;
+    display: none;
     align-items: center;
     background-color: #e8ecf1;
 }

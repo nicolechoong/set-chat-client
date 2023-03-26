@@ -73,7 +73,7 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 export function generateChatCard (chatID, chatName) {
     const cardCopy = chatCardTemplate.cloneNode(true);
     cardCopy.id = `chatCard${chatID}`;
-    cardCopy.className = `card no-notif`
+    cardCopy.className = `card card-chat`
     chatList.insertBefore(cardCopy, chatCardTemplate);
 
     const card = document.getElementById(`chatCard${chatID}`);
@@ -95,7 +95,6 @@ export function generateUserCard (pk, username, chatID) {
     h3.appendChild(text);
 
     const button = card.getElementsByClassName("removeUserBtn")[0];
-    console.log(`button ${button}`);
     button.addEventListener("click", () => {
         console.log('click clack');
         removeFromChat(new Map([[username, pk]]), chatID)
