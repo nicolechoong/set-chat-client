@@ -70,7 +70,7 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 export function generateChatCard (chatID, chatName) {
     const card = chatCardTemplate.cloneNode(true);
     card.id = `chatCard${chatID}`;
-    card.onclick(async () => selectChat(chatID));
+    card.setAttribute("onclick", selectChat(chatID));
 
     const h3 = card.childNodes[1];
     const text = document.createTextNode(chatName);
@@ -88,7 +88,7 @@ export function generateUserCard (pk, username, chatID) {
     h3.appendChild(text);
 
     const button = card.childNodes[3];
-    button.onclick = (async () => removeFromChat(new Map([[username, pk]]), chatID) );
+    button.setAttribute("onclick", removeFromChat(new Map([[username, pk]]), chatID));
 
     return card;
 }
