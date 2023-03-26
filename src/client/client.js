@@ -451,11 +451,10 @@ async function onRemove (chatID, fromPK, dispute) {
 export async function removeFromChat (username, pk, chatID) {
     // username : string, public key : string, chatID : string
     store.getItem(chatID).then(async (chatInfo) => {
-        pk = strToArr(pk);
         console.log(`we are now removing ${username} and the ops are ${chatInfo.metadata.operations.map(op => op.action)}`);
-        const op = await access.generateOp("remove", keyPair, pk, chatInfo.metadata.operations);
+        const op = await access.generateOp("remove", keyPair, strToArr(pk), chatInfo.metadata.operations);
         chatInfo.metadata.operations.push(op);
-        await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
+        await store.setItem(chatID, chatInfo).then(console.log(`${username} has been removed from ${chatID}`));
 
         const removeMessage = addMsgID({
             type: "remove",
