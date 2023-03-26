@@ -70,7 +70,7 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 export function generateChatCard (chatID, chatName) {
     const card = chatCardTemplate.cloneNode(true);
     card.id = `chatCard${chatID}`;
-    card.setAttribute("onclick", () => { selectChat(chatID); console.log(`clicked`); });
+    card.setAttribute("onclick", `() => { selectChat(${chatID}); console.log('clicked'); }`);
 
     const h3 = card.childNodes[1];
     const text = document.createTextNode(chatName);
