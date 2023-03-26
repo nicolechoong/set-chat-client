@@ -19,7 +19,7 @@ export function generateChatCard (chatID, chatName) {
     const cardCopy = chatCardTemplate.cloneNode(true);
     cardCopy.id = `chatCard${chatID}`;
     cardCopy.className = `card card-chat`
-    chatCardTemplate.insertAdjacentElement("beforebegin", cardCopy);
+    chatCardTemplate.insertAdjacentElement("afterend", cardCopy);
 
     const card = document.getElementById(`chatCard${chatID}`);
     card.addEventListener("click", () => selectChat(chatID));
