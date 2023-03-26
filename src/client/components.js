@@ -15,61 +15,6 @@ const userCardTemplate = document.getElementById('userCardTemplate');
 
 const chatList = document.getElementById('chatList');
 
-
-export function generateCardHTML (type, text, userID=null, notif=false, ops=null) {
-    var card;
-    const h3 = document.createElement("h3");
-    const h3Text = document.createTextNode(text);
-    h3.appendChild(h3Text);
-
-    switch (type) {
-        case "chat":
-            card = document.createElement("button");
-            card.className = "card";
-            card.onclick = (() => {
-                if (index > 0) {
-                    const chatName = chatNameInput.options.item(index).text;
-                    currentChatID = getChatID(chatName);
-                    updateHeading();
-                    chatMessages.innerHTML = "";
-                    store.getItem(currentChatID).then(async (chatInfo) => {
-                        for (const data of chatInfo.history) {
-                            await updateChatWindow(data);
-                        }
-                    });
-                }
-            })
-
-            if (notif) {
-                const icon = document.createElement("i");
-                icon.className = "fa-solid fa-circle fa-2xs notif";
-                card.appendChild(icon);
-            }
-            card.appendChild(h3);
-            break;
-        case "user":
-            card = document.createElement("div");
-            card.className = "card";
-
-            const icon = document.createElement("i");
-            icon.className = "fa-solid fa-user-xmark"
-
-            const button = document.createElement("button");
-            button.class = "removeUserBtn";
-            button.onclick = (async () => {
-                removeFromChat(new Map([[username, await getPK(text)]]), currentChatID);
-            });
-
-            button.appendChild(icon)
-            card.appendChild(button)
-            card.appendChild(h3)
-            break;
-        case "conflict":
-            break;
-    }
-    return card;
-}
-
 export function generateChatCard (chatID, chatName) {
     const cardCopy = chatCardTemplate.cloneNode(true);
     cardCopy.id = `chatCard${chatID}`;
@@ -97,7 +42,7 @@ export function generateUserCard (pk, username, chatID) {
     const button = card.getElementsByClassName("removeUserBtn")[0];
     button.addEventListener("click", () => {
         console.log(`usr ${username}, pk ${pk}, chatID ${chatID}`);
-        removeFromChat(new Map([[username, pk]]), chatID)
+        removeFromChat(username, pk, chatID)
     });
 
     return card;

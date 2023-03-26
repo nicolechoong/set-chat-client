@@ -448,33 +448,30 @@ async function onRemove (chatID, fromPK, dispute) {
     }
 }
 
-export async function removeFromChat (validMemberPubKeys, chatID) {
-    // validMemberPubKeys : map of string username to object public key, chatID : string
+export async function removeFromChat (username, pk, chatID) {
+    // username : string, public key : string, chatID : string
     store.getItem(chatID).then(async (chatInfo) => {
-        var pk;
-        for (const name of validMemberPubKeys.keys()) {
-            pk = objToArr(validMemberPubKeys.get(name));
-            console.log(`we are now removing ${name} and the ops are ${chatInfo.metadata.operations.map(op => op.action)}`);
-            const op = await access.generateOp("remove", keyPair, pk, chatInfo.metadata.operations);
-            chatInfo.metadata.operations.push(op);
-            await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
+        pk = strToArr(validMemberPubKeys.get(username));
+        console.log(`we are now removing ${username} and the ops are ${chatInfo.metadata.operations.map(op => op.action)}`);
+        const op = await access.generateOp("remove", keyPair, pk, chatInfo.metadata.operations);
+        chatInfo.metadata.operations.push(op);
+        await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} has been removed from ${chatID}`));
 
-            const removeMessage = addMsgID({
-                type: "remove",
-                op: op,
-                username: name,
-                from: keyPair.publicKey,
-                chatID: chatID,
-                dispute: false
-            });
-            broadcastToMembers(removeMessage, chatID);
-            sendToServer({
-                to: pk,
-                type: "remove",
-                msg: removeMessage
-            });
-            console.log(`removed ${name}`);
-        }
+        const removeMessage = addMsgID({
+            type: "remove",
+            op: op,
+            username: username,
+            from: keyPair.publicKey,
+            chatID: chatID,
+            dispute: false
+        });
+        broadcastToMembers(removeMessage, chatID);
+        sendToServer({
+            to: pk,
+            type: "remove",
+            msg: removeMessage
+        });
+        console.log(`removed ${username}`);
     });
 }
 
@@ -1087,7 +1084,8 @@ async function addPeer(messageData) {
 }
 
 async function removePeer (messageData) {
-    const pk = JSON.stringify(messageData.op.pk2);
+    const pk = messageData.op.pk2;
+    console.log(`type ${typeof pk}`);
 
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
