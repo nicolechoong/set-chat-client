@@ -74,7 +74,7 @@ export function generateCardHTML (type, text, userID=null, notif=false, ops=null
 export function generateChatCard (chatID, chatName) {
     const cardCopy = chatCardTemplate.cloneNode(true);
     cardCopy.id = `chatCard${chatID}`;
-    cardCopy.className = `class`
+    cardCopy.className = `card no-notif`
     chatList.insertBefore(cardCopy, chatList.firstElementChild);
 
     const card = document.getElementById(`chatCard${chatID}`);

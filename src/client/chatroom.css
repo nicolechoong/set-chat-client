@@ -242,12 +242,12 @@ option {
     flex-flow: column;
 }
 
-.no-notif > svg {
+.chatCard > svg {
     display: none;
 }
 
 .notif > svg {
-    display: block;
+    display: block !important;
     height: 8px;
     width: 8px;
     line-height: 1em !important;
@@ -321,6 +321,6 @@ button.card:hover {
     fill: #fc5c65;
 }
 
-#userCardTemplate {
+#chatCardTemplate, #userCardTemplate {
     display: none;
 }
