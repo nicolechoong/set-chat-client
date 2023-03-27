@@ -464,7 +464,7 @@ export async function removeFromChat (username, pk, chatID) {
         });
         broadcastToMembers(removeMessage, chatID);
         sendToServer({
-            to: pk,
+            to: strToArr(pk),
             type: "remove",
             msg: removeMessage
         });
