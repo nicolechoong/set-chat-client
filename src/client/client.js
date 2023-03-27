@@ -1374,23 +1374,19 @@ function getChatID(chatName) {
 
 function updateChatInfo () {
     if (currentChatID > 0) {
-            store.getItem(currentChatID).then((chatInfo) => {
-            document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
+        document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
 
-            memberList.innerHTML = "";
-            joinedChats.get(currentChatID).members.forEach((pk) => {
-                memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), currentChatID));
-            });
+        memberList.innerHTML = "";
+        joinedChats.get(currentChatID).members.forEach((pk) => {
+            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), currentChatID));
+        });
 
-            document.getElementById('conflictIcon').style.display = access.hasCycles(chatInfo.metadata.ops).cycle ? "block" : "none";
-
-            if (joinedChats.get(currentChatID).currentMember) {
-                enableChatMods(currentChatID);
-            } else {
-                disableChatMods(currentChatID);
-            }
+        if (joinedChats.get(currentChatID).currentMember) {
+            enableChatMods(currentChatID);
+        } else {
+            disableChatMods(currentChatID);
         }
-    )};
+    }
 }
 
 export function selectChat(chatID) {
