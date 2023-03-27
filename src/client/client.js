@@ -1344,14 +1344,14 @@ var resolveGetIgnored;
 function getIgnored(conc) {
     chatInfoList.insertBefore(elem.generateConflictCard(conc), chatInfoList.firstElementChild);
 
-    document.getElementById('chatBox').style.display = "none";
+    document.getElementById('chatBar').style.display = "none";
 
     return new Promise((resolve) => { resolveGetIgnored = resolve; });
 }
 
 export function selectIgnored(op) {
     resolveGetIgnored(op);
-    document.getElementById('chatBox').style.display = "flex";
+    document.getElementById('chatBar').style.display = "flex";
 }
 
 function getChatNames() {
