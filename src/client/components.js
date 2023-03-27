@@ -63,7 +63,6 @@ export function generateConflictCard (ops) {
         card.appendChild(option);
     }
 
-    card.removeChild(optionTemplate);
     return card;
 }
 
