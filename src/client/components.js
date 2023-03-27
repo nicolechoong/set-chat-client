@@ -48,7 +48,7 @@ export function generateUserCard (pk, username, chatID) {
 }
 
 export function generateConflictCard (ops) {
-    var option, h3, button;
+    var option, h3, button, text;
     var card = conflictCardTemplate.cloneNode(true);
     card.id = `conflictCard${JSON.stringify(ops[0].sig)}`;
 
