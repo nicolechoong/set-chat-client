@@ -334,7 +334,7 @@ async function onCreateChat(chatID, chatName) {
         history: [createMsg],
         historyTable: new Map(),
     }).then(() => {
-        // addToChat(validMemberPubKeys, chatID);
+        updateChatWindow(createMsg);
         updateChatOptions("add", chatID);
     if (currentChatID === 0) { selectChat(chatID); }
     });
@@ -423,7 +423,7 @@ async function addToChat (validMemberPubKeys, chatID) {
 async function onRemove (chatID, fromPK, dispute) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
-    if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
+    if (chatInfo.validMembers.includes(JSON.stringify(fromPK)) && chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
         const from = await getUsername(JSON.stringify(fromPK));
         chatInfo.currentMember = false;
 
@@ -434,6 +434,7 @@ async function onRemove (chatID, fromPK, dispute) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
         }
         chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
+        document.getElementById(`userCard${localUsername}`).remove();
         disableChatMods(chatID);
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
@@ -1288,8 +1289,7 @@ export function disableChatMods (chatID) {
         disabledChatBar.style.display = "flex";
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute ? "flex" : "none";
 
-        document.getElementById(`userCard${localUsername}`).remove();
-        [...memberList.getElementsByClassName('removeUserBtn')].map((elem) => {
+        [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = true;
         });
     }

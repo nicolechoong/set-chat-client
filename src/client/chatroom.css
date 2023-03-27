@@ -306,6 +306,7 @@ button.card:hover {
 
 #disabledChatBar {
     display: none;
+    justify-content: center;
     align-items: center;
     background-color: #e8ecf1;
 }
