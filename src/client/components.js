@@ -58,7 +58,7 @@ export function generateConflictCard (ops) {
         text = document.createTextNode(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action}s ${keyMap.get(JSON.stringify(op.pk2))}`);
         h3.appendChild(text);
 
-        button = option.getElementsByTagName("button");
+        button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", () => { selectIgnored(op); });
         card.appendChild(option);
     }
