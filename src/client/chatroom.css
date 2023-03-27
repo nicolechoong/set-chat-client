@@ -78,7 +78,7 @@ button:hover > svg {
     fill: #fc5c65;
 }
 
-button:disabled {
+button:disabled > svg {
     fill: #e8ecf1;
 }
 

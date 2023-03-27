@@ -7,9 +7,8 @@ import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
 const addUserBtn = document.getElementById('addUserBtn');
-const removeUserBtn = document.getElementById('removeUserBtn');
-// const disputeBtn = document.getElementById('disputeBtn');
-// const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
+const disputeBtn = document.getElementById('disputeBtn');
+const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
 const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
@@ -428,7 +427,9 @@ async function onRemove (chatID, fromPK, dispute) {
         chatInfo.currentMember = false;
 
         // if the removal is disputable
-        if (dispute) { chatInfo.toDispute = { peerName: from, peerPK: fromPK }; }
+        if (dispute) { 
+            chatInfo.toDispute = { peerName: from, peerPK: fromPK };
+        }
 
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
@@ -1288,7 +1289,7 @@ export function disableChatMods (chatID) {
         document.getElementById('addUserCard').style.display = "none";
         chatBar.style.display = "none";
         disabledChatBar.style.display = "flex";
-        document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute ? "flex" : "none";
+        document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
 
         [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = true;
