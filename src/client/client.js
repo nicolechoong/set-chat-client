@@ -136,7 +136,7 @@ connection.onmessage = function (message) {
             onAdd(data.chatID, data.chatName, objToArr(data.from), data.id);
             break;
         case "remove":
-            onRemove(data.chatID, objToArr(data.from));
+            onRemove(data.chatID, objToArr(data.from), data.dispute);
             break;
         case "getUsername":
             onGetUsername(data.username, data.success, data.pk);
@@ -435,6 +435,8 @@ async function onRemove (chatID, fromPK, dispute) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
         }
         chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
+        await store.setItem("joinedChats", joinedChats);
+
         if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
         disableChatMods(chatID);
         
@@ -1290,6 +1292,7 @@ export function disableChatMods (chatID) {
         chatBar.style.display = "none";
         disabledChatBar.style.display = "flex";
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
+        console.log(document.getElementById('disputeCard').style.display);
 
         [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = true;
