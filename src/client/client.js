@@ -427,7 +427,8 @@ async function onRemove (chatID, fromPK, dispute) {
         chatInfo.currentMember = false;
 
         // if the removal is disputable
-        if (dispute) { 
+        if (!dispute) { 
+            console.log(`disputable`);
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
 
