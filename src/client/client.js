@@ -73,7 +73,7 @@ var joinedChats = new Map();
 var store;
 
 // map from public key : stringify(pk) to username : String
-var keyMap = new Map();
+export var keyMap = new Map();
 
 // map from public key : stringify(pk) to array of JSON object representing the message data
 var msgQueue = new Map();
@@ -1316,30 +1316,17 @@ export function enableChatMods (chatID) {
     }
 }
 
-// removeUserBtn.addEventListener("click", async () => {
-//     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
-//     const username = modifyUserInput.value;
-//     try {
-//         const pk = await getPK(username);
-//         modifyUserInput.value = "";
-//         if (!joinedChats.get(currentChatID).members.includes(JSON.stringify(pk))) { alert(`Invalid username`); return; };
-//         removeFromChat(new Map([[username, pk]]), currentChatID);
-//     } catch (err) {
-//         alert(`User does not exist`);
-//     }
-// });
-
 disputeBtn.addEventListener("click", async () => {
     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
     joinedChats.get(currentChatID).toDispute = null;
     updateChatInfo();
 });
 
-// acceptRemovalBtn.addEventListener("click", async () => {
-//     console.log(`toDispute cleared`);
-//     joinedChats.get(currentChatID).toDispute = null;
-//     updateChatInfo();
-// });
+acceptRemovalBtn.addEventListener("click", async () => {
+    console.log(`toDispute cleared`);
+    joinedChats.get(currentChatID).toDispute = null;
+    updateChatInfo();
+});
 
 resetStoreBtn.addEventListener("click", () => {
     console.log(`resetting store...`);
@@ -1387,19 +1374,23 @@ function getChatID(chatName) {
 
 function updateChatInfo () {
     if (currentChatID > 0) {
-        document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
+            store.getItem(currentChatID).then((chatInfo) => {
+            document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
 
-        memberList.innerHTML = "";
-        joinedChats.get(currentChatID).members.forEach((pk) => {
-            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), currentChatID));
-        });
+            memberList.innerHTML = "";
+            joinedChats.get(currentChatID).members.forEach((pk) => {
+                memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), currentChatID));
+            });
 
-        if (joinedChats.get(currentChatID).currentMember) {
-            enableChatMods(currentChatID);
-        } else {
-            disableChatMods(currentChatID);
+            document.getElementById('conflictIcon').style.display = access.hasCycles(chatInfo.metadata.ops).cycle ? "block" : "none";
+
+            if (joinedChats.get(currentChatID).currentMember) {
+                enableChatMods(currentChatID);
+            } else {
+                disableChatMods(currentChatID);
+            }
         }
-    }
+    )};
 }
 
 export function selectChat(chatID) {

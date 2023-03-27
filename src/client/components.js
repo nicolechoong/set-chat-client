@@ -1,6 +1,4 @@
-import { selectChat, removeFromChat, selectIgnored } from './client.js';
-
-const ns = "http://www.w3.org/2000/svg";
+import { keyMap, selectChat, removeFromChat, selectIgnored } from './client.js';
 
 const createPopup = document.getElementById('createPopup');
 const loginPopup = document.getElementById('loginPopup');
@@ -57,7 +55,7 @@ export function generateConflictCard (ops) {
     for (const op of ops) {
         option = optionTemplate.cloneNode(true);
         h3 = option.childNodes[1];
-        text = document.createTextNode(`${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`);
+        text = document.createTextNode(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action}s ${keyMap.get(JSON.stringify(op.pk2))}`);
         h3.appendChild(text);
 
         button = option.getElementsByTagName("button");
