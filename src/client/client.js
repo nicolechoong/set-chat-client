@@ -423,7 +423,7 @@ async function addToChat (validMemberPubKeys, chatID) {
 async function onRemove (chatID, fromPK, dispute) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(chatID);
-    if (chatInfo.validMembers.includes(JSON.stringify(fromPK)) && chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
+    if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
         const from = await getUsername(JSON.stringify(fromPK));
         chatInfo.currentMember = false;
 
@@ -434,7 +434,7 @@ async function onRemove (chatID, fromPK, dispute) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
         }
         chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
-        document.getElementById(`userCard${localUsername}`).remove();
+        if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
         disableChatMods(chatID);
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
@@ -1100,6 +1100,7 @@ async function removePeer (messageData) {
     if (joinedChats.get(messageData.chatID).validMembers.includes(pk)) {
         joinedChats.get(messageData.chatID).validMembers.splice(joinedChats.get(messageData.chatID).validMembers.indexOf(pk), 1);
     }
+    
     joinedChats.get(messageData.chatID).exMembers.add(pk);
     store.setItem("joinedChats", joinedChats);
 
