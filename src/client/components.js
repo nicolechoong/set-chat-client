@@ -1,4 +1,4 @@
-import { selectChat, removeFromChat } from './client.js';
+import { selectChat, removeFromChat, selectIgnored } from './client.js';
 
 const ns = "http://www.w3.org/2000/svg";
 
@@ -12,8 +12,9 @@ const showChatInfoBtn = document.getElementById('showChatInfoBtn');
 
 const chatCardTemplate = document.getElementById('chatCardTemplate');
 const userCardTemplate = document.getElementById('userCardTemplate');
+const conflictCardTemplate = document.getElementById('conflictCardTemplate');
+const optionTemplate = document.getElementById('optionTemplate');
 
-const chatList = document.getElementById('chatList');
 
 export function generateChatCard (chatID, chatName) {
     const cardCopy = chatCardTemplate.cloneNode(true);
@@ -48,6 +49,25 @@ export function generateUserCard (pk, username, chatID) {
     return card;
 }
 
+export function generateConflictCard (ops) {
+    var option, h3, button;
+    var card = conflictCardTemplate.cloneNode(true);
+    card.id = `conflictCard${JSON.stringify(ops[0].sig)}`;
+
+    for (const op of ops) {
+        option = optionTemplate.cloneNode(true);
+        h3 = option.childNodes[1];
+        text = document.createTextNode(`${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`);
+        h3.appendChild(text);
+
+        button = option.getElementsByTagName("button");
+        button.addEventListener("click", () => { selectIgnored(op); });
+        card.appendChild(option);
+    }
+
+    card.removeChild(optionTemplate);
+    return card;
+}
 
 document.getElementById('createChatBtn').onclick = (() => {
     createPopup.style.display = "flex";

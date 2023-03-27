@@ -13,6 +13,8 @@ const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
 const memberList = document.getElementById('memberList');
+const chatInfoList = document.getElementById('chatInfoList');
+
 const chatBar = document.getElementById('chatBar');
 const disabledChatBar = document.getElementById('disabledChatBar');
 
@@ -1350,31 +1352,19 @@ resetStoreBtn.addEventListener("click", () => {
     })
 })
 
-const ignoredOptions = [];
 var resolveGetIgnored;
 
 function getIgnored(conc) {
-    document.getElementById('universeSelection').style.display = "block";
+    chatInfoList.insertBefore(elem.generateConflictCard(conc), chatInfoList.firstElementChild);
+
     document.getElementById('chatBox').style.display = "none";
-    var option;
-    for (let i = ignoredInput.options.length - 1; i >= 0; i--) {
-        ignoredInput.remove(i);
-    }
-    for (const op of conc) {
-        option = document.createElement("option");
-        option.text = `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`;
-        ignoredInput.add(option);
-        ignoredOptions.push(op);
-    }
-    return new Promise((resolve) => {
-        resolveGetIgnored = resolve;
-    });
+
+    return new Promise((resolve) => { resolveGetIgnored = resolve; });
 }
 
-function selectIgnored() {
-    resolveGetIgnored(ignoredOptions[ignoredInput.selectedIndex]);
-    document.getElementById('chatBox').style.display = "block";
-    document.getElementById('universeSelection').style.display = "none";
+export function selectIgnored(op) {
+    resolveGetIgnored(op);
+    document.getElementById('chatBox').style.display = "flex";
 }
 
 function getChatNames() {
