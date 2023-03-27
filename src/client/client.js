@@ -313,6 +313,7 @@ async function onCreateChat(chatID, chatName) {
         exMembers: new Set(),
         peerIgnored: new Map(),
         currentMember: true,
+        conc: [],
         toDispute: null
     });
     await store.setItem("joinedChats", joinedChats);
@@ -337,7 +338,7 @@ async function onCreateChat(chatID, chatName) {
     }).then(() => {
         updateChatWindow(createMsg);
         updateChatOptions("add", chatID);
-    if (currentChatID === 0) { selectChat(chatID); }
+        if (currentChatID === 0) { selectChat(chatID); }
     });
 }
 
@@ -357,6 +358,7 @@ async function onAdd(chatID, chatName, fromPK, msgID) {
             exMembers: new Set(),
             peerIgnored: new Map(),
             currentMember: false,
+            conc: [],
             toDispute: null
         });
         await store.setItem("joinedChats", joinedChats);
@@ -716,29 +718,7 @@ async function receivedOperations (ops, chatID, pk) {
                 const graphInfo = access.hasCycles(ops);
                 if (graphInfo.cycle) {
                     if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
-                        for (const cycle of graphInfo.concurrent) { // each of unresolved
-                            const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-                            var ignoredOp = cycle.at(removeSelfIndex);
-                            if (removeSelfIndex == -1) {
-                                ignoredOp = await getIgnored(cycle);
-                            }
-                            
-                            const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
-                            chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
-                            refreshChatWindow(chatID);
-                            if (ignoredOpIndex > -1) {
-                                const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
-                                if (ignoredOp.action == "remove") {
-                                    interval[1] = 0;
-                                    chatInfo.historyTable.get(pk).push(interval);
-                                }
-                            }
-                            chatInfo.metadata.ignored.push(ignoredOp);
-                            removeOp(chatInfo.metadata.operations, ignoredOp);
-
-                            console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
-                            await store.setItem(chatID, chatInfo);
-                        }
+                        ignoredOp = await getIgnored(graphInfo.concurrent, chatID);
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
@@ -1339,19 +1319,53 @@ resetStoreBtn.addEventListener("click", () => {
     })
 })
 
-var resolveGetIgnored;
+var resolveGetIgnored = new Map();
 
-function getIgnored(conc) {
-    chatInfoList.insertBefore(elem.generateConflictCard(conc), chatInfoList.firstElementChild);
+function getIgnored(cycles, chatID) {
+    if (chatID == currentChatID) {
+        document.getElementById('chatBar').style.display = "none";
+    }
+    return new Promise((resolve) => { 
+        resolveGetIgnored.set(chatID, [cycles, resolve]); 
 
-    document.getElementById('chatBar').style.display = "none";
-
-    return new Promise((resolve) => { resolveGetIgnored = resolve; });
+        for (const cycle of cycles) {
+            const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+            if (removeSelfIndex > -1) {
+                selectIgnored(cycle.at(removeSelfIndex));
+                continue;
+            }
+        }
+    });
 }
 
-export function selectIgnored(op) {
-    resolveGetIgnored(op);
-    document.getElementById('chatBar').style.display = "flex";
+export async function selectIgnored(ignoredOp) {
+    await store.getItem(currentChatID).then(async (chatInfo) => {
+        // unwinding chat history
+        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+        chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
+        refreshChatWindow(chatID);
+        if (ignoredOpIndex > -1) {
+            const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
+            if (ignoredOp.action == "remove") {
+                interval[1] = 0;
+                chatInfo.historyTable.get(pk).push(interval);
+            }
+        }
+
+        // writing to storage
+        chatInfo.metadata.ignored.push(ignoredOp);
+        removeOp(chatInfo.metadata.operations, ignoredOp);
+        await store.setItem(currentChatID, chatInfo);
+
+        console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
+    });
+
+    resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID).findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
+    if (resolveGetIgnored.get(currentChatID)[0].size == 0) {
+        resolveGetIgnored.get(currentChatID)[1]();
+        resolveGetIgnored.delete(currentChatID);
+        document.getElementById('chatBar').style.display = "flex";
+    }
 }
 
 function getChatNames() {
@@ -1386,6 +1400,13 @@ function updateChatInfo () {
         } else {
             disableChatMods(currentChatID);
         }
+
+        if (resolveGetIgnored.has(currentChatID)) {
+            disableChatMods(currentChatID);
+            resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
+                chatInfoList.insertBefore(elem.generateConflictCard(cycle), chatInfoList.firstElementChild);
+            });
+        };
     }
 }
 

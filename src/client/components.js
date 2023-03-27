@@ -41,7 +41,7 @@ export function generateUserCard (pk, username, chatID) {
     const button = card.getElementsByClassName("removeUserBtn")[0];
     button.addEventListener("click", () => {
         console.log(`usr ${username}, pk ${pk}, chatID ${chatID}`);
-        removeFromChat(username, pk, chatID)
+        removeFromChat(username, pk, chatID);
     });
 
     return card;
@@ -50,7 +50,6 @@ export function generateUserCard (pk, username, chatID) {
 export function generateConflictCard (ops) {
     var option, h3, button, text;
     var card = conflictCardTemplate.cloneNode(true);
-    card.id = `conflictCard${JSON.stringify(ops[0].sig)}`;
 
     for (const op of ops) {
         option = optionTemplate.cloneNode(true);
@@ -59,7 +58,10 @@ export function generateConflictCard (ops) {
         h3.appendChild(text);
 
         button = option.getElementsByTagName("button")[0];
-        button.addEventListener("click", () => { selectIgnored(op); });
+        button.addEventListener("click", async () => { 
+            await selectIgnored(op);
+            card.parentNode.removeChild(card);
+        });
         card.appendChild(option);
     }
 
