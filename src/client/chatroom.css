@@ -168,8 +168,6 @@ h4 {
     display: flex;
     flex-flow: row;
     flex: 0 1 auto;
-    align-self: flex-start;
-    justify-content: space-between;
 }
 
 #chatBox {

@@ -14,6 +14,7 @@ const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
 const memberList = document.getElementById('memberList');
 const chatInfoList = document.getElementById('chatInfoList');
+const conflictCardList = document.getElementById('conflictCardList');
 
 const chatBar = document.getElementById('chatBar');
 const disabledChatBar = document.getElementById('disabledChatBar');
@@ -1419,11 +1420,11 @@ function updateChatInfo () {
             disableChatMods(currentChatID);
         }
 
-        if (resolveGetIgnored.has(currentChatID) 
-        && document.getElementsByClassName('card-conflict').length - 1 < resolveGetIgnored.get(currentChatID[0].length)) {
+        if (resolveGetIgnored.has(currentChatID)) {
             disableChatMods(currentChatID, true);
+            chatInfoList.removeChild(conflictCardList);
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
-                chatInfoList.insertBefore(elem.generateConflictCard(cycle), chatInfoList.firstElementChild);
+                conflictCardList.appendChild(elem.generateConflictCard(cycle));
             });
         };
     }
