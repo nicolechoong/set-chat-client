@@ -659,8 +659,8 @@ async function sendIgnored (ignored, chatID, pk) {
 
 async function receivedIgnored (ignored, chatID, pk) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
-    await store.getItem(chatID).then(async (chatInfo) => {
-        return new Promise(async (resolve) => {
+    return new Promise(async (resolve) => {
+        await store.getItem(chatID).then(async (chatInfo) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
             console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
 
@@ -672,7 +672,8 @@ async function receivedIgnored (ignored, chatID, pk) {
                 })
                 joinedChats.get(chatID).peerIgnored.set(pk, ignored);
                 store.setItem("joinedChats", joinedChats);
-                return resolve("WAITING FOR LOCAL IGNORED");
+                resolve("WAITING FOR LOCAL IGNORED");
+                return;
             }
         
             if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
@@ -685,9 +686,9 @@ async function receivedIgnored (ignored, chatID, pk) {
                 }
 
                 if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-                    return resolve("ACCEPT");
+                    resolve("ACCEPT");
                 } else {
-                    return resolve("REJECT");
+                    resolve("REJECT");
                 }
 
             } else {
@@ -698,7 +699,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 joinedChats.get(chatID).exMembers.add(pk);
                 store.setItem("joinedChats", joinedChats);
                 updateChatInfo();
-                return resolve("REJECT");
+                resolve("REJECT");
             }
         });
     });
