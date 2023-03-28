@@ -1370,8 +1370,8 @@ export async function selectIgnored(ignoredOp) {
         console.log(ignoredOp);
         return access.hasOp(cycle, ignoredOp)
     }), 1);
-    console.log(resolveGetIgnored.get(currentChatID).size);
-    if (resolveGetIgnored.get(currentChatID)[0].size == 0) {
+    console.log(resolveGetIgnored.get(currentChatID)[0].length);
+    if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
         resolveGetIgnored.get(currentChatID)[1]();
         resolveGetIgnored.delete(currentChatID);
         enableChatMods(currentChatID);
