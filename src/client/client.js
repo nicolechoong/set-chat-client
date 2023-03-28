@@ -698,7 +698,7 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
-        if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("IGNORE"); }
+        if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
             var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
