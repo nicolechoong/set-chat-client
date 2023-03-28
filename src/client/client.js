@@ -336,9 +336,9 @@ async function onCreateChat(chatID, chatName) {
         history: [createMsg],
         historyTable: new Map(),
     }).then(() => {
-        updateChatWindow(createMsg);
         updateChatOptions("add", chatID);
         selectChat(chatID);
+        updateChatWindow(createMsg);
     });
 }
 
@@ -837,7 +837,7 @@ function initPeerConnection() {
 function initChannel(channel) {
     channel.onopen = (event) => { onChannelOpen(event); }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
-    channel.onmessage = (event) => { receivedMessage(JSON.parse(event.data)) }
+    channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data)) }
 }
 
 async function receivedMessage(messageData) {
@@ -1031,6 +1031,7 @@ async function addPeer(messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
+    updateChatStore(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (!chatInfo.historyTable.has(pk)) {
             chatInfo.historyTable.set(pk, []);
@@ -1068,7 +1069,7 @@ async function removePeer (messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-
+    updateMessageData(messageData);
     closeConnections(pk, messageData.chatID);
 }
 
