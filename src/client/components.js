@@ -50,6 +50,7 @@ export function generateUserCard (pk, username, chatID) {
 export function generateConflictCard (ops) {
     var option, h3, button, text;
     var card = conflictCardTemplate.cloneNode(true);
+    card.id = "";
 
     for (const op of ops) {
         option = optionTemplate.cloneNode(true);
