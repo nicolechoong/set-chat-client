@@ -1420,7 +1420,7 @@ function updateChatInfo () {
         }
 
         if (resolveGetIgnored.has(currentChatID) 
-        && document.getElementsByClassName('card-conflict').length < resolveGetIgnored.get(currentChatID[0].length)) {
+        && document.getElementsByClassName('card-conflict').length - 1 < resolveGetIgnored.get(currentChatID[0].length)) {
             disableChatMods(currentChatID, true);
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 chatInfoList.insertBefore(elem.generateConflictCard(cycle), chatInfoList.firstElementChild);
