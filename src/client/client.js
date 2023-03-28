@@ -26,8 +26,6 @@ const addUserInput = document.getElementById('addUserInput');
 
 var localUsername;
 
-// TODO: massive fucking techdebt of modularising
-// TODO: replace getItem/setItem with just gets upon login and periodic sets
 
 //////////////////////
 // GLOBAL VARIABLES //
@@ -866,7 +864,7 @@ function receivedMessage(messageData) {
                 messageData.ignored.forEach(op => unpackOp(op));
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res == "ACCEPT" && !replay) {
+                if (res == "ACCEPT" && !messageData.replay) {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
@@ -1229,6 +1227,8 @@ newChatBtn.addEventListener("click", () => {
     chatNameInput.value = "";
 });
 
+logoutBtn.addEventListener("click", logout);
+
 addUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
     const username = addUserInput.value;
@@ -1413,7 +1413,7 @@ export function selectChat(chatID) {
 
 const chatOptions = new Set();
 
-function updateChatOptions(operation, chatID) {
+function updateChatOptions (operation, chatID) {
     if (operation === "add" && !chatOptions.has(chatID)) {
         elem.generateChatCard(chatID, joinedChats.get(chatID).chatName);
         chatOptions.add(chatID);
@@ -1426,11 +1426,23 @@ function updateChatOptions(operation, chatID) {
     }
 }
 
-function createNewChat() {
+function createNewChat () {
     sendToServer({
         type: "createChat",
         chatName: chatNameInput.value,
         from: keyPair.publicKey,
+    });
+}
+
+function logout () {
+    for (const chatID of joinedChats.keys()) {
+        joinedChats.get(chatID).members.forEach((pk) => {
+            closeConnections(pk, chatID);
+        });
+    }
+    sendToServer({
+        type: "leave",
+        pk: keyPair.publicKey,
     });
 }
 
@@ -1553,6 +1565,7 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
 }
 
 function closeConnections (pk, chatID) {
+    // pk : string, chatID : string
     console.log(`connection with ${keyMap.get(pk)} closed`);
     for (const id of joinedChats.keys()) {
         if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
