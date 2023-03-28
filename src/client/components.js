@@ -54,6 +54,8 @@ export function generateConflictCard (ops) {
 
     for (const op of ops) {
         option = optionTemplate.cloneNode(true);
+        option.id = "";
+        
         h3 = option.childNodes[1];
         text = document.createTextNode(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action}s ${keyMap.get(JSON.stringify(op.pk2))}`);
         h3.appendChild(text);

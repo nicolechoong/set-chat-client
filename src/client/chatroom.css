@@ -345,6 +345,6 @@ button.card:hover {
     fill: #fc5c65;
 }
 
-#chatCardTemplate, #userCardTemplate, #conflictCardTemplate {
+#chatCardTemplate, #userCardTemplate, #conflictCardTemplate, #optionTemplate {
     display: none;
 }

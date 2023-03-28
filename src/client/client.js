@@ -1364,7 +1364,7 @@ export async function selectIgnored(ignoredOp) {
         console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
     });
 
-    resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID).findIndex((cycle) => {
+    resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => {
         console.log(cycle);
         console.log(ignoredOp);
         return access.hasOp(cycle, ignoredOp)
