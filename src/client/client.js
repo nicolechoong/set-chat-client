@@ -865,6 +865,9 @@ function initChannel(channel) {
 
 function receivedMessage(messageData) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
+    if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")) {
+        document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
+    }
     switch (messageData.type) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
@@ -926,9 +929,6 @@ function receivedMessage(messageData) {
             break;
         case "text":
             if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
-                if (messageData.chatID !== currentChatID) {
-                    document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
-                }
                 updateChatWindow(messageData);
                 updateChatStore(messageData);
             }
@@ -1350,8 +1350,9 @@ export async function selectIgnored(ignoredOp) {
         refreshChatWindow(currentChatID);
         if (ignoredOpIndex > -1) {
             console.log([...chatInfo.historyTable.keys()]);
-            console.log(chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2))); // seems like no history table??
-            const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
+            console.log(keyMap.get(JSON.stringify(ignoredOp.pk2)));
+            console.log(chatInfo.historyTable.get(ignoredOp.pk2)); // seems like no history table??
+            const interval = chatInfo.historyTable.get(ignoredOp.pk2).pop();
             if (ignoredOp.action == "remove") {
                 interval[1] = 0;
                 chatInfo.historyTable.get(pk).push(interval);
