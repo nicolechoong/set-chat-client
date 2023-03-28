@@ -718,11 +718,12 @@ async function receivedOperations (ops, chatID, pk) {
 
                 const graphInfo = access.hasCycles(ops);
                 if (graphInfo.cycle) {
+                    var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
                     if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         console.log(`cycle detected`);
-                        await getIgnored(graphInfo.concurrent, chatID);
+                        ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
                     }
-                    sendIgnored(chatInfo.metadata.ignored, chatID, pk);
+                    sendIgnored(ignoredSet, chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
                         console.log(`resolving ignored from ${keyMap.get(queuedPk)}`);
                         receivedMessage({
@@ -748,7 +749,9 @@ async function receivedOperations (ops, chatID, pk) {
                 }
             }
             return resolve("REJECT");
-        });
+        }).then(store.getItem(chatID).then((chatInfo) => {
+            console.log(`herhehehrhehre ${chatInfo.metadata.ignored}`);
+        }));
     });
 }
 
@@ -1376,7 +1379,7 @@ export async function selectIgnored(ignoredOp) {
     
         if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
             console.log(`ignored set here ${chatInfo.metadata.ignored.length}`);
-            resolveGetIgnored.get(currentChatID)[1]();
+            resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.operations);
             resolveGetIgnored.delete(currentChatID);
             enableChatMods(currentChatID);
         }
