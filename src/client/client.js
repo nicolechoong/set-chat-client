@@ -340,7 +340,7 @@ async function onCreateChat(chatID, chatName) {
     }).then(() => {
         updateChatWindow(createMsg);
         updateChatOptions("add", chatID);
-        if (currentChatID === 0) { selectChat(chatID); }
+        selectChat(chatID);
     });
 }
 
@@ -419,7 +419,6 @@ async function addToChat (validMemberPubKeys, chatID) {
                 type: "add",
                 msg: addMessage
             });
-            console.log(`added ${name}`);
         }
     });
 }
@@ -434,7 +433,6 @@ async function onRemove (chatID, fromPK, dispute) {
 
         // if the removal is disputable
         if (!dispute) { 
-            console.log(`disputable`);
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
 
@@ -478,7 +476,6 @@ export async function removeFromChat (username, pk, chatID) {
             type: "remove",
             msg: removeMessage
         });
-        console.log(`removed ${username}`);
     });
 }
 
@@ -520,10 +517,8 @@ var rejectGetUsername = new Map();
 function onGetUsername(name, success, pk) {
     // name: String, success: boolean, pk: string
     if (success) {
-        console.log(`Received username of ${pk}, ${name}`);
         keyMap.set(pk, name);
         store.setItem("keyMap", keyMap);
-        console.log(`resolveGetUsername keys ${[...resolveGetUsername.keys()]}`);
         resolveGetUsername.get(pk)(name);
     } else {
         rejectGetUsername.get(pk)(new Error("User does not exist"));
@@ -542,7 +537,6 @@ function getUsername(pk) {
         }
         resolveGetUsername.set(pk, resolve);
         rejectGetUsername.set(pk, reject);
-        console.log(`Requesting for username of ${pk}`);
         sendToServer({
             type: "getUsername",
             pk: pk
@@ -553,7 +547,6 @@ function getUsername(pk) {
 function onGetPK(name, success, pk) {
     // name: String, success: boolean, pk: Uint8Array
     if (success) {
-        console.log(`Received pk of ${name}, ${pk}`);
         keyMap.set(JSON.stringify(pk), name);
         store.setItem("keyMap", keyMap);
         resolveGetPK.get(name)(pk);
@@ -572,7 +565,6 @@ async function onGetOnline(online, chatID) {
     for (const peer of online) {
         peer.peerPK = objToArr(peer.peerPK);
         if (await connectToPeer(peer)) {
-            console.log(`Successfully connected to ${peer.peerName}`);
             sendOperations(chatID, JSON.stringify(peer.peerPK));
             resolveGetOnline.get(true); // doesn't mean that it synced
         }
@@ -621,7 +613,6 @@ function getPK(username) {
         }
         resolveGetPK.set(username, resolve);
         rejectGetPK.set(username, reject);
-        console.log(`Requesting for pk of ${username}`);
         sendToServer({
             type: "getPK",
             username: username
@@ -644,7 +635,6 @@ async function sendOperations(chatID, pk) {
 
 async function sendIgnored (ignored, chatID, pk) {
     // chatID : String, pk : String
-    console.log(`broadcasting ignored`);
     const ignoredMessage = addMsgID({
         type: "ignored",
         ignored: ignored,
@@ -727,7 +717,6 @@ async function receivedOperations (ops, chatID, pk) {
                     }
                     sendIgnored(ignoredSet, chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
-                        console.log(`resolving ignored from ${keyMap.get(queuedPk)}`);
                         receivedMessage({
                             type: "ignored",
                             ignored: queuedIg,
@@ -763,7 +752,6 @@ async function updateMembers (memberSet, chatID) {
     if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
         updateChatOptions("add", chatID);
         joinedChats.get(chatID).currentMember = true;
-        console.log(`current exmembers ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
         joinedChats.get(chatID).exMembers.delete(JSON.stringify(keyPair.publicKey));
     }
 
@@ -782,19 +770,6 @@ async function updateMembers (memberSet, chatID) {
 ////////////////////////////
 // Peer to Peer Functions //
 ////////////////////////////
-
-function joinChat(chatID) {
-    if (currentChatID !== chatID) {
-        currentChatID = chatID;
-        for (peerPK of joinedChats.get(chatID).members) {
-            if (peerPK !== JSON.stringify(keyPair.publicKey)) {
-                // Insert Key Exchange Protocol
-                console.log(`peerPK is ${peerPK}`);
-                sendOffer(peerName, strToArr(peerPK));
-            }
-        }
-    }
-}
 
 function initPeerConnection() {
     try {
@@ -891,9 +866,7 @@ function receivedMessage(messageData) {
                 messageData.ignored.forEach(op => unpackOp(op));
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                console.log(`deets ${res}`);
                 if (res == "ACCEPT") {
-                    console.log(`sending deets`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
@@ -996,7 +969,6 @@ async function sendChatHistory (chatID, pk) {
             chatInfo.historyTable.set(pk, [[chatInfo.history[0].id, 0]]);
             await store.setItem(chatID, chatInfo);
         }
-        console.log(`we currently store history of ${[...chatInfo.historyTable.keys()].map(pk => keyMap.get(pk))}`);
         const intervals = chatInfo.historyTable.get(pk);
         var start, end;
         for (const interval of intervals) {
@@ -1017,7 +989,6 @@ async function sendChatHistory (chatID, pk) {
 
 function initChatHistoryTable (chatID, msgID) {
     console.log(`initialised chat history`);
-    console.log(joinedChats.get(chatID).members.map(pk => keyMap.get(pk)));
     store.getItem(chatID).then(async (chatInfo) => {
         for (const pk of joinedChats.get(chatID).members) {
             if (!chatInfo.historyTable.has(pk)) {
@@ -1101,7 +1072,6 @@ async function removePeer (messageData) {
     updateChatInfo();
     updateChatWindow(messageData);
 
-    console.log(`closing from removePeer ${keyMap.get(pk)}`);
     closeConnections(pk, messageData.chatID);
 }
 
@@ -1109,14 +1079,12 @@ async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatMessages.innerHTML = "";
         store.getItem(currentChatID).then(async (chatInfo) => {
-            for (const msg of chatInfo.history) {
-                await updateChatWindow(msg);
-            }
+            chatInfo.history.forEach(msg => updateChatWindow(msg));
         });
     }
 }
 
-async function updateChatWindow (data) {
+function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
         var message;
@@ -1357,16 +1325,15 @@ export async function selectIgnored(ignoredOp) {
     await store.getItem(currentChatID).then(async (chatInfo) => {
         // unwinding chat history
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
-        chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
-        refreshChatWindow(currentChatID);
-        if (ignoredOpIndex > -1 && chatInfo.historyTable.has(JSON.stringify(ignoredOp.pk2))) {
-            console.log([...chatInfo.historyTable.keys()]);
-            console.log(keyMap.get(JSON.stringify(ignoredOp.pk2)));
-            console.log(chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2))); // seems like no history table??
-            const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
-            if (ignoredOp.action == "remove") {
-                interval[1] = 0;
-                chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).push(interval);
+        if (ignoredOpIndex > -1) {
+            chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
+
+            if (chatInfo.historyTable.has(JSON.stringify(ignoredOp.pk2))) {
+                const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
+                if (ignoredOp.action == "remove") {
+                    interval[1] = 0;
+                    chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).push(interval);
+                }
             }
         }
 
@@ -1438,9 +1405,7 @@ export function selectChat(chatID) {
     chatMessages.innerHTML = "";
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
     store.getItem(currentChatID).then(async (chatInfo) => {
-        for (const data of chatInfo.history) {
-            await updateChatWindow(data);
-        }
+        chatInfo.history.forEach(msg => updateChatWindow(data));
     });
 }
 
