@@ -1322,20 +1322,20 @@ resetStoreBtn.addEventListener("click", () => {
 
 var resolveGetIgnored = new Map();
 
-function getIgnored(cycles, chatID) {
+async function getIgnored(cycles, chatID) {
 
-    return new Promise((resolve) => { 
+    return new Promise(async (resolve) => { 
         resolveGetIgnored.set(chatID, [cycles, resolve]); 
 
         for (const cycle of cycles) {
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
             if (removeSelfIndex > -1) {
-                selectIgnored(cycle.at(removeSelfIndex));
+                await selectIgnored(cycle.at(removeSelfIndex));
                 continue;
             }
         }
 
-        if (chatID == currentChatID) {
+        if (chatID == currentChatID && resolveGetIgnored.has(chatID)) {
             document.getElementById('chatBar').style.display = "none";
             updateChatInfo();
         }
@@ -1372,7 +1372,7 @@ export async function selectIgnored(ignoredOp) {
     if (resolveGetIgnored.get(currentChatID)[0].size == 0) {
         resolveGetIgnored.get(currentChatID)[1]();
         resolveGetIgnored.delete(currentChatID);
-        document.getElementById('chatBar').style.display = "flex";
+        enableChatMods(currentChatID);
     }
 }
 
