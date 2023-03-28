@@ -737,7 +737,7 @@ async function receivedOperations (ops, chatID, pk) {
                         await store.setItem("joinedChats", joinedChats);
                     }
                 }
-                const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
+                const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
                 }
@@ -1379,7 +1379,7 @@ export async function selectIgnored(ignoredOp) {
     
         if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
             console.log(`ignored set here ${chatInfo.metadata.ignored.length}`);
-            resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.operations);
+            resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.ignored);
             resolveGetIgnored.delete(currentChatID);
             enableChatMods(currentChatID);
         }
