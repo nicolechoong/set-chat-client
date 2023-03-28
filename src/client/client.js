@@ -650,7 +650,7 @@ async function receivedIgnored (ignored, chatID, pk) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
     return new Promise(async (resolve) => {
         await store.getItem(chatID).then(async (chatInfo) => {
-            if (pk === JSON.stringify(keyPair.publicKey)) { resolve("ACCEPT"); return; }
+            if (pk === JSON.stringify(keyPair.publicKey)) { resolve("IGNORE"); return; }
             console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
 
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
@@ -698,7 +698,7 @@ async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
     return new Promise((resolve) => {
-        if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
+        if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("IGNORE"); }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
             var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
@@ -864,7 +864,8 @@ async function receivedMessage(messageData) {
                 messageData.ignored.forEach(op => unpackOp(op));
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res == "ACCEPT" && !messageData.replay) {
+                if (res == "ACCEPT") {
+                    console.log(`ignored from??? ${keyMap.get(JSON.stringify(messageData.from))}`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
@@ -1387,7 +1388,6 @@ function updateChatInfo () {
             disableChatMods(currentChatID);
         }
 
-        console.log(`resolved get ignored has ${currentChatID} ${resolveGetIgnored.has(currentChatID)}`)
         if (resolveGetIgnored.has(currentChatID)) {
             disableChatMods(currentChatID, true);
             conflictCardList.innerHTML = "";
