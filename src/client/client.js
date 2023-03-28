@@ -1364,7 +1364,11 @@ export async function selectIgnored(ignoredOp) {
         console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
     });
 
-    resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID).findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
+    resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID).findIndex((cycle) => {
+        console.log(cycle);
+        console.log(ignoredOp);
+        return access.hasOp(cycle, ignoredOp)
+    }), 1);
     if (resolveGetIgnored.get(currentChatID)[0].size == 0) {
         resolveGetIgnored.get(currentChatID)[1]();
         resolveGetIgnored.delete(currentChatID);
