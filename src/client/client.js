@@ -719,7 +719,7 @@ async function receivedOperations (ops, chatID, pk) {
                 if (graphInfo.cycle) {
                     if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         console.log(`cycle detected`);
-                        ignoredOp = await getIgnored(graphInfo.concurrent, chatID);
+                        await getIgnored(graphInfo.concurrent, chatID);
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
@@ -1349,6 +1349,7 @@ export async function selectIgnored(ignoredOp) {
         chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
         refreshChatWindow(currentChatID);
         if (ignoredOpIndex > -1) {
+            console.log([...chatInfo.historyTable.keys()]);
             console.log(chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2))); // seems like no history table??
             const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
             if (ignoredOp.action == "remove") {
@@ -1366,11 +1367,9 @@ export async function selectIgnored(ignoredOp) {
     });
 
     resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => {
-        console.log(cycle);
-        console.log(ignoredOp);
         return access.hasOp(cycle, ignoredOp)
     }), 1);
-    console.log(resolveGetIgnored.get(currentChatID)[0].length);
+
     if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
         resolveGetIgnored.get(currentChatID)[1]();
         resolveGetIgnored.delete(currentChatID);
