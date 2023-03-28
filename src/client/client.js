@@ -1349,6 +1349,7 @@ export async function selectIgnored(ignoredOp) {
         chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
         refreshChatWindow(currentChatID);
         if (ignoredOpIndex > -1) {
+            console.log(chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2))); // seems like no history table??
             const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
             if (ignoredOp.action == "remove") {
                 interval[1] = 0;
@@ -1369,6 +1370,7 @@ export async function selectIgnored(ignoredOp) {
         console.log(ignoredOp);
         return access.hasOp(cycle, ignoredOp)
     }), 1);
+    console.log(resolveGetIgnored.get(currentChatID).size);
     if (resolveGetIgnored.get(currentChatID)[0].size == 0) {
         resolveGetIgnored.get(currentChatID)[1]();
         resolveGetIgnored.delete(currentChatID);
