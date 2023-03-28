@@ -749,9 +749,7 @@ async function receivedOperations (ops, chatID, pk) {
                 }
             }
             return resolve("REJECT");
-        }).then(store.getItem(chatID).then((chatInfo) => {
-            console.log(`herhehehrhehre ${chatInfo.metadata.ignored}`);
-        }));
+        });
     });
 }
 
@@ -892,6 +890,7 @@ function receivedMessage(messageData) {
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res == "ACCEPT") {
+                    console.log(`sending deets`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
@@ -1000,7 +999,7 @@ async function sendChatHistory (chatID, pk) {
         for (const interval of intervals) {
             start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
             end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-            end = end < 0 ? chatInfo.history.length : end + 1;
+            end = (interval[1] == 0 ? chatInfo.history.length : end) + 1;
             peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
         }
         
