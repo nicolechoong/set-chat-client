@@ -1358,7 +1358,7 @@ export async function selectIgnored(ignoredOp) {
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
         chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
         refreshChatWindow(currentChatID);
-        if (ignoredOpIndex > -1) {
+        if (ignoredOpIndex > -1 && chatInfo.historyTable.has(JSON.stringify(ignoredOp.pk2))) {
             console.log([...chatInfo.historyTable.keys()]);
             console.log(keyMap.get(JSON.stringify(ignoredOp.pk2)));
             console.log(chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2))); // seems like no history table??
@@ -1419,7 +1419,8 @@ function updateChatInfo () {
             disableChatMods(currentChatID);
         }
 
-        if (resolveGetIgnored.has(currentChatID)) {
+        if (resolveGetIgnored.has(currentChatID) 
+        && document.getElementsByClassName('card-conflict').length < resolveGetIgnored.get(currentChatID[0].length)) {
             disableChatMods(currentChatID, true);
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 chatInfoList.insertBefore(elem.generateConflictCard(cycle), chatInfoList.firstElementChild);
@@ -1563,7 +1564,6 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
 
             // sorting intervals for each set of intervals
             for (pk of modifiedHistoryTable) {
-                console.log(chatInfo.historyTable.get(pk));
                 chatInfo.historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
             }
 
@@ -1577,8 +1577,8 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
 
             await store.setItem(chatID, chatInfo);
             
-            await refreshChatWindow();
-            if (newMessage) { document.getElementById(`chatCard${chatID}`).className = "card card-chat notif"; }
+            await refreshChatWindow(chatID);
+            if (newMessage && chatID !== currentChatID) { document.getElementById(`chatCard${chatID}`).className = "card card-chat notif"; }
         }
     });
 }

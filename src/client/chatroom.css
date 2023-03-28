@@ -168,6 +168,7 @@ h4 {
     display: flex;
     flex-flow: row;
     flex: 0 1 auto;
+    align-self: flex-start;
 }
 
 #chatBox {
@@ -325,6 +326,7 @@ button.card:hover {
     min-width: 300px;
     max-width: 350px;
     flex-grow: 2;
+    overflow-y: auto;
 }
 
 #heading {
