@@ -1420,9 +1420,10 @@ function updateChatInfo () {
             disableChatMods(currentChatID);
         }
 
+        console.log(`resolved get ignored has ${currentChatID} ${resolveGetIgnored.has(currentChatID)}`)
         if (resolveGetIgnored.has(currentChatID)) {
             disableChatMods(currentChatID, true);
-            chatInfoList.removeChild(conflictCardList);
+            conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 conflictCardList.appendChild(elem.generateConflictCard(cycle));
             });
