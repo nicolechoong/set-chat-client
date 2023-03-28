@@ -679,7 +679,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 console.log(`same universe naisu`);
                 const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
                 joinedChats.get(chatID).exMembers.delete(pk);
-                store.setItem("joinedChats", joinedChats);
+                await store.setItem("joinedChats", joinedChats);
                 if (memberSet.has(pk)) {
                     updateMembers(memberSet, chatID);
                 }
@@ -889,6 +889,7 @@ function receivedMessage(messageData) {
                 messageData.ignored.forEach(op => unpackOp(op));
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+                console.log(`deets ${res}`);
                 if (res == "ACCEPT") {
                     console.log(`sending deets`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
@@ -1164,7 +1165,6 @@ function addMsgID (data) {
 
 function broadcastToMembers (data, chatID = null) {
     chatID = chatID === null ? currentChatID : chatID;
-    console.log(`username broadcast ${joinedChats.get(chatID).members}`);
     for (const pk of joinedChats.get(chatID).members) {
         try {
             sendToMember(data, pk);
