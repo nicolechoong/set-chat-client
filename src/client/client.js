@@ -1253,6 +1253,7 @@ export function disableChatMods (chatID, conflict=false) {
         conflictChatBar.style.display = conflict ? "flex" : "none";
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
+        document.getElementById('chatBoxHeading').style.display = "flex";
 
         [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = true;
@@ -1269,6 +1270,7 @@ export function enableChatMods (chatID) {
         conflictChatBar.style.display = "none";
         document.getElementById('disputeCard').style.display = "none";
         document.getElementById('defaultText').style.display = "none";
+        document.getElementById('chatBoxHeading').style.display = "flex";
 
         [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = false;
@@ -1405,7 +1407,7 @@ export function selectChat(chatID) {
     chatMessages.innerHTML = "";
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
     store.getItem(currentChatID).then(async (chatInfo) => {
-        chatInfo.history.forEach(msg => updateChatWindow(data));
+        chatInfo.history.forEach(msg => updateChatWindow(msg));
     });
 }
 
