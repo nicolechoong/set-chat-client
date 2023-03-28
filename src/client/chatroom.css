@@ -239,8 +239,11 @@ h4 {
 }
 
 .card-input, .card-conflict {
-    display: none;
     flex-flow: column;
+}
+
+.card-template {
+    display: none !important;
 }
 
 .card > div {
@@ -344,8 +347,4 @@ button.card:hover {
     display: none;
     margin-right: 16px;
     fill: #fc5c65;
-}
-
-#chatCardTemplate, #userCardTemplate {
-    display: none;
 }
