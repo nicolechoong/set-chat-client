@@ -1069,7 +1069,7 @@ async function removePeer (messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-    updateMessageData(messageData);
+    updateChatStore(messageData);
     closeConnections(pk, messageData.chatID);
 }
 
