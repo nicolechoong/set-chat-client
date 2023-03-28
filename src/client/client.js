@@ -642,7 +642,7 @@ async function sendIgnored (ignored, chatID, pk) {
         from: keyPair.publicKey,
         replay: false
     });
-    broadcastToMembers(ignoredMessage, chatID, false); // don't send to itself
+    broadcastToMembers(ignoredMessage, chatID);
     if (!joinedChats.get(chatID).members.includes(pk)) {
         sendToMember(ignoredMessage, pk)
     }
@@ -866,7 +866,7 @@ function receivedMessage(messageData) {
                 messageData.ignored.forEach(op => unpackOp(op));
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res == "ACCEPT") {
+                if (res == "ACCEPT" && !replay) {
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
