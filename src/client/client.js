@@ -642,7 +642,7 @@ async function sendIgnored (ignored, chatID, pk) {
         from: keyPair.publicKey,
         replay: false
     });
-    broadcastToMembers(ignoredMessage, chatID);
+    broadcastToMembers(ignoredMessage, chatID, false); // don't send to itself
     if (!joinedChats.get(chatID).members.includes(pk)) {
         sendToMember(ignoredMessage, pk)
     }
@@ -1152,7 +1152,7 @@ function sendChatMessage (messageInput) {
         chatID: currentChatID
     });
 
-    broadcastToMembers(data);
+    broadcastToMembers(data, chatID);
 }
 
 
