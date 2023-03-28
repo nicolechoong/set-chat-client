@@ -17,6 +17,7 @@ const chatInfoList = document.getElementById('chatInfoList');
 
 const chatBar = document.getElementById('chatBar');
 const disabledChatBar = document.getElementById('disabledChatBar');
+const chatWindow = document.getElementById('chatWindow');
 
 const loginInput = document.getElementById('loginInput');
 const messageInput = document.getElementById('messageInput');
@@ -988,6 +989,7 @@ async function sendChatHistory (chatID, pk) {
         var peerHistory = [];
         if (!chatInfo.historyTable.has(pk)) {
             chatInfo.historyTable.set(pk, [[chatInfo.history[0].id, 0]]);
+            await store.setItem(chatID, chatInfo);
         }
         console.log(`we currently store history of ${[...chatInfo.historyTable.keys()].map(pk => keyMap.get(pk))}`);
         const intervals = chatInfo.historyTable.get(pk);
@@ -998,7 +1000,6 @@ async function sendChatHistory (chatID, pk) {
             end = end < 0 ? chatInfo.history.length : end + 1;
             peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
         }
-        await store.setItem(chatID, chatInfo);
         
         sendToMember(addMsgID({
             type: "history",
@@ -1071,7 +1072,7 @@ async function addPeer(messageData) {
 async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
 
-    await store.getItem(messageData.chatID).then((chatInfo) => {
+    await store.getItem(messageData.chatID).then(async (chatInfo) => {
         if (chatInfo.historyTable.has(pk)) {
             const interval = chatInfo.historyTable.get(pk).pop();
             interval[1] = messageData.id;
@@ -1079,7 +1080,7 @@ async function removePeer (messageData) {
         }
         chatInfo.history.push(messageData);
         console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
-        store.setItem(messageData.chatID, chatInfo);
+        await store.setItem(messageData.chatID, chatInfo);
     }).then(() => console.log(`added removal message data to chat history`));
 
     if (joinedChats.get(messageData.chatID).members.includes(pk)) {
@@ -1090,7 +1091,7 @@ async function removePeer (messageData) {
     }
     
     joinedChats.get(messageData.chatID).exMembers.add(pk);
-    store.setItem("joinedChats", joinedChats);
+    await store.setItem("joinedChats", joinedChats);
 
     updateChatInfo();
     updateChatWindow(messageData);
@@ -1271,11 +1272,13 @@ addUserBtn.addEventListener("click", async () => {
     }
 });
 
-export function disableChatMods (chatID) {
+export function disableChatMods (chatID, conflict=false) {
     if (chatID == currentChatID) {
         document.getElementById('addUserCard').style.display = "none";
         chatBar.style.display = "none";
-        disabledChatBar.style.display = "flex";
+        chatWindow.style.display = "flex";
+        disabledChatBar.style.display = conflict ? "none" : "flex";
+        conflictChatBar.style.display = conflict ? "flex" : "none";
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         console.log(document.getElementById('disputeCard').style.display);
 
@@ -1288,8 +1291,10 @@ export function disableChatMods (chatID) {
 export function enableChatMods (chatID) {
     if (chatID == currentChatID) {
         document.getElementById('addUserCard').style.display = "flex";
+        chatWindow.style.display = "flex";
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
+        conflictChatBar.style.display = "none";
         document.getElementById('disputeCard').style.display = "none";
 
         [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
@@ -1352,8 +1357,8 @@ export async function selectIgnored(ignoredOp) {
         if (ignoredOpIndex > -1) {
             console.log([...chatInfo.historyTable.keys()]);
             console.log(keyMap.get(JSON.stringify(ignoredOp.pk2)));
-            console.log(chatInfo.historyTable.get(ignoredOp.pk2)); // seems like no history table??
-            const interval = chatInfo.historyTable.get(ignoredOp.pk2).pop();
+            console.log(chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2))); // seems like no history table??
+            const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
             if (ignoredOp.action == "remove") {
                 interval[1] = 0;
                 chatInfo.historyTable.get(pk).push(interval);
@@ -1413,7 +1418,7 @@ function updateChatInfo () {
         }
 
         if (resolveGetIgnored.has(currentChatID)) {
-            disableChatMods(currentChatID);
+            disableChatMods(currentChatID, true);
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 chatInfoList.insertBefore(elem.generateConflictCard(cycle), chatInfoList.firstElementChild);
             });
