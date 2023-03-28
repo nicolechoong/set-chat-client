@@ -718,6 +718,7 @@ async function receivedOperations (ops, chatID, pk) {
                 const graphInfo = access.hasCycles(ops);
                 if (graphInfo.cycle) {
                     if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
+                        console.log(`cycle detected`);
                         ignoredOp = await getIgnored(graphInfo.concurrent, chatID);
                     }
                     sendIgnored(chatInfo.metadata.ignored, chatID, pk);
@@ -1324,6 +1325,7 @@ var resolveGetIgnored = new Map();
 function getIgnored(cycles, chatID) {
     if (chatID == currentChatID) {
         document.getElementById('chatBar').style.display = "none";
+        updateChatInfo();
     }
     return new Promise((resolve) => { 
         resolveGetIgnored.set(chatID, [cycles, resolve]); 
@@ -1343,7 +1345,7 @@ export async function selectIgnored(ignoredOp) {
         // unwinding chat history
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
         chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
-        refreshChatWindow(chatID);
+        refreshChatWindow(currentChatID);
         if (ignoredOpIndex > -1) {
             const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
             if (ignoredOp.action == "remove") {
