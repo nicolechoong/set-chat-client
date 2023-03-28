@@ -984,7 +984,7 @@ function sendAdvertisement(chatID, pk) {
 
 async function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
-    store.getItem(chatID).then((chatInfo) => {
+    await store.getItem(chatID).then(async (chatInfo) => {
         var peerHistory = [];
         if (!chatInfo.historyTable.has(pk)) {
             chatInfo.historyTable.set(pk, [[chatInfo.history[0].id, 0]]);
@@ -998,6 +998,7 @@ async function sendChatHistory (chatID, pk) {
             end = end < 0 ? chatInfo.history.length : end + 1;
             peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
         }
+        await store.setItem(chatID, chatInfo);
         
         sendToMember(addMsgID({
             type: "history",
