@@ -1372,17 +1372,15 @@ export async function selectIgnored(ignoredOp) {
         await store.setItem(currentChatID, chatInfo);
 
         console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
+        resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
+    
+        if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
+            console.log(`ignored set here ${chatInfo.metadata.ignored.length}`);
+            resolveGetIgnored.get(currentChatID)[1]();
+            resolveGetIgnored.delete(currentChatID);
+            enableChatMods(currentChatID);
+        }
     });
-
-    resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => {
-        return access.hasOp(cycle, ignoredOp)
-    }), 1);
-
-    if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
-        resolveGetIgnored.get(currentChatID)[1]();
-        resolveGetIgnored.delete(currentChatID);
-        enableChatMods(currentChatID);
-    }
 }
 
 function getChatNames() {

@@ -315,8 +315,9 @@ button.card:hover {
     margin-right: 16px;
 }
 
-#default-text {
+#defaultText {
     text-align: center;
+
 }
 
 #chatInfo {
