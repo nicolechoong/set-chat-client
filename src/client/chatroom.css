@@ -303,7 +303,7 @@ button.card:hover {
     justify-content: space-between;
 }
 
-#disabledChatBar {
+#disabledChatBar, #conflictChatBar {
     display: none;
     justify-content: center;
     align-items: center;
@@ -313,6 +313,10 @@ button.card:hover {
 #messageInput {
     width: 100%;
     margin-right: 16px;
+}
+
+#default-text {
+    text-align: center;
 }
 
 #chatInfo {

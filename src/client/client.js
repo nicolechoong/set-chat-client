@@ -1280,7 +1280,7 @@ export function disableChatMods (chatID, conflict=false) {
         disabledChatBar.style.display = conflict ? "none" : "flex";
         conflictChatBar.style.display = conflict ? "flex" : "none";
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
-        console.log(document.getElementById('disputeCard').style.display);
+        document.getElementById('defaultText').style.display = "none";
 
         [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = true;
@@ -1296,6 +1296,7 @@ export function enableChatMods (chatID) {
         disabledChatBar.style.display = "none";
         conflictChatBar.style.display = "none";
         document.getElementById('disputeCard').style.display = "none";
+        document.getElementById('defaultText').style.display = "none";
 
         [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
             elem.disabled = false;
@@ -1361,7 +1362,7 @@ export async function selectIgnored(ignoredOp) {
             const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
             if (ignoredOp.action == "remove") {
                 interval[1] = 0;
-                chatInfo.historyTable.get(pk).push(interval);
+                chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).push(interval);
             }
         }
 
