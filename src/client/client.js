@@ -840,7 +840,7 @@ function initChannel(channel) {
     channel.onmessage = (event) => { receivedMessage(JSON.parse(event.data)) }
 }
 
-function receivedMessage(messageData) {
+async function receivedMessage(messageData) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
     if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")) {
         document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
@@ -876,9 +876,7 @@ function receivedMessage(messageData) {
             messageData.online.forEach((peer) => connectToPeer(peer));
             break;
         case "history":
-            store.getItem(messageData.chatID).then(async (chatInfo) => {
-                await mergeChatHistory(messageData.chatID, JSON.stringify(messageData.from), chatInfo.history, messageData.history);
-            });
+            await mergeChatHistory(messageData.chatID, JSON.stringify(messageData.from), messageData.history);
             break;
         case "remove":
             unpackOp(messageData.op);
@@ -1076,7 +1074,7 @@ async function removePeer (messageData) {
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatMessages.innerHTML = "";
-        store.getItem(currentChatID).then(async (chatInfo) => {
+        await store.getItem(currentChatID).then(async (chatInfo) => {
             chatInfo.history.forEach(msg => updateChatWindow(msg));
         });
     }
@@ -1503,8 +1501,9 @@ function mergeJoinedChats(localChats, receivedChats) {
     return mergedChats;
 }
 
-async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
-    store.getItem(chatID).then(async (chatInfo) => {
+async function mergeChatHistory (chatID, pk, receivedMsgs) {
+    await store.getItem(chatID).then(async (chatInfo) => {
+        const localMsgs = chatInfo.history;
         console.log(`local length ${localMsgs.length}`);
         console.log(`received length ${receivedMsgs.length}`);
         var newMessage = false;
@@ -1557,7 +1556,6 @@ async function mergeChatHistory (chatID, pk, localMsgs, receivedMsgs) {
             chatInfo.history = mergedChatHistory;
 
             await store.setItem(chatID, chatInfo);
-            
             await refreshChatWindow(chatID);
             if (newMessage && chatID !== currentChatID) { document.getElementById(`chatCard${chatID}`).className = "card card-chat notif"; }
         }
