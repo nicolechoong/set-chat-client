@@ -1323,10 +1323,7 @@ resetStoreBtn.addEventListener("click", () => {
 var resolveGetIgnored = new Map();
 
 function getIgnored(cycles, chatID) {
-    if (chatID == currentChatID) {
-        document.getElementById('chatBar').style.display = "none";
-        updateChatInfo();
-    }
+
     return new Promise((resolve) => { 
         resolveGetIgnored.set(chatID, [cycles, resolve]); 
 
@@ -1336,6 +1333,11 @@ function getIgnored(cycles, chatID) {
                 selectIgnored(cycle.at(removeSelfIndex));
                 continue;
             }
+        }
+
+        if (chatID == currentChatID) {
+            document.getElementById('chatBar').style.display = "none";
+            updateChatInfo();
         }
     });
 }
