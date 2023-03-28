@@ -711,6 +711,7 @@ async function receivedOperations (ops, chatID, pk) {
         if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
         store.getItem(chatID).then(async (chatInfo) => {
             ops = unionOps(chatInfo.metadata.operations, ops);
+            var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
 
             if (access.verifyOperations(ops)) {
                 chatInfo.metadata.operations = ops;
@@ -718,7 +719,6 @@ async function receivedOperations (ops, chatID, pk) {
 
                 const graphInfo = access.hasCycles(ops);
                 if (graphInfo.cycle) {
-                    var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
                     if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         console.log(`cycle detected`);
                         ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
