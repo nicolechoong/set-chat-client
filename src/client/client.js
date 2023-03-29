@@ -1056,7 +1056,6 @@ async function addPeer(messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-    updateChatStore(messageData);
     await store.getItem(messageData.chatID).then((chatInfo) => {
         if (!chatInfo.historyTable.has(pk)) {
             chatInfo.historyTable.set(pk, []);
@@ -1094,8 +1093,6 @@ async function removePeer (messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-    updateChatStore(messageData);
-    console.log(`stored remove peer ${keyMap.get(pk)}`);
     closeConnections(pk, messageData.chatID);
 }
 
