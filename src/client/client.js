@@ -87,7 +87,13 @@ function initialiseClient () {
     [...document.getElementsByClassName('chat-bar')].forEach((elem) => {
         elem.style.display = "none";
     });
+    chatWindow.innerHTML = "";
     currentChatID = 0;
+
+    dim.style.display = "block";
+    loginPopup.style.display = "flex";
+    loginInput.focus();
+    loginInput.select();
 }
 
 initialiseClient();
@@ -101,10 +107,6 @@ var connection = new WebSocket('wss://35.178.80.94:3000/');
 
 connection.onopen = function () {
     console.log("Connected to server");
-    dim.style.display = "block";
-    loginPopup.style.display = "flex";
-    loginInput.focus();
-    loginInput.select();
 };
 
 connection.onerror = function (err) {
@@ -451,7 +453,6 @@ async function onRemove (messageData) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
             updateChatWindow(messageData);
             updateChatStore(messageData);
-            console.log(`stored remove ${localUsername}`);
         }
         chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
         await store.setItem("joinedChats", joinedChats);
@@ -1352,6 +1353,7 @@ export async function selectIgnored(ignoredOp) {
         // unwinding chat history
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
         if (ignoredOpIndex > -1) {
+            console.log(`found ignored op`);
             chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
 
             if (chatInfo.historyTable.has(JSON.stringify(ignoredOp.pk2))) {
@@ -1368,11 +1370,9 @@ export async function selectIgnored(ignoredOp) {
         removeOp(chatInfo.metadata.operations, ignoredOp);
         await store.setItem(currentChatID, chatInfo);
 
-        console.log(`ignored op is ${ignoredOp.action} ${keyMap.get(JSON.stringify(ignoredOp.pk2))}`);
         resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
     
         if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
-            console.log(`ignored set here ${chatInfo.metadata.ignored.length}`);
             resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.ignored);
             resolveGetIgnored.delete(currentChatID);
             enableChatMods(currentChatID);
