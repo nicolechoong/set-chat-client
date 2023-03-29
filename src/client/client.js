@@ -350,11 +350,11 @@ async function onCreateChat(chatID, chatName) {
         },
         history: [createMsg],
         historyTable: new Map(),
+    }).then(async () => {
+        updateChatOptions("add", chatID);
+        await selectChat(chatID);
+        // updateChatWindow(createMsg);
     });
-
-    updateChatOptions("add", chatID);
-    await selectChat(chatID);
-    updateChatWindow(createMsg);
 }
 
 // When being added to a new chat
@@ -1099,10 +1099,12 @@ async function removePeer (messageData) {
 
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
-        await store.getItem(currentChatID).then(async (chatInfo) => {
-            chatWindow.innerHTML = "";
-            chatInfo.history.forEach(data => {
-                updateChatWindow(data);
+        await navigator.locks.request("history", async () => {
+            await store.getItem(currentChatID).then(async (chatInfo) => {
+                chatWindow.innerHTML = "";
+                chatInfo.history.forEach(data => {
+                    updateChatWindow(data);
+                });
             });
         });
     }
@@ -1124,7 +1126,7 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             case "remove":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))} ${JSON.stringify(data.id)}`;
                 break;
             default:
                 break;
@@ -1352,6 +1354,8 @@ export async function selectIgnored(ignoredOp) {
     await store.getItem(currentChatID).then(async (chatInfo) => {
         // unwinding chat history
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+        console.log(ignoredOpIndex);
+        console.log(chatInfo.history.map(msg => JSON.stringify(msg.id)).join("\n"));
         if (ignoredOpIndex > -1) {
             console.log(`found ignored op`);
             chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
@@ -1528,7 +1532,7 @@ function mergeJoinedChats(localChats, receivedChats) {
 
 
 async function mergeChatHistory (chatID, pk, receivedMsgs) {
-    await navigator.locks.request("mergeChat", async () => {
+    await navigator.locks.request("history", async () => {
         await store.getItem(chatID).then(async (chatInfo) => {
             const localMsgs = chatInfo.history;
             console.log(`local length ${localMsgs.length}`);
