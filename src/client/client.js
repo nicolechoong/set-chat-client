@@ -658,7 +658,7 @@ async function receivedIgnored (ignored, opHash, chatID, pk) {
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
             console.log(`why why ${graphInfo.cycle} resolved ${access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)}`);
             if ((graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored))
-            || !arrEqual(elem.hashOpArray(chatInfo.metadata.operations), opHash)) {
+            || !arrEqual(access.hashOpArray(chatInfo.metadata.operations), opHash)) {
                 console.log(`not resolved?`);
                 graphInfo.concurrent.forEach((cyc) => {
                     console.log(cyc.map((op) => `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`).join(" "));
@@ -717,7 +717,7 @@ async function receivedOperations (ops, chatID, pk) {
                         console.log(`cycle detected`);
                         ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
                     }
-                    sendIgnored(ignoredSet, elem.hashOpArray(ops), chatID, pk);
+                    sendIgnored(ignoredSet, access.hashOpArray(ops), chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
                         joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                         receivedMessage({
