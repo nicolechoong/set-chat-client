@@ -500,16 +500,19 @@ async function disputeRemoval(peer, chatID) {
         const ignoredOp = chatInfo.metadata.operations.at(end);
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
         const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
-        chatInfo.metadata.operations.push(op);
-        chatInfo.metadata.ignored.push(ignoredOp);
-        await store.setItem(chatID, chatInfo);
 
-
+        console.log(`${chatInfo.history.map(msg => msg.type)}`);
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(objToArr(msg.op.sig), ignoredOp.sig));
         console.log(`ignoredOpIndex ${ignoredOpIndex}`);
         if (ignoredOpIndex > -1) {
             chatInfo.history.splice(ignoredOpIndex);
         }
+        console.log(`${chatInfo.history.map(msg => msg.type)}`);
+
+        chatInfo.metadata.operations.push(op);
+        chatInfo.metadata.ignored.push(ignoredOp);
+        await store.setItem(chatID, chatInfo);
+        await refreshChatWindow(chatID);
 
         const removeMessage = addMsgID({
             type: "remove",
@@ -1109,6 +1112,7 @@ async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatWindow.innerHTML = "";
         await store.getItem(currentChatID).then(async (chatInfo) => {
+            console.log(`${chatInfo.history.map(msg => msg.type)}`);
             chatInfo.history.forEach(data => {
                 updateChatWindow(data);
             });
