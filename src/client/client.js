@@ -13,7 +13,6 @@ const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
 const memberList = document.getElementById('memberList');
-const chatInfoList = document.getElementById('chatInfoList');
 const conflictCardList = document.getElementById('conflictCardList');
 
 const chatBar = document.getElementById('chatBar');
@@ -61,23 +60,31 @@ const configuration = {
     ]
 };
 
-var currentChatID = 0;
-
-// map from stringify(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
-var connections = new Map();
-
-// (chatID: String, {chatName: String, members: Array of String})
-var joinedChats = new Map();
+var currentChatID, connections, joinedChats, msgQueue;
+export var keyMap;
 
 // local cache : localForage instance
 var store;
 
-// map from public key : stringify(pk) to username : String
-export var keyMap = new Map();
+function initialiseClient () {
+    currentChatID = 0;
+    connections = new Map(); // map from stringify(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
+    joinedChats = new Map(); // (chatID: String, {chatName: String, members: Array of String})
+    keyMap = new Map(); // map from public key : stringify(pk) to username : String
+    msgQueue = new Map(); // map from public key : stringify(pk) to array of JSON object representing the message data
 
-// map from public key : stringify(pk) to array of JSON object representing the message data
-var msgQueue = new Map();
+    // layout
+    document.getElementById('chatList').innerHTML = "";
+    document.getElementById('defaultText').style.display = "block";
+    document.getElementById('chatInfo').style.display = "none";
+    document.getElementById('chatBoxHeading').style.display = "none";
+    [...document.getElementsByClassName('chat-bar')].forEach((elem) => {
+        elem.style.display = "none";
+    });
+    currentChatID = 0;
+}
 
+initialiseClient();
 
 /////////////////////////
 // WebSocket to Server //
@@ -656,7 +663,7 @@ async function receivedIgnored (ignored, opHash, chatID, pk) {
 
             // we need to receive ops and ignored, and queue if we are missing dependencies
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
-            console(`left ${access.hashOpArray(chatInfo.metadata.operations)} right ${opHash}`);
+            console.log(`left ${access.hashOpArray(chatInfo.metadata.operations)} right ${opHash}`);
             if ((graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored))
             || !arrEqual(access.hashOpArray(chatInfo.metadata.operations), opHash)) {
                 console.log(`not resolved?`);
@@ -1465,11 +1472,13 @@ function logout () {
             closeConnections(pk, chatID);
         });
     }
+    initialiseClient();
     sendToServer({
         type: "leave",
         pk: keyPair.publicKey,
     });
 }
+
 
 ///////////
 // UTILS //
