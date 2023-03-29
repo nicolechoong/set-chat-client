@@ -151,7 +151,7 @@ connection.onmessage = function (message) {
             onAdd(data.chatID, data.chatName, objToArr(data.from), data.id);
             break;
         case "remove":
-            onRemove(data.chatID, objToArr(data.from), data.dispute);
+            onRemove(data);
             break;
         case "getUsername":
             onGetUsername(data.username, data.success, data.pk);
@@ -436,15 +436,14 @@ async function addToChat (validMemberPubKeys, chatID) {
 
 
 async function onRemove (messageData) {
-    // chatID : string, chatName : string, from : string, fromPK : Uint8Array
     var chatInfo = joinedChats.get(messageData.chatID);
-    if (chatInfo.validMembers.includes(JSON.stringify(messageData.fromPK))) {
-        const from = await getUsername(JSON.stringify(messageData.fromPK));
+    if (chatInfo.validMembers.includes(JSON.stringify(messageData.from))) {
+        const from = await getUsername(JSON.stringify(messageData.from));
         chatInfo.currentMember = false;
 
         // if the removal is disputable
         if (!messageData.dispute) { 
-            chatInfo.toDispute = { peerName: from, peerPK: messageData.fromPK };
+            chatInfo.toDispute = { peerName: from, peerPK: messageData.from };
         }
 
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
