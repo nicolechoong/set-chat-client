@@ -730,7 +730,6 @@ async function receivedOperations (ops, chatID, pk) {
                     console.log(`hashOp after ignored ${access.hashOpArray(ops)}`);
                     sendIgnored(ignoredSet, access.hashOpArray(ops), chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
-                        joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                         receivedMessage({
                             type: "ignored",
                             ignored: queuedIg,
@@ -739,6 +738,7 @@ async function receivedOperations (ops, chatID, pk) {
                             from: strToArr(queuedPk),
                             replay: true
                         });
+                        joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                         await store.setItem("joinedChats", joinedChats);
                     }
                 }
