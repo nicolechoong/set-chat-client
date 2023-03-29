@@ -12,6 +12,8 @@ const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
 const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
 const chatMessages = document.getElementById('chatMessages');
+
+const chatList = document.getElementById('chatList');
 const memberList = document.getElementById('memberList');
 const conflictCardList = document.getElementById('conflictCardList');
 
@@ -74,7 +76,11 @@ function initialiseClient () {
     msgQueue = new Map(); // map from public key : stringify(pk) to array of JSON object representing the message data
 
     // layout
-    document.getElementById('chatList').innerHTML = "";
+    [...chatList.childNodes].forEach((node) => {
+        if (node.id !== "chatCardTemplate") {
+            chatList.removeChild(node);
+        }
+    });
     document.getElementById('defaultText').style.display = "block";
     document.getElementById('chatInfo').style.display = "none";
     document.getElementById('chatBoxHeading').style.display = "none";
