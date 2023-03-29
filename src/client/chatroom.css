@@ -271,6 +271,11 @@ button.card:hover {
     background-color: #e8ecf1;
 }
 
+.chat-message {
+    margin: 0;
+    padding: 4px 16px;
+}
+
 #disputeCard {
     display: none;
 }
@@ -289,11 +294,6 @@ button.card:hover {
 #chatOptions {
     min-width: 250px;
     max-width: 300px;
-}
-
-#chat-message {
-    margin: 0;
-    padding: 4px 16px;
 }
 
 #chatBar {
