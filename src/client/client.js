@@ -660,7 +660,7 @@ async function sendIgnored (ignored, opHash, chatID, pk) {
     }
 }
 
-async function receivedIgnored (ignored, opHash, chatID, pk) {
+async function receivedIgnored (ignored, chatID, pk, opHash) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
     return new Promise(async (resolve) => {
         await store.getItem(chatID).then(async (chatInfo) => {
@@ -671,7 +671,7 @@ async function receivedIgnored (ignored, opHash, chatID, pk) {
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
             console.log(`left ${access.hashOpArray(chatInfo.metadata.operations)} right ${opHash}`);
             if ((graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored))
-            || !arrEqual(access.hashOpArray(chatInfo.metadata.operations), opHash)) {
+            || (opHash && !arrEqual(access.hashOpArray(chatInfo.metadata.operations), opHash))) {
                 console.log(`not resolved?`);
                 joinedChats.get(chatID).peerIgnored.set(pk, ignored);
                 store.setItem("joinedChats", joinedChats);
@@ -720,20 +720,20 @@ async function receivedOperations (ops, chatID, pk) {
             if (access.verifyOperations(ops)) {
                 chatInfo.metadata.operations = ops;
                 await store.setItem(chatID, chatInfo);
-                console.log(`hashOp before ignored ${access.hashOpArray(ops)}`);
+
                 const graphInfo = access.hasCycles(ops);
                 if (graphInfo.cycle) {
                     if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         console.log(`cycle detected`);
                         ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
                     }
-                    console.log(`hashOp after ignored ${access.hashOpArray(ops)}`);
+
                     sendIgnored(ignoredSet, access.hashOpArray(ops), chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
                         receivedMessage({
                             type: "ignored",
                             ignored: queuedIg,
-                            opHash: access.hashOpArray(ops),
+                            opHash: null,
                             chatID: chatID,
                             from: strToArr(queuedPk),
                             replay: true
@@ -880,7 +880,8 @@ async function receivedMessage(messageData) {
                 messageData.ignored.forEach(op => unpackOp(op));
                 messageData.opHash = objToArr(messageData.opHash);
             }
-            receivedIgnored(messageData.ignored, messageData.opHash, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+            console.log(`is replay true? ${messageData.replay} is opHash null? ${messageData.opHash}`);
+            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from), messageData.opHash).then(async (res) => {
                 if (res == "ACCEPT") {
                     console.log(`ignored from??? ${keyMap.get(JSON.stringify(messageData.from))}`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
