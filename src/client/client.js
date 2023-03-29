@@ -503,11 +503,9 @@ async function disputeRemoval(peer, chatID) {
 
         console.log(`${chatInfo.history.map(msg => msg.type)}`);
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(objToArr(msg.op.sig), ignoredOp.sig));
-        console.log(`ignoredOpIndex ${ignoredOpIndex}`);
         if (ignoredOpIndex > -1) {
             chatInfo.history.splice(ignoredOpIndex);
         }
-        console.log(`${chatInfo.history.map(msg => msg.type)}`);
 
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(ignoredOp);
@@ -1125,6 +1123,7 @@ function updateChatWindow (data) {
     if (data.chatID === currentChatID) {
         const message = document.createElement('p');
         message.className = "chat-message";
+        console.log(`hmm ${data.type}`)
         switch (data.type) {
             case "create":
                 console.log(`creaaaate`);
@@ -1137,7 +1136,7 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             case "remove":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))} ${JSON.stringify(data.id)}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             default:
                 break;
