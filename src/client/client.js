@@ -503,8 +503,9 @@ async function disputeRemoval(peer, chatID) {
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(ignoredOp));
         await store.setItem(chatID, chatInfo);
 
+        console.log(`${chatInfo.history.at(-1).op.sig} of type ${typeof chatInfo.history.at(-1).op.sig}`);
+        console.log(`${ignoredOp.sig} of type ${typeof ignoredOp.sig}`);
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
-        console.log(`ignoredOpIndex ${chatInfo.history.map(msg => msg.id).join("\n")}`);
         console.log(`ignoredOpIndex ${ignoredOpIndex}`);
         if (ignoredOpIndex > -1) {
             chatInfo.history.splice(ignoredOpIndex);
@@ -1359,6 +1360,8 @@ async function getIgnored(cycles, chatID) {
 export async function selectIgnored(ignoredOp) {
     await store.getItem(currentChatID).then(async (chatInfo) => {
         // unwinding chat history
+        console.log(`${chatInfo.history.at(-1).op.sig} of type ${typeof chatInfo.history.at(-1).op.sig}`);
+        console.log(`${ignoredOp.sig} of type ${typeof ignoredOp.sig}`);
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
         console.log(ignoredOpIndex);
         console.log(chatInfo.history.map(msg => JSON.stringify(msg.id)).join("\n"));
