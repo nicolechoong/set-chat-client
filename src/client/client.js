@@ -448,13 +448,13 @@ async function onRemove (messageData) {
 
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+            updateChatWindow(messageData);
+            updateChatStore(messageData);
         }
         chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
         await store.setItem("joinedChats", joinedChats);
 
         if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
-        updateChatWindow(messageData);
-        updateChatStore(messageData);
         disableChatMods(messageData.chatID);
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
@@ -498,7 +498,7 @@ async function disputeRemoval(peer, chatID) {
         const op = await access.generateOp("remove", keyPair,peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
-        store.setItem(chatID, chatInfo);
+        await store.setItem(chatID, chatInfo);
 
         const removeMessage = addMsgID({
             type: "remove",
@@ -508,6 +508,8 @@ async function disputeRemoval(peer, chatID) {
             chatID: chatID,
             dispute: true,
         });
+
+
         sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
         sendToServer({
             to: peer.peerPK,
@@ -753,8 +755,9 @@ async function receivedOperations (ops, chatID, pk) {
                 } else {
                     return memberSet.has(pk) ? resolve("ACCEPT") : resolve("REJECT");
                 }
+            } else {
+                return resolve("FAIL");
             }
-            return resolve("REJECT");
         });
     });
 }
@@ -1095,26 +1098,10 @@ async function removePeer (messageData) {
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         await store.getItem(currentChatID).then(async (chatInfo) => {
-            var text = "";
+            chatWindow.innerHTML = "";
             chatInfo.history.forEach(data => {
-                switch (data.type) {
-                    case "create":
-                        text = `${text}<br />[${formatDate(data.sentTime)}] chat created by ${keyMap.get(JSON.stringify(data.from))}`;
-                        break;
-                    case "text":
-                        text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
-                        break;
-                    case "add":
-                        text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
-                        break;
-                    case "remove":
-                        text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))} ${JSON.stringify(data.id)}`;
-                        break;
-                    default:
-                        break;
-                }
+                updateChatWindow(data);
             });
-            chatMessages.innerHTML = text;
         });
     }
 }
@@ -1122,26 +1109,25 @@ async function refreshChatWindow (chatID) {
 function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
-        var message;
+        const message = document.createElement('p');
+        message.className = "chat-message";
         switch (data.type) {
             case "create":
-                message = `chat created by ${keyMap.get(JSON.stringify(data.from))}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] chat created by ${keyMap.get(JSON.stringify(data.from))}`;
                 break;
             case "text":
-                message = `${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
                 break;
             case "add":
-                message = `${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             case "remove":
-                message = `${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))} ${JSON.stringify(data.id)}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))} ${JSON.stringify(data.id)}`;
                 break;
             default:
-                message = "";
                 break;
         }
-        const msg = `${chatMessages.innerHTML}<br />[${formatDate(data.sentTime)}] ${message}`;
-        chatMessages.innerHTML = msg;
+        chatWindow.appendChild(message);
     }
 }
 
