@@ -1106,18 +1106,6 @@ async function removePeer (messageData) {
     closeConnections(pk, messageData.chatID);
 }
 
-async function refreshChatWindow (chatID) {
-    if (chatID === currentChatID) {
-        chatWindow.innerHTML = "";
-        await store.getItem(currentChatID).then(async (chatInfo) => {
-            console.log(`${chatInfo.history.map(msg => msg.type)}`);
-            chatInfo.history.forEach(data => {
-                updateChatWindow(data);
-            });
-        });
-    }
-}
-
 function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
@@ -1143,6 +1131,18 @@ function updateChatWindow (data) {
                 break;
         }
         chatWindow.appendChild(message);
+    }
+}
+
+async function refreshChatWindow (chatID) {
+    if (chatID === currentChatID) {
+        // chatWindow.innerHTML = "";
+        await store.getItem(currentChatID).then(async (chatInfo) => {
+            console.log(`${chatInfo.history.map(msg => msg.type)}`);
+            chatInfo.history.forEach(data => {
+                updateChatWindow(data);
+            });
+        });
     }
 }
 
