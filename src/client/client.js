@@ -499,7 +499,7 @@ async function disputeRemoval(peer, chatID) {
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
         const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
-        // chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
+        chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
         await store.setItem(chatID, chatInfo);
 
         const removeMessage = addMsgID({
@@ -667,48 +667,50 @@ async function sendIgnored (ignored, opHash, chatID, pk) {
 
 async function receivedIgnored (ignored, chatID, pk, opHash) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
-    return new Promise(async (resolve) => {
-        await store.getItem(chatID).then(async (chatInfo) => {
-            if (pk === JSON.stringify(keyPair.publicKey)) { resolve("IGNORE"); return; }
-            console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
+    navigator.locks.request("ops", () => {
+        return new Promise(async (resolve) => {
+            await store.getItem(chatID).then(async (chatInfo) => {
+                if (pk === JSON.stringify(keyPair.publicKey)) { resolve("IGNORE"); return; }
+                console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
 
-            // we need to receive ops and ignored, and queue if we are missing dependencies
-            const graphInfo = access.hasCycles(chatInfo.metadata.operations);
-            console.log(`left ${access.hashOpArray(chatInfo.metadata.operations)} right ${opHash}`);
-            if ((graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored))
-            || (opHash && !arrEqual(access.hashOpArray(chatInfo.metadata.operations), opHash))) {
-                console.log(`not resolved?`);
-                joinedChats.get(chatID).peerIgnored.set(pk, ignored);
-                store.setItem("joinedChats", joinedChats);
-                resolve("WAITING FOR LOCAL IGNORED");
-                return;
-            }
-        
-            if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
-                console.log(`same universe naisu`);
-                const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
-                joinedChats.get(chatID).exMembers.delete(pk);
-                await store.setItem("joinedChats", joinedChats);
-                if (memberSet.has(pk)) {
-                    updateMembers(memberSet, chatID);
+                // we need to receive ops and ignored, and queue if we are missing dependencies
+                const graphInfo = access.hasCycles(chatInfo.metadata.operations);
+                console.log(`left ${access.hashOpArray(chatInfo.metadata.operations)} right ${opHash}`);
+                if ((graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored))
+                || (opHash && !arrEqual(access.hashOpArray(chatInfo.metadata.operations), opHash))) {
+                    console.log(`not resolved?`);
+                    joinedChats.get(chatID).peerIgnored.set(pk, ignored);
+                    store.setItem("joinedChats", joinedChats);
+                    resolve("WAITING FOR LOCAL IGNORED");
+                    return;
                 }
+            
+                if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
+                    console.log(`same universe naisu`);
+                    const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
+                    joinedChats.get(chatID).exMembers.delete(pk);
+                    await store.setItem("joinedChats", joinedChats);
+                    if (memberSet.has(pk)) {
+                        updateMembers(memberSet, chatID);
+                    }
 
-                if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-                    resolve("ACCEPT");
+                    if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
+                        resolve("ACCEPT");
+                    } else {
+                        resolve("REJECT");
+                    }
+
                 } else {
+                    console.log(`different universe from ${keyMap.get(pk)}`);
+                    if (joinedChats.get(chatID).members.includes(pk)) {
+                        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
+                    }
+                    joinedChats.get(chatID).exMembers.add(pk);
+                    store.setItem("joinedChats", joinedChats);
+                    updateChatInfo();
                     resolve("REJECT");
                 }
-
-            } else {
-                console.log(`different universe from ${keyMap.get(pk)}`);
-                if (joinedChats.get(chatID).members.includes(pk)) {
-                    joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
-                }
-                joinedChats.get(chatID).exMembers.add(pk);
-                store.setItem("joinedChats", joinedChats);
-                updateChatInfo();
-                resolve("REJECT");
-            }
+            });
         });
     });
 }
@@ -716,50 +718,52 @@ async function receivedIgnored (ignored, chatID, pk, opHash) {
 async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
-    return new Promise((resolve) => {
-        if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
-        store.getItem(chatID).then(async (chatInfo) => {
-            ops = unionOps(chatInfo.metadata.operations, ops);
-            var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
+    navigator.locks.request("ops", () => {
+        return new Promise((resolve) => {
+            if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
+            store.getItem(chatID).then(async (chatInfo) => {
+                ops = unionOps(chatInfo.metadata.operations, ops);
+                var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
 
-            if (access.verifyOperations(ops)) {
-                chatInfo.metadata.operations = ops;
-                await store.setItem(chatID, chatInfo);
+                if (access.verifyOperations(ops)) {
+                    chatInfo.metadata.operations = ops;
+                    await store.setItem(chatID, chatInfo);
 
-                const graphInfo = access.hasCycles(ops);
-                if (graphInfo.cycle) {
-                    if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
-                        console.log(`cycle detected`);
-                        ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
+                    const graphInfo = access.hasCycles(ops);
+                    if (graphInfo.cycle) {
+                        if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
+                            console.log(`cycle detected`);
+                            ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
+                        }
+
+                        sendIgnored(ignoredSet, access.hashOpArray(ops), chatID, pk);
+                        for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
+                            receivedMessage({
+                                type: "ignored",
+                                ignored: queuedIg,
+                                opHash: null,
+                                chatID: chatID,
+                                from: strToArr(queuedPk),
+                                replay: true
+                            });
+                            joinedChats.get(chatID).peerIgnored.delete(queuedPk);
+                            await store.setItem("joinedChats", joinedChats);
+                        }
+                    }
+                    const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
+                    if (memberSet.has(pk)) {
+                        updateMembers(memberSet, chatID);
                     }
 
-                    sendIgnored(ignoredSet, access.hashOpArray(ops), chatID, pk);
-                    for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
-                        receivedMessage({
-                            type: "ignored",
-                            ignored: queuedIg,
-                            opHash: null,
-                            chatID: chatID,
-                            from: strToArr(queuedPk),
-                            replay: true
-                        });
-                        joinedChats.get(chatID).peerIgnored.delete(queuedPk);
-                        await store.setItem("joinedChats", joinedChats);
+                    if (graphInfo.cycle) {
+                        return resolve("WAITING FOR PEER IGNORED");
+                    } else {
+                        return memberSet.has(pk) ? resolve("ACCEPT") : resolve("REJECT");
                     }
-                }
-                const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
-                if (memberSet.has(pk)) {
-                    updateMembers(memberSet, chatID);
-                }
-
-                if (graphInfo.cycle) {
-                    return resolve("WAITING FOR PEER IGNORED");
                 } else {
-                    return memberSet.has(pk) ? resolve("ACCEPT") : resolve("REJECT");
+                    return resolve("FAIL");
                 }
-            } else {
-                return resolve("FAIL");
-            }
+            });
         });
     });
 }
@@ -870,7 +874,7 @@ async function receivedMessage(messageData) {
     switch (messageData.type) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
-            receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+            await receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res === "ACCEPT" || res === "REJECT") {
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                     if (res == "ACCEPT") {
@@ -887,7 +891,7 @@ async function receivedMessage(messageData) {
                 messageData.opHash = objToArr(messageData.opHash);
             }
             console.log(`is replay true? ${messageData.replay} is opHash null? ${messageData.opHash}`);
-            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from), messageData.opHash).then(async (res) => {
+            await receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from), messageData.opHash).then(async (res) => {
                 if (res == "ACCEPT") {
                     console.log(`ignored from??? ${keyMap.get(JSON.stringify(messageData.from))}`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
@@ -905,7 +909,7 @@ async function receivedMessage(messageData) {
             break;
         case "remove":
             unpackOp(messageData.op);
-            receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+            await receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                 if (res === "ACCEPT") { 
                     if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
                         onRemove(messageData);
@@ -922,8 +926,10 @@ async function receivedMessage(messageData) {
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
                 onAdd(messageData.chatID, messageData.chatName, objToArr(messageData.from), messageData.msgID);
             } else {
-                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res === "ACCEPT") { addPeer(messageData); }
+                await receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                    if (res === "ACCEPT") { 
+                        addPeer(messageData);
+                    }
                 });
             }
             break;
