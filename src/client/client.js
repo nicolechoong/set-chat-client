@@ -1559,10 +1559,12 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                     if (!localMsgIDs.has(msg.id)) { // if we don't have this message
                         mergedChatHistory.push(msg);
                         newMessage = true;
-                        pk2 = JSON.stringify(msg.op.pk2);
+
+                        if (msg.type === "text") { continue; }
 
                         // rolling forward changes to history table
                         if (!arrEqual(msg.op.pk2, keyPair.publicKey)) {
+                            pk2 = JSON.stringify(msg.op.pk2);
                             if (msg.type === "add") {
                                 if (!chatInfo.historyTable.has(pk2)) {
                                     chatInfo.historyTable.set(pk2, []);
