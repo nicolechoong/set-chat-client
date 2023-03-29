@@ -339,7 +339,7 @@ async function onCreateChat(chatID, chatName) {
     const createMsg = addMsgID({
         type: "create",
         from: keyPair.publicKey,
-        chatID: currentChatID
+        chatID: chatID,
     });
 
     await store.setItem(chatID, {
@@ -1106,15 +1106,24 @@ async function removePeer (messageData) {
     closeConnections(pk, messageData.chatID);
 }
 
+async function refreshChatWindow (chatID) {
+    if (chatID === currentChatID) {
+        chatWindow.innerHTML = "";
+        await store.getItem(currentChatID).then(async (chatInfo) => {
+            chatInfo.history.forEach(data => {
+                updateChatWindow(data);
+            });
+        });
+    }
+}
+
 function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
         const message = document.createElement('p');
         message.className = "chat-message";
-        console.log(`hmm ${data.type}`);
         switch (data.type) {
             case "create":
-                console.log(`creaaaate`);
                 message.innerHTML = `[${formatDate(data.sentTime)}] chat created by ${keyMap.get(JSON.stringify(data.from))}`;
                 break;
             case "text":
@@ -1127,22 +1136,9 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             default:
-                console.log(`nani dafuq ${data.type}`)
                 break;
         }
         chatWindow.appendChild(message);
-    }
-}
-
-async function refreshChatWindow (chatID) {
-    if (chatID === currentChatID) {
-        // chatWindow.innerHTML = "";
-        await store.getItem(currentChatID).then(async (chatInfo) => {
-            console.log(`${chatInfo.history.map(msg => msg.type)}`);
-            chatInfo.history.forEach(data => {
-                updateChatWindow(data);
-            });
-        });
     }
 }
 
