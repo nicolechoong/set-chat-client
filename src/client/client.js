@@ -496,11 +496,12 @@ export async function removeFromChat (username, pk, chatID) {
 
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
-        const ignoredOp = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, ignoredOp).map(op => op.action)}`);
-        const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, ignoredOp));
+        const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+        const ignoredOp = chatInfo.metadata.operations.at(end);
+        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
+        const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
-        chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(ignoredOp));
+        chatInfo.metadata.ignored.push(ignoredOp);
         await store.setItem(chatID, chatInfo);
 
         console.log(`${chatInfo.history.at(-1).op.sig} of type ${typeof chatInfo.history.at(-1).op.sig}`);
