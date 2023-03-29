@@ -348,11 +348,11 @@ async function onCreateChat(chatID, chatName) {
         },
         history: [createMsg],
         historyTable: new Map(),
-    }).then(() => {
-        updateChatOptions("add", chatID);
-        selectChat(chatID);
-        updateChatWindow(createMsg);
-    });
+    })
+
+    updateChatOptions("add", chatID);
+    await selectChat(chatID);
+    updateChatWindow(createMsg);
 }
 
 // When being added to a new chat
@@ -673,9 +673,6 @@ async function receivedIgnored (ignored, opHash, chatID, pk) {
             if ((graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored))
             || !arrEqual(access.hashOpArray(chatInfo.metadata.operations), opHash)) {
                 console.log(`not resolved?`);
-                graphInfo.concurrent.forEach((cyc) => {
-                    console.log(cyc.map((op) => `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`).join(" "));
-                })
                 joinedChats.get(chatID).peerIgnored.set(pk, ignored);
                 store.setItem("joinedChats", joinedChats);
                 resolve("WAITING FOR LOCAL IGNORED");
@@ -723,13 +720,14 @@ async function receivedOperations (ops, chatID, pk) {
             if (access.verifyOperations(ops)) {
                 chatInfo.metadata.operations = ops;
                 await store.setItem(chatID, chatInfo);
-
+                console.log(`hashOp before ignored ${access.hashOpArray(ops)}`);
                 const graphInfo = access.hasCycles(ops);
                 if (graphInfo.cycle) {
                     if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                         console.log(`cycle detected`);
                         ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
                     }
+                    console.log(`hashOp after ignored ${access.hashOpArray(ops)}`);
                     sendIgnored(ignoredSet, access.hashOpArray(ops), chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
                         joinedChats.get(chatID).peerIgnored.delete(queuedPk);
@@ -1099,22 +1097,20 @@ async function refreshChatWindow (chatID) {
             chatInfo.history.forEach(data => {
                 switch (data.type) {
                     case "create":
-                        message = `chat created by ${keyMap.get(JSON.stringify(data.from))}`;
+                        text = `${text}<br />[${formatDate(data.sentTime)}] chat created by ${keyMap.get(JSON.stringify(data.from))}`;
                         break;
                     case "text":
-                        message = `${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
+                        text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
                         break;
                     case "add":
-                        message = `${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                        text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                         break;
                     case "remove":
-                        message = `${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                        text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                         break;
                     default:
-                        message = "";
                         break;
                 }
-                text = `${text}<br />[${formatDate(data.sentTime)}] ${message}`;
             });
             chatMessages.innerHTML = text;
         });
@@ -1147,8 +1143,8 @@ function updateChatWindow (data) {
     }
 }
 
-async function updateChatStore(messageData) {
-    store.getItem(messageData.chatID).then((chatInfo) => {
+async function updateChatStore (messageData) {
+    await store.getItem(messageData.chatID).then((chatInfo) => {
         chatInfo.history.push(messageData);
         store.setItem(messageData.chatID, chatInfo);
     });
@@ -1438,15 +1434,13 @@ function updateChatInfo () {
     }
 }
 
-export function selectChat(chatID) {
+export async function selectChat(chatID) {
     currentChatID = chatID;
     updateChatInfo();
 
     chatMessages.innerHTML = "";
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
-    store.getItem(currentChatID).then(async (chatInfo) => {
-        chatInfo.history.forEach(msg => updateChatWindow(msg));
-    });
+    await refreshChatWindow(chatID);
 }
 
 const chatOptions = new Set();
