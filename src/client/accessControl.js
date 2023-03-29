@@ -141,6 +141,10 @@ export function hashOp (op) {
     return nacl.hash(enc.encode(concatOp(op)));
 }
 
+export function hashOpArray (ops) {
+    return nacl.hash(enc.encode(ops.map(op => op.sig).join("")));
+}
+
 function getOpFromHash(ops, hashedOp) {
     if (hashedOps.has(JSON.stringify(hashedOp))) { return hashedOps.get(JSON.stringify(hashedOp)); }
     for (const op of ops) {

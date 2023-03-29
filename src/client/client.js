@@ -631,11 +631,12 @@ async function sendOperations(chatID, pk) {
     });
 }
 
-async function sendIgnored (ignored, chatID, pk) {
+async function sendIgnored (ignored, opHash, chatID, pk) {
     // chatID : String, pk : String
     const ignoredMessage = addMsgID({
         type: "ignored",
         ignored: ignored,
+        opHash: opHash,
         chatID: chatID,
         from: keyPair.publicKey,
         replay: false
@@ -646,15 +647,18 @@ async function sendIgnored (ignored, chatID, pk) {
     }
 }
 
-async function receivedIgnored (ignored, chatID, pk) {
+async function receivedIgnored (ignored, opHash, chatID, pk) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
     return new Promise(async (resolve) => {
         await store.getItem(chatID).then(async (chatInfo) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { resolve("IGNORE"); return; }
             console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
 
+            // we need to receive ops and ignored, and queue if we are missing dependencies
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
-            if (graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
+            console.log(`why why ${graphInfo.cycle} resolved ${access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)}`);
+            if ((graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored))
+            || !arrEqual(elem.hashOpArray(chatInfo.metadata.operations), opHash)) {
                 console.log(`not resolved?`);
                 graphInfo.concurrent.forEach((cyc) => {
                     console.log(cyc.map((op) => `${op.action} ${keyMap.get(JSON.stringify(op.pk2))}`).join(" "));
@@ -713,8 +717,9 @@ async function receivedOperations (ops, chatID, pk) {
                         console.log(`cycle detected`);
                         ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
                     }
-                    sendIgnored(ignoredSet, chatID, pk);
+                    sendIgnored(ignoredSet, elem.hashOpArray(ops), chatID, pk);
                     for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
+                        joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                         receivedMessage({
                             type: "ignored",
                             ignored: queuedIg,
@@ -722,7 +727,6 @@ async function receivedOperations (ops, chatID, pk) {
                             from: strToArr(queuedPk),
                             replay: true
                         });
-                        joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                         await store.setItem("joinedChats", joinedChats);
                     }
                 }
@@ -862,8 +866,9 @@ async function receivedMessage(messageData) {
         case "ignored":
             if (!messageData.replay) {
                 messageData.ignored.forEach(op => unpackOp(op));
+                messageData.opHash = objToArr(messageData.opHash);
             }
-            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+            receivedIgnored(messageData.ignored, messageData.opHash, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res == "ACCEPT") {
                     console.log(`ignored from??? ${keyMap.get(JSON.stringify(messageData.from))}`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
@@ -1075,9 +1080,29 @@ async function removePeer (messageData) {
 
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
-        chatMessages.innerHTML = "";
         await store.getItem(currentChatID).then(async (chatInfo) => {
-            chatInfo.history.forEach(msg => updateChatWindow(msg));
+            var text = "";
+            chatInfo.history.forEach(data => {
+                switch (data.type) {
+                    case "create":
+                        message = `chat created by ${keyMap.get(JSON.stringify(data.from))}`;
+                        break;
+                    case "text":
+                        message = `${keyMap.get(JSON.stringify(data.from))}: ${data.message}`;
+                        break;
+                    case "add":
+                        message = `${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                        break;
+                    case "remove":
+                        message = `${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                        break;
+                    default:
+                        message = "";
+                        break;
+                }
+                text = `${text}<br />[${formatDate(data.sentTime)}] ${message}`;
+            });
+            chatMessages.innerHTML = text;
         });
     }
 }
