@@ -504,6 +504,7 @@ async function disputeRemoval(peer, chatID) {
         await store.setItem(chatID, chatInfo);
 
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+        console.log(`ignoredOpIndex ${ignoredOpIndex}`);
         if (ignoredOpIndex > -1) {
             chatInfo.history.splice(ignoredOpIndex);
         }
@@ -1104,18 +1105,15 @@ async function removePeer (messageData) {
 
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
-        await navigator.locks.request("history", async () => {
-            chatWindow.innerHTML = "";
-            await store.getItem(currentChatID).then(async (chatInfo) => {
-                console.log(chatInfo.history.map(msg => msg.type));
-                chatInfo.history.forEach(data => {
-                    console.log(`${data.type} ${currentChatID}`);
-                    updateChatWindow(data);
-                });
+        chatWindow.innerHTML = "";
+        await store.getItem(currentChatID).then(async (chatInfo) => {
+            console.log(chatInfo.history.map(msg => msg.type));
+            chatInfo.history.forEach(data => {
+                console.log(`${JSON.stringify(data)}`);
+                updateChatWindow(data);
             });
-            console.log(`chatwindow state ${chatWindow.innerHTML}`);
         });
-        console.log(`refresh released`);
+        console.log(`chatwindow state ${chatWindow.innerHTML}`);
     }
 }
 
@@ -1442,7 +1440,9 @@ export async function selectChat(chatID) {
     updateChatInfo();
 
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
-    await refreshChatWindow(currentChatID);
+    await navigator.locks.request("history", async () => {
+        await refreshChatWindow(currentChatID);
+    });
 }
 
 const chatOptions = new Set();
@@ -1555,6 +1555,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                 
                 const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
                 for (const msg of receivedMsgs) {
+                    console.log(`msg ${msg.type}`);
                     if (!localMsgIDs.has(msg.id)) {
                         mergedChatHistory.push(msg);
                         newMessage = true;
