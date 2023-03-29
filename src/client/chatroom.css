@@ -291,7 +291,7 @@ button.card:hover {
     max-width: 300px;
 }
 
-#chatMessage {
+#chat-message {
     margin: 0;
     padding: 4px 16px;
 }

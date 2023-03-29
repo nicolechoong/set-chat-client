@@ -348,7 +348,7 @@ async function onCreateChat(chatID, chatName) {
         },
         history: [createMsg],
         historyTable: new Map(),
-    })
+    });
 
     updateChatOptions("add", chatID);
     await selectChat(chatID);
@@ -451,6 +451,7 @@ async function onRemove (messageData) {
             chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
             updateChatWindow(messageData);
             updateChatStore(messageData);
+            console.log(`stored remove ${localUsername}`);
         }
         chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
         await store.setItem("joinedChats", joinedChats);
@@ -1093,6 +1094,7 @@ async function removePeer (messageData) {
     updateChatInfo();
     updateChatWindow(messageData);
     updateChatStore(messageData);
+    console.log(`stored remove peer ${keyMap.get(pk)}`);
     closeConnections(pk, messageData.chatID);
 }
 
@@ -1526,64 +1528,67 @@ function mergeJoinedChats(localChats, receivedChats) {
     return mergedChats;
 }
 
+
 async function mergeChatHistory (chatID, pk, receivedMsgs) {
-    await store.getItem(chatID).then(async (chatInfo) => {
-        const localMsgs = chatInfo.history;
-        console.log(`local length ${localMsgs.length}`);
-        console.log(`received length ${receivedMsgs.length}`);
-        var newMessage = false;
+    await navigator.locks.request("mergeChat", async () => {
+        await store.getItem(chatID).then(async (chatInfo) => {
+            const localMsgs = chatInfo.history;
+            console.log(`local length ${localMsgs.length}`);
+            console.log(`received length ${receivedMsgs.length}`);
+            var newMessage = false;
 
-        if (receivedMsgs.length > 0) {
-            const mergedChatHistory = localMsgs;
-            const modifiedHistoryTable = new Set();
-            var pk2;
-            
-            const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
-            for (const msg of receivedMsgs) {
-                if (!localMsgIDs.has(msg.id)) {
-                    mergedChatHistory.push(msg);
-                    newMessage = true;
-                    pk2 = JSON.stringify(msg.op.pk2);
+            if (receivedMsgs.length > 0) {
+                const mergedChatHistory = localMsgs;
+                const modifiedHistoryTable = new Set();
+                var pk2;
+                
+                const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
+                for (const msg of receivedMsgs) {
+                    if (!localMsgIDs.has(msg.id)) {
+                        mergedChatHistory.push(msg);
+                        newMessage = true;
+                        pk2 = JSON.stringify(msg.op.pk2);
 
-                    // rolling forward changes
-                    if (!arrEqual(msg.op.pk2, keyPair.publicKey)) {
-                        if (msg.type === "add") {
-                            if (!chatInfo.historyTable.has(pk2)) {
-                                chatInfo.historyTable.set(pk2, []);
+                        // rolling forward changes
+                        if (!arrEqual(msg.op.pk2, keyPair.publicKey)) {
+                            if (msg.type === "add") {
+                                if (!chatInfo.historyTable.has(pk2)) {
+                                    chatInfo.historyTable.set(pk2, []);
+                                }
+                                modifiedHistoryTable.add(pk2);
+                                chatInfo.historyTable.get(pk2).push([msg.id, 0]);
+
+                            } else if (msg.type === "remove") {
+                                modifiedHistoryTable.add(pk2);
+                                if (!chatInfo.historyTable.has(pk2)) {
+                                    chatInfo.historyTable.set(pk2, [[localMsgs[0].id, 0]]);
+                                }
+                                const interval = chatInfo.historyTable.get(pk2).pop();
+                                interval[1] = msg.id;
+                                chatInfo.historyTable.get(pk2).push(interval);
                             }
-                            modifiedHistoryTable.add(pk2);
-                            chatInfo.historyTable.get(pk2).push([msg.id, 0]);
-
-                        } else if (msg.type === "remove") {
-                            modifiedHistoryTable.add(pk2);
-                            if (!chatInfo.historyTable.has(pk2)) {
-                                chatInfo.historyTable.set(pk2, [[localMsgs[0].id, 0]]);
-                            }
-                            const interval = chatInfo.historyTable.get(pk2).pop();
-                            interval[1] = msg.id;
-                            chatInfo.historyTable.get(pk2).push(interval);
                         }
                     }
                 }
+
+                // sorting intervals for each set of intervals
+                for (pk of modifiedHistoryTable) {
+                    chatInfo.historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
+                }
+
+                mergedChatHistory.sort((a, b) => {
+                    if (a.sentTime > b.sentTime) { return 1; }
+                    if (a.sentTime < b.sentTime) { return -1; }
+                    if (a.username > b.username) { return 1; }
+                    else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
+                });
+                chatInfo.history = mergedChatHistory;
+
+                await store.setItem(chatID, chatInfo);
+                await refreshChatWindow(chatID);
+                if (newMessage && chatID !== currentChatID) { document.getElementById(`chatCard${chatID}`).className = "card card-chat notif"; }
             }
-
-            // sorting intervals for each set of intervals
-            for (pk of modifiedHistoryTable) {
-                chatInfo.historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
-            }
-
-            mergedChatHistory.sort((a, b) => {
-                if (a.sentTime > b.sentTime) { return 1; }
-                if (a.sentTime < b.sentTime) { return -1; }
-                if (a.username > b.username) { return 1; }
-                else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
-            });
-            chatInfo.history = mergedChatHistory;
-
-            await store.setItem(chatID, chatInfo);
-            await refreshChatWindow(chatID);
-            if (newMessage && chatID !== currentChatID) { document.getElementById(`chatCard${chatID}`).className = "card card-chat notif"; }
-        }
+        });
     });
 }
 
