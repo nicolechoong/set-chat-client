@@ -1123,7 +1123,7 @@ function updateChatWindow (data) {
     if (data.chatID === currentChatID) {
         const message = document.createElement('p');
         message.className = "chat-message";
-        console.log(`hmm ${data.type}`)
+        console.log(`hmm ${data.type}`);
         switch (data.type) {
             case "create":
                 console.log(`creaaaate`);
@@ -1139,6 +1139,7 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
             default:
+                console.log(`nani dafuq ${data.type}`)
                 break;
         }
         chatWindow.appendChild(message);
