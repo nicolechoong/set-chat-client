@@ -505,6 +505,7 @@ async function disputeRemoval(peer, chatID) {
         await store.setItem(chatID, chatInfo);
 
         console.log(`${chatInfo.history.at(-1).op.sig} of type ${typeof chatInfo.history.at(-1).op.sig}`);
+        console.log(`${objToArr(chatInfo.history.at(-1).op.sig)} of type ${typeof chatInfo.history.at(-1).op.sig}`);
         console.log(`${ignoredOp.sig} of type ${typeof ignoredOp.sig}`);
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
         console.log(`ignoredOpIndex ${ignoredOpIndex}`);
