@@ -1113,6 +1113,7 @@ async function refreshChatWindow (chatID) {
                     updateChatWindow(data);
                 });
             });
+            console.log(`chatwindow state ${chatWindow.innerHTML}`);
         });
         console.log(`refresh released`);
     }
