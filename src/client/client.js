@@ -667,7 +667,7 @@ async function sendIgnored (ignored, opHash, chatID, pk) {
 
 async function receivedIgnored (ignored, chatID, pk, opHash) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
-    navigator.locks.request("ops", () => {
+    navigator.locks.request("ops", async () => {
         return new Promise(async (resolve) => {
             await store.getItem(chatID).then(async (chatInfo) => {
                 if (pk === JSON.stringify(keyPair.publicKey)) { resolve("IGNORE"); return; }
@@ -718,7 +718,7 @@ async function receivedIgnored (ignored, chatID, pk, opHash) {
 async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
-    navigator.locks.request("ops", () => {
+    navigator.locks.request("ops", async () => {
         return new Promise((resolve) => {
             if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
             store.getItem(chatID).then(async (chatInfo) => {
@@ -874,7 +874,7 @@ async function receivedMessage(messageData) {
     switch (messageData.type) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
-            await receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+            receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res === "ACCEPT" || res === "REJECT") {
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                     if (res == "ACCEPT") {
@@ -891,7 +891,7 @@ async function receivedMessage(messageData) {
                 messageData.opHash = objToArr(messageData.opHash);
             }
             console.log(`is replay true? ${messageData.replay} is opHash null? ${messageData.opHash}`);
-            await receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from), messageData.opHash).then(async (res) => {
+            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from), messageData.opHash).then(async (res) => {
                 if (res == "ACCEPT") {
                     console.log(`ignored from??? ${keyMap.get(JSON.stringify(messageData.from))}`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
@@ -909,7 +909,7 @@ async function receivedMessage(messageData) {
             break;
         case "remove":
             unpackOp(messageData.op);
-            await receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+            receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                 if (res === "ACCEPT") { 
                     if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
                         onRemove(messageData);
@@ -926,10 +926,8 @@ async function receivedMessage(messageData) {
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
                 onAdd(messageData.chatID, messageData.chatName, objToArr(messageData.from), messageData.msgID);
             } else {
-                await receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                    if (res === "ACCEPT") { 
-                        addPeer(messageData);
-                    }
+                receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
+                    if (res === "ACCEPT") { addPeer(messageData); }
                 });
             }
             break;
