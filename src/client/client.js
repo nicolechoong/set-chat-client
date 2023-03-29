@@ -353,7 +353,8 @@ async function onCreateChat(chatID, chatName) {
     }).then(async () => {
         updateChatOptions("add", chatID);
         await selectChat(chatID);
-        // updateChatWindow(createMsg);
+        updateChatWindow(createMsg);
+        console.log(chatInfo.history.length);
     });
 }
 
@@ -496,11 +497,15 @@ export async function removeFromChat (username, pk, chatID) {
 
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
+        // wait uh potential problem since we only remove the last removal?
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
         const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
+        
+        resolveGetIgnored.set(chatID, [1, ()=>{}]); 
+        selectIgnored(end);
+
         chatInfo.metadata.operations.push(op);
-        chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
         await store.setItem(chatID, chatInfo);
 
         const removeMessage = addMsgID({
@@ -1099,14 +1104,16 @@ async function removePeer (messageData) {
 
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
-        await navigator.locks.request("history", async () => {
+        navigator.locks.request("history", async () => {
             await store.getItem(currentChatID).then(async (chatInfo) => {
+                console.log(chatInfo.history.length);
                 chatWindow.innerHTML = "";
                 chatInfo.history.forEach(data => {
                     updateChatWindow(data);
                 });
             });
         });
+        console.log(`refresh released`);
     }
 }
 
@@ -1592,6 +1599,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
             }
         });
     });
+    console.log(`merge released`);
 }
 
 function closeConnections (pk, chatID) {
