@@ -667,8 +667,8 @@ async function sendIgnored (ignored, opHash, chatID, pk) {
 
 async function receivedIgnored (ignored, chatID, pk, opHash) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
-    navigator.locks.request("ops", async () => {
-        return new Promise(async (resolve) => {
+    return new Promise(async (resolve) => {
+        navigator.locks.request("ops", async () => {
             await store.getItem(chatID).then(async (chatInfo) => {
                 if (pk === JSON.stringify(keyPair.publicKey)) { resolve("IGNORE"); return; }
                 console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
@@ -718,8 +718,8 @@ async function receivedIgnored (ignored, chatID, pk, opHash) {
 async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID}`);
-    navigator.locks.request("ops", async () => {
-        return new Promise((resolve) => {
+    return new Promise((resolve) => {
+        navigator.locks.request("ops", async () => {
             if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
             store.getItem(chatID).then(async (chatInfo) => {
                 ops = unionOps(chatInfo.metadata.operations, ops);
