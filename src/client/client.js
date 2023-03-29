@@ -656,6 +656,7 @@ async function receivedIgnored (ignored, opHash, chatID, pk) {
 
             // we need to receive ops and ignored, and queue if we are missing dependencies
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
+            console(`left ${access.hashOpArray(chatInfo.metadata.operations)} right ${opHash}`);
             if ((graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored))
             || !arrEqual(access.hashOpArray(chatInfo.metadata.operations), opHash)) {
                 console.log(`not resolved?`);
@@ -722,6 +723,7 @@ async function receivedOperations (ops, chatID, pk) {
                         receivedMessage({
                             type: "ignored",
                             ignored: queuedIg,
+                            opHash: access.hashOpArray(ops),
                             chatID: chatID,
                             from: strToArr(queuedPk),
                             replay: true
