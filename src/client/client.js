@@ -436,14 +436,15 @@ async function addToChat (validMemberPubKeys, chatID) {
 
 
 async function onRemove (messageData) {
+    const fromPK = objToArr(messageData.from);
     var chatInfo = joinedChats.get(messageData.chatID);
-    if (chatInfo.validMembers.includes(JSON.stringify(messageData.from))) {
-        const from = await getUsername(JSON.stringify(messageData.from));
+    if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
+        const from = await getUsername(JSON.stringify(fromPK));
         chatInfo.currentMember = false;
 
         // if the removal is disputable
         if (!messageData.dispute) { 
-            chatInfo.toDispute = { peerName: from, peerPK: messageData.from };
+            chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
 
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
@@ -495,7 +496,7 @@ async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-        const op = await access.generateOp("remove", keyPair,peer.peerPK, chatInfo.metadata.operations.slice(0, end));
+        const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(end));
         await store.setItem(chatID, chatInfo);
