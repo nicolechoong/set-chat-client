@@ -354,7 +354,6 @@ async function onCreateChat(chatID, chatName) {
         updateChatOptions("add", chatID);
         await selectChat(chatID);
         updateChatWindow(createMsg);
-        console.log(chatInfo.history.length);
     });
 }
 
@@ -497,16 +496,17 @@ export async function removeFromChat (username, pk, chatID) {
 
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
-        // wait uh potential problem since we only remove the last removal?
-        const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-        const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
-        
-        resolveGetIgnored.set(chatID, [1, ()=>{}]); 
-        selectIgnored(end);
-
+        const ignoredOp = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, ignoredOp).map(op => op.action)}`);
+        const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, ignoredOp));
         chatInfo.metadata.operations.push(op);
+        chatInfo.metadata.ignored.push(chatInfo.metadata.operations.at(ignoredOp));
         await store.setItem(chatID, chatInfo);
+
+        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+        if (ignoredOpIndex > -1) {
+            chatInfo.history.splice(ignoredOpIndex);
+        }
 
         const removeMessage = addMsgID({
             type: "remove",
@@ -1104,7 +1104,7 @@ async function removePeer (messageData) {
 
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
-        navigator.locks.request("history", async () => {
+        await navigator.locks.request("history", async () => {
             await store.getItem(currentChatID).then(async (chatInfo) => {
                 console.log(chatInfo.history.length);
                 chatWindow.innerHTML = "";
@@ -1365,7 +1365,7 @@ export async function selectIgnored(ignoredOp) {
         console.log(chatInfo.history.map(msg => JSON.stringify(msg.id)).join("\n"));
         if (ignoredOpIndex > -1) {
             console.log(`found ignored op`);
-            chatInfo.history.splice(ignoredOpIndex, chatInfo.history.length-ignoredOpIndex);
+            chatInfo.history.splice(ignoredOpIndex);
 
             if (chatInfo.historyTable.has(JSON.stringify(ignoredOp.pk2))) {
                 const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
@@ -1599,7 +1599,6 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
             }
         });
     });
-    console.log(`merge released`);
 }
 
 function closeConnections (pk, chatID) {
