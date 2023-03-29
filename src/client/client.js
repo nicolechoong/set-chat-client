@@ -1109,6 +1109,7 @@ async function refreshChatWindow (chatID) {
             await store.getItem(currentChatID).then(async (chatInfo) => {
                 console.log(chatInfo.history.map(msg => msg.type));
                 chatInfo.history.forEach(data => {
+                    console.log(`${data.type} ${currentChatID}`);
                     updateChatWindow(data);
                 });
             });
@@ -1374,7 +1375,7 @@ export async function selectIgnored(ignoredOp) {
                     chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).push(interval);
                 }
             }
-            refreshChatWindow(chatID);
+            refreshChatWindow(currentChatID);
         }
 
         // writing to storage
@@ -1440,7 +1441,7 @@ export async function selectChat(chatID) {
     updateChatInfo();
 
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
-    await refreshChatWindow(chatID);
+    await refreshChatWindow(currentChatID);
 }
 
 const chatOptions = new Set();
