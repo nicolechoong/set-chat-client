@@ -1426,7 +1426,7 @@ export async function selectChat(chatID) {
     currentChatID = chatID;
     updateChatInfo();
 
-    chatMessages.innerHTML = "";
+    chatWindow.innerHTML = "";
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
     await refreshChatWindow(chatID);
 }
