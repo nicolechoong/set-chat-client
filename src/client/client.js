@@ -435,16 +435,16 @@ async function addToChat (validMemberPubKeys, chatID) {
 }
 
 
-async function onRemove (chatID, fromPK, dispute) {
+async function onRemove (messageData) {
     // chatID : string, chatName : string, from : string, fromPK : Uint8Array
-    var chatInfo = joinedChats.get(chatID);
-    if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
-        const from = await getUsername(JSON.stringify(fromPK));
+    var chatInfo = joinedChats.get(messageData.chatID);
+    if (chatInfo.validMembers.includes(JSON.stringify(messageData.fromPK))) {
+        const from = await getUsername(JSON.stringify(messageData.fromPK));
         chatInfo.currentMember = false;
 
         // if the removal is disputable
-        if (!dispute) { 
-            chatInfo.toDispute = { peerName: from, peerPK: fromPK };
+        if (!messageData.dispute) { 
+            chatInfo.toDispute = { peerName: from, peerPK: messageData.fromPK };
         }
 
         if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
@@ -454,13 +454,15 @@ async function onRemove (chatID, fromPK, dispute) {
         await store.setItem("joinedChats", joinedChats);
 
         if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
-        disableChatMods(chatID);
+        updateChatWindow(messageData);
+        updateChatStore(messageData);
+        disableChatMods(messageData.chatID);
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
         await store.setItem("joinedChats", joinedChats);
 
         for (const pk of chatInfo.members) {
-            closeConnections(pk, chatID);
+            closeConnections(pk, messageData.chatID);
         }
     }
 }
@@ -902,7 +904,7 @@ async function receivedMessage(messageData) {
             receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                 if (res === "ACCEPT") { 
                     if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                        onRemove(messageData.chatID, objToArr(messageData.from), messageData.dispute);
+                        onRemove(messageData);
                     } else {
                         removePeer(messageData); 
                     }
@@ -1107,7 +1109,7 @@ async function refreshChatWindow (chatID) {
                         text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} added ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                         break;
                     case "remove":
-                        text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
+                        text = `${text}<br />[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))} ${JSON.stringify(data.id)}`;
                         break;
                     default:
                         break;
