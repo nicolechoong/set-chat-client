@@ -1105,9 +1105,9 @@ async function removePeer (messageData) {
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         await navigator.locks.request("history", async () => {
+            chatWindow.innerHTML = "";
             await store.getItem(currentChatID).then(async (chatInfo) => {
-                console.log(chatInfo.history.length);
-                chatWindow.innerHTML = "";
+                console.log(chatInfo.history.map(msg => msg.type));
                 chatInfo.history.forEach(data => {
                     updateChatWindow(data);
                 });
@@ -1374,6 +1374,7 @@ export async function selectIgnored(ignoredOp) {
                     chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).push(interval);
                 }
             }
+            refreshChatWindow(chatID);
         }
 
         // writing to storage
@@ -1438,7 +1439,6 @@ export async function selectChat(chatID) {
     currentChatID = chatID;
     updateChatInfo();
 
-    chatWindow.innerHTML = "";
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
     await refreshChatWindow(chatID);
 }
@@ -1598,6 +1598,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                 if (newMessage && chatID !== currentChatID) { document.getElementById(`chatCard${chatID}`).className = "card card-chat notif"; }
             }
         });
+        console.log(`merge released`);
     });
 }
 
