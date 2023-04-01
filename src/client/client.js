@@ -1544,7 +1544,6 @@ function mergeJoinedChats(localChats, receivedChats) {
 
 async function mergeChatHistory (chatID, pk, receivedMsgs) {
     await navigator.locks.request("history", async () => {
-        console.log(`merge acquired lock`);
         await store.getItem(chatID).then(async (chatInfo) => {
             const localMsgs = chatInfo.history;
             console.log(`local length ${localMsgs.length}`);
@@ -1608,7 +1607,6 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                 }
             }
         });
-        console.log(`merge released`);
     });
 }
 

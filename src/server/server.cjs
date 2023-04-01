@@ -255,19 +255,20 @@ function onCandidate (connection, data) {
 
 function onLeave (data) {
   console.log(`Disconnecting from ${data.pk}`);
-  var conn = connectedUsers.get(data.pk).connection;
+  var conn = connectedUsers.get(JSON.stringify(data.pk)).connection;
+  connectedUsers.delete(JSON.stringify(data.pk));
 
-  const index = conn.otherNames.indexOf(data.pk);
-  if (index > -1) {
-    conn.otherNames.splice(index, 1);
-  }
+  // const index = conn.otherNames.indexOf(JSON.stringify(data.pk));
+  // if (index > -1) {
+  //   conn.otherNames.splice(index, 1);
+  // }
 
-  if (conn != null) {
-    sendTo(conn, {
-      type: "leave",
-      from: data.pk
-    });
-  }
+  // if (conn != null) {
+  //   sendTo(conn, {
+  //     type: "leave",
+  //     from: data.pk
+  //   });
+  // }
 }
 
 // Depreciated: For joining public chatrooms (maybe revive later!!)
@@ -482,7 +483,7 @@ function onReconnect (connection, name, pk) {
   // connection: WebSocket, pk: String
   const msgQueue = allUsers.get(pk).msgQueue;
   const joinedChats = getJoinedChats(pk);
-  connectedUsers.set(pk, {connection: connection, groups: []}); 
+  connectedUsers.set(pk, {connection: connection, groups: joinedChats}); 
   connection.pk = pk;
 
   console.log(`User ${allUsers.get(pk).username} has rejoined`);
