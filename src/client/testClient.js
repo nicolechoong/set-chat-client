@@ -316,7 +316,7 @@ function onJoin(usernames) {
 
 function onLeave(peerPK) {
     // peerPK : string
-    closeConnections(peerPK, 0, true);
+    closeConnections(peerPK, 0);
 }
 
 async function onCreateChat(chatID, chatName) {
@@ -463,7 +463,7 @@ async function onRemove (messageData) {
         await store.setItem("joinedChats", joinedChats);
 
         for (const pk of chatInfo.members) {
-            closeConnections(pk, messageData.chatID, true);
+            closeConnections(pk, messageData.chatID);
         }
     }
 }
@@ -528,7 +528,6 @@ async function disputeRemoval(peer, chatID) {
             msg: removeMessage
         });
         
-        console.log(joinedChats.get(chatID).members);
         for (const mem of joinedChats.get(chatID).members) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
@@ -767,7 +766,7 @@ async function receivedOperations (ops, chatID, pk) {
                     if (graphInfo.cycle) {
                         return resolve("WAITING FOR PEER IGNORED");
                     } else {
-                        return memberSet.has(pk) && memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
+                        return memberSet.has(pk) ? resolve("ACCEPT") : resolve("REJECT");
                     }
                 } else {
                     return resolve("FAIL");
@@ -811,7 +810,7 @@ function initPeerConnection() {
         connection.ondatachannel = receiveChannelCallback;
         connection.onclose = function (event) {
             console.log(`received onclose`);
-            closeConnections(connectionNames.get(connection), 0, true);
+            closeConnections(connectionNames.get(connection), 0);
         };
         connection.onicecandidate = function (event) {
             console.log("New candidate");
@@ -886,11 +885,13 @@ async function receivedMessage(messageData) {
         case "ops":
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
-                if (res == "ACCEPT") {
+                if (res === "ACCEPT" || res === "REJECT") {
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-                    sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                } else {
-                    closeConnections(JSON.stringify(messageData.from), messageData.chatID, true);
+                    if (res == "ACCEPT") {
+                        sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
+                    } else {
+                        closeConnections(JSON.stringify(messageData.from), messageData.chatID);
+                    }
                 }
             });
             break;
@@ -900,10 +901,11 @@ async function receivedMessage(messageData) {
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res == "ACCEPT") {
-                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
+                    console.log(`ignored from??? ${keyMap.get(JSON.stringify(messageData.from))}`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
+                    sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 } else if (res === "REJECT") {
-                    closeConnections(JSON.stringify(messageData.from), messageData.chatID, true);
+                    closeConnections(JSON.stringify(messageData.from), messageData.chatID);
                 }
             });
             break;
@@ -943,9 +945,6 @@ async function receivedMessage(messageData) {
                 updateChatStore(messageData);
             }
             break;
-        case "close":
-            sendChatHistory(data.chatID, data.from);
-            closeConnections(data.from, data.chatID, false);
         default:
             console.log(`Unrecognised message type ${messageData.type}`);
     }
@@ -997,7 +996,6 @@ function sendAdvertisement(chatID, pk) {
 
 async function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
-    console.log(`is pk string ${typeof pk}`);
     await store.getItem(chatID).then(async (chatInfo) => {
         var peerHistory = [];
         if (!chatInfo.historyTable.has(pk)) {
@@ -1106,7 +1104,7 @@ async function removePeer (messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-    closeConnections(pk, messageData.chatID, true);
+    closeConnections(pk, messageData.chatID);
 }
 
 async function refreshChatWindow (chatID) {
@@ -1154,11 +1152,14 @@ async function updateChatStore (messageData) {
 
 function sendToMember(data, pk) {
     // data: JSON, pk: String
-    if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
-    console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
-    if (connections.has(pk)) {
-        connections.get(pk).sendChannel.send(JSON.stringify(data));
+    if (pk === JSON.stringify(keyPair.publicKey)) {
+        return receivedMessage(data);
     }
+    console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
+    sendToServer({
+        toPK: strToArr(pk),
+        ...data
+    });
     return;
 }
 
@@ -1475,7 +1476,7 @@ function createNewChat () {
 function logout () {
     for (const chatID of joinedChats.keys()) {
         joinedChats.get(chatID).members.forEach((pk) => {
-            closeConnections(pk, chatID, true);
+            closeConnections(pk, chatID);
         });
     }
     initialiseClient();
@@ -1612,34 +1613,25 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
     });
 }
 
-function closeConnections (pk, chatID, initiated) {
+function closeConnections (pk, chatID) {
     // pk : string, chatID : string
-    if (initiated) {
-        console.log(`sending request to close`);
-        sendToMember({
-            type: "close",
-            chatID: chatID,
-            from: keyPair.publicKey,
-        }, pk);
-    } else {
-        console.log(`connection with ${keyMap.get(pk)} closed`);
-        for (const id of joinedChats.keys()) {
-            if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
-                return;
-            }
+    console.log(`connection with ${keyMap.get(pk)} closed`);
+    for (const id of joinedChats.keys()) {
+        if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
+            return;
         }
-        if (connections.has(pk) && !offerSent.has(pk)) {
-            connectionNames.delete(connections.get(pk).connection);
-            if (connections.get(pk).sendChannel) {
-                connections.get(pk).sendChannel.close();
-                connections.get(pk).sendChannel = null;
-            }
-            if (connections.get(pk).connection) {
-                connections.get(pk).connection.close();
-                connections.get(pk).connection = null;
-            }
-            connections.delete(pk);
-        }
-        console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
     }
+    if (connections.has(pk) && !offerSent.has(pk)) {
+        connectionNames.delete(connections.get(pk).connection);
+        if (connections.get(pk).sendChannel) {
+            connections.get(pk).sendChannel.close();
+            connections.get(pk).sendChannel = null;
+        }
+        if (connections.get(pk).connection) {
+            connections.get(pk).connection.close();
+            connections.get(pk).connection = null;
+        }
+        connections.delete(pk);
+    }
+    console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
 }
