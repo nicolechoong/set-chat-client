@@ -873,7 +873,8 @@ function initChannel(channel) {
 
 async function receivedMessage(messageData) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
-    if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")) {
+    if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")
+    && document.getElementById(`chatCard${messageData.chatID}`) !== null) {
         document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
     }
     switch (messageData.type) {
@@ -1599,7 +1600,9 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
 
                 await store.setItem(chatID, chatInfo);
                 await refreshChatWindow(chatID);
-                if (newMessage && chatID !== currentChatID) { document.getElementById(`chatCard${chatID}`).className = "card card-chat notif"; }
+                if (newMessage && chatID !== currentChatID && document.getElementById(`chatCard${messageData.chatID}`) !== null) { 
+                    document.getElementById(`chatCard${chatID}`).className = "card card-chat notif";
+                }
             }
         });
         console.log(`merge released`);

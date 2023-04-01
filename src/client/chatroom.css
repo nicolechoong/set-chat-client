@@ -280,7 +280,7 @@ button.card:hover {
     display: none;
 }
 
-#disputeCard .conflict, #conflictChatBar .conflict {
+.conflict #disputeCard, .conflict #conflictChatBar {
     display: flex;
 }
 
@@ -296,11 +296,11 @@ button.card:hover {
     background-color: #e8ecf1;
 }
 
-#disabledChatBar .conflict, #conflictChatBar {
+.conflict #disabledChatBar, #conflictChatBar {
     display: none;
 }
 
-#conflictIcon .conflict {
+.conflict #conflictIcon {
     display: block;
 }
 
