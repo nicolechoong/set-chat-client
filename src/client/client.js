@@ -11,7 +11,7 @@ const disputeBtn = document.getElementById('disputeBtn');
 const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
 const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
-const chatMessages = document.getElementById('chatMessages');
+const chatBox = document.getElementById('chatBox');
 
 const chatList = document.getElementById('chatList');
 const memberList = document.getElementById('memberList');
@@ -353,7 +353,6 @@ async function onCreateChat(chatID, chatName) {
     }).then(async () => {
         updateChatOptions("add", chatID);
         await selectChat(chatID);
-        updateChatWindow(createMsg);
     });
 }
 
@@ -659,12 +658,11 @@ async function sendOperations(chatID, pk) {
     });
 }
 
-async function sendIgnored (ignored, opCount, chatID, pk) {
+async function sendIgnored (ignored, chatID, pk) {
     // chatID : String, pk : String
     const ignoredMessage = addMsgID({
         type: "ignored",
         ignored: ignored,
-        opHash: opCount,
         chatID: chatID,
         from: keyPair.publicKey,
         replay: false
@@ -675,7 +673,7 @@ async function sendIgnored (ignored, opCount, chatID, pk) {
     }
 }
 
-async function receivedIgnored (ignored, chatID, pk, opCount) {
+async function receivedIgnored (ignored, chatID, pk) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
     return new Promise(async (resolve) => {
         navigator.locks.request("ops", async () => {
@@ -685,7 +683,6 @@ async function receivedIgnored (ignored, chatID, pk, opCount) {
 
                 // we need to receive ops and ignored, and queue if we are missing dependencies
                 const graphInfo = access.hasCycles(chatInfo.metadata.operations);
-                console.log(`left ${chatInfo.metadata.operations.length} right ${opCount}`);
                 if (graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                     console.log(`not resolved?`);
                     joinedChats.get(chatID).peerIgnored.set(pk, ignored);
@@ -745,12 +742,11 @@ async function receivedOperations (ops, chatID, pk) {
                             ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
                         }
 
-                        sendIgnored(ignoredSet, ops.length, chatID, pk);
+                        sendIgnored(ignoredSet, chatID, pk);
                         for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
                             receivedMessage({
                                 type: "ignored",
                                 ignored: queuedIg,
-                                opHash: null,
                                 chatID: chatID,
                                 from: strToArr(queuedPk),
                                 replay: true
@@ -898,7 +894,7 @@ async function receivedMessage(messageData) {
             if (!messageData.replay) {
                 messageData.ignored.forEach(op => unpackOp(op));
             }
-            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from), messageData.opCount).then(async (res) => {
+            receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res == "ACCEPT") {
                     console.log(`ignored from??? ${keyMap.get(JSON.stringify(messageData.from))}`);
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
@@ -1284,8 +1280,9 @@ export function disableChatMods (chatID, conflict=false) {
         chatBar.style.display = "none";
         chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
-        conflictChatBar.style.display = conflict ? "flex" : "none";
-        document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
+        // conflictChatBar.style.display = conflict ? "flex" : "none";
+
+        // document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
         document.getElementById('chatBoxHeading').style.display = "flex";
 
@@ -1301,8 +1298,8 @@ export function enableChatMods (chatID) {
         chatWindow.style.display = "flex";
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
-        conflictChatBar.style.display = "none";
-        document.getElementById('disputeCard').style.display = "none";
+        // conflictChatBar.style.display = "none";
+        // document.getElementById('disputeCard').style.display = "none";
         document.getElementById('defaultText').style.display = "none";
         document.getElementById('chatBoxHeading').style.display = "flex";
 
@@ -1387,6 +1384,7 @@ export async function selectIgnored(ignoredOp) {
         if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
             resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.ignored);
             resolveGetIgnored.delete(currentChatID);
+            chatBox.className = "chat-panel col-8";
             enableChatMods(currentChatID);
         }
     });
@@ -1427,6 +1425,7 @@ function updateChatInfo () {
 
         if (resolveGetIgnored.has(currentChatID)) {
             disableChatMods(currentChatID, true);
+            chatBox.className = "chat-panel col-8 conflict";
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 conflictCardList.appendChild(elem.generateConflictCard(cycle));

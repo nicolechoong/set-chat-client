@@ -280,6 +280,27 @@ button.card:hover {
     display: none;
 }
 
+#disputeCard .conflict, #conflictChatBar .conflict {
+    display: flex;
+}
+
+#conflictIcon {
+    display: none;
+    margin-right: 16px;
+    fill: #fc5c65;
+}
+
+#disabledChatBar .conflict, #conflictChatBar {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background-color: #e8ecf1;
+}
+
+#conflictIcon .conflict {
+    display: block;
+}
+
 #chatWindow {
     height: 100%;
     overflow-y: auto;
@@ -303,13 +324,6 @@ button.card:hover {
     flex: 0 1 auto;
     justify-self: flex-end;
     justify-content: space-between;
-}
-
-#disabledChatBar, #conflictChatBar {
-    display: none;
-    justify-content: center;
-    align-items: center;
-    background-color: #e8ecf1;
 }
 
 #messageInput {
@@ -345,12 +359,6 @@ button.card:hover {
 #connectBtn {
     margin-left: auto;
     margin-right: 16px;
-}
-
-#conflictIcon {
-    display: none;
-    margin-right: 16px;
-    fill: #fc5c65;
 }
 
 #chatCardTemplate, #userCardTemplate, #conflictCardTemplate, #optionTemplate {
