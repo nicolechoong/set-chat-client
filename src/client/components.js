@@ -71,6 +71,12 @@ export function generateConflictCard (ops) {
     return card;
 }
 
+document.getElementById('createChatBtn').onclick = (() => {
+    createPopup.style.display = "flex";
+    chatNameInput.focus();
+    chatNameInput.select();
+});
+
 document.getElementById('showChatInfoBtn').onclick = (() => {
     chatInfo.style.display = chatInfo.style.display === "flex" ? "none" : "flex";
 });
