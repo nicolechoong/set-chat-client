@@ -290,11 +290,14 @@ button.card:hover {
     fill: #fc5c65;
 }
 
-#disabledChatBar .conflict, #conflictChatBar {
-    display: none;
+#disabledChatBar, #conflictChatBar {
     justify-content: center;
     align-items: center;
     background-color: #e8ecf1;
+}
+
+#disabledChatBar .conflict, #conflictChatBar {
+    display: none;
 }
 
 #conflictIcon .conflict {

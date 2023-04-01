@@ -1280,9 +1280,8 @@ export function disableChatMods (chatID, conflict=false) {
         chatBar.style.display = "none";
         chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
-        // conflictChatBar.style.display = conflict ? "flex" : "none";
 
-        // document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
+        document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
         document.getElementById('chatBoxHeading').style.display = "flex";
 
@@ -1298,8 +1297,8 @@ export function enableChatMods (chatID) {
         chatWindow.style.display = "flex";
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
-        // conflictChatBar.style.display = "none";
-        // document.getElementById('disputeCard').style.display = "none";
+        
+        document.getElementById('disputeCard').style.display = "none";
         document.getElementById('defaultText').style.display = "none";
         document.getElementById('chatBoxHeading').style.display = "flex";
 
