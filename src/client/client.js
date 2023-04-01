@@ -811,7 +811,7 @@ function initPeerConnection() {
         connection.ondatachannel = receiveChannelCallback;
         connection.onclose = function (event) {
             console.log(`received onclose`);
-            closeConnections(connectionNames.get(connection), 0, true);
+            closeConnections(connectionNames.get(connection), 0, false);
         };
         connection.onicecandidate = function (event) {
             console.log("New candidate");
