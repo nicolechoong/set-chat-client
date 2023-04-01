@@ -1361,6 +1361,7 @@ async function getIgnored(cycles, chatID) {
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
             if (removeSelfIndex > -1) {
                 await selectIgnored(cycle.at(removeSelfIndex));
+                console.log(`automatically resolved`);
                 continue;
             }
         }
