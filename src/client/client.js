@@ -1425,7 +1425,7 @@ function updateChatInfo () {
         memberList.innerHTML = "";
         joinedChats.get(currentChatID).members.forEach((pk) => {
             if (pk === JSON.stringify(keyPair.publicKey)) {
-                const card = generateSelfCard(pk, keyMap.get(pk), currentChatID);
+                const card = elem.generateUserCard(pk, keyMap.get(pk), currentChatID);
                 card.className = `card ${localUsername}`;
                 memberList.insertBefore(card, memberList.firstElementChild);
             } else {
