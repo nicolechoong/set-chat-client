@@ -323,7 +323,7 @@ async function onCreateChat(chatID, chatName) {
 
     joinedChats.set(chatID, {
         chatName: chatName,
-        validMembers: [JSON.stringify(keyPair.publicKey)],
+        validMembers: new Set([JSON.stringify(keyPair.publicKey)]),
         members: [JSON.stringify(keyPair.publicKey)],
         exMembers: new Set(),
         peerIgnored: new Map(),
@@ -367,7 +367,7 @@ async function onAdd(chatID, chatName, fromPK, msgID) {
     if (!joinedChats.has(chatID)) {
         joinedChats.set(chatID, {
             chatName: chatName,
-            validMembers: [JSON.stringify(fromPK)],
+            validMembers: new Set([JSON.stringify(fromPK)]),
             members: [JSON.stringify(fromPK)],
             exMembers: new Set(),
             peerIgnored: new Map(),
@@ -421,7 +421,7 @@ async function addToChat (validMemberPubKeys, chatID) {
                 chatName: chatInfo.metadata.chatName
             });
 
-            joinedChats.get(chatID).validMembers.push(JSON.stringify(pk));
+            joinedChats.get(chatID).validMembers.add(JSON.stringify(pk));
             joinedChats.get(chatID).members.push(JSON.stringify(pk));
             await store.setItem("joinedChats", joinedChats);
             await store.setItem(chatID, chatInfo).then(console.log(`${[...validMemberPubKeys.keys()]} have been added to ${chatID}`));
@@ -439,7 +439,7 @@ async function addToChat (validMemberPubKeys, chatID) {
 async function onRemove (messageData) {
     const fromPK = objToArr(messageData.from);
     var chatInfo = joinedChats.get(messageData.chatID);
-    if (chatInfo.validMembers.includes(JSON.stringify(fromPK))) {
+    if (chatInfo.validMembers.has(JSON.stringify(fromPK))) {
         const from = await getUsername(JSON.stringify(fromPK));
         chatInfo.currentMember = false;
 
@@ -793,12 +793,16 @@ async function updateMembers (memberSet, chatID) {
     }
 
     // add all the users which are no longer valid to exMembers
-    joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk)).forEach(pk => joinedChats.get(chatID).exMembers.add(pk));
-    joinedChats.get(chatID).validMembers = [...memberSet];
-    joinedChats.get(chatID).members = joinedChats.get(chatID).validMembers.filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
+    joinedChats.get(chatID).validMembers.forEach(pk => {
+        if (!memberSet.has(pk)) {
+            joinedChats.get(chatID).exMembers.add(pk)
+        }
+    });
+    joinedChats.get(chatID).validMembers = memberSet;
+    joinedChats.get(chatID).members = [...joinedChats.get(chatID).validMembers].filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
     await store.setItem("joinedChats", joinedChats);
     updateChatInfo();
-    console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
+    console.log(`all valid members ${[...joinedChats.get(chatID).validMembers].map(pk => keyMap.get(pk))}`);
     console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
     console.log(`current exmembers ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
 }
@@ -1065,8 +1069,8 @@ async function addPeer(messageData) {
     if (!joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.push(pk);
     }
-    if (!joinedChats.get(messageData.chatID).validMembers.includes(pk)) {
-        joinedChats.get(messageData.chatID).validMembers.push(pk);
+    if (!joinedChats.get(messageData.chatID).validMembers.has(pk)) {
+        joinedChats.get(messageData.chatID).validMembers.add(pk);
     }
     joinedChats.get(messageData.chatID).exMembers.delete(pk);
     store.setItem("joinedChats", joinedChats);
@@ -1101,9 +1105,7 @@ async function removePeer (messageData) {
     if (joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
     }
-    if (joinedChats.get(messageData.chatID).validMembers.includes(pk)) {
-        joinedChats.get(messageData.chatID).validMembers.splice(joinedChats.get(messageData.chatID).validMembers.indexOf(pk), 1);
-    }
+    joinedChats.get(messageData.chatID).validMembers.delete(pk);
     
     joinedChats.get(messageData.chatID).exMembers.add(pk);
     await store.setItem("joinedChats", joinedChats);
@@ -1281,7 +1283,7 @@ addUserBtn.addEventListener("click", async () => {
         const pk = await getPK(username);
         addUserInput.value = "";
         // as long as you are in some universe
-        if (joinedChats.get(currentChatID).validMembers.includes(JSON.stringify(pk))) { alert(`User has already been added`); return; }
+        if (joinedChats.get(currentChatID).validMembers.has(JSON.stringify(pk))) { alert(`User has already been added`); return; }
         addToChat(new Map([[username, pk]]), currentChatID);
     } catch (err) {
         alert(`User does not exist`);
