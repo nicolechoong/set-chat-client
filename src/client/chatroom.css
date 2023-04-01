@@ -367,3 +367,8 @@ button.card:hover {
 #chatCardTemplate, #userCardTemplate, #conflictCardTemplate, #optionTemplate {
     display: none;
 }
+
+#showChatInfoBtn {
+    display: flex;
+    flex-direction: row;
+}

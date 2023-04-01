@@ -1358,8 +1358,7 @@ export async function selectIgnored(ignoredOp) {
     await store.getItem(currentChatID).then(async (chatInfo) => {
         // unwinding chat history
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
-        console.log(ignoredOpIndex);
-        console.log(chatInfo.history.map(msg => JSON.stringify(msg.id)).join("\n"));
+
         if (ignoredOpIndex > -1) {
             console.log(`found ignored op`);
             chatInfo.history.splice(ignoredOpIndex);
@@ -1600,7 +1599,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
 
                 await store.setItem(chatID, chatInfo);
                 await refreshChatWindow(chatID);
-                if (newMessage && chatID !== currentChatID && document.getElementById(`chatCard${messageData.chatID}`) !== null) { 
+                if (newMessage && chatID !== currentChatID && document.getElementById(`chatCard${chatID}`) !== null) { 
                     document.getElementById(`chatCard${chatID}`).className = "card card-chat notif";
                 }
             }
