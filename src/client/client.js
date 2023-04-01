@@ -945,7 +945,7 @@ async function receivedMessage(messageData) {
             break;
         case "close":
             sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
-            closeConnections(messageData.from, messageData.chatID, false);
+            closeConnections(JSON.stringify(messageData.from), messageData.chatID, false);
             break;
         default:
             console.log(`Unrecognised message type ${messageData.type}`);
@@ -1426,7 +1426,7 @@ function updateChatInfo () {
         joinedChats.get(currentChatID).members.forEach((pk) => {
             if (pk === JSON.stringify(keyPair.publicKey)) {
                 const card = elem.generateUserCard(pk, keyMap.get(pk), currentChatID);
-                card.className = `card ${localUsername}`;
+                card.className = `card self`;
                 memberList.insertBefore(card, memberList.firstElementChild);
             } else {
                 memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), currentChatID));
