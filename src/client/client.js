@@ -736,6 +736,7 @@ async function receivedOperations (ops, chatID, pk) {
                 var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
 
                 if (access.verifyOperations(ops)) {
+                    console.log(`ops verified`);
                     chatInfo.metadata.operations = ops;
                     await store.setItem(chatID, chatInfo);
 
@@ -761,6 +762,7 @@ async function receivedOperations (ops, chatID, pk) {
                         return resolve("WAITING FOR PEER IGNORED");
                     }
                     const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
+                    console.log(`valid?`);
                     if (joinedChats.get(chatID).validMembers.has(pk)) {
                         updateMembers(memberSet, chatID);
                     }
@@ -1298,7 +1300,7 @@ export function disableChatMods (chatID, conflict=false) {
         chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
 
-        document.getElementById('disputeCard').style.display = !conflict && joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
+        document.getElementById('disputeCard').style.display = conflict || joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
         document.getElementById('chatBoxHeading').style.display = "flex";
 
