@@ -688,7 +688,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                 if (graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                     console.log(`not resolved?`);
                     joinedChats.get(chatID).peerIgnored.set(pk, ignored);
-                    store.setItem("joinedChats", joinedChats);
+                    await store.setItem("joinedChats", joinedChats);
                     resolve("WAITING FOR LOCAL IGNORED");
                     return;
                 }
@@ -731,7 +731,7 @@ async function receivedOperations (ops, chatID, pk) {
         navigator.locks.request("ops", async () => {
             console.log(`ops acquired lock`);
             if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
-            store.getItem(chatID).then(async (chatInfo) => {
+            await store.getItem(chatID).then(async (chatInfo) => {
                 ops = unionOps(chatInfo.metadata.operations, ops);
                 var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
 
@@ -759,15 +759,13 @@ async function receivedOperations (ops, chatID, pk) {
                             joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                             await store.setItem("joinedChats", joinedChats);
                         }
-                        return resolve("WAITING FOR PEER IGNORED");
                     }
+                    
                     const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
                     console.log(`valid?`);
                     if (joinedChats.get(chatID).validMembers.has(pk)) {
                         updateMembers(memberSet, chatID);
                     }
-
-                    return memberSet.has(pk) && memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
 
                     if (graphInfo.cycle) {
                         return resolve("WAITING FOR PEER IGNORED");

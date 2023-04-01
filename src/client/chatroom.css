@@ -291,6 +291,7 @@ button.card:hover {
 }
 
 #disabledChatBar, #conflictChatBar {
+    display: none;
     justify-content: center;
     align-items: center;
     background-color: #e8ecf1;
@@ -301,7 +302,7 @@ button.card:hover {
 }
 
 .conflict #conflictIcon, .self .exitIcon, .removeUserIcon{
-    display: block;
+    display: block !important;
 }
 
 #chatWindow {
