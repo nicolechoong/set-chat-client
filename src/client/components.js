@@ -6,7 +6,6 @@ const dim = document.getElementById('dim');
 
 const chatInfo = document.getElementById('chatInfo');
 const chatNameInput = document.getElementById('chatNameInput');
-const showChatInfoBtn = document.getElementById('showChatInfoBtn');
 
 const chatCardTemplate = document.getElementById('chatCardTemplate');
 const userCardTemplate = document.getElementById('userCardTemplate');
@@ -40,7 +39,6 @@ export function generateUserCard (pk, username, chatID) {
 
     const button = card.getElementsByClassName("removeUserBtn")[0];
     button.addEventListener("click", () => {
-        console.log(`usr ${username}, pk ${pk}, chatID ${chatID}`);
         removeFromChat(username, pk, chatID);
     });
 

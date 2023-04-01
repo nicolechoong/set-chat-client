@@ -444,7 +444,7 @@ async function onRemove (messageData) {
         chatInfo.currentMember = false;
 
         // if the removal is disputable
-        if (!messageData.dispute) { 
+        if (!messageData.dispute && !arrEqual(fromPK, keyPair.publicKey)) { 
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
 
@@ -1158,7 +1158,11 @@ function sendToMember(data, pk) {
     if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
     if (connections.has(pk)) {
-        connections.get(pk).sendChannel.send(JSON.stringify(data));
+        try {
+            connections.get(pk).sendChannel.send(JSON.stringify(data));
+        } catch {
+            console.log(`failed to send ${data.type}`);
+        }
     }
     return;
 }
@@ -1420,7 +1424,13 @@ function updateChatInfo () {
 
         memberList.innerHTML = "";
         joinedChats.get(currentChatID).members.forEach((pk) => {
-            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), currentChatID));
+            if (pk === JSON.stringify(keyPair.publicKey)) {
+                const card = generateSelfCard(pk, keyMap.get(pk), currentChatID);
+                card.className = `card ${localUsername}`;
+                memberList.insertBefore(card, memberList.firstElementChild);
+            } else {
+                memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), currentChatID));
+            }
         });
 
         if (joinedChats.get(currentChatID).currentMember) {

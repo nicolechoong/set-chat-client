@@ -296,11 +296,11 @@ button.card:hover {
     background-color: #e8ecf1;
 }
 
-.conflict #disabledChatBar, #conflictChatBar {
+.conflict #disabledChatBar, #conflictChatBar, .self .removeUserIcon, .exitIcon {
     display: none;
 }
 
-.conflict #conflictIcon {
+.conflict #conflictIcon, .self .exitIcon, .removeUserIcon{
     display: block;
 }
 
