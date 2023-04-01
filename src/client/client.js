@@ -698,7 +698,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                     const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
                     joinedChats.get(chatID).exMembers.delete(pk);
                     await store.setItem("joinedChats", joinedChats);
-                    if (memberSet.has(pk)) {
+                    if (joinedChats.get(chatID).validMembers.has(pk)) {
                         updateMembers(memberSet, chatID);
                     }
 
@@ -758,11 +758,14 @@ async function receivedOperations (ops, chatID, pk) {
                             joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                             await store.setItem("joinedChats", joinedChats);
                         }
+                        return resolve("WAITING FOR PEER IGNORED");
                     }
                     const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
-                    if (memberSet.has(pk)) {
+                    if (joinedChats.get(chatID).validMembers.has(pk)) {
                         updateMembers(memberSet, chatID);
                     }
+
+                    return memberSet.has(pk) && memberSet.has(JSON.stringify(keyPair.publicKey)) ? resolve("ACCEPT") : resolve("REJECT");
 
                     if (graphInfo.cycle) {
                         return resolve("WAITING FOR PEER IGNORED");
@@ -1293,7 +1296,7 @@ export function disableChatMods (chatID, conflict=false) {
         chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
 
-        document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
+        document.getElementById('disputeCard').style.display = !conflict && joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
         document.getElementById('chatBoxHeading').style.display = "flex";
 
