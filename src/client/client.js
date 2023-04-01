@@ -944,8 +944,8 @@ async function receivedMessage(messageData) {
             }
             break;
         case "close":
-            sendChatHistory(data.chatID, data.from);
-            closeConnections(data.from, data.chatID, false);
+            sendChatHistory(messageData.chatID, messageData.from);
+            closeConnections(messageData.from, messageData.chatID, false);
         default:
             console.log(`Unrecognised message type ${messageData.type}`);
     }
