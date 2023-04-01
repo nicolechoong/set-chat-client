@@ -302,7 +302,7 @@ button.card:hover {
 }
 
 .conflict #conflictIcon, .self .exitIcon, .removeUserIcon{
-    display: block !important;
+    display: block;
 }
 
 #chatWindow {

@@ -462,9 +462,9 @@ async function onRemove (messageData) {
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
         await store.setItem("joinedChats", joinedChats);
 
-        for (const pk of chatInfo.members) {
-            closeConnections(pk, messageData.chatID, true);
-        }
+        // for (const pk of chatInfo.members) {
+        //     closeConnections(pk, messageData.chatID, true);
+        // }
     }
 }
 
