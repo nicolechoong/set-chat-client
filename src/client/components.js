@@ -56,17 +56,29 @@ export function generateConflictCard (ops) {
         option.id = "";
 
         option.getElementsByTagName("h3")[0].innerHTML = `${keyMap.get(JSON.stringify(info.op.pk1))} ${info.op.action}s ${keyMap.get(JSON.stringify(info.op.pk2))}`;
-        option.getElementsByTagName("p")[0].innerHTML = `↪ Members: ${info.mems}`;
+        const p = option.getElementsByTagName("p")[0];
+        p.innerHTML = `↪ Members: ${info.mems}`;
+        p.id = `p${sig}`;
 
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
-            await selectIgnored(op);
+            await selectIgnored(info.op);
             card.parentNode.removeChild(card);
         });
         card.appendChild(option);
     }
 
     return card;
+}
+
+export function updateSelectedMembers (username, sig) {
+    const p = document.getElementById(`p${sig}`);
+    if (p !== null) {
+        const cur = p.innerHTML.split(", ");
+        if (!cur.includes(username)) { 
+            p.innerHTML = `${p.innerHTML}, ${username}`;
+        }
+    }
 }
 
 document.getElementById('createChatBtn').onclick = (() => {

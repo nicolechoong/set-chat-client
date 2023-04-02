@@ -275,10 +275,6 @@ h4 {
     justify-content: space-between;
 }
 
-.card > div:last-child {
-    margin-bottom: 16px;
-}
-
 .card-chat > svg {
     display: none;
 }
@@ -306,10 +302,6 @@ button.card:hover {
     display: none;
 }
 
-.conflict #disputeCard, .conflict #conflictChatBar {
-    display: flex;
-}
-
 #conflictIcon {
     display: none;
     margin-right: 16px;
@@ -329,6 +321,10 @@ button.card:hover {
 
 .conflict #disabledChatBar, #conflictChatBar, .self .removeUserIcon, .exitIcon {
     display: none;
+}
+
+.conflict #disputeCard, .conflict #conflictChatBar {
+    display: flex;
 }
 
 .conflict #conflictIcon, .self .exitIcon, .removeUserIcon{

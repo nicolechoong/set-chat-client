@@ -691,6 +691,9 @@ async function receivedIgnored (ignored, chatID, pk) {
                 if (graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                     console.log(`not resolved?`);
                     joinedChats.get(chatID).peerIgnored.set(pk, ignored);
+                    ignored.forEach(ig => {
+                        updateSelectedMembers(keyMap.get(pk), testArrToStr(ig.sig));
+                    });
                     await store.setItem("joinedChats", joinedChats);
                     resolve("WAITING FOR LOCAL IGNORED");
                     return;
@@ -1459,7 +1462,13 @@ function updateChatInfo () {
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 const cardInfo = new Map();
                 cycle.forEach((op) => {
-                    cardInfo.set(JSON.stringify(op.sig), {op: op, mems: keyMap.get(JSON.stringify(op.pk1))});
+                    const mems = [keyMap.get(JSON.stringify(op.pk1))];
+                    peerIgnored.forEach((value, key) => {
+                        if (access.hasOp(value, op) && !mems.includes(keyMap.get(key))) {
+                            mems.push(keyMap.get(key));
+                        }
+                    });
+                    cardInfo.set(JSON.stringify(op.sig), {op: op, mems: mems.join(", ")});
                 })
                 conflictCardList.appendChild(elem.generateConflictCard(cardInfo));
             });
