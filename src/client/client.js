@@ -735,7 +735,7 @@ async function receivedOperations (ops, chatID, pk) {
             console.log(`ops acquired lock`);
             if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
             await store.getItem(chatID).then(async (chatInfo) => {
-                ops.metadata.operations.forEach(op => {
+                ops.forEach(op => {
                     console.log(`${JSON.stringify(op.action)} ${keyMap.get(JSON.stringify(op.pk2))}`);
                 });
                 ops = unionOps(chatInfo.metadata.operations, ops);
