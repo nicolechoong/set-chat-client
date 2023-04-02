@@ -383,7 +383,7 @@ async function onAdd(chatID, chatName, fromPK, ignored, msgID) {
             metadata: {
                 chatName: chatName,
                 operations: [],
-                ignored: [ignored]
+                ignored: ignored
             },
             history: [],
             historyTable: new Map(),
