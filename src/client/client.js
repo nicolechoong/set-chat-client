@@ -726,13 +726,16 @@ async function receivedIgnored (ignored, chatID, pk) {
 
 async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
-    console.log(`receiving operations for chatID ${chatID}`);
+    console.log(`receiving operations for chatID ${chatID} from ${keyMap.get(pk)}`);
     return new Promise((resolve) => {
         navigator.locks.request("ops", async () => {
             console.log(`ops acquired lock`);
             if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
             await store.getItem(chatID).then(async (chatInfo) => {
                 ops = unionOps(chatInfo.metadata.operations, ops);
+                ops.forEach(op => {
+                    console.log(`${JSON.stringify(op.action)} ${keyMap.get(JSON.stringify(op.pk2))}`);
+                })
                 var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
 
                 if (access.verifyOperations(ops)) {
