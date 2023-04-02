@@ -511,7 +511,7 @@ async function disputeRemoval(peer, chatID) {
         await store.setItem(chatID, chatInfo);
         await refreshChatWindow(chatID);
 
-        ops.forEach(op => {
+        chatInfo.metadata.operations.forEach(op => {
             console.log(`${JSON.stringify(op.action)} ${keyMap.get(JSON.stringify(op.pk2))}`);
         });
 
