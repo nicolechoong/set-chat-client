@@ -1,4 +1,4 @@
-import { keyMap, selectChat, removeFromChat, selectIgnored } from './client.js';
+import { joinedChats, keyMap, selectChat, removeFromChat, selectIgnored } from './client.js';
 import { hasOp } from './accessControl.js';
 import { testArrToStr } from './utils.js';
 

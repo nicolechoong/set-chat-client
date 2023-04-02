@@ -1307,6 +1307,7 @@ export function disableChatMods (chatID, conflict=false) {
         chatBar.style.display = "none";
         chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
+        document.getElementById('conflictChatBar').style.display = conflict ? "flex" : "none";
 
         document.getElementById('disputeCard').style.display = conflict || joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
