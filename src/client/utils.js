@@ -3,7 +3,10 @@ export function strToArr (str) {
 }
 
 export function testArrToStr (arr) {
-    return arr.map(n => n.toString(16).padStart(2, '0')).join("|");
+    return arr.map(n => {
+        console.log(n)
+        return n.toString(16).padStart(2, '0');
+    }).join("|");
 }
 
 export function objToArr (obj) {
