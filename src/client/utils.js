@@ -4,7 +4,8 @@ export function strToArr (str) {
 
 export function testArrToStr (arr) {
     return arr.map(n => {
-        console.log(n)
+        console.log(n);
+        console.log(n.toString(16));
         return n.toString(16).padStart(2, '0');
     }).join("|");
 }
