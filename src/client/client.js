@@ -175,6 +175,8 @@ async function onLogin(success, chats, username) {
     if (success === false) {
         alert("oops...try a different username");
     } else {
+        let str = Buffer.from(keyPair.publicKey).toString('base64');
+        alert(str);
         localUsername = username;
         joinedChats = mergeJoinedChats(joinedChats, new Map());
         store.setItem("joinedChats", joinedChats);
@@ -462,9 +464,9 @@ async function onRemove (messageData) {
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
         await store.setItem("joinedChats", joinedChats);
 
-        // for (const pk of chatInfo.members) {
-        //     closeConnections(pk, messageData.chatID, true);
-        // }
+        for (const pk of chatInfo.members) {
+            closeConnections(pk, messageData.chatID, true);
+        }
     }
 }
 
@@ -1450,7 +1452,11 @@ function updateChatInfo () {
             chatBox.className = "chat-panel col-8 conflict";
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
-                conflictCardList.appendChild(elem.generateConflictCard(cycle));
+                const cardInfo = new Map();
+                cycle.forEach((op) => {
+                    cardInfo.set(JSON.stringify(op.sig), {op: op, mems: keyMap.get(JSON.stringify(op.pk1)).join(", ")});
+                })
+                conflictCardList.appendChild(elem.generateConflictCard(cardInfo));
             });
         };
     }

@@ -46,17 +46,17 @@ export function generateUserCard (pk, username, chatID) {
 }
 
 export function generateConflictCard (ops) {
-    var option, h3, button, text;
+    // op.sig mapped to op: Object of Arr, mem mapped to String of joined members
+    var option, button;
     var card = conflictCardTemplate.cloneNode(true);
     card.id = "";
 
-    for (const op of ops) {
+    for (const [sig, info] of ops) {
         option = optionTemplate.cloneNode(true);
         option.id = "";
 
-        h3 = option.childNodes[1];
-        text = document.createTextNode(`${keyMap.get(JSON.stringify(op.pk1))} ${op.action}s ${keyMap.get(JSON.stringify(op.pk2))}`);
-        h3.appendChild(text);
+        option.getElementsByTagName("h3")[0].innerHTML = `${keyMap.get(JSON.stringify(info.op.pk1))} ${info.op.action}s ${keyMap.get(JSON.stringify(info.op.pk2))}`;
+        option.getElementsByTagName("p")[0].innerHTML = `↪ Members: ${info.mems}`;
 
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 

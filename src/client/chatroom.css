@@ -120,7 +120,7 @@ h4 {
 }
 
 .dim {
-    /* display: none; */
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -208,6 +208,11 @@ h4 {
     padding: 0;
 }
 
+#chatInfo .card {
+    min-width: 300px;
+    max-width: 350px;
+}
+
 .card:last-child {
     border-width: 2px 0 2px;
 }
@@ -218,6 +223,14 @@ h4 {
     margin: 16px 24px;
 }
 
+.ignore-option h3 {
+    margin: 16px 24px 4px;
+}
+
+.ignore-option {
+    margin-bottom: 0 !important;
+}
+
 .card button {
     height: 32px;
     width: 32px;
@@ -225,6 +238,19 @@ h4 {
     margin-right: 16px;
     align-self: center;
     flex: 0 0 auto;
+}
+
+.card-conflict button {
+    margin-top: 12px;
+    align-self: start;
+}
+
+.ignore-option p {
+    width: 200px;
+    margin: 4px 28px 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card > button:first-of-type {
@@ -297,6 +323,10 @@ button.card:hover {
     background-color: #e8ecf1;
 }
 
+.removeUserIcon {
+    margin: 0;
+}
+
 .conflict #disabledChatBar, #conflictChatBar, .self .removeUserIcon, .exitIcon {
     display: none;
 }
@@ -341,7 +371,7 @@ button.card:hover {
 }
 
 #chatInfo {
-    display: none;
+    /* display: none; */
     min-width: 300px;
     max-width: 350px;
     flex-grow: 2;
@@ -366,7 +396,7 @@ button.card:hover {
 }
 
 #chatCardTemplate, #userCardTemplate, #conflictCardTemplate, #optionTemplate {
-    display: none;
+    /* display: none; */
 }
 
 #showChatInfoBtn {
