@@ -47,7 +47,7 @@ export function generateUserCard (pk, username, chatID) {
     return card;
 }
 
-export function generateConflictCard (ops) {
+export function generateConflictCard (ops, chatID) {
     // op.sig mapped to op: Object of Arr, mem mapped to String of joined members
     var option, button;
     var card = conflictCardTemplate.cloneNode(true);

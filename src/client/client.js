@@ -1461,7 +1461,7 @@ function updateChatInfo () {
             chatBox.className = "chat-panel col-8 conflict";
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
-                conflictCardList.appendChild(elem.generateConflictCard(cycle));
+                conflictCardList.appendChild(elem.generateConflictCard(cycle, currentChatID));
             });
         };
     }
