@@ -698,7 +698,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                     const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
                     joinedChats.get(chatID).exMembers.delete(pk);
                     await store.setItem("joinedChats", joinedChats);
-                    if (joinedChats.get(chatID).validMembers.has(pk)) {
+                    if (memberSet.has(pk)) {
                         updateMembers(memberSet, chatID);
                     }
 
@@ -741,6 +741,7 @@ async function receivedOperations (ops, chatID, pk) {
                     await store.setItem(chatID, chatInfo);
 
                     const graphInfo = access.hasCycles(ops);
+                    console.log(`graph Info ${graphInfo.cycle}`);
                     if (graphInfo.cycle) {
                         if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                             console.log(`cycle detected`);
