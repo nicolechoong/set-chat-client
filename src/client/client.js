@@ -62,8 +62,8 @@ const configuration = {
     ]
 };
 
-var currentChatID, connections, joinedChats, msgQueue;
-export var keyMap;
+var currentChatID, connections, msgQueue;
+export var joinedChats, keyMap;
 
 // local cache : localForage instance
 var store;
@@ -692,7 +692,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                     console.log(`not resolved?`);
                     joinedChats.get(chatID).peerIgnored.set(pk, ignored);
                     ignored.forEach(ig => {
-                        updateSelectedMembers(keyMap.get(pk), testArrToStr(ig.sig));
+                        elem.updateSelectedMembers(keyMap.get(pk), testArrToStr(ig.sig));
                     });
                     await store.setItem("joinedChats", joinedChats);
                     resolve("WAITING FOR LOCAL IGNORED");
@@ -1460,17 +1460,7 @@ function updateChatInfo () {
             chatBox.className = "chat-panel col-8 conflict";
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
-                const cardInfo = new Map();
-                cycle.forEach((op) => {
-                    const mems = [keyMap.get(JSON.stringify(op.pk1))];
-                    peerIgnored.forEach((value, key) => {
-                        if (access.hasOp(value, op) && !mems.includes(keyMap.get(key))) {
-                            mems.push(keyMap.get(key));
-                        }
-                    });
-                    cardInfo.set(JSON.stringify(op.sig), {op: op, mems: mems.join(", ")});
-                })
-                conflictCardList.appendChild(elem.generateConflictCard(cardInfo));
+                conflictCardList.appendChild(elem.generateConflictCard(cycle));
             });
         };
     }
