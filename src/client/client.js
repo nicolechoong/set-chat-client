@@ -151,7 +151,8 @@ connection.onmessage = function (message) {
             onCreateChat(data.chatID, data.chatName);
             break;
         case "add":
-            onAdd(data.chatID, data.chatName, objToArr(data.from), data.id);
+            messageData.ignored.forEach(ig => unpackOp(ig));
+            onAdd(data.chatID, data.chatName, objToArr(data.from), data.ignored, data.id);
             break;
         case "remove":
             onRemove(data);
@@ -358,7 +359,7 @@ async function onCreateChat(chatID, chatName) {
 }
 
 // When being added to a new chat
-async function onAdd(chatID, chatName, fromPK, msgID) {
+async function onAdd(chatID, chatName, fromPK, ignored, msgID) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
@@ -382,7 +383,7 @@ async function onAdd(chatID, chatName, fromPK, msgID) {
             metadata: {
                 chatName: chatName,
                 operations: [],
-                ignored: []
+                ignored: [ignored]
             },
             history: [],
             historyTable: new Map(),
@@ -416,6 +417,7 @@ async function addToChat (validMemberPubKeys, chatID) {
             const addMessage = addMsgID({
                 type: "add",
                 op: op,
+                ignored: chatInfo.metadata.ignored,
                 from: keyPair.publicKey,
                 username: name,
                 chatID: chatID,
@@ -947,8 +949,9 @@ async function receivedMessage(messageData) {
             break;
         case "add":
             unpackOp(messageData.op);
+            messageData.ignored.forEach(ig => unpackOp(ig));
             if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                onAdd(messageData.chatID, messageData.chatName, objToArr(messageData.from), messageData.msgID);
+                onAdd(messageData.chatID, messageData.chatName, objToArr(messageData.from), messageData.ignored, messageData.msgID);
             } else {
                 receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
                     if (res === "ACCEPT") { addPeer(messageData); }
