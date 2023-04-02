@@ -60,7 +60,7 @@ export function generateConflictCard (ops, chatID) {
         option.getElementsByTagName("h3")[0].innerHTML = `${keyMap.get(JSON.stringify(op.pk1))} ${op.action}s ${keyMap.get(JSON.stringify(op.pk2))}`;
         const p = option.getElementsByTagName("p")[0];
 
-        const mems = [];
+        const mems = [keyMap.get(JSON.stringify(op.pk1))];
         joinedChats.get(chatID).peerIgnored.forEach((value, key) => {
             if (hasOp(value, op) && !mems.includes(keyMap.get(key))) {
                 mems.push(keyMap.get(key));

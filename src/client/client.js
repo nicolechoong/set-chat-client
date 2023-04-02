@@ -19,6 +19,7 @@ const conflictCardList = document.getElementById('conflictCardList');
 
 const chatBar = document.getElementById('chatBar');
 const disabledChatBar = document.getElementById('disabledChatBar');
+const conflictChatBar = document.getElementById('conflictChatBar');
 const chatWindow = document.getElementById('chatWindow');
 
 const loginInput = document.getElementById('loginInput');
@@ -1307,7 +1308,7 @@ export function disableChatMods (chatID, conflict=false) {
         chatBar.style.display = "none";
         chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
-        document.getElementById('conflictChatBar').style.display = conflict ? "flex" : "none";
+        conflictChatBar.style.display = conflict ? "flex" : "none";
 
         document.getElementById('disputeCard').style.display = conflict || joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
@@ -1325,6 +1326,7 @@ export function enableChatMods (chatID) {
         chatWindow.style.display = "flex";
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
+        conflictChatBar.style.display = "none";
         
         document.getElementById('disputeCard').style.display = "none";
         document.getElementById('defaultText').style.display = "none";
@@ -1369,8 +1371,8 @@ async function getIgnored(cycles, chatID) {
         for (const cycle of cycles) {
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
             if (removeSelfIndex > -1) {
+                console.log(`automatically resolved ${cycle.at(removeSelfIndex).action} ${keyMap.get(JSON.stringify(cycle.at(removeSelfIndex).pk2))}`);
                 await selectIgnored(cycle.at(removeSelfIndex));
-                console.log(`automatically resolved`);
                 continue;
             }
         }
