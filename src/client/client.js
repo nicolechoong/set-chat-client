@@ -151,7 +151,7 @@ connection.onmessage = function (message) {
             onCreateChat(data.chatID, data.chatName);
             break;
         case "add":
-            messageData.ignored.forEach(ig => unpackOp(ig));
+            data.ignored.forEach(ig => unpackOp(ig));
             onAdd(data.chatID, data.chatName, objToArr(data.from), data.ignored, data.id);
             break;
         case "remove":
