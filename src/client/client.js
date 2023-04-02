@@ -1459,7 +1459,7 @@ function updateChatInfo () {
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 const cardInfo = new Map();
                 cycle.forEach((op) => {
-                    cardInfo.set(JSON.stringify(op.sig), {op: op, mems: keyMap.get(JSON.stringify(op.pk1)).join(", ")});
+                    cardInfo.set(JSON.stringify(op.sig), {op: op, mems: keyMap.get(JSON.stringify(op.pk1))});
                 })
                 conflictCardList.appendChild(elem.generateConflictCard(cardInfo));
             });
