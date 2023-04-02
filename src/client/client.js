@@ -511,6 +511,10 @@ async function disputeRemoval(peer, chatID) {
         await store.setItem(chatID, chatInfo);
         await refreshChatWindow(chatID);
 
+        ops.forEach(op => {
+            console.log(`${JSON.stringify(op.action)} ${keyMap.get(JSON.stringify(op.pk2))}`);
+        });
+
         const removeMessage = addMsgID({
             type: "remove",
             op: op,
@@ -519,7 +523,6 @@ async function disputeRemoval(peer, chatID) {
             chatID: chatID,
             dispute: true,
         });
-
 
         sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
         sendToServer({
@@ -735,7 +738,7 @@ async function receivedOperations (ops, chatID, pk) {
                 ops = unionOps(chatInfo.metadata.operations, ops);
                 ops.forEach(op => {
                     console.log(`${JSON.stringify(op.action)} ${keyMap.get(JSON.stringify(op.pk2))}`);
-                })
+                });
                 var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
 
                 if (access.verifyOperations(ops)) {
