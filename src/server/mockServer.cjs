@@ -14,7 +14,7 @@ app.get('/', (req, res, next) => {
 });
 
 app.get('/src/client/client.js', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'client.js'));
+  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'mockClient.js'));
 });
 
 app.get('/src/client/accessControl.js', (req, res, next) => {
@@ -73,10 +73,6 @@ const usernameToPK = new Map();
 
 // (pk: stringified String, {connection: WebSocket, chatrooms: Array of String})
 const connectedUsers = new Map();
-
-// UNUSED FOR NOW
-// (chatroomID: String, members: Array of username)
-const chatrooms = new Map();
 
 // (chatID: String, {chatName: String, members: Array of String})
 const chats = new Map();

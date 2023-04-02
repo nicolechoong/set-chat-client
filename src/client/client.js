@@ -532,12 +532,12 @@ async function disputeRemoval(peer, chatID) {
             msg: removeMessage
         });
         
+        const oldMembers = [...joinedChats.get(chatID).members];
         console.log(joinedChats.get(chatID).members);
-        for (const mem of joinedChats.get(chatID).members) {
+        await updateMembers(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
+        for (const mem of oldMembers) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
         }
-
-        updateMembers(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
     });
 }
 
@@ -813,9 +813,9 @@ async function updateMembers (memberSet, chatID) {
     joinedChats.get(chatID).members = [...joinedChats.get(chatID).validMembers].filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
     await store.setItem("joinedChats", joinedChats);
     updateChatInfo();
-    console.log(`all valid members ${[...joinedChats.get(chatID).validMembers].map(pk => keyMap.get(pk))}`);
-    console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
-    console.log(`current exmembers ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
+    console.log(`all valid members ${chatID} ${[...joinedChats.get(chatID).validMembers].map(pk => keyMap.get(pk))}`);
+    console.log(`current universe members ${chatID} ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
+    console.log(`current exmembers ${chatID} ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
 }
 
 
@@ -1377,7 +1377,7 @@ async function getIgnored(cycles, chatID) {
             }
         }
 
-        if (chatID == currentChatID && resolveGetIgnored.has(chatID)) {
+        if (chatID === currentChatID && resolveGetIgnored.has(chatID)) {
             document.getElementById('chatBar').style.display = "none";
             updateChatInfo();
         }

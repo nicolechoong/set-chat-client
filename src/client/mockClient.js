@@ -4,7 +4,6 @@ import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
 
-const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
 const addUserBtn = document.getElementById('addUserBtn');
 const disputeBtn = document.getElementById('disputeBtn');
@@ -21,11 +20,13 @@ const chatBar = document.getElementById('chatBar');
 const disabledChatBar = document.getElementById('disabledChatBar');
 const chatWindow = document.getElementById('chatWindow');
 
-const loginInput = document.getElementById('loginInput');
 const messageInput = document.getElementById('messageInput');
 const addUserInput = document.getElementById('addUserInput');
 
-var localUsername;
+var localUsername = "tester";
+var keyPair = nacl.sign.keyPair();
+console.log(keyPair.publicKey);
+console.log(keyPair.secretKey);
 
 
 //////////////////////
@@ -34,14 +35,11 @@ var localUsername;
 
 const enc = new TextEncoder();
 
-// private keypair for the client
-var keyPair;
-
 // connection to stringified(peerPK)
 var connectionNames = new Map();
 
-var currentChatID, connections, joinedChats, msgQueue;
-export var keyMap;
+var currentChatID, connections, msgQueue;
+export var joinedChats, keyMap;
 
 var store = new Map();
 
@@ -66,11 +64,6 @@ function initialiseClient () {
     });
     chatWindow.innerHTML = "";
     currentChatID = 0;
-
-    dim.style.display = "block";
-    loginPopup.style.display = "flex";
-    loginInput.focus();
-    loginInput.select();
 }
 
 initialiseClient();
@@ -102,9 +95,6 @@ connection.onmessage = function (message) {
     var data = JSON.parse(message.data);
 
     switch (data.type) {
-        case "login":
-            onLogin(data.success, new Map(data.joinedChats), data.username);
-            break;
         case "text":
             updateChatWindow(data);
             break;
@@ -140,64 +130,6 @@ connection.onmessage = function (message) {
     }
 };
 
-// Server approves Login
-async function onLogin(success, chats, username) {
-
-    if (success === false) {
-        alert("oops...try a different username");
-    } else {
-        localUsername = username;
-        joinedChats = mergeJoinedChats(joinedChats, new Map());
-        store.setItem("joinedChats", joinedChats);
-
-        keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
-        store.getItem("keyMap").then((storedKeyMap) => {
-            keyMap = storedKeyMap === null ? new Map() : storedKeyMap;
-            keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
-            store.setItem("keyMap", keyMap);
-        })
-        store.getItem("msgQueue").then((storedMsgQueue) => {
-            msgQueue = storedMsgQueue === null ? new Map() : storedMsgQueue;
-        });
-
-        loginPopup.style.display = "none";
-        dim.style.display = "none";
-        document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
-
-        for (const chatID of joinedChats.keys()) {
-            updateChatOptions("add", chatID);
-            getOnline(chatID);
-        }
-    }
-};
-
-async function initialiseStore(username) {
-    // new user: creates new store
-    // returning user: will just point to the same instance
-    console.log(`init store local user: ${username}`);
-    store = localforage.createInstance({
-        storeName: username
-    });
-    store.getItem("joinedChats").then((chats) => {
-        if (chats === null) {
-            joinedChats = [];
-        } else {
-            joinedChats = chats;
-        }
-        store.setItem("joinedChats", joinedChats).then(console.log(`store initialised to ${joinedChats}`));
-    });
-}
-
-
-function onConnectedUsers(usernames) {
-    if (localUsername) {
-        const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap.get(entry[0]))).map(entry => entry[0]);
-        for (const pk of toSend) {
-            onQueuedOnline(objToArr(pk));
-        }
-    }
-}
-
 
 // When being added to a new chat
 async function onAdd(chatID, chatName, fromPK, msgID) {
@@ -228,6 +160,8 @@ async function onAdd(chatID, chatName, fromPK, msgID) {
             history: [],
             historyTable: new Map(),
         });
+
+        initChatHistoryTable(chatID, msgID);
     }
 }
 
@@ -247,7 +181,6 @@ async function addToChat (validMemberPubKeys, chatID) {
 
         joinedChats.get(chatID).validMembers.push(JSON.stringify(pk));
         joinedChats.get(chatID).members.push(JSON.stringify(pk));
-        // broadcastToMembers(addMessage, chatID);
         sendToServer({
             to: pk,
             type: "add",
@@ -286,11 +219,11 @@ export async function removeFromChat (username, pk, chatID) {
     // username : string, public key : string, chatID : string
     const removeMessage = addMsgID({
         type: "remove",
-        from: keyPair.publicKey,
+        username: username,
         chatID: chatID,
         dispute: false
     });
-    // broadcastToMembers(removeMessage, chatID);
+
     sendToServer({
         to: strToArr(pk),
         type: "remove",
@@ -299,45 +232,36 @@ export async function removeFromChat (username, pk, chatID) {
 }
 
 async function disputeRemoval(peer, chatID) {
-    store.getItem(chatID).then(async (chatInfo) => {
-        const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-        const ignoredOp = chatInfo.metadata.operations.at(end);
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-        const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
+    const chatInfo = store.get(chatID);
+    const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+    const ignoredOp = chatInfo.metadata.operations.at(end);
+    console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
+    const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
 
-        console.log(`${chatInfo.history.map(msg => msg.type)}`);
-        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(objToArr(msg.op.sig), ignoredOp.sig));
-        if (ignoredOpIndex > -1) {
-            chatInfo.history.splice(ignoredOpIndex);
-        }
+    console.log(`${chatInfo.history.map(msg => msg.type)}`);
+    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(objToArr(msg.op.sig), ignoredOp.sig));
+    if (ignoredOpIndex > -1) {
+        chatInfo.history.splice(ignoredOpIndex);
+    }
 
-        chatInfo.metadata.operations.push(op);
-        chatInfo.metadata.ignored.push(ignoredOp);
-        await store.setItem(chatID, chatInfo);
-        await refreshChatWindow(chatID);
+    chatInfo.metadata.operations.push(op);
+    chatInfo.metadata.ignored.push(ignoredOp);
+    await refreshChatWindow(chatID);
 
-        const removeMessage = addMsgID({
-            type: "remove",
-            op: op,
-            username: peer.peerName,
-            from: keyPair.publicKey,
-            chatID: chatID,
-            dispute: true,
-        });
+    const removeMessage = addMsgID({
+        type: "remove",
+        op: op,
+        username: peer.peerName,
+        chatID: chatID,
+        dispute: true,
+    });
 
-
-        sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
-        sendToServer({
-            to: peer.peerPK,
-            type: "remove",
-            msg: removeMessage
-        });
-        
-        for (const mem of joinedChats.get(chatID).members) {
-            connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
-        }
-
-        updateMembers(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
+    await updateMembers(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
+    sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
+    sendToServer({
+        to: peer.peerPK,
+        type: "remove",
+        msg: removeMessage
     });
 }
 
@@ -457,8 +381,7 @@ async function sendOperations(chatID, pk) {
         sendToMember({
             type: "ops",
             ops: chatInfo.metadata.operations,
-            chatID: chatID,
-            from: keyPair.publicKey,
+            chatID: chatID
         }, pk);
     });
 }
@@ -468,140 +391,12 @@ async function sendIgnored (ignored, chatID, pk) {
     const ignoredMessage = addMsgID({
         type: "ignored",
         ignored: ignored,
-        chatID: chatID,
-        from: keyPair.publicKey,
-        replay: false
+        chatID: chatID
     });
     broadcastToMembers(ignoredMessage, chatID);
     if (!joinedChats.get(chatID).members.includes(pk)) {
-        sendToMember(ignoredMessage, pk)
+        sendToMember(ignoredMessage, pk);
     }
-}
-
-async function receivedIgnored (ignored, chatID, pk) {
-    // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
-    return new Promise(async (resolve) => {
-        navigator.locks.request("ops", async () => {
-            console.log(`ignored acquired lock`);
-            await store.getItem(chatID).then(async (chatInfo) => {
-                if (pk === JSON.stringify(keyPair.publicKey)) { resolve("IGNORE"); return; }
-                console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
-
-                // we need to receive ops and ignored, and queue if we are missing dependencies
-                const graphInfo = access.hasCycles(chatInfo.metadata.operations);
-                if (graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
-                    console.log(`not resolved?`);
-                    joinedChats.get(chatID).peerIgnored.set(pk, ignored);
-                    store.setItem("joinedChats", joinedChats);
-                    resolve("WAITING FOR LOCAL IGNORED");
-                    return;
-                }
-            
-                if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
-                    console.log(`same universe naisu`);
-                    const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
-                    joinedChats.get(chatID).exMembers.delete(pk);
-                    await store.setItem("joinedChats", joinedChats);
-                    if (memberSet.has(pk)) {
-                        updateMembers(memberSet, chatID);
-                    }
-
-                    if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-                        resolve("ACCEPT");
-                    } else {
-                        resolve("REJECT");
-                    }
-
-                } else {
-                    console.log(`different universe from ${keyMap.get(pk)}`);
-                    if (joinedChats.get(chatID).members.includes(pk)) {
-                        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
-                    }
-                    joinedChats.get(chatID).exMembers.add(pk);
-                    store.setItem("joinedChats", joinedChats);
-                    updateChatInfo();
-                    resolve("REJECT");
-                }
-            });
-            console.log(`ignored released lock`);
-        });
-    });
-}
-
-async function receivedOperations (ops, chatID, pk) {
-    // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
-    console.log(`receiving operations for chatID ${chatID}`);
-    return new Promise((resolve) => {
-        navigator.locks.request("ops", async () => {
-            console.log(`ops acquired lock`);
-            if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
-            store.getItem(chatID).then(async (chatInfo) => {
-                ops = unionOps(chatInfo.metadata.operations, ops);
-                var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
-
-                if (access.verifyOperations(ops)) {
-                    chatInfo.metadata.operations = ops;
-                    await store.setItem(chatID, chatInfo);
-
-                    const graphInfo = access.hasCycles(ops);
-                    if (graphInfo.cycle) {
-                        if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
-                            console.log(`cycle detected`);
-                            ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
-                        }
-
-                        sendIgnored(ignoredSet, chatID, pk);
-                        for (const [queuedPk, queuedIg] of joinedChats.get(chatID).peerIgnored) {
-                            receivedMessage({
-                                type: "ignored",
-                                ignored: queuedIg,
-                                chatID: chatID,
-                                from: strToArr(queuedPk),
-                                replay: true
-                            });
-                            joinedChats.get(chatID).peerIgnored.delete(queuedPk);
-                            await store.setItem("joinedChats", joinedChats);
-                        }
-                    }
-                    const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
-                    if (memberSet.has(pk)) {
-                        updateMembers(memberSet, chatID);
-                    }
-
-                    if (graphInfo.cycle) {
-                        return resolve("WAITING FOR PEER IGNORED");
-                    } else {
-                        return memberSet.has(pk) ? resolve("ACCEPT") : resolve("REJECT");
-                    }
-                } else {
-                    return resolve("FAIL");
-                }
-            });
-            console.log(`ops released lock`);
-        });
-    });
-}
-
-async function updateMembers (memberSet, chatID) {
-    for (const mem of memberSet) { // populating keyMap
-        await getUsername(mem);
-    }
-
-    if (memberSet.has(JSON.stringify(keyPair.publicKey))) {
-        updateChatOptions("add", chatID);
-        joinedChats.get(chatID).currentMember = true;
-        joinedChats.get(chatID).exMembers.delete(JSON.stringify(keyPair.publicKey));
-    }
-
-    // add all the users which are no longer valid to exMembers
-    joinedChats.get(chatID).validMembers.filter(pk => !memberSet.has(pk)).forEach(pk => joinedChats.get(chatID).exMembers.add(pk));
-    joinedChats.get(chatID).validMembers = [...memberSet];
-    joinedChats.get(chatID).members = joinedChats.get(chatID).validMembers.filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
-    await store.setItem("joinedChats", joinedChats);
-    updateChatInfo();
-    console.log(`all valid members ${joinedChats.get(chatID).validMembers.map(pk => keyMap.get(pk))}`);
-    console.log(`current universe members ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
-    console.log(`current exmembers ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
 }
 
 
@@ -915,10 +710,8 @@ async function removePeer (messageData) {
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatWindow.innerHTML = "";
-        await store.getItem(currentChatID).then(async (chatInfo) => {
-            chatInfo.history.forEach(data => {
-                updateChatWindow(data);
-            });
+        store.get(currentChatID).history.forEach(data => {
+            updateChatWindow(data);
         });
     }
 }
@@ -994,29 +787,6 @@ function sendChatMessage (messageInput) {
 /////////////////////
 // Event Listeners //
 /////////////////////
-
-loginInput.addEventListener("keypress", ((event) => {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        loginBtn.click();
-    }
-}));
-
-// Send Login attempt
-loginBtn.addEventListener("click", async function (event) {
-    const username = loginInput.value;
-    console.log(username);
-    if (username.length > 0 && isAlphanumeric(username)) {
-        keyPair = nacl.sign.keyPair();
-        console.log("keyPair generated");
-
-        sendToServer({
-            type: "login",
-            name: username,
-            pubKey: keyPair.publicKey
-        });
-    }
-});
 
 chatNameInput.addEventListener("keypress", function (event) {
     if (event.key === "Enter") {
@@ -1247,19 +1017,6 @@ function createNewChat () {
         type: "createChat",
         chatName: chatNameInput.value,
         from: keyPair.publicKey,
-    });
-}
-
-function logout () {
-    for (const chatID of joinedChats.keys()) {
-        joinedChats.get(chatID).members.forEach((pk) => {
-            closeConnections(pk, chatID);
-        });
-    }
-    initialiseClient();
-    sendToServer({
-        type: "leave",
-        pk: keyPair.publicKey,
     });
 }
 
