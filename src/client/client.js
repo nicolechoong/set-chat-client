@@ -897,7 +897,7 @@ async function receivedMessage(messageData) {
                 if (res == "ACCEPT") {
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
-                } else {
+                } else if (res == "REJECT") {
                     closeConnections(JSON.stringify(messageData.from), messageData.chatID, true);
                 }
             });
