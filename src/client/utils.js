@@ -1,18 +1,22 @@
-export function strToArr(str) {
+export function strToArr (str) {
     return objToArr(JSON.parse(str));
 }
 
-export function objToArr(obj) {
+export function testArrToStr (arr) {
+    return arr.map(n => n.toString(16)).join("");
+}
+
+export function objToArr (obj) {
     return Uint8Array.from(Object.values(obj));
 }
 
-export function formatDate(now) {
+export function formatDate (now) {
     const date = new Date(now);
     const intl = new Intl.DateTimeFormat('en-UK').format(date);
     return `${intl} ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
 }
 
-export function arrEqual(arr1, arr2) {
+export function arrEqual (arr1, arr2) {
     if (arr1.length !== arr2.length) { return false; }
     let index = 0;
     while (index < arr1.length) {
@@ -22,6 +26,6 @@ export function arrEqual(arr1, arr2) {
     return true;
 }
 
-export function isAlphanumeric(str) {
+export function isAlphanumeric (str) {
     return str === str.replace(/[^a-z0-9]/gi, '');
 }

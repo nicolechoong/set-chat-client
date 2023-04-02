@@ -2,7 +2,7 @@ import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js"
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
-import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
+import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric, testArrToStr} from "./utils.js";
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -175,8 +175,7 @@ async function onLogin(success, chats, username) {
     if (success === false) {
         alert("oops...try a different username");
     } else {
-        let str = Buffer.from(keyPair.publicKey).toString('base64');
-        alert(str);
+        alert(testArrToStr(keyPair.publicKey));
         localUsername = username;
         joinedChats = mergeJoinedChats(joinedChats, new Map());
         store.setItem("joinedChats", joinedChats);
