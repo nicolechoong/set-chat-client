@@ -175,10 +175,6 @@ async function onLogin(success, chats, username) {
     if (success === false) {
         alert("oops...try a different username");
     } else {
-        const test = testArrToStr(keyPair.publicKey);
-        console.log(test);
-        const test2 = testStrToArr(test);
-        console.log(test2);
         localUsername = username;
         joinedChats = mergeJoinedChats(joinedChats, new Map());
         store.setItem("joinedChats", joinedChats);
@@ -767,7 +763,7 @@ async function receivedOperations (ops, chatID, pk) {
                     
                     const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
                     console.log(`valid?`);
-                    if (joinedChats.get(chatID).validMembers.has(pk)) {
+                    if (memberSet.has(pk)) {
                         updateMembers(memberSet, chatID);
                     }
 
