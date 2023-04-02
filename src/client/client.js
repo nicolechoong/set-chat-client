@@ -735,13 +735,10 @@ async function receivedOperations (ops, chatID, pk) {
             console.log(`ops acquired lock`);
             if (pk === JSON.stringify(keyPair.publicKey)) { return resolve("ACCEPT"); }
             await store.getItem(chatID).then(async (chatInfo) => {
-                chatInfo.metadata.operations.forEach(op => {
+                ops.metadata.operations.forEach(op => {
                     console.log(`${JSON.stringify(op.action)} ${keyMap.get(JSON.stringify(op.pk2))}`);
                 });
                 ops = unionOps(chatInfo.metadata.operations, ops);
-                ops.forEach(op => {
-                    console.log(`${JSON.stringify(op.action)} ${keyMap.get(JSON.stringify(op.pk2))}`);
-                });
                 var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
 
                 if (access.verifyOperations(ops)) {
@@ -1645,15 +1642,15 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
 
 function closeConnections (pk, chatID, initiated) {
     // pk : string, chatID : string
-    if (initiated) {
-        console.log(`sending request to close`);
-        sendToMember({
-            type: "close",
-            chatID: chatID,
-            from: keyPair.publicKey,
-        }, pk);
-    } else {
-        console.log(`connection with ${keyMap.get(pk)} closed`);
+    // if (initiated) {
+    //     console.log(`sending request to close`);
+    //     sendToMember({
+    //         type: "close",
+    //         chatID: chatID,
+    //         from: keyPair.publicKey,
+    //     }, pk);
+    // } else {
+    //     console.log(`connection with ${keyMap.get(pk)} closed`);
         for (const id of joinedChats.keys()) {
             if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
                 return;
@@ -1672,5 +1669,5 @@ function closeConnections (pk, chatID, initiated) {
             connections.delete(pk);
         }
         console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
-    }
+    // }
 }
