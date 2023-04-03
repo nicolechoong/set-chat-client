@@ -537,7 +537,8 @@ function generateConflictCard (ops, chatID) {
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
             await selectIgnored(op);
-            document.getElementById('conflictCardList').removeChild(card);
+            console.log(card.parentElement);
+            conflictCardList.removeChild(card);
         });
         card.appendChild(option);
     }
