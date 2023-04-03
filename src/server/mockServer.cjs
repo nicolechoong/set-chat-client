@@ -306,12 +306,12 @@ function onRemove (connection, data) {
   const toPK = JSON.stringify(data.to);
   // chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
 
-  console.log(`sending remove message for chat ${data.msg.chatID} to ${allUsers.get(toPK).username}`);
-  if (connectedUsers.get(toPK) == null) {
-    sendTo(null, data.msg, toPK);
-  } else {
-    sendTo(connectedUsers.get(toPK).connection, data.msg);
-  }
+  // console.log(`sending remove message for chat ${data.msg.chatID} to ${allUsers.get(toPK).username}`);
+  // if (connectedUsers.get(toPK) == null) {
+  //   sendTo(null, data.msg, toPK);
+  // } else {
+  //   sendTo(connectedUsers.get(toPK).connection, data.msg);
+  // }
 }
 
 // Helper function to stringify outgoing messages
