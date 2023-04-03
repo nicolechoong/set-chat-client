@@ -310,10 +310,9 @@ async function removePeer (messageData) {
     const pk = messageData.pk2;
     if (messageData.dispute) {
         console.log(`dispute detected`);
-        disableChatMods(messageData.chatID, true);
         joinedChats.get(messageData.chatID).peerIgnored = new Map(JSON.parse(messageData.peerIgnored));
-        console.log([...JSON.parse(messageData.peerIgnored)]);
-        console.log(new Map(JSON.parse(messageData.peerIgnored)));
+        console.log(joinedChats.get(messageData.chatID).peerIgnored);
+        disableChatMods(messageData.chatID, true);
         getIgnored([JSON.parse(messageData.dispute)], messageData.chatID);
 
     } else {
@@ -532,6 +531,7 @@ function generateConflictCard (ops, chatID) {
         const p = option.getElementsByTagName("p")[0];
 
         const mems = [op.pk1];
+        console.log(joinedChats.get(chatID).peerIgnored);
         joinedChats.get(chatID).peerIgnored.forEach((value, key) => {
             if (value === pk1 && !mems.includes(key)) {
                 mems.push(key);
