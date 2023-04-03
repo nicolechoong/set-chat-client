@@ -156,7 +156,7 @@ async function onSetup (n) {
   console.log(`received setup ${n}`);
   switch (n) {
     case 0:
-      chats.set(100, {chatName: 'Backdoor', members: ['server', 'overlord']});
+      chats.set(100, {chatName: 'Backdoor', members: ['server']});
       addUser("overlord", 100, "server");
       sendChatHistory('overlord', 100, [
         addMsgID({
@@ -171,7 +171,7 @@ async function onSetup (n) {
       break;
 
     case 1:
-      chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd', 'tester']});
+      chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
       addUser("tester", 1, "jimmyGourd");
       sendChatHistory("tester", 1, [
         addMsgID({
@@ -185,9 +185,9 @@ async function onSetup (n) {
       break;
 
     case 2:
-      chats.set(2, {chatName: 'Task 2', members: ['jimmyGourd', 'tester', 'lauraCarrot', 'percyPea']});
+      chats.set(2, {chatName: 'Task 2', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
       addUser("tester", 2, "jimmyGourd");
-      sendChatHistory(2, [
+      sendChatHistory("tester", 2, [
         addMsgID({
           type: "add",
           username: "tester",
@@ -295,6 +295,7 @@ function onAdd (connection, data) {
 
 function addUser (to, chatID, from) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
+  chats.get(chatID).members.push(to);
   const msg = addMsgID({
     "type": "add",
     pk1: from,
@@ -304,7 +305,7 @@ function addUser (to, chatID, from) {
     chatName: chats.get(chatID).chatName,
   });
 
-  chats.get(chatID).members.push(to);
+  console.log(`adding ${to} to ${chatID}`);
   sendTo(connectedUsers.get(to), msg);
 }
 
