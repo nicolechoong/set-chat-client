@@ -531,7 +531,6 @@ function generateConflictCard (ops, chatID) {
         const p = option.getElementsByTagName("p")[0];
 
         const mems = [op.pk1];
-        console.log(JSON.stringify(joinedChats.get(chatID)));
         joinedChats.get(chatID).peerIgnored.forEach((value, key) => {
             if (value === pk1 && !mems.includes(key)) {
                 mems.push(key);
@@ -627,7 +626,7 @@ function updateChatInfo () {
             chatBox.className = "chat-panel col-8 conflict";
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
-                conflictCardList.appendChild(generateConflictCard(cycle));
+                conflictCardList.appendChild(generateConflictCard(cycle, currentChatID));
             });
         };
     }
