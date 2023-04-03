@@ -6,6 +6,7 @@ const nacl = require('../../node_modules/tweetnacl/nacl-fast.js');
 
 const express = require('express');
 const app = express();
+const enc = new TextEncoder();
 
 const key = fs.readFileSync("./cert/CA/localhost/localhost.decrypted.key");
 const cert = fs.readFileSync("./cert/CA/localhost/localhost.crt");
@@ -28,18 +29,6 @@ app.get('/src/client/utils.js', (req, res, next) => {
 
 app.get('/src/client/chatroom.css', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'chatroom.css'));
-});
-
-app.get('/assets/css/fontawesome.min.css', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','fontawesome.min.css'));
-});
-
-app.get('/assets/css/solid.css', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','solid.css'));
-});
-
-app.get('/assets/webfonts/fa-solid-900.woff2', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','webfonts','fa-solid-900.woff2'));
 });
 
 app.get('/src/client/components.js', (req, res, next) => {
@@ -154,17 +143,24 @@ wsServer.on('connection', function(connection) {
     };
 });
 
-const msgs = [
-  { type: "text", message: "helloooo" }
-]
 
 function onSetup (n) {
   switch (n) {
     case 1:
       chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
       addUser("tester", 1, "jimmyGourd");
-      sendChatHistory(1, msgs);
+      sendChatHistory(1, [
+        { type: "text", message: "helloooo", from: "jimmyGourd" }
+      ]);
       break;
+    case 2:
+      chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
+      addUser("tester", 1, "jimmyGourd");
+      sendChatHistory(2, [
+        { type: "text", message: "helloooo", from: "jimmyGourd" },
+        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea" },
+        { type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot" }
+      ]);
   }
 }
 
@@ -177,21 +173,9 @@ function sendChatHistory (chatID, history) {
   }), connectedUser);
 }
 
-function setupChats () {
-  chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
-  addUser("tester", 1, "jimmyGourd");
-  sendChatHistory(1, msgs);
-
-  // chats.set(2, {chatName: 'Task 2', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
-  // chats.set(3, {chatName: 'Task 3', members: ['jimmyGourd']});
-  // chats.set(4, {chatName: 'Task 4', members: ['jimmyGourd']});
-  // chats.set(5, {chatName: 'Task 5', members: ['jimmyGourd']});
-  // chats.set(6, {chatName: 'Task 6', members: ['jimmyGourd']});
-}
-
 function addMsgID (data) {
   data.sentTime = Date.now();
-  data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
+  data.id = JSON.stringify(nacl.hash(enc.encode(`${data.from}:${data.sentTime}`)));
   return data;
 }
 
