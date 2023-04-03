@@ -351,15 +351,20 @@ async function addPeer(messageData) {
 
 async function removePeer (messageData) {
     const pk = messageData.pk2;
+    if (messageData.dispute) {
+        disableChatMods(messageData.chatID, true);
+        getIgnored([messageData.dispute], messageData.chatID);
+        
+    } else {
+        const chatInfo = store.get(messageData.chatID);
+        chatInfo.history.push(messageData);
 
-    const chatInfo = store.get(messageData.chatID);
-    chatInfo.history.push(messageData);
-
-    if (joinedChats.get(messageData.chatID).members.includes(pk)) {
-        joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+        if (joinedChats.get(messageData.chatID).members.includes(pk)) {
+            joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+        }
+        
+        joinedChats.get(messageData.chatID).exMembers.add(pk);
     }
-    
-    joinedChats.get(messageData.chatID).exMembers.add(pk);
 
     updateChatInfo();
     updateChatWindow(messageData);
@@ -549,6 +554,40 @@ acceptRemovalBtn.addEventListener("click", async () => {
     updateChatInfo();
 });
 
+function generateConflictCard (ops, chatID) {
+    // op.sig mapped to op: Object of Arr, mem mapped to String of joined members
+    var option, button;
+    var card = conflictCardTemplate.cloneNode(true);
+    card.id = "";
+
+    for (const op of ops) {
+        option = optionTemplate.cloneNode(true);
+        option.id = "";
+
+        option.getElementsByTagName("h3")[0].innerHTML = `${op.pk1} ${op.action}s ${op.pk2}`;
+        const p = option.getElementsByTagName("p")[0];
+
+        const mems = [op.pk1];
+        joinedChats.get(chatID).peerIgnored.forEach((value, key) => {
+            if (hasOp(value, op) && !mems.includes(keyMap.get(key))) {
+                mems.push(keyMap.get(key));
+            }
+        });
+
+        p.innerHTML = `↪ Members: ${mems.join(", ")}`;
+        p.id = `p${op.pk1}`;
+
+        button = option.getElementsByTagName("button")[0];
+        button.addEventListener("click", async () => { 
+            await selectIgnored(op);
+            card.parentNode.removeChild(card);
+        });
+        card.appendChild(option);
+    }
+
+    return card;
+}
+
 var resolveGetIgnored = new Map();
 
 async function getIgnored(cycles, chatID) {
@@ -585,7 +624,6 @@ export async function selectIgnored(ignoredOp) {
             chatInfo.history.splice(ignoredOpIndex);
         }
 
-        // writing to storage
         refreshChatWindow(currentChatID);
 
         resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
@@ -625,7 +663,7 @@ function updateChatInfo () {
             chatBox.className = "chat-panel col-8 conflict";
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
-                conflictCardList.appendChild(elem.generateConflictCard(cycle));
+                conflictCardList.appendChild(generateConflictCard(cycle));
             });
         };
     }

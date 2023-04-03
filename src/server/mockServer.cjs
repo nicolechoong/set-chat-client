@@ -147,6 +147,11 @@ function onLogin (connection, data) {
 
   if (data.name == "tester") {
     onSetup("1");
+    onSetup("2");
+    onSetup("3");
+    onSetup("4");
+    onSetup("5");
+    onSetup("6");
   } else if (data.name == "overlord") {
     onSetup("0");
   }
@@ -195,7 +200,9 @@ async function onSetup (n) {
           chatID: 2,
           pk1: "jimmyGourd",
           pk2: "tester"
-        },
+        }
+      ]);
+      sendMessages("tester", [
         { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 },
         { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 2 },
         { type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 2 }
@@ -212,14 +219,23 @@ async function onSetup (n) {
           chatID: 3,
           pk1: "jimmyGourd",
           pk2: "tester"
-        },
+        }
+      ]);
+      sendMessages("tester", [
         { type: "text", message: "yo what's up guys", from: "lauraCarrot", chatID: 3 },
         { type: "text", message: "no", from: 'percyPea', chatID: 3 },
         { type: "text", message: "???", from: 'lauraCarrot', chatID: 3 },
         { type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 },
       ]);
       sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot"));
+      sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
       break;
+  }
+}
+
+function sendMessages (to, msgs) {
+  for (const msg of msgs) {
+    sendTo(connectedUsers.get(to), addMsgID(msg));
   }
 }
 
@@ -267,14 +283,14 @@ function addUser (to, chatID, from) {
   sendTo(connectedUsers.get(to), msg);
 }
 
-function removeUser (to, chatID, from) {
+function removeUser (to, chatID, from, dispute=null) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   const msg = addMsgID({
     type: "remove",
     pk1: from,
     pk2: to,
     chatID: chatID,
-    dispute: false,
+    dispute: dispute,
   });
 
   console.log(`removing ${to} from ${chatID}`);
