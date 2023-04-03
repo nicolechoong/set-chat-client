@@ -219,7 +219,7 @@ export async function removeFromChat (username, pk, chatID) {
     });
 
     if (joinedChats.get(chatID).members.includes(username)) {
-        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).indexOf(nausernameme), 1);
+        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).indexOf(usernameme), 1);
     }
     receivedSMessage(removeMessage);
     sendToServer(removeMessage);
@@ -346,23 +346,19 @@ async function addPeer(messageData) {
 }
 
 async function removePeer (messageData) {
-    const pk = JSON.stringify(messageData.op.pk2);
+    const pk = messageData.pk2;
 
-    await store.getItem(messageData.chatID).then(async (chatInfo) => {
-        chatInfo.history.push(messageData);
-        await store.setItem(messageData.chatID, chatInfo);
-    }).then(() => console.log(`added removal message data to chat history`));
+    const chatInfo = store.get(messageData.chatID);
+    chatInfo.history.push(messageData);
 
     if (joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
     }
     
     joinedChats.get(messageData.chatID).exMembers.add(pk);
-    await store.setItem("joinedChats", joinedChats);
 
     updateChatInfo();
     updateChatWindow(messageData);
-    closeConnections(pk, messageData.chatID);
 }
 
 async function refreshChatWindow (chatID) {
