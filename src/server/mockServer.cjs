@@ -199,8 +199,27 @@ async function onSetup (n) {
       ]);
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 }));
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 2 }));
-      await sleep(1000);
+      await new Promise(resolve => setTimeout(resolve, 1000));
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 2 }));
+      break;
+    case "3":
+      chats.set(3, {chatName: 'Task 3', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
+      addUser("tester", 3, "jimmyGourd");
+      sendChatHistory("tester", 3, [
+        addMsgID({
+          type: "add",
+          username: "tester",
+          chatName: 'Task 3',
+          chatID: 3,
+          pk1: "jimmyGourd",
+          pk2: "tester"
+        }),
+        addMsgID({ type: "text", message: "yo what's up guys", from: "lauraCarrot", chatID: 3 }),
+        addMsgID({ type: "text", message: "no", from: 'percyPea', chatID: 3 }),
+        addMsgID({ type: "text", message: "???", from: 'lauraCarrot', chatID: 3 }),
+        addMsgID({ type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 }),
+      ]);
+      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot"));
       break;
   }
 }
@@ -297,7 +316,7 @@ function addUser (to, chatID, from) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   chats.get(chatID).members.push(to);
   const msg = addMsgID({
-    "type": "add",
+    type: "add",
     pk1: from,
     pk2: to,
     chatID: chatID,
@@ -307,6 +326,21 @@ function addUser (to, chatID, from) {
 
   console.log(`adding ${to} to ${chatID}`);
   sendTo(connectedUsers.get(to), msg);
+}
+
+function removeUser (to, chatID, from) {
+  // data = {type: 'add', to: username of invited user, chatID: chat id}
+  const msg = addMsgID({
+    type: "add",
+    pk1: from,
+    pk2: to,
+    chatID: chatID,
+    dispute: false,
+  });
+
+  console.log(`removing ${to} from ${chatID}`);
+  sendTo(connectedUsers.get(to), msg);
+  return msg;
 }
 
 function onRemove (connection, data) {
