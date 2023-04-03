@@ -121,15 +121,15 @@ connection.onmessage = function (message) {
             onCreateChat(data.chatID, data.chatName);
             break;
         case "add":
-            if (arrEqual(messageData.pk2, localUsername)) {
+            if (arrEqual(data.pk2, localUsername)) {
                 onAdd(data.chatID, data.chatName, data.pk1, data.members, data.id);
             } else {
-                addPeer(messageData);
+                addPeer(data);
             }
             onAdd(data.chatID, data.chatName, data.from, data.members, data.id);
             break;
         case "history":
-            mergeChatHistory(messageData.chatID, messageData.history);
+            mergeChatHistory(data.chatID, data.history);
             break;
         case "remove":
             onRemove(data);
