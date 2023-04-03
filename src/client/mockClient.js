@@ -75,6 +75,9 @@ var connection = new WebSocket('wss://35.178.80.94:3000/');
 
 connection.onopen = function () {
     console.log("Connected to server");
+    loginPopup.style.display = "none";
+    dim.style.display = "none";
+    document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
 };
 
 connection.onerror = function (err) {
