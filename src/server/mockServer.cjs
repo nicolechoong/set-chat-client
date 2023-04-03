@@ -238,7 +238,7 @@ async function onSetup (n) {
 function sendMessages (to, msgs) {
   for (const msg of msgs) {
     sendTo(connectedUsers.get(to), addMsgID(msg));
-    new Promise(resolve => setTimeout(resolve, 50))
+    new Promise(resolve => setTimeout(resolve, 200))
   }
 }
 

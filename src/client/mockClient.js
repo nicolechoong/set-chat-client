@@ -223,7 +223,7 @@ export async function removeFromChat (username, pk, chatID) {
     });
 
     if (joinedChats.get(chatID).members.includes(username)) {
-        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).indexOf(usernameme), 1);
+        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).indexOf(username), 1);
     }
     receivedSMessage(removeMessage);
     sendToServer(removeMessage);
@@ -291,49 +291,6 @@ async function disputeRemoval(peer, chatID) {
 // Peer to Peer Functions //
 ////////////////////////////
 
-async function receivedMessage(messageData) {
-    console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
-    if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")
-    && document.getElementById(`chatCard${messageData.chatID}`) !== null) {
-        document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
-    }
-    switch (messageData.type) {
-        case "history":
-            await mergeChatHistory(messageData.chatID, messageData.history);
-            break;
-        case "remove":
-            unpackOp(messageData.op);
-            receivedOperations([messageData.op], messageData.chatID, JSON.stringify(messageData.from)).then((res) => {
-                if (res === "ACCEPT") { 
-                    if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                        onRemove(messageData);
-                    } else {
-                        removePeer(messageData); 
-                    }
-                } else {
-                    console.log(`remove reject`);
-                }
-            });
-            break;
-        case "add":
-            unpackOp(messageData.op);
-            if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
-                onAdd(messageData.chatID, messageData.chatName, objToArr(messageData.from), messageData.msgID);
-            } else {
-                addPeer(messageData);
-            }
-            break;
-        case "text":
-            if (joinedChats.get(messageData.chatID).members.includes(JSON.stringify(messageData.from))) {
-                updateChatWindow(messageData);
-                updateChatStore(messageData);
-            }
-            break;
-        default:
-            console.log(`Unrecognised message type ${messageData.type}`);
-    }
-}
-
 async function addPeer(messageData) {
     const pk = messageData.pk2;
 
@@ -352,9 +309,10 @@ async function addPeer(messageData) {
 async function removePeer (messageData) {
     const pk = messageData.pk2;
     if (messageData.dispute) {
+        console.log(`dispute detected`);
         disableChatMods(messageData.chatID, true);
-        getIgnored([messageData.dispute], messageData.chatID);
-        
+        getIgnored([JSON.parse(messageData.dispute)], messageData.chatID);
+
     } else {
         const chatInfo = store.get(messageData.chatID);
         chatInfo.history.push(messageData);
@@ -553,6 +511,9 @@ acceptRemovalBtn.addEventListener("click", async () => {
     joinedChats.get(currentChatID).toDispute = null;
     updateChatInfo();
 });
+
+const optionTemplate = document.getElementById('optionTemplate');
+const conflictCardTemplate = document.getElementById('conflictCardTemplate');
 
 function generateConflictCard (ops, chatID) {
     // op.sig mapped to op: Object of Arr, mem mapped to String of joined members
