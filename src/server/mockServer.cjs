@@ -227,7 +227,9 @@ async function onSetup (n) {
         { type: "text", message: "???", from: 'lauraCarrot', chatID: 3 },
         { type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 },
       ]);
+      await new Promise(resolve => setTimeout(resolve, 1000));
       sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot"));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
       break;
   }
@@ -236,6 +238,7 @@ async function onSetup (n) {
 function sendMessages (to, msgs) {
   for (const msg of msgs) {
     sendTo(connectedUsers.get(to), addMsgID(msg));
+    new Promise(resolve => setTimeout(resolve, 50))
   }
 }
 
