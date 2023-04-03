@@ -251,37 +251,27 @@ async function onRemove (messageData) {
 }
 
 async function disputeRemoval(peer, chatID) {
-    const chatInfo = store.get(chatID);
-    const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
-    const ignoredOp = chatInfo.metadata.operations.at(end);
-    console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-    const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
 
     console.log(`${chatInfo.history.map(msg => msg.type)}`);
-    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(objToArr(msg.op.sig), ignoredOp.sig));
+    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == "remove" && msg.pk2 == localUsername);
     if (ignoredOpIndex > -1) {
         chatInfo.history.splice(ignoredOpIndex);
     }
 
-    chatInfo.metadata.operations.push(op);
-    chatInfo.metadata.ignored.push(ignoredOp);
+    if (joinedChats.get(chatID).members.includes(peer)) {
+        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(peer), 1);
+    }
     await refreshChatWindow(chatID);
 
     const removeMessage = addMsgID({
         type: "remove",
-        op: op,
-        username: peer.peerName,
+        pk1: localUsername,
+        pk2: peer,
         chatID: chatID,
-        dispute: true,
+        dispute: true
     });
 
-    await updateMembers(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
-    sendToMember(removeMessage, JSON.stringify(keyPair.publicKey));
-    sendToServer({
-        to: peer.peerPK,
-        type: "remove",
-        msg: removeMessage
-    });
+    sendToMember(removeMessage, localUsername);
 }
 
 
@@ -473,6 +463,7 @@ export function disableChatMods (chatID, conflict=false) {
         chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
         conflictChatBar.style.display = conflict ? "flex" : "none";
+        document.getElementById('conflictCardList').style.display = conflict ? "flex" : "none";
 
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
@@ -579,7 +570,7 @@ export async function selectIgnored(ignoredOp) {
     })
     const chatInfo = store.get(currentChatID);
     // unwinding chat history
-    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.pk1 === ignoredOp.pk1);
 
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
