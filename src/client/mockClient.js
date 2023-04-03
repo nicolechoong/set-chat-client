@@ -53,6 +53,7 @@ function initialiseClient () {
             chatList.removeChild(node);
         }
     });
+    document.getElementById('heading').innerHTML = `Hello, I am a test Chat`;
     document.getElementById('defaultText').style.display = "block";
     document.getElementById('chatInfo').style.display = "none";
     document.getElementById('chatBoxHeading').style.display = "none";
@@ -145,7 +146,6 @@ connection.onmessage = function (message) {
 };
 
 function onLogin () {
-    localUsername = username;
     loginPopup.style.display = "none";
     dim.style.display = "none";
     document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
@@ -841,6 +841,7 @@ loginBtn.addEventListener("click", async function (event) {
     const username = loginInput.value;
     console.log(username);
     if (username == "tester" || username == "overlord") {
+        localUsername = username;
         sendToServer({
             type: "login",
             name: username,

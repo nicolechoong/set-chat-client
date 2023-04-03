@@ -140,7 +140,6 @@ function onLogin (connection, data) {
   connections.push(connection);
   sendTo(connection, {
     type: "login",
-    success: true,
   });
 
   if (data.name == "tester") {
