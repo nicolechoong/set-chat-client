@@ -515,7 +515,7 @@ function generateConflictCard (ops, chatID) {
     // op.sig mapped to op: Object of Arr, mem mapped to String of joined members
     var option, button;
     var card = conflictCardTemplate.cloneNode(true);
-    card.id = "";
+    card.id = "card123";
 
     for (const op of ops) {
         option = optionTemplate.cloneNode(true);
@@ -537,8 +537,7 @@ function generateConflictCard (ops, chatID) {
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
             await selectIgnored(op);
-            console.log(card.parentElement);
-            conflictCardList.removeChild(card);
+            conflictCardList.removeChild(document.getElementById('card123'));
         });
         card.appendChild(option);
     }
