@@ -158,17 +158,26 @@ function onSetup (n) {
           pk1: "jimmyGourd",
           pk2: "tester"
         }),
-        { type: "text", message: "helloooo", from: "jimmyGourd" }
+        addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 1 })
       ]);
       break;
     case 2:
       chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
       addUser("tester", 1, "jimmyGourd");
       sendChatHistory(2, [
-        { type: "text", message: "helloooo", from: "jimmyGourd" },
-        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea" },
-        { type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot" }
+        addMsgID({
+          type: "add",
+          username: "tester",
+          chatName: 'Task 2',
+          chatID: 2,
+          pk1: "jimmyGourd",
+          pk2: "tester"
+        }),
+        addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 }),
+        addMsgID({ type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 2 }),
+        addMsgID({ type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 2 })
       ]);
+      break;
   }
 }
 

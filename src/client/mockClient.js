@@ -985,6 +985,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
             });
             chatInfo.history = mergedChatHistory;
+            
 
             await refreshChatWindow(chatID);
             if (newMessage && chatID !== currentChatID && document.getElementById(`chatCard${chatID}`) !== null) { 
