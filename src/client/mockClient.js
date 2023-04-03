@@ -796,7 +796,6 @@ newChatBtn.addEventListener("click", () => {
     chatNameInput.value = "";
 });
 
-logoutBtn.addEventListener("click", logout);
 
 addUserBtn.addEventListener("click", async () => {
     if (currentChatID === 0) { console.alert(`Please select a chat`); return; }
@@ -916,24 +915,6 @@ export async function selectIgnored(ignoredOp) {
         }
     });
 }
-
-function getChatNames() {
-    var chatnames = [];
-    for (const chatID of joinedChats.keys()) {
-        chatnames.push(joinedChats.get(chatID).chatName);
-    }
-    return chatnames;
-}
-
-function getChatID(chatName) {
-    for (const chatID of joinedChats.keys()) {
-        if (chatName === joinedChats.get(chatID).chatName) {
-            return chatID;
-        }
-    }
-    return -1;
-}
-
 
 function updateChatInfo () {
     if (currentChatID > 0) {
