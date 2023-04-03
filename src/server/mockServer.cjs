@@ -2,6 +2,7 @@ const https = require('https');
 const WebSocketServer = require('ws').Server;
 const fs = require('fs');
 const path = require('path');
+const nacl = require('../../node_modules/tweetnacl-es6/nacl-fast-es.js');
 
 const express = require('express');
 const app = express();
