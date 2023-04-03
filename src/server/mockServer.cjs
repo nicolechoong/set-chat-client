@@ -202,7 +202,7 @@ async function onSetup (n) {
           pk2: "tester"
         }
       ]);
-      sendMessages("tester", [
+      await sendMessages("tester", [
         { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 },
         { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 2 },
         { type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 2 }
@@ -221,9 +221,9 @@ async function onSetup (n) {
           pk2: "tester"
         }
       ]);
-      sendMessages("tester", [
+      await sendMessages("tester", [
         { type: "text", message: "yo what's up guys", from: "lauraCarrot", chatID: 3 },
-        { type: "text", message: "no", from: 'percyPea', chatID: 3 },
+        { type: "text", message: "no.", from: 'percyPea', chatID: 3 },
         { type: "text", message: "???", from: 'lauraCarrot', chatID: 3 },
         { type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 },
       ]);
@@ -235,10 +235,10 @@ async function onSetup (n) {
   }
 }
 
-function sendMessages (to, msgs) {
+async function sendMessages (to, msgs) {
   for (const msg of msgs) {
     sendTo(connectedUsers.get(to), addMsgID(msg));
-    new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 200));
   }
 }
 

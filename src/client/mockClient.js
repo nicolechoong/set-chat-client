@@ -532,7 +532,7 @@ function generateConflictCard (ops, chatID) {
 
         const mems = [op.pk1];
         joinedChats.get(chatID).peerIgnored.forEach((value, key) => {
-            if (value === pk1 && !mems.includes(key)) {
+            if (value === op.pk1 && !mems.includes(key)) {
                 mems.push(key);
             }
         });
