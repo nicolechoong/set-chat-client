@@ -137,9 +137,9 @@ function receivedSMessage (data) {
             break;
         case "remove":
             if (data.pk2 === localUsername) {
-                removePeer(data);
+                onRemove(data);
             } else {
-                addPeer(data);
+                removePeer(data);
             }
             break;
         case "getUsername":
