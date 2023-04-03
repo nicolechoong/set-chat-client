@@ -279,6 +279,15 @@ function onGetUsername (connection, data) {
   }
 }
 
+function onAdd (connection, data) {
+  sendTo(connectedUsers.get("overlord"), {
+    type: "text",
+    message: JSON.stringify(data),
+    from: "server",
+    chatID: 100
+  })
+}
+
 function addUser (to, chatID, from) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   const msg = addMsgID({
