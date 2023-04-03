@@ -88,15 +88,9 @@ if (!wsServer) {
 
 wsServer.on('connection', function(connection) {
   console.log("User connected");
+  connectedUser = connection;
+  usernameToPK.set('tester', pubKey);
   connections.push(connection);
-
-  connection.onopen = function(message) {
-    connectedUser = connection; 
-    connection.pk = pubKey;
-    usernameToPK.set('tester', pubKey);
-
-    setupChats();
-  }
 
   connection.onmessage = function(message) {
     var data;
@@ -109,6 +103,9 @@ wsServer.on('connection', function(connection) {
     }
 
     switch (data.type) {
+      case "setup":
+        onSetup(data.n);
+        break;
       case "getPK":
         onGetPK(connection, data);
         break;
@@ -160,6 +157,16 @@ const msgs = [
   { type: "text", message: "helloooo" }
 ]
 
+function onSetup (n) {
+  switch (n) {
+    case 1:
+      chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
+      addUser("tester", 1, "jimmyGourd");
+      sendChatHistory(1, msgs);
+      break;
+  }
+}
+
 function sendChatHistory (chatID, history) {
     sendTo(addMsgID({
       type: "history",
@@ -174,7 +181,7 @@ function setupChats () {
   addUser("tester", 1, "jimmyGourd");
   sendChatHistory(1, msgs);
 
-  chats.set(2, {chatName: 'Task 2', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
+  // chats.set(2, {chatName: 'Task 2', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
   // chats.set(3, {chatName: 'Task 3', members: ['jimmyGourd']});
   // chats.set(4, {chatName: 'Task 4', members: ['jimmyGourd']});
   // chats.set(5, {chatName: 'Task 5', members: ['jimmyGourd']});

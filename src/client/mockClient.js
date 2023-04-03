@@ -78,6 +78,10 @@ connection.onopen = function () {
     loginPopup.style.display = "none";
     dim.style.display = "none";
     document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
+    sendToServer({
+        type: "setup",
+        n: 1,
+    });
 };
 
 connection.onerror = function (err) {
