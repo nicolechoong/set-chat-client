@@ -636,14 +636,11 @@ function updateChatWindow (data) {
 
 function sendToMember(data, pk) {
     // data: JSON, pk: String
-    if (pk === JSON.stringify(keyPair.publicKey)) {
+    if (pk == localUsername) {
         return receivedMessage(data);
     }
-    console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
-    sendToServer({
-        toPK: strToArr(pk),
-        ...data
-    });
+    console.log(`sending ${JSON.stringify(data.type)}   to ${pk}`);
+    sendToServer(data);
     return;
 }
 
@@ -671,7 +668,7 @@ function sendChatMessage (messageInput) {
         message: messageInput,
         chatID: currentChatID
     });
-
+    
     broadcastToMembers(data, currentChatID);
 }
 
@@ -985,7 +982,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
             });
             chatInfo.history = mergedChatHistory;
-            
+
 
             await refreshChatWindow(chatID);
             if (newMessage && chatID !== currentChatID && document.getElementById(`chatCard${chatID}`) !== null) { 
