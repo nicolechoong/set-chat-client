@@ -483,6 +483,7 @@ export function enableChatMods (chatID) {
         chatWindow.style.display = "flex";
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
+        conflictChatBar.style.display = "none";
         
         document.getElementById('disputeCard').style.display = "none";
         document.getElementById('defaultText').style.display = "none";
@@ -536,7 +537,7 @@ function generateConflictCard (ops, chatID) {
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
             await selectIgnored(op);
-            card.parentNode.removeChild(card);
+            document.getElementById('conflictCardList').removeChild(card);
         });
         card.appendChild(option);
     }
@@ -573,14 +574,14 @@ export async function selectIgnored(ignoredOp) {
     })
     const chatInfo = store.get(currentChatID);
     // unwinding chat history
-    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.pk1 === ignoredOp.pk1);
+    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.pk2 === ignoredOp.pk1);
 
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
         chatInfo.history.splice(ignoredOpIndex);
     }
 
-    const p = document.getElementById(`p${ignoredOp.pk1}`);
+    const p = document.getElementById(`p${ignoredOp.pk2}`);
     const toRemove = p.innerHTML.slice(11).split(", ");
     toRemove.forEach(mem => {
         if (joinedChats.get(currentChatID).members.includes(mem)) {
