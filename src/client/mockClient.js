@@ -134,7 +134,7 @@ connection.onmessage = function (message) {
 
 
 // When being added to a new chat
-async function onAdd(chatID, chatName, from, msgID) {
+async function onAdd(chatID, chatName, from, mems, msgID) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
@@ -143,11 +143,11 @@ async function onAdd(chatID, chatName, from, msgID) {
     if (!joinedChats.has(chatID)) {
         joinedChats.set(chatID, {
             chatName: chatName,
-            validMembers: [from],
-            members: [from],
+            validMembers: mems,
+            members: mems,
             exMembers: new Set(),
             peerIgnored: new Map(),
-            currentMember: false,
+            currentMember: true,
             conc: [],
             toDispute: null
         });
@@ -167,6 +167,7 @@ async function onAdd(chatID, chatName, from, msgID) {
 
     updateChatOptions("remove", chatID);
     updateChatOptions("add", chatID);
+    updateChatInfo();
 }
 
 async function addToChat (validMemberPubKeys, chatID) {
