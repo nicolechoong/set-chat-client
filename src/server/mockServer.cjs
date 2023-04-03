@@ -174,13 +174,13 @@ async function onSetup (n) {
       chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
       addUser("tester", 1, "jimmyGourd");
       sendChatHistory("tester", 1, [
-        addMsgID({
+        {
           type: "add",
           chatName: 'Task 1',
           chatID: 1,
           pk1: "jimmyGourd",
           pk2: "tester"
-        })]);
+        }]);
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 1 }));
       break;
 
@@ -188,36 +188,35 @@ async function onSetup (n) {
       chats.set(2, {chatName: 'Task 2', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
       addUser("tester", 2, "jimmyGourd");
       sendChatHistory("tester", 2, [
-        addMsgID({
+        {
           type: "add",
           username: "tester",
           chatName: 'Task 2',
           chatID: 2,
           pk1: "jimmyGourd",
           pk2: "tester"
-        })
+        },
+        { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 },
+        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 2 },
+        { type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 2 }
       ]);
-      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 }));
-      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 2 }));
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 2 }));
       break;
     case "3":
       chats.set(3, {chatName: 'Task 3', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
       addUser("tester", 3, "jimmyGourd");
       sendChatHistory("tester", 3, [
-        addMsgID({
+        {
           type: "add",
           username: "tester",
           chatName: 'Task 3',
           chatID: 3,
           pk1: "jimmyGourd",
           pk2: "tester"
-        }),
-        addMsgID({ type: "text", message: "yo what's up guys", from: "lauraCarrot", chatID: 3 }),
-        addMsgID({ type: "text", message: "no", from: 'percyPea', chatID: 3 }),
-        addMsgID({ type: "text", message: "???", from: 'lauraCarrot', chatID: 3 }),
-        addMsgID({ type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 }),
+        },
+        { type: "text", message: "yo what's up guys", from: "lauraCarrot", chatID: 3 },
+        { type: "text", message: "no", from: 'percyPea', chatID: 3 },
+        { type: "text", message: "???", from: 'lauraCarrot', chatID: 3 },
+        { type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 },
       ]);
       sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot"));
       break;
@@ -225,6 +224,7 @@ async function onSetup (n) {
 }
 
 function sendChatHistory (to, chatID, history) {
+  history = history.map(msg => addMsgID(msg));
     sendTo(connectedUsers.get(to), addMsgID({
       type: "history",
       history: history,
@@ -239,77 +239,13 @@ function addMsgID (data) {
   return data;
 }
 
-function onGetPK (connection, data) {
-  if (!usernameToPK.has(data.username)) {
-    console.log(`User ${data.username} does not exist`);
-    sendTo(connection, {
-      type: "getPK",
-      username: data.username,
-      success: false,
-      pk: []
-    })
-    return;
-  }
-
-  console.log(`sending pk of user ${data.username}`);
-  sendTo(connection, {
-    type: "getPK",
-    username: data.username,
-    success: true,
-    pk: Uint8Array.from(Object.values(JSON.parse(usernameToPK.get(data.username))))
-  });
-}
-
-function getOnline (pk, chatID) {
-  // pk : stringified(pk)
-  const onlineMembers = [];
-  if (chats.has(chatID) && (chats.get(chatID).members.includes(pk))) {
-    for (const mem of chats.get(chatID).members) {
-      if (connectedUsers.has(mem) && mem !== pk) {
-        onlineMembers.push({
-          peerName: allUsers.get(mem).username,
-          peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
-        });
-      }
-    }
-  }
-  return onlineMembers;
-}
-
-function onGetOnline (connection, data) {
-  sendTo(connection, {
-    type: "getOnline",
-    chatID: data.chatID,
-    online: getOnline(connection.pk, data.chatID)
-  })
-}
-
-function onGetUsername (connection, data) {
-  console.log(`seeking username for${data.pk}`);
-  if (allUsers.has(data.pk)) {
-    console.log(`returning username ${allUsers.get(data.pk).username}`);
-    sendTo(connection, {
-      type: "getUsername",
-      pk: data.pk,
-      success: true,
-      username: allUsers.get(data.pk).username
-    });
-  } else {
-    sendTo(connection, {
-      type: "getUsername",
-      pk: data.pk,
-      success: false,
-    });
-  }
-}
-
 function onAdd (connection, data) {
-  sendTo(connectedUsers.get("overlord"), {
+  sendTo(connectedUsers.get("overlord"), addMsgID({
     type: "text",
     message: JSON.stringify(data),
     from: "server",
     chatID: 100
-  })
+  }))
 }
 
 function addUser (to, chatID, from) {
@@ -331,7 +267,7 @@ function addUser (to, chatID, from) {
 function removeUser (to, chatID, from) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   const msg = addMsgID({
-    type: "add",
+    type: "remove",
     pk1: from,
     pk2: to,
     chatID: chatID,
