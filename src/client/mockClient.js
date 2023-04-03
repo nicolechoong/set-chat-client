@@ -858,7 +858,7 @@ function updateChatInfo () {
 
         memberList.innerHTML = "";
         joinedChats.get(currentChatID).members.forEach((pk) => {
-            memberList.appendChild(elem.generateUserCard(pk, keyMap.get(pk), currentChatID));
+            memberList.appendChild(elem.generateUserCard(pk, pk, currentChatID));
         });
 
         if (joinedChats.get(currentChatID).currentMember) {
