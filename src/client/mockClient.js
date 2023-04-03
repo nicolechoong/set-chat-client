@@ -298,6 +298,8 @@ async function addPeer(messageData) {
 
 async function removePeer (messageData) {
     const pk = messageData.pk2;
+    const chatInfo = store.get(messageData.chatID);
+    chatInfo.history.push(messageData);
     if (messageData.dispute) {
         console.log(`dispute detected`);
         joinedChats.get(messageData.chatID).peerIgnored = new Map(JSON.parse(messageData.peerIgnored));
@@ -306,8 +308,6 @@ async function removePeer (messageData) {
         getIgnored([JSON.parse(messageData.dispute)], messageData.chatID);
 
     } else {
-        const chatInfo = store.get(messageData.chatID);
-        chatInfo.history.push(messageData);
 
         if (joinedChats.get(messageData.chatID).members.includes(pk)) {
             joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
@@ -583,10 +583,10 @@ export async function selectIgnored(ignoredOp) {
     const p = document.getElementById(`p${ignoredOp.pk1}`);
     const toRemove = p.innerHTML.slice(11).split(", ");
     toRemove.forEach(mem => {
-        if (joinedChats.get(messageData.chatID).members.includes(mem)) {
-            joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(mem), 1);
+        if (joinedChats.get(currentChatID).members.includes(mem)) {
+            joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(mem), 1);
         }
-        joinedChats.get(messageData.chatID).exMembers.add(pk);
+        joinedChats.get(currentChatID).exMembers.add(pk);
     });
 
     updateChatInfo();
