@@ -3,6 +3,7 @@ import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
 
+const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
 const addUserBtn = document.getElementById('addUserBtn');
 const disputeBtn = document.getElementById('disputeBtn');
@@ -21,11 +22,9 @@ const chatWindow = document.getElementById('chatWindow');
 
 const messageInput = document.getElementById('messageInput');
 const addUserInput = document.getElementById('addUserInput');
+const loginInput = document.getElementById('loginInput');
 
 var localUsername = "tester";
-var keyPair = nacl.sign.keyPair();
-console.log(keyPair.publicKey);
-console.log(keyPair.secretKey);
 
 
 //////////////////////
@@ -62,6 +61,11 @@ function initialiseClient () {
     });
     chatWindow.innerHTML = "";
     currentChatID = 0;
+
+    dim.style.display = "block";
+    loginPopup.style.display = "flex";
+    loginInput.focus();
+    loginInput.select();
 }
 
 initialiseClient();
@@ -75,13 +79,6 @@ var connection = new WebSocket('wss://35.178.80.94:3000/');
 
 connection.onopen = function () {
     console.log("Connected to server");
-    loginPopup.style.display = "none";
-    dim.style.display = "none";
-    document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
-    sendToServer({
-        type: "setup",
-        n: 1,
-    });
 };
 
 connection.onerror = function (err) {
@@ -145,37 +142,54 @@ connection.onmessage = function (message) {
     }
 };
 
+function onLogin (username) {
+    localUsername = username;
+    loginPopup.style.display = "none";
+    dim.style.display = "none";
+    document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
+
+    if (username == "tester") {
+        sendToServer({
+            type: "setup",
+            n: 1,
+        });
+    } else if (username == "overlord") {
+        sendToServer({
+            type: "setup",
+            n: 0,
+        });
+    }
+}
+
 
 // When being added to a new chat
-async function onAdd(chatID, chatName, from, members, msgID) {
+async function onAdd (chatID, chatName, from, members, msgID) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
 
-    if (!joinedChats.has(chatID)) {
-        joinedChats.set(chatID, {
+    joinedChats.set(chatID, {
+        chatName: chatName,
+        members: members,
+        exMembers: new Set(),
+        peerIgnored: new Map(),
+        currentMember: true,
+        conc: [],
+        toDispute: null
+    });
+
+    store.set(chatID, {
+        metadata: {
             chatName: chatName,
-            members: members,
-            exMembers: new Set(),
-            peerIgnored: new Map(),
-            currentMember: true,
-            conc: [],
-            toDispute: null
-        });
+            operations: [],
+            ignored: []
+        },
+        history: [],
+        historyTable: new Map(),
+    });
 
-        store.set(chatID, {
-            metadata: {
-                chatName: chatName,
-                operations: [],
-                ignored: []
-            },
-            history: [],
-            historyTable: new Map(),
-        });
-
-        initChatHistoryTable(chatID, msgID);
-    }
+    initChatHistoryTable(chatID, msgID);
 
     updateChatOptions("remove", chatID);
     updateChatOptions("add", chatID);
@@ -471,75 +485,6 @@ async function receivedMessage(messageData) {
     }
 }
 
-function onChannelOpen(event) {
-    console.log(`Channel ${event.target.label} opened`);
-    const channelLabel = JSON.parse(event.target.label);
-    const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
-
-    if (resolveConnectToPeer.has(peerPK)) {
-        resolveConnectToPeer.get(peerPK)(true);
-        resolveConnectToPeer.delete(peerPK);
-    }
-
-    for (const chatID of joinedChats.keys()) {
-        if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
-            sendOperations(chatID, peerPK);
-        }
-    }
-}
-
-function receiveChannelCallback(event) {
-    const channelLabel = JSON.parse(event.channel.label);
-    console.log(`Received channel ${event.channel.label} from ${channelLabel.senderPK}`);
-    const peerConnection = connections.get(channelLabel.senderPK);
-    peerConnection.sendChannel = event.channel;
-    initChannel(peerConnection.sendChannel);
-}
-
-function sendAdvertisement(chatID, pk) {
-    // chatID: String, pk: stringify(pk)
-    const online = [];
-    for (const mem of joinedChats.get(chatID).members) {
-        if (connections.has(mem) && mem !== pk) {
-            online.push({ peerName: keyMap.get(mem), peerPK: objToArr(JSON.parse(mem)) });
-        }
-    }
-
-    if (online.length > 0) {
-        console.log(`sending an advertistment to ${pk} of ${JSON.stringify(online)}`)
-        sendToMember(addMsgID({
-            type: "advertisement",
-            online: online,
-            from: keyPair.publicKey
-        }), pk);
-    }
-}
-
-async function sendChatHistory (chatID, pk) {
-    console.log(`sending chat history to ${pk}`);
-    await store.getItem(chatID).then(async (chatInfo) => {
-        var peerHistory = [];
-        if (!chatInfo.historyTable.has(pk)) {
-            chatInfo.historyTable.set(pk, [[chatInfo.history[0].id, 0]]);
-            await store.setItem(chatID, chatInfo);
-        }
-        const intervals = chatInfo.historyTable.get(pk);
-        var start, end;
-        for (const interval of intervals) {
-            start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
-            end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-            end = (interval[1] == 0 ? chatInfo.history.length : end) + 1;
-            peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
-        }
-        
-        sendToMember(addMsgID({
-            type: "history",
-            history: peerHistory,
-            chatID: chatID,
-            from: keyPair.publicKey
-        }), pk);
-    });
-}
 
 function initChatHistoryTable (chatID, msgID) {
     console.log(`initialised chat history`);
@@ -664,11 +609,11 @@ function broadcastToMembers (data, chatID = null) {
 function sendChatMessage (messageInput) {
     const data = addMsgID({
         type: "text",
-        from: keyPair.publicKey,
+        from: localUsername,
         message: messageInput,
         chatID: currentChatID
     });
-    
+
     broadcastToMembers(data, currentChatID);
 }
 
@@ -893,6 +838,28 @@ function createNewChat () {
         from: keyPair.publicKey,
     });
 }
+
+loginInput.addEventListener("keypress", ((event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        loginBtn.click();
+    }
+}));
+
+// Send Login attempt
+loginBtn.addEventListener("click", async function (event) {
+    const username = loginInput.value;
+    console.log(username);
+    if (username == "tester" || username == "overlord") {
+        sendToServer({
+            type: "login",
+            name: username,
+        });
+    } else {
+        alert("please enter a valid username");
+        loginInput.value = "";
+    }
+});
 
 
 ///////////

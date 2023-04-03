@@ -78,9 +78,6 @@ if (!wsServer) {
 
 wsServer.on('connection', function(connection) {
   console.log("User connected");
-  connectedUser = connection;
-  usernameToPK.set('tester', pubKey);
-  connections.push(connection);
 
   connection.onmessage = function(message) {
     var data;
@@ -93,6 +90,9 @@ wsServer.on('connection', function(connection) {
     }
 
     switch (data.type) {
+      case "login":
+        onLogin(connection, data);
+        break;
       case "setup":
         onSetup(data.n);
         break;
@@ -130,22 +130,35 @@ wsServer.on('connection', function(connection) {
         connections.splice(connections.indexOf(connection), 1);
 
         broadcastActiveUsernames();
-
-        // for (chatroomID of removeFrom) {
-        //   chatrooms.get(chatroomID).splice(chatrooms.get(chatroomID).indexOf(connection.name), 1);
-        //   console.log(`${connection.name} has left ${chatroomID}`);
-        //   broadcast({
-        //     type: "leave",
-        //     from: connection.name
-        //   }, chatroomID);
-        // }
       }
     };
 });
 
+function onLogin (connection, data) {
+  // data: type, name
+  connectedUsers.set(data.name, connection);
+  connections.push(connection);
+  sendTo({
+    type: "login",
+    success: true,
+  })
+}
 
 function onSetup (n) {
   switch (n) {
+    case 0:
+      chats.set(100, {chatName: 'Backdoor', members: ['server']});
+      addUser("overlord", 1, "server");
+      sendChatHistory('overlord', 1, [
+        addMsgID({
+          type: "add",
+          username: "overlord",
+          chatName: 'Task 1',
+          chatID: 1,
+          pk1: "server",
+          pk2: "overlord"
+        })]);
+        sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "enter stuff", from: "server", chatID: 100 }));
     case 1:
       chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
       addUser("tester", 1, "jimmyGourd");
@@ -157,9 +170,8 @@ function onSetup (n) {
           chatID: 1,
           pk1: "jimmyGourd",
           pk2: "tester"
-        }),
-        addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 1 })
-      ]);
+        })]);
+      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 1 }));
       break;
     case 2:
       chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
@@ -181,8 +193,8 @@ function onSetup (n) {
   }
 }
 
-function sendChatHistory (chatID, history) {
-    sendTo(connectedUser, addMsgID({
+function sendChatHistory (to, chatID, history) {
+    sendTo(connectedUsers.get(to), addMsgID({
       type: "history",
       history: history,
       chatID: chatID,
@@ -260,19 +272,19 @@ function onGetUsername (connection, data) {
   }
 }
 
-function addUser (name, chatID, from) {
+function addUser (to, chatID, from) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   const msg = addMsgID({
     "type": "add",
     pk1: from,
-    pk2: name,
+    pk2: to,
     chatID: chatID,
     members: chats.get(chatID).members,
     chatName: chats.get(chatID).chatName,
   });
 
-  chats.get(chatID).members.push(name);
-  sendTo(connectedUser, msg);
+  chats.get(chatID).members.push(to);
+  sendTo(connectedUsers.get(to), msg);
 }
 
 function onRemove (connection, data) {
