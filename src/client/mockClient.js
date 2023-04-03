@@ -102,6 +102,8 @@ connection.onmessage = function (message) {
     }
 
     switch (data.type) {
+        case "login":
+            onLogin();
         case "text":
             updateChatWindow(data);
             break;
@@ -142,7 +144,7 @@ connection.onmessage = function (message) {
     }
 };
 
-function onLogin (username) {
+function onLogin () {
     localUsername = username;
     loginPopup.style.display = "none";
     dim.style.display = "none";
