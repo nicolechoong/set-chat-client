@@ -271,7 +271,9 @@ async function disputeRemoval(peer, chatID) {
         dispute: true
     });
 
-    sendToMember(removeMessage, localUsername);
+    chatInfo.history.push(removeMessage);
+    updateChatWindow(removeMessage);
+    sendToServer(removeMessage);
 }
 
 
@@ -494,6 +496,7 @@ export function enableChatMods (chatID) {
 
 disputeBtn.addEventListener("click", async () => {
     disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
+    joinedChats.get(currentChatID).currentMember = true;
     joinedChats.get(currentChatID).toDispute = null;
     updateChatInfo();
 });
@@ -577,7 +580,7 @@ export async function selectIgnored(ignoredOp) {
         chatInfo.history.splice(ignoredOpIndex);
     }
 
-    const p = document.getElementById(`p${msg.pk1}`);
+    const p = document.getElementById(`p${ignoredOp.pk1}`);
     const toRemove = p.innerHTML.slice(11).split(", ");
     toRemove.forEach(mem => {
         if (joinedChats.get(messageData.chatID).members.includes(mem)) {

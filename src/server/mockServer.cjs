@@ -114,6 +114,9 @@ wsServer.on('connection', function(connection) {
       case "remove":
         onRemove(connection, data);
         break;
+      case "selectedIgnored":
+        onSelectedIgnored(data);
+        break;
       case "leave":
         onLeave(data);
         break;
@@ -340,12 +343,29 @@ function onRemove (connection, data) {
 // Helper function to stringify outgoing messages
 // Sends the message of the user is online, else adds it to its queue (if it doesn't expire)
 // TODO: If the user doesn't exist it should send an error
-function sendTo (connection, message, pk = "") {
+function sendTo (connection, message) {
   // connection: RTCPeerConnection, message: JSON, pk: stringified
   console.log(`sending ${message.type}`);
   if (connection != null) {
     connection.send(JSON.stringify(message));
     return;
+  }
+}
+
+function onSelectedIgnored (op) {
+  if (op.pk1 == "lauraCarrot") {
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "wow, that was dumb", chatID: 3, from: "percyPea"}));
+    sendChatHistory("tester", 4, [
+      {
+        type: "remove",
+        pk1: "percyPea",
+        pk2: "lauraCarrot",
+        chatID: 4,
+        dispute: false,
+      }
+    ]);
+  } else {
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good that he's gone", chatID: 3, from: "lauraCarrot"}));
   }
 }
 
