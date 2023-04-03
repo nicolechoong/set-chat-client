@@ -149,18 +149,6 @@ function onLogin () {
     loginPopup.style.display = "none";
     dim.style.display = "none";
     document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
-
-    if (username == "tester") {
-        sendToServer({
-            type: "setup",
-            n: 1,
-        });
-    } else if (username == "overlord") {
-        sendToServer({
-            type: "setup",
-            n: 0,
-        });
-    }
 }
 
 

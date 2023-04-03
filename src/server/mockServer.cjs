@@ -142,6 +142,12 @@ function onLogin (connection, data) {
     type: "login",
     success: true,
   });
+
+  if (data.name == "tester") {
+    onSetup(1);
+  } else if (data.name == "overlord") {
+    onSetup(0);
+  }
 }
 
 function onSetup (n) {
