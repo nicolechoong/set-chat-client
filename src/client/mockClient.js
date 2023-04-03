@@ -127,9 +127,6 @@ connection.onmessage = function (message) {
         case "getPK":
             onGetPK(data.username, data.success, objToArr(data.pk));
             break;
-        case "getOnline":
-            onGetOnline(data.online, data.chatID);
-            break;
         default:
             break;
     }
@@ -280,7 +277,7 @@ function onGetUsername(name, success, pk) {
     // name: String, success: boolean, pk: string
     if (success) {
         keyMap.set(pk, name);
-        store.setItem("keyMap", keyMap);
+        store.set("keyMap", keyMap);
         resolveGetUsername.get(pk)(name);
     } else {
         rejectGetUsername.get(pk)(new Error("User does not exist"));
@@ -310,7 +307,7 @@ function onGetPK(name, success, pk) {
     // name: String, success: boolean, pk: Uint8Array
     if (success) {
         keyMap.set(JSON.stringify(pk), name);
-        store.setItem("keyMap", keyMap);
+        store.set("keyMap", keyMap);
         resolveGetPK.get(name)(pk);
     } else {
         rejectGetPK.get(name)(new Error("User does not exist"));
@@ -318,33 +315,6 @@ function onGetPK(name, success, pk) {
     }
     resolveGetPK.delete(name);
     rejectGetPK.delete(name);
-}
-
-async function onGetOnline(online, chatID) {
-    if (online.length == 0) {
-        resolveGetOnline.get(chatID)(false);
-    }
-    for (const peer of online) {
-        peer.peerPK = objToArr(peer.peerPK);
-        if (await connectToPeer(peer)) {
-            sendOperations(chatID, JSON.stringify(peer.peerPK));
-            resolveGetOnline.get(true); // doesn't mean that it synced
-        }
-    }
-    resolveGetOnline.delete(chatID);
-}
-
-var resolveGetOnline = new Map();
-
-function getOnline(chatID) {
-    return new Promise((resolve) => {
-        resolveGetOnline.set(chatID, resolve);
-        sendToServer({
-            type: "getOnline",
-            pk: keyPair.publicKey,
-            chatID: chatID
-        });
-    });
 }
 
 async function onQueuedOnline(pk) {
@@ -380,31 +350,6 @@ function getPK(username) {
             username: username
         });
     });
-}
-
-async function sendOperations(chatID, pk) {
-    // chatID : String, pk : String
-    console.log(`sending operations to ${keyMap.get(pk)}`);
-    store.getItem(chatID).then((chatInfo) => {
-        sendToMember({
-            type: "ops",
-            ops: chatInfo.metadata.operations,
-            chatID: chatID
-        }, pk);
-    });
-}
-
-async function sendIgnored (ignored, chatID, pk) {
-    // chatID : String, pk : String
-    const ignoredMessage = addMsgID({
-        type: "ignored",
-        ignored: ignored,
-        chatID: chatID
-    });
-    broadcastToMembers(ignoredMessage, chatID);
-    if (!joinedChats.get(chatID).members.includes(pk)) {
-        sendToMember(ignoredMessage, pk);
-    }
 }
 
 
@@ -600,15 +545,14 @@ async function sendChatHistory (chatID, pk) {
 
 function initChatHistoryTable (chatID, msgID) {
     console.log(`initialised chat history`);
-    store.getItem(chatID).then(async (chatInfo) => {
-        for (const pk of joinedChats.get(chatID).members) {
-            if (!chatInfo.historyTable.has(pk)) {
-                chatInfo.historyTable.set(pk, []);
-            }
-            chatInfo.historyTable.get(pk).push([msgID, 0]);
+    const chatInfo = store.get(chatID);
+    for (const pk of joinedChats.get(chatID).members) {
+        if (!chatInfo.historyTable.has(pk)) {
+            chatInfo.historyTable.set(pk, []);
         }
-        await store.setItem(chatID, chatInfo);
-    });
+        chatInfo.historyTable.get(pk).push([msgID, 0]);
+    }
+    store.set(chatID, chatInfo);
 } 
 
 var resolveConnectToPeer = new Map();
@@ -621,7 +565,7 @@ function connectToPeer (peer) {
 
         resolveConnectToPeer.set(JSON.stringify(peer.peerPK), resolve);
         keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
-        store.setItem("keyMap", keyMap);
+        store.set("keyMap", keyMap);
         sendOffer(peer.peerName, peer.peerPK);
         setTimeout(() => {
             resolve(false);
@@ -632,7 +576,7 @@ function connectToPeer (peer) {
 async function addPeer(messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
     keyMap.set(pk, messageData.username);
-    store.setItem("keyMap", keyMap);
+    store.set("keyMap", keyMap);
 
     if (!joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.push(pk);
@@ -641,19 +585,17 @@ async function addPeer(messageData) {
         joinedChats.get(messageData.chatID).validMembers.push(pk);
     }
     joinedChats.get(messageData.chatID).exMembers.delete(pk);
-    store.setItem("joinedChats", joinedChats);
 
     updateChatInfo();
     updateChatWindow(messageData);
-    await store.getItem(messageData.chatID).then((chatInfo) => {
-        if (!chatInfo.historyTable.has(pk)) {
-            chatInfo.historyTable.set(pk, []);
-        }
-        chatInfo.historyTable.get(pk).push([messageData.id, 0]);
-        chatInfo.history.push(messageData);
-        store.setItem(messageData.chatID, chatInfo);
-        console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
-    }).then(() => console.log(`added message data to chat history`));
+    const chatInfo = store.get(messageData.chatID);
+    if (!chatInfo.historyTable.has(pk)) {
+        chatInfo.historyTable.set(pk, []);
+    }
+    chatInfo.historyTable.get(pk).push([messageData.id, 0]);
+    chatInfo.history.push(messageData);
+    console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
+    console.log(`added message data to chat history`);
 }
 
 async function removePeer (messageData) {
@@ -1040,7 +982,7 @@ function mergeJoinedChats(localChats, receivedChats) {
 
 async function mergeChatHistory (chatID, receivedMsgs) {
     await navigator.locks.request("history", async () => {
-        const chatInfo = await store.getItem(chatID);
+        const chatInfo = store.get(chatID);
         const localMsgs = chatInfo.history;
         console.log(`local length ${localMsgs.length}`);
         console.log(`received length ${receivedMsgs.length}`);
