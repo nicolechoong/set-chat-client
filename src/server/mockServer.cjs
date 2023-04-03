@@ -353,7 +353,7 @@ function sendTo (connection, message) {
 }
 
 function onSelectedIgnored (op) {
-  if (op.pk1 == "lauraCarrot") {
+  if (op.pk1 == "percyPea") {
     sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "wow, that was dumb", chatID: 3, from: "percyPea"}));
     sendChatHistory("tester", 4, [
       {
@@ -364,7 +364,7 @@ function onSelectedIgnored (op) {
         dispute: false,
       }
     ]);
-  } else {
+  } else if (op.pk1 == "lauraCarrot") {
     sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good that he's gone", chatID: 3, from: "lauraCarrot"}));
   }
 }

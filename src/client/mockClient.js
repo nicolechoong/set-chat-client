@@ -586,7 +586,7 @@ export async function selectIgnored(ignoredOp) {
         if (joinedChats.get(currentChatID).members.includes(mem)) {
             joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(mem), 1);
         }
-        joinedChats.get(currentChatID).exMembers.add(pk);
+        joinedChats.get(currentChatID).exMembers.add(mem);
     });
 
     updateChatInfo();
