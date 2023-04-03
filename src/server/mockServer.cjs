@@ -228,7 +228,7 @@ async function onSetup (n) {
         { type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 },
       ]);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot"));
+      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot", [["jimmyGourd", "lauraCarrot"]]));
       await new Promise(resolve => setTimeout(resolve, 3000));
       sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
       break;
@@ -238,7 +238,7 @@ async function onSetup (n) {
 function sendMessages (to, msgs) {
   for (const msg of msgs) {
     sendTo(connectedUsers.get(to), addMsgID(msg));
-    new Promise(resolve => setTimeout(resolve, 600))
+    new Promise(resolve => setTimeout(resolve, 1000))
   }
 }
 
@@ -286,7 +286,7 @@ function addUser (to, chatID, from) {
   sendTo(connectedUsers.get(to), msg);
 }
 
-function removeUser (to, chatID, from, dispute=null) {
+function removeUser (to, chatID, from, dispute=null, peerIgnored) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   const msg = addMsgID({
     type: "remove",
@@ -294,6 +294,7 @@ function removeUser (to, chatID, from, dispute=null) {
     pk2: to,
     chatID: chatID,
     dispute: dispute,
+    peerIgnored: JSON.stringify(peerIgnored)
   });
 
   console.log(`removing ${to} from ${chatID}`);

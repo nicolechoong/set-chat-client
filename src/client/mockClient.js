@@ -223,7 +223,7 @@ export async function removeFromChat (username, pk, chatID) {
     });
 
     if (joinedChats.get(chatID).members.includes(username)) {
-        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).indexOf(username), 1);
+        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(username), 1);
     }
     receivedSMessage(removeMessage);
     sendToServer(removeMessage);
@@ -311,6 +311,7 @@ async function removePeer (messageData) {
     if (messageData.dispute) {
         console.log(`dispute detected`);
         disableChatMods(messageData.chatID, true);
+        joinedChats.get(messageData.chatID).peerIgnored = new Map(JSON.parse(messageData.peerIgnored));
         getIgnored([JSON.parse(messageData.dispute)], messageData.chatID);
 
     } else {
@@ -530,8 +531,8 @@ function generateConflictCard (ops, chatID) {
 
         const mems = [op.pk1];
         joinedChats.get(chatID).peerIgnored.forEach((value, key) => {
-            if (hasOp(value, op) && !mems.includes(keyMap.get(key))) {
-                mems.push(keyMap.get(key));
+            if (value === pk1 && !mems.includes(key)) {
+                mems.push(key);
             }
         });
 
@@ -557,7 +558,7 @@ async function getIgnored(cycles, chatID) {
         resolveGetIgnored.set(chatID, [cycles, resolve]); 
 
         for (const cycle of cycles) {
-            const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+            const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, localUsername));
             if (removeSelfIndex > -1) {
                 await selectIgnored(cycle.at(removeSelfIndex));
                 continue;
