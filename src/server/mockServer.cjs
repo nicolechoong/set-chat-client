@@ -108,22 +108,7 @@ wsServer.on('connection', function(connection) {
       data = {};
     }
 
-    switch (data.type) { 
-      case "login":
-        onLogin(connection, data.name, data.pubKey);
-        break;     
-      case "offer":
-        onOffer(connection, data);
-        break;
-      case "answer":
-        onAnswer(connection, data);
-        break;
-      case "candidate":
-        onCandidate(connection, data);
-        break;
-      case "join":
-        onJoin(connection, data);
-        break;
+    switch (data.type) {
       case "getPK":
         onGetPK(connection, data);
         break;
@@ -297,6 +282,7 @@ function onRemove (connection, data) {
 // TODO: If the user doesn't exist it should send an error
 function sendTo(connection, message, pk = "") {
   // connection: RTCPeerConnection, message: JSON, pk: stringified
+  console.log(`sending ${message.type}`);
   if (connection != null) {
     connection.send(JSON.stringify(message));
     return;
