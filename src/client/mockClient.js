@@ -96,7 +96,10 @@ function sendToServer(message) {
 connection.onmessage = function (message) {
     console.log("Got message", message.data);
     var data = JSON.parse(message.data);
+    receivedSMessage(data);
+};
 
+function receivedSMessage (data) {
     if (data.chatID !== currentChatID && (data.type === "text" || data.type === "add" || data.type === "remove")
     && document.getElementById(`chatCard${data.chatID}`) !== null) {
         document.getElementById(`chatCard${data.chatID}`).className = "card card-chat notif";
@@ -105,7 +108,9 @@ connection.onmessage = function (message) {
     switch (data.type) {
         case "login":
             onLogin();
+            break;
         case "text":
+            store.get(data.chatID).history.push(data);
             updateChatWindow(data);
             break;
         case "connectedUsers":
@@ -143,7 +148,7 @@ connection.onmessage = function (message) {
         default:
             break;
     }
-};
+}
 
 function onLogin () {
     loginPopup.style.display = "none";
@@ -572,7 +577,7 @@ function updateChatWindow (data) {
 function sendToMember(data, pk) {
     // data: JSON, pk: String
     if (pk == localUsername) {
-        return receivedMessage(data);
+        return receivedSMessage(data);
     }
     console.log(`sending ${JSON.stringify(data.type)}   to ${pk}`);
     sendToServer(data);

@@ -162,12 +162,14 @@ function onSetup (n) {
           chatID: 1,
           pk1: "server",
           pk2: "overlord"
-        })]);
-        sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "enter stuff", from: "server", chatID: 100 }));
+        })
+      ]);
+      sendTo(connectedUsers.get("overlord"), addMsgID({ type: "text", message: "enter stuff", from: "server", chatID: 100 }));
+      break;
     case 1:
       chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
       addUser("tester", 1, "jimmyGourd");
-      sendChatHistory(1, [
+      sendChatHistory("tester", 1, [
         addMsgID({
           type: "add",
           username: "tester",
