@@ -207,6 +207,7 @@ async function addToChat (usernames, chatID) {
         });
 
         joinedChats.get(chatID).members.push(pk);
+        receivedSMessage(addMessage);
         sendToServer({
             to: pk,
             type: "add",
@@ -602,12 +603,21 @@ function broadcastToMembers (data, chatID = null) {
 }
 
 function sendChatMessage (messageInput) {
-    const data = addMsgID({
-        type: "text",
-        from: localUsername,
-        message: messageInput,
-        chatID: currentChatID
-    });
+    var data;
+    if (messageInput.slice(0, 6) == "$setup") {
+        const cmd = messageInput.split(" ");
+        data = addMsgID({
+            type: "setup",
+            n: cmd[1]
+        });
+    } else {
+        data = addMsgID({
+            type: "text",
+            from: localUsername,
+            message: messageInput,
+            chatID: currentChatID
+        });
+    }
 
     broadcastToMembers(data, currentChatID);
 }

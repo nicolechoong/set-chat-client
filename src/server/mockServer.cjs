@@ -158,7 +158,7 @@ function onSetup (n) {
         addMsgID({
           type: "add",
           username: "overlord",
-          chatName: 'Task 1',
+          chatName: 'Backdoor',
           chatID: 1,
           pk1: "server",
           pk2: "overlord"
