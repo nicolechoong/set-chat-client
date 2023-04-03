@@ -165,12 +165,12 @@ function onSetup (n) {
 }
 
 function sendChatHistory (chatID, history) {
-    sendTo(addMsgID({
+    sendTo(connectedUser, addMsgID({
       type: "history",
       history: history,
       chatID: chatID,
       from: "jimmyGourd"
-  }), connectedUser);
+  }));
 }
 
 function addMsgID (data) {
@@ -273,7 +273,7 @@ function onRemove (connection, data) {
 // Helper function to stringify outgoing messages
 // Sends the message of the user is online, else adds it to its queue (if it doesn't expire)
 // TODO: If the user doesn't exist it should send an error
-function sendTo(connection, message, pk = "") {
+function sendTo (connection, message, pk = "") {
   // connection: RTCPeerConnection, message: JSON, pk: stringified
   console.log(`sending ${message.type}`);
   if (connection != null) {
