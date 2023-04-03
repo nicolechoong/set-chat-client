@@ -250,6 +250,7 @@ function addUser (name, chatID, from) {
     username: name,
     from: from,
     chatID: chatID,
+    members: chats.get(chatID).members,
     chatName: chats.get(chatID).chatName,
   });
 
