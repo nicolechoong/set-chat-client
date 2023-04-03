@@ -1,4 +1,4 @@
-import nacl from 'tweetnacl-es6';
+import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
