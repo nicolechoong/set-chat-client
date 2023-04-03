@@ -150,6 +150,14 @@ function onSetup (n) {
       chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
       addUser("tester", 1, "jimmyGourd");
       sendChatHistory(1, [
+        addMsgID({
+          type: "add",
+          username: "tester",
+          chatName: 'Task 1',
+          chatID: 1,
+          pk1: "jimmyGourd",
+          pk2: "tester"
+        }),
         { type: "text", message: "helloooo", from: "jimmyGourd" }
       ]);
       break;
@@ -247,8 +255,8 @@ function addUser (name, chatID, from) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   const msg = addMsgID({
     "type": "add",
-    username: name,
-    from: from,
+    pk1: from,
+    pk2: name,
     chatID: chatID,
     members: chats.get(chatID).members,
     chatName: chats.get(chatID).chatName,
