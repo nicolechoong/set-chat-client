@@ -234,6 +234,33 @@ async function onSetup (n) {
       await new Promise(resolve => setTimeout(resolve, 3000));
       sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }]), [["jimmyGourd", "lauraCarrot"]]));
       break;
+    case "4":
+      chats.set(4, {chatName: 'Task 4', members: ['jimmyGourd', 'bobTomato', 'lauraCarrot', 'percyPea']});
+      addUser("tester", 4, "jimmyGourd");
+      sendChatHistory("tester", 4, [
+        {
+          type: "add",
+          username: "tester",
+          chatName: 'Task 4',
+          chatID: 4,
+          pk1: "jimmyGourd",
+          pk2: "tester"
+        }
+      ]);
+      await sendMessages("tester", [
+        { type: "text", message: "idk man there's too many of us here", from: "percyPea", chatID: 4 },
+        { type: "text", message: "what? just let them stay", from: "jimmyGourd", chatID: 4 },
+      ]);
+      sendTo(connectedUsers.get("tester"), removeUser("tester", 4, "percyPea", false, null));
+      break;
+    case "5":
+      await sendMessages("tester", [
+        { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 },
+        { type: "text", message: "Raid Shadow Legends: RAID: Shadow Legends™ is an immersive online experience with everything you'd expect from a brand new RPG title. It's got an amazing storyline, awesome 3D graphics, giant boss fights, PVP battles, and hundreds of never before seen champions to collect and customize. I never expected to get this level of performance out of a mobile game. Look how crazy the level of detail is on these champions! So go ahead and check out the video description to find out more about RAID: Shadow Legends™. There, you will find a link to the store page and a special code to unlock all sorts of goodies. Using the special code, you can get 50,000 Silver immediately, and a FREE Epic Level Champion as part of the new players program, courtesy of course of the RAID: Shadow Legends devs.", from: "larryCucumber", chatID: 2 },
+        { type: "text", message: "LMAOOOO", from: "bobTomato", chatID: 2 },
+        { type: "text", message: "someone kick him out", from: "bobTomato", chatID: 2 }
+      ]);
+  
   }
 }
 
@@ -305,15 +332,9 @@ function removeUser (to, chatID, from, dispute=null, peerIgnored=null) {
 }
 
 function onRemove (connection, data) {
-  const toPK = JSON.stringify(data.to);
-  // chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
-
-  // console.log(`sending remove message for chat ${data.msg.chatID} to ${allUsers.get(toPK).username}`);
-  // if (connectedUsers.get(toPK) == null) {
-  //   sendTo(null, data.msg, toPK);
-  // } else {
-  //   sendTo(connectedUsers.get(toPK).connection, data.msg);
-  // }
+  if (data.pk2 == "larryCucumber") {
+    removeUser("tester", 5, "larryCucumber", dispute=true, null);
+  }
 }
 
 // Helper function to stringify outgoing messages

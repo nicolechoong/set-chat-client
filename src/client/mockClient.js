@@ -230,26 +230,24 @@ export async function removeFromChat (username, pk, chatID) {
 }
 
 async function onRemove (messageData) {
-    const fromPK = objToArr(messageData.from);
     var chatInfo = joinedChats.get(messageData.chatID);
-    const from = await getUsername(JSON.stringify(fromPK));
     chatInfo.currentMember = false;
 
     // if the removal is disputable
     if (!messageData.dispute) { 
-        chatInfo.toDispute = { peerName: from, peerPK: fromPK };
+        chatInfo.toDispute = { peerName: messageData.pk1, peerPK: messageData.pk1 };
     }
 
-    if (chatInfo.members.includes(JSON.stringify(keyPair.publicKey))) {
-        chatInfo.members.splice(chatInfo.members.indexOf(JSON.stringify(keyPair.publicKey)), 1);
+    if (chatInfo.members.includes(localUsername)) {
+        chatInfo.members.splice(chatInfo.members.indexOf(localUsername), 1);
         updateChatWindow(messageData);
     }
-    chatInfo.exMembers.add(JSON.stringify(keyPair.publicKey));
+    chatInfo.exMembers.add(localUsername);
 
     if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
     disableChatMods(messageData.chatID);
     
-    console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
+    console.log(`you've been removed from chat ${chatInfo.chatName} by ${messageData.pk1}`);
 }
 
 async function disputeRemoval(peer, chatID) {
@@ -579,7 +577,7 @@ export async function selectIgnored(ignoredOp) {
         type: "selectedIgnore",
         op: ignoredOp
     })
-    const chatInfo = store.getItem(currentChatID);
+    const chatInfo = store.get(currentChatID);
     // unwinding chat history
     const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
 
