@@ -474,6 +474,7 @@ export function disableChatMods (chatID, conflict=false) {
         chatBar.style.display = "none";
         chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
+        conflictChatBar.style.display = conflict ? "flex" : "none";
 
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
@@ -578,26 +579,25 @@ export async function selectIgnored(ignoredOp) {
         type: "selectedIgnore",
         op: ignoredOp
     })
-    await store.getItem(currentChatID).then(async (chatInfo) => {
-        // unwinding chat history
-        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+    const chatInfo = store.getItem(currentChatID);
+    // unwinding chat history
+    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
 
-        if (ignoredOpIndex > -1) {
-            console.log(`found ignored op`);
-            chatInfo.history.splice(ignoredOpIndex);
-        }
+    if (ignoredOpIndex > -1) {
+        console.log(`found ignored op`);
+        chatInfo.history.splice(ignoredOpIndex);
+    }
 
-        refreshChatWindow(currentChatID);
+    refreshChatWindow(currentChatID);
 
-        resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
-    
-        if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
-            resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.ignored);
-            resolveGetIgnored.delete(currentChatID);
-            chatBox.className = "chat-panel col-8";
-            enableChatMods(currentChatID);
-        }
-    });
+    resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
+
+    if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
+        resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.ignored);
+        resolveGetIgnored.delete(currentChatID);
+        chatBox.className = "chat-panel col-8";
+        enableChatMods(currentChatID);
+    }
 }
 
 function updateChatInfo () {
