@@ -146,16 +146,16 @@ function onLogin (connection, data) {
   });
 
   if (data.name == "tester") {
-    onSetup(1);
+    onSetup("1");
   } else if (data.name == "overlord") {
-    onSetup(0);
+    onSetup("0");
   }
 }
 
 async function onSetup (n) {
   console.log(`received setup ${n}`);
   switch (n) {
-    case 0:
+    case "0":
       chats.set(100, {chatName: 'Backdoor', members: ['server']});
       addUser("overlord", 100, "server");
       sendChatHistory('overlord', 100, [
@@ -170,7 +170,7 @@ async function onSetup (n) {
       sendTo(connectedUsers.get("overlord"), addMsgID({ type: "text", message: "enter stuff", from: "server", chatID: 100 }));
       break;
 
-    case 1:
+    case "1":
       chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
       addUser("tester", 1, "jimmyGourd");
       sendChatHistory("tester", 1, [
@@ -184,7 +184,7 @@ async function onSetup (n) {
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 1 }));
       break;
 
-    case 2:
+    case "2":
       chats.set(2, {chatName: 'Task 2', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
       addUser("tester", 2, "jimmyGourd");
       sendChatHistory("tester", 2, [
