@@ -191,7 +191,6 @@ async function onAdd (chatID, chatName, from, members) {
 async function addToChat (usernames, chatID) {
     // members is the list of members pubkey: object
     var chatInfo = store.get(chatID);
-    var pk;
     for (const name of usernames) {
         console.log(`we are now adding ${name}`);
 
@@ -203,12 +202,28 @@ async function addToChat (usernames, chatID) {
             pk1: localUsername,
         });
 
-        joinedChats.get(chatID).members.push(pk);
+        joinedChats.get(chatID).members.push(name);
         receivedSMessage(addMessage);
         sendToServer(addMessage);
     }
 }
 
+export async function removeFromChat (username, pk, chatID) {
+    // username : string, public key : string, chatID : string
+    const removeMessage = addMsgID({
+        type: "remove",
+        pk1: localUsername,
+        pk2: username,
+        chatID: chatID,
+        dispute: false
+    });
+
+    if (joinedChats.get(chatID).members.includes(username)) {
+        joinedChats.get(chatID).members.splice(joinedChats.get(chatID).indexOf(nausernameme), 1);
+    }
+    receivedSMessage(removeMessage);
+    sendToServer(removeMessage);
+}
 
 async function onRemove (messageData) {
     const fromPK = objToArr(messageData.from);
@@ -231,22 +246,6 @@ async function onRemove (messageData) {
     disableChatMods(messageData.chatID);
     
     console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
-}
-
-export async function removeFromChat (username, pk, chatID) {
-    // username : string, public key : string, chatID : string
-    const removeMessage = addMsgID({
-        type: "remove",
-        username: username,
-        chatID: chatID,
-        dispute: false
-    });
-
-    sendToServer({
-        to: strToArr(pk),
-        type: "remove",
-        msg: removeMessage
-    });
 }
 
 async function disputeRemoval(peer, chatID) {
@@ -392,6 +391,9 @@ function updateChatWindow (data) {
                 break;
             case "remove":
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${data.pk1} removed ${data.pk2}`;
+                break;
+            case "setup":
+                message.innerHTML = `[${formatDate(data.sentTime)}] $setup ${data.n}`;
                 break;
             default:
                 break;

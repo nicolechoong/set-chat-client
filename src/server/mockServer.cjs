@@ -89,6 +89,7 @@ wsServer.on('connection', function(connection) {
       data = {};
     }
 
+    console.log(`received ${data.type}`);
     switch (data.type) {
       case "login":
         onLogin(connection, data);
@@ -152,15 +153,16 @@ function onLogin (connection, data) {
 }
 
 function onSetup (n) {
+  console.log(`received setup ${n}`);
   switch (n) {
     case 0:
       chats.set(100, {chatName: 'Backdoor', members: ['server', 'overlord']});
       addUser("overlord", 100, "server");
-      sendChatHistory('overlord', 1, [
+      sendChatHistory('overlord', 100, [
         addMsgID({
           type: "add",
           chatName: 'Backdoor',
-          chatID: 1,
+          chatID: 100,
           pk1: "server",
           pk2: "overlord"
         })
