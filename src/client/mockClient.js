@@ -158,7 +158,7 @@ function onLogin () {
 
 
 // When being added to a new chat
-async function onAdd (chatID, chatName, from, members, msgID) {
+async function onAdd (chatID, chatName, from, members) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
@@ -166,7 +166,7 @@ async function onAdd (chatID, chatName, from, members, msgID) {
 
     joinedChats.set(chatID, {
         chatName: chatName,
-        members: members,
+        members: [...members],
         exMembers: new Set(),
         peerIgnored: new Map(),
         currentMember: true,
@@ -181,10 +181,7 @@ async function onAdd (chatID, chatName, from, members, msgID) {
             ignored: []
         },
         history: [],
-        historyTable: new Map(),
     });
-
-    initChatHistoryTable(chatID, msgID);
 
     updateChatOptions("remove", chatID);
     updateChatOptions("add", chatID);
@@ -208,11 +205,7 @@ async function addToChat (usernames, chatID) {
 
         joinedChats.get(chatID).members.push(pk);
         receivedSMessage(addMessage);
-        sendToServer({
-            to: pk,
-            type: "add",
-            msg: addMessage
-        });
+        sendToServer(addMessage);
     }
 }
 
@@ -287,78 +280,6 @@ async function disputeRemoval(peer, chatID) {
         to: peer.peerPK,
         type: "remove",
         msg: removeMessage
-    });
-}
-
-var resolveGetUsername = new Map();
-var rejectGetUsername = new Map();
-
-function onGetUsername(name, success, pk) {
-    // name: String, success: boolean, pk: string
-    if (success) {
-        keyMap.set(pk, name);
-        store.set("keyMap", keyMap);
-        resolveGetUsername.get(pk)(name);
-    } else {
-        rejectGetUsername.get(pk)(new Error("User does not exist"));
-        console.error(`User ${name} does not exist`);
-    }
-    resolveGetUsername.delete(pk);
-    rejectGetUsername.delete(pk);
-}
-
-function getUsername(pk) {
-    // pk: stringified(pk)
-    return new Promise((resolve, reject) => {
-        if (keyMap.has(pk)) {
-            resolve(keyMap.get(pk));
-            return;
-        }
-        resolveGetUsername.set(pk, resolve);
-        rejectGetUsername.set(pk, reject);
-        sendToServer({
-            type: "getUsername",
-            pk: pk
-        });
-    });
-}
-
-function onGetPK(name, success, pk) {
-    // name: String, success: boolean, pk: Uint8Array
-    if (success) {
-        keyMap.set(JSON.stringify(pk), name);
-        store.set("keyMap", keyMap);
-        resolveGetPK.get(name)(pk);
-    } else {
-        rejectGetPK.get(name)(new Error("User does not exist"));
-        console.error(`User ${name} does not exist`);
-    }
-    resolveGetPK.delete(name);
-    rejectGetPK.delete(name);
-}
-
-
-//////////////////////////////
-// Access Control Functions //
-//////////////////////////////
-
-var resolveGetPK = new Map();
-var rejectGetPK = new Map();
-
-function getPK(username) {
-    return new Promise((resolve, reject) => {
-        for (const pk of keyMap) {
-            if (username == keyMap.get(pk)) {
-                resolve(objToArr(pk));
-                return;
-            }
-        }
-        resolveGetPK.set(username, resolve);
-        rejectGetPK.set(username, reject);
-        sendToServer({
-            type: "getPK",
-            username: username
-        });
     });
 }
 
@@ -481,19 +402,6 @@ async function receivedMessage(messageData) {
     }
 }
 
-
-function initChatHistoryTable (chatID, msgID) {
-    console.log(`initialised chat history`);
-    const chatInfo = store.get(chatID);
-    for (const pk of joinedChats.get(chatID).members) {
-        if (!chatInfo.historyTable.has(pk)) {
-            chatInfo.historyTable.set(pk, []);
-        }
-        chatInfo.historyTable.get(pk).push([msgID, 0]);
-    }
-    store.set(chatID, chatInfo);
-} 
-
 async function addPeer(messageData) {
     const pk = JSON.stringify(messageData.pk2);
 
@@ -505,12 +413,7 @@ async function addPeer(messageData) {
     updateChatInfo();
     updateChatWindow(messageData);
     const chatInfo = store.get(messageData.chatID);
-    if (!chatInfo.historyTable.has(pk)) {
-        chatInfo.historyTable.set(pk, []);
-    }
-    chatInfo.historyTable.get(pk).push([messageData.id, 0]);
     chatInfo.history.push(messageData);
-    console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
     console.log(`added message data to chat history`);
 }
 
@@ -518,13 +421,7 @@ async function removePeer (messageData) {
     const pk = JSON.stringify(messageData.op.pk2);
 
     await store.getItem(messageData.chatID).then(async (chatInfo) => {
-        if (chatInfo.historyTable.has(pk)) {
-            const interval = chatInfo.historyTable.get(pk).pop();
-            interval[1] = messageData.id;
-            chatInfo.historyTable.get(pk).push(interval);
-        }
         chatInfo.history.push(messageData);
-        console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
         await store.setItem(messageData.chatID, chatInfo);
     }).then(() => console.log(`added removal message data to chat history`));
 
@@ -755,14 +652,6 @@ export async function selectIgnored(ignoredOp) {
         if (ignoredOpIndex > -1) {
             console.log(`found ignored op`);
             chatInfo.history.splice(ignoredOpIndex);
-
-            if (chatInfo.historyTable.has(JSON.stringify(ignoredOp.pk2))) {
-                const interval = chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).pop();
-                if (ignoredOp.action == "remove") {
-                    interval[1] = 0;
-                    chatInfo.historyTable.get(JSON.stringify(ignoredOp.pk2)).push(interval);
-                }
-            }
         }
 
         // writing to storage

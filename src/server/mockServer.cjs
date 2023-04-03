@@ -153,11 +153,10 @@ function onSetup (n) {
   switch (n) {
     case 0:
       chats.set(100, {chatName: 'Backdoor', members: ['server']});
-      addUser("overlord", 1, "server");
+      addUser("overlord", 100, "server");
       sendChatHistory('overlord', 1, [
         addMsgID({
           type: "add",
-          username: "overlord",
           chatName: 'Backdoor',
           chatID: 1,
           pk1: "server",
@@ -172,7 +171,6 @@ function onSetup (n) {
       sendChatHistory("tester", 1, [
         addMsgID({
           type: "add",
-          username: "tester",
           chatName: 'Task 1',
           chatID: 1,
           pk1: "jimmyGourd",
