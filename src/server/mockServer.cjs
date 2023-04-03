@@ -105,6 +105,8 @@ wsServer.on('connection', function(connection) {
       case "getUsername":
         onGetUsername(connection, data);
         break;
+      case "text":
+        break;
       case "add":
         onAdd(connection, data);
         break;
@@ -152,7 +154,7 @@ function onLogin (connection, data) {
 function onSetup (n) {
   switch (n) {
     case 0:
-      chats.set(100, {chatName: 'Backdoor', members: ['server']});
+      chats.set(100, {chatName: 'Backdoor', members: ['server', 'overlord']});
       addUser("overlord", 100, "server");
       sendChatHistory('overlord', 1, [
         addMsgID({
@@ -166,7 +168,7 @@ function onSetup (n) {
       sendTo(connectedUsers.get("overlord"), addMsgID({ type: "text", message: "enter stuff", from: "server", chatID: 100 }));
       break;
     case 1:
-      chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd']});
+      chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd', 'tester']});
       addUser("tester", 1, "jimmyGourd");
       sendChatHistory("tester", 1, [
         addMsgID({
@@ -179,7 +181,7 @@ function onSetup (n) {
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "helloooo", from: "jimmyGourd", chatID: 1 }));
       break;
     case 2:
-      chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
+      chats.set(1, {chatName: 'Task 1', members: ['jimmyGourd', 'tester', 'lauraCarrot', 'percyPea']});
       addUser("tester", 1, "jimmyGourd");
       sendChatHistory(2, [
         addMsgID({

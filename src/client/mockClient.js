@@ -288,77 +288,6 @@ async function disputeRemoval(peer, chatID) {
 // Peer to Peer Functions //
 ////////////////////////////
 
-function initPeerConnection() {
-    try {
-        const connection = new RTCPeerConnection(configuration);
-        connection.ondatachannel = receiveChannelCallback;
-        connection.onclose = function (event) {
-            console.log(`received onclose`);
-            closeConnections(connectionNames.get(connection), 0);
-        };
-        connection.onicecandidate = function (event) {
-            console.log("New candidate");
-            if (event.candidate) {
-                sendToServer({
-                    type: "candidate",
-                    candidate: event.candidate,
-                    name: localUsername,
-                    chatroomID: currentChatID
-                });
-            }
-        };
-        connection.oniceconnectionstatechange = function (event) {
-            if (connection.iceConnectionState === "failed") {
-                connections.delete(JSON.stringify(connectionNames.get(connection)));
-                console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
-                connection.restartIce();
-            }
-        }
-        connection.onconnectionstatechange = function (event) {
-            console.log(event);
-            if (connection.connectionState === "failed") {
-                connections.delete(JSON.stringify(connectionNames.get(connection)));
-                console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
-                connection.restartIce();
-            }
-        }
-        // connection.onnegotiationneeded = function (event) {
-        //     console.log("On negotiation needed")
-        //     if (connection.connectionState === "failed") {
-        //         console.log(JSON.stringify(event));
-        //         console.log(`connection name ${connectionNames.get(connection)}`);
-        //         connection.createOffer(function (offer) { 
-        //             sendToServer({
-        //                 to: connectionNames.get(connection),
-        //                 type: "offer",
-        //                 offer: offer ,
-        //                 fromPK: keyPair.publicKey,
-        //                 from: localUsername,
-        //             });
-        //             connection.setLocalDescription(offer);
-        //         }, function (error) { 
-        //             alert("An error has occurred."); 
-        //         }, function () {
-        //             console.log("Create Offer failed");
-        //         }, {
-        //             iceRestart: true
-        //         });
-        //     }
-        // }
-        console.log("Local RTCPeerConnection object was created");
-        return connection;
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
-}
-
-function initChannel(channel) {
-    channel.onopen = (event) => { onChannelOpen(event); }
-    channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
-    channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data)) }
-}
-
 async function receivedMessage(messageData) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
     if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")
@@ -403,7 +332,7 @@ async function receivedMessage(messageData) {
 }
 
 async function addPeer(messageData) {
-    const pk = JSON.stringify(messageData.pk2);
+    const pk = messageData.pk2;
 
     if (!joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.push(pk);
