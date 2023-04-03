@@ -251,7 +251,7 @@ async function onRemove (messageData) {
 }
 
 async function disputeRemoval(peer, chatID) {
-
+    const chatInfo = store.get(chatID);
     console.log(`${chatInfo.history.map(msg => msg.type)}`);
     const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == "remove" && msg.pk2 == localUsername);
     if (ignoredOpIndex > -1) {
@@ -565,7 +565,7 @@ async function getIgnored(cycles, chatID) {
 
 export async function selectIgnored(ignoredOp) {
     sendToServer({
-        type: "selectedIgnore",
+        type: "selectedIgnored",
         op: ignoredOp
     })
     const chatInfo = store.get(currentChatID);
@@ -577,9 +577,19 @@ export async function selectIgnored(ignoredOp) {
         chatInfo.history.splice(ignoredOpIndex);
     }
 
+    const p = document.getElementById(`p${msg.pk1}`);
+    const toRemove = p.innerHTML.slice(11).split(", ");
+    toRemove.forEach(mem => {
+        if (joinedChats.get(messageData.chatID).members.includes(mem)) {
+            joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(mem), 1);
+        }
+        joinedChats.get(messageData.chatID).exMembers.add(pk);
+    });
+
+    updateChatInfo();
     refreshChatWindow(currentChatID);
 
-    resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
+    resolveGetIgnored.get(currentChatID)[0].splice(0, 1);
 
     if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
         resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.ignored);
@@ -682,47 +692,6 @@ loginBtn.addEventListener("click", async function (event) {
 // UTILS //
 ///////////
 
-function unpackOp(op) {
-    op.sig = objToArr(op.sig);
-    if (op.action === "create") {
-        op.pk = objToArr(op.pk);
-        op.nonce = objToArr(op.nonce);
-    } else {
-        op.pk1 = objToArr(op.pk1);
-        op.pk2 = objToArr(op.pk2);
-        op.deps = op.deps.map(dep => objToArr(dep));
-    }
-}
-
-function unionOps(ops1, ops2) {
-    const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
-    const ops = [...ops1];
-    for (const op of ops2) {
-        if (!sigSet.has(JSON.stringify(op.sig))) { ops.push(op); }
-    }
-    return ops;
-}
-
-function opsArrEqual (ops1, ops2) {
-    if (ops1.length !== ops2.length) { return false; }
-
-    const sigSet = new Set(ops1.map(op => JSON.stringify(op.sig)));
-    for (const op of ops2) {
-        if (!sigSet.has(JSON.stringify(op.sig))) {
-            return false;
-        }
-    }
-    return true;
-}
-
-function removeOp(ops, op) {
-    for (let i = 0; i < ops.length; i++) {
-        if (arrEqual(ops[i].sig, op.sig)) {
-            ops.splice(i, 1);
-        }
-    }
-}
-
 function mergeJoinedChats(localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);
     if (receivedChats.size === 0) { return mergedChats; }
@@ -773,27 +742,4 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             }
         }
     });
-}
-
-function closeConnections (pk, chatID) {
-    // pk : string, chatID : string
-    console.log(`connection with ${keyMap.get(pk)} closed`);
-    for (const id of joinedChats.keys()) {
-        if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
-            return;
-        }
-    }
-    if (connections.has(pk) && !offerSent.has(pk)) {
-        connectionNames.delete(connections.get(pk).connection);
-        if (connections.get(pk).sendChannel) {
-            connections.get(pk).sendChannel.close();
-            connections.get(pk).sendChannel = null;
-        }
-        if (connections.get(pk).connection) {
-            connections.get(pk).connection.close();
-            connections.get(pk).connection = null;
-        }
-        connections.delete(pk);
-    }
-    console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
 }
