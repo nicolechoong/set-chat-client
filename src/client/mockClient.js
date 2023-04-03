@@ -126,7 +126,7 @@ function receivedSMessage (data) {
             onCreateChat(data.chatID, data.chatName);
             break;
         case "add":
-            if (arrEqual(data.pk2, localUsername)) {
+            if (data.pk2 === localUsername) {
                 onAdd(data.chatID, data.chatName, data.pk1, JSON.parse(data.members), data.id);
             } else {
                 addPeer(data);
@@ -136,7 +136,11 @@ function receivedSMessage (data) {
             mergeChatHistory(data.chatID, data.history);
             break;
         case "remove":
-            onRemove(data);
+            if (data.pk2 === localUsername) {
+                removePeer(data);
+            } else {
+                addPeer(data);
+            }
             break;
         case "getUsername":
             onGetUsername(data.username, data.success, data.pk);

@@ -224,10 +224,13 @@ async function onSetup (n) {
 }
 
 function sendChatHistory (to, chatID, history) {
-  history = history.map(msg => addMsgID(msg));
+  histIDs = []
+  for (const msg of history) {
+    histIDs.push(addMsgID(msg));
+  }
     sendTo(connectedUsers.get(to), addMsgID({
       type: "history",
-      history: history,
+      history: histIDs,
       chatID: chatID,
       from: "jimmyGourd"
   }));
