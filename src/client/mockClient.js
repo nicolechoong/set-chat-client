@@ -131,7 +131,6 @@ function receivedSMessage (data) {
             } else {
                 addPeer(data);
             }
-            onAdd(data.chatID, data.chatName, data.from, data.members, data.id);
             break;
         case "history":
             mergeChatHistory(data.chatID, data.history);
