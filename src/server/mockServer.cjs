@@ -138,10 +138,10 @@ function onLogin (connection, data) {
   // data: type, name
   connectedUsers.set(data.name, connection);
   connections.push(connection);
-  sendTo({
+  sendTo(connection, {
     type: "login",
     success: true,
-  })
+  });
 }
 
 function onSetup (n) {
