@@ -293,7 +293,7 @@ function addUser (to, chatID, from) {
     pk1: from,
     pk2: to,
     chatID: chatID,
-    members: chats.get(chatID).members,
+    members: JSON.stringify(chats.get(chatID).members),
     chatName: chats.get(chatID).chatName,
   });
 

@@ -127,7 +127,7 @@ function receivedSMessage (data) {
             break;
         case "add":
             if (arrEqual(data.pk2, localUsername)) {
-                onAdd(data.chatID, data.chatName, data.pk1, data.members, data.id);
+                onAdd(data.chatID, data.chatName, data.pk1, JSON.parse(data.members), data.id);
             } else {
                 addPeer(data);
             }
@@ -163,10 +163,11 @@ async function onAdd (chatID, chatName, from, members) {
 
     // we want to move this actual joining to after syncing with someone from the chat
     console.log(`you've been added to chat ${chatName} by ${from}`);
+    console.log(members);
 
     joinedChats.set(chatID, {
         chatName: chatName,
-        members: [...members],
+        members: members,
         exMembers: new Set(),
         peerIgnored: new Map(),
         currentMember: true,
