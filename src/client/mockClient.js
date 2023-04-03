@@ -312,6 +312,8 @@ async function removePeer (messageData) {
         console.log(`dispute detected`);
         disableChatMods(messageData.chatID, true);
         joinedChats.get(messageData.chatID).peerIgnored = new Map(JSON.parse(messageData.peerIgnored));
+        console.log([...JSON.parse(messageData.peerIgnored)]);
+        console.log(new Map(JSON.parse(messageData.peerIgnored)));
         getIgnored([JSON.parse(messageData.dispute)], messageData.chatID);
 
     } else {
