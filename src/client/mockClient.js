@@ -232,14 +232,12 @@ export async function removeFromChat (username, pk, chatID) {
 async function onRemove (messageData) {
     var chatInfo = store.get(messageData.chatID);
     chatInfo.history.push(messageData);
-    joinedChats.get(messageData.chatID).currentMember = false;
-    
 
     // if the removal is disputable
     if (!messageData.dispute) { 
         joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
     } else if (messageData.pk1 == "larryCucumber") {
-        const toRemove = ['bobTomato', 'percyPea'];
+        const toRemove = ['bobTomato', 'percyPea', 'jimmyGourd'];
         toRemove.forEach(mem => {
             if (joinedChats.get(currentChatID).members.includes(mem)) {
                 joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(mem), 1);
@@ -252,9 +250,17 @@ async function onRemove (messageData) {
             joinedChats.get(currentChatID).members.push('bobTomato');
         }
         joinedChats.get(currentChatID).exMembers.delete('bobTomato');
+        updateChatInfo();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (!joinedChats.get(currentChatID).members.includes('jimmyGourd')) {
+            joinedChats.get(currentChatID).members.push('jimmyGourd');
+        }
+        joinedChats.get(currentChatID).exMembers.delete('jimmyGourd');
+        updateChatInfo();
+        return;
     }
 
-    
+    joinedChats.get(messageData.chatID).currentMember = false;
     if (joinedChats.get(messageData.chatID).members.includes(localUsername)) {
         joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(localUsername), 1);
         updateChatWindow(messageData);
@@ -315,8 +321,7 @@ async function addPeer(messageData) {
 
 async function removePeer (messageData) {
     const pk = messageData.pk2;
-    const chatInfo = store.get(messageData.chatID);
-    chatInfo.history.push(messageData);
+
     if (messageData.dispute) {
         console.log(`dispute detected`);
         joinedChats.get(messageData.chatID).peerIgnored = new Map(JSON.parse(messageData.peerIgnored));
@@ -325,6 +330,9 @@ async function removePeer (messageData) {
         getIgnored([JSON.parse(messageData.dispute)], messageData.chatID);
 
     } else {
+        const chatInfo = store.get(messageData.chatID);
+        chatInfo.history.push(messageData);
+        updateChatWindow(messageData);
 
         if (joinedChats.get(messageData.chatID).members.includes(pk)) {
             joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
@@ -334,7 +342,6 @@ async function removePeer (messageData) {
     }
 
     updateChatInfo();
-    updateChatWindow(messageData);
 }
 
 async function refreshChatWindow (chatID) {

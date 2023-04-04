@@ -370,16 +370,16 @@ function onSelectedIgnored (op) {
   console.log(op);
   if (op.pk1 == "percyPea") {
     sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "wow, that was dumb", chatID: 3, from: "percyPea"}));
+  } else if (op.pk1 == "lauraCarrot") {
     sendChatHistory("tester", 3, [
-      {
+      addMsgID({
         type: "remove",
         pk1: "percyPea",
         pk2: "lauraCarrot",
         chatID: 3,
         dispute: false,
-      }
+      })
     ]);
-  } else if (op.pk1 == "lauraCarrot") {
     sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good that he's gone", chatID: 3, from: "jimmyGourd"}));
   }
 }
