@@ -230,9 +230,6 @@ export async function removeFromChat (username, pk, chatID) {
 }
 
 async function onRemove (messageData) {
-    var chatInfo = store.get(messageData.chatID);
-    chatInfo.history.push(messageData);
-
     // if the removal is disputable
     if (!messageData.dispute) { 
         joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
@@ -251,7 +248,7 @@ async function onRemove (messageData) {
         }
         joinedChats.get(currentChatID).exMembers.delete('bobTomato');
         updateChatInfo();
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         if (!joinedChats.get(currentChatID).members.includes('jimmyGourd')) {
             joinedChats.get(currentChatID).members.push('jimmyGourd');
         }
@@ -259,6 +256,9 @@ async function onRemove (messageData) {
         updateChatInfo();
         return;
     }
+
+    var chatInfo = store.get(messageData.chatID);
+    chatInfo.history.push(messageData);
 
     joinedChats.get(messageData.chatID).currentMember = false;
     if (joinedChats.get(messageData.chatID).members.includes(localUsername)) {

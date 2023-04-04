@@ -150,11 +150,6 @@ function onLogin (connection, data) {
 
   if (data.name == "tester") {
     onSetup("1");
-    onSetup("2");
-    onSetup("3");
-    onSetup("4");
-    onSetup("5");
-    onSetup("6");
   } else if (data.name == "overlord") {
     onSetup("0");
   }
@@ -205,6 +200,7 @@ async function onSetup (n) {
           pk2: "tester"
         }
       ]);
+      await new Promise(resolve => setTimeout(resolve, 200));
       await sendMessages("tester", [
         { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 },
         { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 2 },
@@ -369,18 +365,18 @@ function sendTo (connection, message) {
 function onSelectedIgnored (op) {
   console.log(op);
   if (op.pk1 == "percyPea") {
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "wow, that was dumb", chatID: 3, from: "percyPea"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good that he's gone", chatID: 3, from: "jimmyGourd"}));
   } else if (op.pk1 == "lauraCarrot") {
     sendChatHistory("tester", 3, [
-      addMsgID({
+      {
         type: "remove",
         pk1: "percyPea",
         pk2: "lauraCarrot",
         chatID: 3,
         dispute: false,
-      })
+      }
     ]);
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good that he's gone", chatID: 3, from: "jimmyGourd"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "wow, that was dumb", chatID: 3, from: "percyPea"}));
   }
 }
 
