@@ -115,7 +115,7 @@ wsServer.on('connection', function(connection) {
         onRemove(connection, data);
         break;
       case "selectedIgnored":
-        onSelectedIgnored(data);
+        onSelectedIgnored(data.op);
         break;
       case "leave":
         onLeave(data);
@@ -235,7 +235,7 @@ async function onSetup (n) {
       sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot"));
       await new Promise(resolve => setTimeout(resolve, 1000));
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "he's so annoying", from: 'lauraCarrot', chatID: 3 }));
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }]), [["jimmyGourd", "lauraCarrot"]]));
       break;
     case "4":
@@ -272,7 +272,7 @@ async function onSetup (n) {
         }
       ]);
       await sendMessages("tester", [
-        { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 5 },
+        { type: "text", message: "welcome!", from: "jimmyGourd", chatID: 5 },
         { type: "text", message: "Raid Shadow Legends: RAID: Shadow Legends™ is an immersive online experience with everything you'd expect from a brand new RPG title. It's got an amazing storyline, awesome 3D graphics, giant boss fights, PVP battles, and hundreds of never before seen champions to collect and customize. I never expected to get this level of performance out of a mobile game. Look how crazy the level of detail is on these champions! So go ahead and check out the video description to find out more about RAID: Shadow Legends™. There, you will find a link to the store page and a special code to unlock all sorts of goodies. Using the special code, you can get 50,000 Silver immediately, and a FREE Epic Level Champion as part of the new players program, courtesy of course of the RAID: Shadow Legends devs.", from: "larryCucumber", chatID: 5 },
         { type: "text", message: "LMAOOOO", from: "bobTomato", chatID: 5 },
         { type: "text", message: "someone kick larry out", from: "bobTomato", chatID: 5 }
@@ -347,8 +347,9 @@ function removeUser (to, chatID, from, dispute=null, peerIgnored=[]) {
   return msg;
 }
 
-function onRemove (connection, data) {
+async function onRemove (connection, data) {
   if (data.pk2 == "larryCucumber") {
+    await new Promise(resolve => setTimeout(resolve, 3000));
     removeUser("tester", 5, "larryCucumber", dispute=true, null);
   }
 }
@@ -366,15 +367,15 @@ function sendTo (connection, message) {
 }
 
 function onSelectedIgnored (op) {
-  console.log(op.pk1);
+  console.log(op);
   if (op.pk1 == "percyPea") {
     sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "wow, that was dumb", chatID: 3, from: "percyPea"}));
-    sendChatHistory("tester", 4, [
+    sendChatHistory("tester", 3, [
       {
         type: "remove",
         pk1: "percyPea",
         pk2: "lauraCarrot",
-        chatID: 4,
+        chatID: 3,
         dispute: false,
       }
     ]);

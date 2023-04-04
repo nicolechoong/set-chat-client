@@ -238,8 +238,23 @@ async function onRemove (messageData) {
     // if the removal is disputable
     if (!messageData.dispute) { 
         joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
+    } else if (messageData.pk1 == "larryCucumber") {
+        const toRemove = ['bobTomato', 'percyPea'];
+        toRemove.forEach(mem => {
+            if (joinedChats.get(currentChatID).members.includes(mem)) {
+                joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(mem), 1);
+            }
+            joinedChats.get(currentChatID).exMembers.add(mem);
+        });
+        updateChatInfo();
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        if (!joinedChats.get(currentChatID).members.includes('bobTomato')) {
+            joinedChats.get(currentChatID).members.push('bobTomato');
+        }
+        joinedChats.get(currentChatID).exMembers.delete('bobTomato');
     }
 
+    
     if (joinedChats.get(messageData.chatID).members.includes(localUsername)) {
         joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(localUsername), 1);
         updateChatWindow(messageData);
