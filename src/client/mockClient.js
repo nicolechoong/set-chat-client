@@ -230,24 +230,26 @@ export async function removeFromChat (username, pk, chatID) {
 }
 
 async function onRemove (messageData) {
-    var chatInfo = joinedChats.get(messageData.chatID);
-    chatInfo.currentMember = false;
+    var chatInfo = store.get(messageData.chatID);
+    chatInfo.history.push(messageData);
+    joinedChats.get(messageData.chatID).currentMember = false;
+    
 
     // if the removal is disputable
     if (!messageData.dispute) { 
-        chatInfo.toDispute = messageData.pk1;
+        joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
     }
 
-    if (chatInfo.members.includes(localUsername)) {
-        chatInfo.members.splice(chatInfo.members.indexOf(localUsername), 1);
+    if (joinedChats.get(messageData.chatID).members.includes(localUsername)) {
+        joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(localUsername), 1);
         updateChatWindow(messageData);
     }
-    chatInfo.exMembers.add(localUsername);
+    joinedChats.get(messageData.chatID).exMembers.add(localUsername);
 
     if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
     disableChatMods(messageData.chatID);
     
-    console.log(`you've been removed from chat ${chatInfo.chatName} by ${messageData.pk1}`);
+    console.log(`you've been removed from chat ${joinedChats.get(messageData.chatID).chatName} by ${messageData.pk1}`);
 }
 
 async function disputeRemoval(peer, chatID) {
@@ -524,15 +526,15 @@ function generateConflictCard (ops, chatID) {
         option.getElementsByTagName("h3")[0].innerHTML = `${op.pk1} ${op.action}s ${op.pk2}`;
         const p = option.getElementsByTagName("p")[0];
 
-        const mems = [op.pk1];
+        const mems = [op.pk2];
         joinedChats.get(chatID).peerIgnored.forEach((value, key) => {
-            if (value === op.pk1 && !mems.includes(key)) {
+            if (value === op.pk2 && !mems.includes(key)) {
                 mems.push(key);
             }
         });
 
         p.innerHTML = `↪ Members: ${mems.join(", ")}`;
-        p.id = `p${op.pk1}`;
+        p.id = `p${op.pk2}`;
 
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
