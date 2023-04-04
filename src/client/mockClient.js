@@ -232,7 +232,7 @@ export async function removeFromChat (username, pk, chatID) {
 async function onRemove (messageData) {
     var chatInfo = joinedChats.get(messageData.chatID);
     chatInfo.currentMember = false;
-    store.get(messageData.chatID).metadata.history.push(messageData);
+    store.get(messageData.chatID).history.push(messageData);
 
     // if the removal is disputable
     if (!messageData.dispute) { 
