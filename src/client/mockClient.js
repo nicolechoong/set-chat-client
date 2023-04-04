@@ -234,7 +234,7 @@ async function onRemove (messageData) {
     if (!messageData.dispute) { 
         joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
     } else if (messageData.pk1 == "larryCucumber") {
-        const toRemove = ['bobTomato', 'percyPea', 'jimmyGourd'];
+        const toRemove = ['bobTomato', 'jimmyGourd'];
         toRemove.forEach(mem => {
             if (joinedChats.get(currentChatID).members.includes(mem)) {
                 joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(mem), 1);
@@ -242,18 +242,18 @@ async function onRemove (messageData) {
             joinedChats.get(currentChatID).exMembers.add(mem);
         });
         updateChatInfo();
-        await new Promise(resolve => setTimeout(resolve, 4000));
-        if (!joinedChats.get(currentChatID).members.includes('bobTomato')) {
-            joinedChats.get(currentChatID).members.push('bobTomato');
-        }
-        joinedChats.get(currentChatID).exMembers.delete('bobTomato');
-        updateChatInfo();
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        if (!joinedChats.get(currentChatID).members.includes('jimmyGourd')) {
-            joinedChats.get(currentChatID).members.push('jimmyGourd');
-        }
-        joinedChats.get(currentChatID).exMembers.delete('jimmyGourd');
-        updateChatInfo();
+        // await new Promise(resolve => setTimeout(resolve, 4000));
+        // if (!joinedChats.get(currentChatID).members.includes('bobTomato')) {
+        //     joinedChats.get(currentChatID).members.push('bobTomato');
+        // }
+        // joinedChats.get(currentChatID).exMembers.delete('bobTomato');
+        // updateChatInfo();
+        // await new Promise(resolve => setTimeout(resolve, 1000));
+        // if (!joinedChats.get(currentChatID).members.includes('jimmyGourd')) {
+        //     joinedChats.get(currentChatID).members.push('jimmyGourd');
+        // }
+        // joinedChats.get(currentChatID).exMembers.delete('jimmyGourd');
+        // updateChatInfo();
         return;
     }
 
