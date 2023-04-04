@@ -259,6 +259,16 @@ async function onSetup (n) {
       break;
     case "5":
       chats.set(5, {chatName: 'Task 5', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
+      sendChatHistory("tester", 5, [
+        {
+          type: "add",
+          username: "tester",
+          chatName: 'Task 5',
+          chatID: 5,
+          pk1: "jimmyGourd",
+          pk2: "tester"
+        }
+      ]);
       await sendMessages("tester", [
         { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 5 },
         { type: "text", message: "Raid Shadow Legends: RAID: Shadow Legends™ is an immersive online experience with everything you'd expect from a brand new RPG title. It's got an amazing storyline, awesome 3D graphics, giant boss fights, PVP battles, and hundreds of never before seen champions to collect and customize. I never expected to get this level of performance out of a mobile game. Look how crazy the level of detail is on these champions! So go ahead and check out the video description to find out more about RAID: Shadow Legends™. There, you will find a link to the store page and a special code to unlock all sorts of goodies. Using the special code, you can get 50,000 Silver immediately, and a FREE Epic Level Champion as part of the new players program, courtesy of course of the RAID: Shadow Legends devs.", from: "larryCucumber", chatID: 2 },
