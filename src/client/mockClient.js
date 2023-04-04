@@ -233,14 +233,12 @@ async function onRemove (messageData) {
     // if the removal is disputable
     if (!messageData.dispute) { 
         joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
-    } else if (messageData.pk1 == "larryCucumber") {
-        const toRemove = ['bobTomato', 'jimmyGourd'];
-        toRemove.forEach(mem => {
-            if (joinedChats.get(currentChatID).members.includes(mem)) {
-                joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(mem), 1);
-            }
-            joinedChats.get(currentChatID).exMembers.add(mem);
-        });
+    } else if (messageData.pk1 == "larryCucumber" && messageData.dispute) {
+        joinedChats.currentMember = true;
+        if (joinedChats.get(currentChatID).members.includes('jimmyGourd')) {
+            joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf('jimmyGourd'), 1);
+        }
+        joinedChats.get(currentChatID).exMembers.add('jimmyGourd');
         updateChatInfo();
         // await new Promise(resolve => setTimeout(resolve, 4000));
         // if (!joinedChats.get(currentChatID).members.includes('bobTomato')) {
@@ -678,6 +676,7 @@ function updateChatInfo () {
 
 export async function selectChat(chatID) {
     currentChatID = chatID;
+    chatInfo.style.display = "none";
     updateChatInfo();
 
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
