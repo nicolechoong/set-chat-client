@@ -232,6 +232,7 @@ export async function removeFromChat (username, pk, chatID) {
 async function onRemove (messageData) {
     var chatInfo = joinedChats.get(messageData.chatID);
     chatInfo.currentMember = false;
+    chatInfo.history.push(messageData);
 
     // if the removal is disputable
     if (!messageData.dispute) { 
@@ -252,7 +253,7 @@ async function onRemove (messageData) {
 
 async function disputeRemoval(peer, chatID) {
     const chatInfo = store.get(chatID);
-    console.log(`${chatInfo.history.map(msg => msg.type)}`);
+
     const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == "remove" && msg.pk2 == localUsername);
     if (ignoredOpIndex > -1) {
         chatInfo.history.splice(ignoredOpIndex);
@@ -496,7 +497,7 @@ export function enableChatMods (chatID) {
 }
 
 disputeBtn.addEventListener("click", async () => {
-    disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
+    disputeRemoval(joinedChats.get(currentChatID).toDispute.peer, currentChatID);
     joinedChats.get(currentChatID).currentMember = true;
     joinedChats.get(currentChatID).toDispute = null;
     updateChatInfo();

@@ -211,6 +211,7 @@ async function onSetup (n) {
         { type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 2 }
       ]);
       break;
+
     case "3":
       chats.set(3, {chatName: 'Task 3', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
       addUser("tester", 3, "jimmyGourd");
@@ -318,7 +319,7 @@ function addUser (to, chatID, from) {
   sendTo(connectedUsers.get(to), msg);
 }
 
-function removeUser (to, chatID, from, dispute=null, peerIgnored=null) {
+function removeUser (to, chatID, from, dispute=null, peerIgnored=[]) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   const msg = addMsgID({
     type: "remove",
@@ -353,6 +354,7 @@ function sendTo (connection, message) {
 }
 
 function onSelectedIgnored (op) {
+  console.log(`op.pk1`);
   if (op.pk1 == "percyPea") {
     sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "wow, that was dumb", chatID: 3, from: "percyPea"}));
     sendChatHistory("tester", 4, [
@@ -365,7 +367,7 @@ function onSelectedIgnored (op) {
       }
     ]);
   } else if (op.pk1 == "lauraCarrot") {
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good that he's gone", chatID: 3, from: "lauraCarrot"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good that he's gone", chatID: 3, from: "jimmyGourd"}));
   }
 }
 
