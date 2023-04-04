@@ -206,9 +206,9 @@ async function onSetup (n) {
         }
       ]);
       await sendMessages("tester", [
-        { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 2 },
-        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 2 },
-        { type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 2 }
+        { type: "text", message: "helloooo", from: "jimmyGourd", chatID: 5 },
+        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 5 },
+        { type: "text", message: "uhoh looks like someone got hacked", from: "lauraCarrot", chatID: 5 }
       ]);
       break;
 

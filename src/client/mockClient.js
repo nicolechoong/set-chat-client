@@ -232,11 +232,10 @@ export async function removeFromChat (username, pk, chatID) {
 async function onRemove (messageData) {
     var chatInfo = joinedChats.get(messageData.chatID);
     chatInfo.currentMember = false;
-    store.get(messageData.chatID).history.push(messageData);
 
     // if the removal is disputable
     if (!messageData.dispute) { 
-        chatInfo.toDispute = { peerName: messageData.pk1, peerPK: messageData.pk1 };
+        chatInfo.toDispute = messageData.pk1;
     }
 
     if (chatInfo.members.includes(localUsername)) {
@@ -497,7 +496,7 @@ export function enableChatMods (chatID) {
 }
 
 disputeBtn.addEventListener("click", async () => {
-    disputeRemoval(joinedChats.get(currentChatID).toDispute.peer, currentChatID);
+    disputeRemoval(joinedChats.get(currentChatID).toDispute, currentChatID);
     joinedChats.get(currentChatID).currentMember = true;
     joinedChats.get(currentChatID).toDispute = null;
     updateChatInfo();
@@ -582,8 +581,17 @@ export async function selectIgnored(ignoredOp) {
         chatInfo.history.splice(ignoredOpIndex);
     }
 
-    const p = document.getElementById(`p${ignoredOp.pk2}`);
-    const toRemove = p.innerHTML.slice(11).split(", ");
+    const pa = document.getElementById(`p${ignoredOp.pk1}`);
+    const toAdd = pa.innerHTML.slice(11).split(", ");
+    toAdd.forEach(mem => {
+        if (!joinedChats.get(currentChatID).members.includes(mem)) {
+            joinedChats.get(currentChatID).members.push(mem);
+        }
+        joinedChats.get(currentChatID).exMembers.delete(mem);
+    });
+
+    const pr = document.getElementById(`p${ignoredOp.pk2}`);
+    const toRemove = pr.innerHTML.slice(11).split(", ");
     toRemove.forEach(mem => {
         if (joinedChats.get(currentChatID).members.includes(mem)) {
             joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(mem), 1);
