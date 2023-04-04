@@ -251,7 +251,7 @@ async function onSetup (n) {
         { type: "text", message: "idk man there's too many of us here", from: "percyPea", chatID: 4 },
         { type: "text", message: "what? just let them stay", from: "jimmyGourd", chatID: 4 },
       ]);
-      sendTo(connectedUsers.get("tester"), removeUser("tester", 4, "percyPea", false, null));
+      removeUser("tester", 4, "percyPea", false, null);
       break;
 
     case "5":

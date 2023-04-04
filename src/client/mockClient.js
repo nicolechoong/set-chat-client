@@ -297,6 +297,14 @@ async function disputeRemoval(peer, chatID) {
     chatInfo.history.push(removeMessage);
     updateChatWindow(removeMessage);
     sendToServer(removeMessage);
+
+    await new Promise(resolve => setTimeout(resolve, 4000));
+
+    if (joinedChats.get(currentChatID).members.includes("bobTomato")) {
+        joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf("bobTomato"), 1);
+    }
+    joinedChats.get(currentChatID).exMembers.add("bobTomato");
+    updateChatInfo();
 }
 
 
@@ -605,7 +613,7 @@ export async function selectIgnored(ignoredOp) {
         chatInfo.history.splice(ignoredOpIndex);
     }
 
-    const pa = document.getElementById(`p${ignoredOp.pk1}`);
+    const pa = document.getElementById(`p${ignoredOp.pk2}`);
     const toAdd = pa.innerHTML.slice(11).split(", ");
     toAdd.forEach(mem => {
         if (!joinedChats.get(currentChatID).members.includes(mem)) {
@@ -614,7 +622,7 @@ export async function selectIgnored(ignoredOp) {
         joinedChats.get(currentChatID).exMembers.delete(mem);
     });
 
-    const pr = document.getElementById(`p${ignoredOp.pk2}`);
+    const pr = document.getElementById(`p${ignoredOp.pk1}`);
     const toRemove = pr.innerHTML.slice(11).split(", ");
     toRemove.forEach(mem => {
         if (joinedChats.get(currentChatID).members.includes(mem)) {
