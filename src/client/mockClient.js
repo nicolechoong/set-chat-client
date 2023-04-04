@@ -282,6 +282,10 @@ async function disputeRemoval(peer, chatID) {
     if (joinedChats.get(chatID).members.includes(peer)) {
         joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(peer), 1);
     }
+    joinedChats.get(chatID).exMembers.add(peer);
+    joinedChats.get(chatID).exMembers.delete(localUsername);
+    joinedChats.get(chatID).members.push(localUsername);
+
     await refreshChatWindow(chatID);
 
     const removeMessage = addMsgID({
