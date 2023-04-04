@@ -257,8 +257,10 @@ async function onSetup (n) {
       ]);
       sendTo(connectedUsers.get("tester"), removeUser("tester", 4, "percyPea", false, null));
       break;
+
     case "5":
       chats.set(5, {chatName: 'Task 5', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
+      addUser("tester", 5, "jimmyGourd");
       sendChatHistory("tester", 5, [
         {
           type: "add",

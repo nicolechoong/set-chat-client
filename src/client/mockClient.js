@@ -576,7 +576,7 @@ export async function selectIgnored(ignoredOp) {
     })
     const chatInfo = store.get(currentChatID);
     // unwinding chat history
-    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.pk2 === ignoredOp.pk1);
+    const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.pk1 === ignoredOp.pk1);
 
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
