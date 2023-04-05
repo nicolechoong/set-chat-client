@@ -309,7 +309,7 @@ function sendChatHistory (to, chatID, history) {
 }
 
 function addMsgID (data) {
-  if (data.sentTime) {
+  if (data.sentTime == null) {
     data.sentTime = Date.now();
   }
   data.id = JSON.stringify(nacl.hash(enc.encode(`${data.from}:${data.sentTime}`)));
