@@ -238,6 +238,8 @@ async function onSetup (n) {
       sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "lauraCarrot removes percyPea", from: "jimmyGourd", chatID: 3 }));
       break;
 
+    
+
     case "4":
       chats.set(4, {chatName: 'Scenario 2', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
       addUser("tester", 4, "jimmyGourd");

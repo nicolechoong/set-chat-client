@@ -605,7 +605,8 @@ export async function selectIgnored(ignoredOp) {
 
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
-        chatInfo.history.splice(ignoredOpIndex);
+        const rem = chatInfo.history.splice(ignoredOpIndex);
+        chatInfo.history = chatInfo.history.concat(rem.filter(msg => msg.type == "ignored"));
     }
 
     const pa = document.getElementById(`p${ignoredOp.pk2}`);
