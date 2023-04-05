@@ -244,18 +244,6 @@ async function onRemove (messageData) {
         }
         joinedChats.get(currentChatID).exMembers.add('jimmyGourd');
         updateChatInfo();
-        // await new Promise(resolve => setTimeout(resolve, 4000));
-        // if (!joinedChats.get(currentChatID).members.includes('bobTomato')) {
-        //     joinedChats.get(currentChatID).members.push('bobTomato');
-        // }
-        // joinedChats.get(currentChatID).exMembers.delete('bobTomato');
-        // updateChatInfo();
-        // await new Promise(resolve => setTimeout(resolve, 1000));
-        // if (!joinedChats.get(currentChatID).members.includes('jimmyGourd')) {
-        //     joinedChats.get(currentChatID).members.push('jimmyGourd');
-        // }
-        // joinedChats.get(currentChatID).exMembers.delete('jimmyGourd');
-        // updateChatInfo();
         return;
     }
 
@@ -335,6 +323,9 @@ async function addPeer(messageData) {
 
 async function removePeer (messageData) {
     const pk = messageData.pk2;
+    const chatInfo = store.get(messageData.chatID);
+    chatInfo.history.push(messageData);
+    updateChatWindow(messageData);
 
     if (messageData.dispute) {
         console.log(`dispute detected`);
@@ -344,14 +335,9 @@ async function removePeer (messageData) {
         getIgnored([JSON.parse(messageData.dispute)], messageData.chatID);
 
     } else {
-        const chatInfo = store.get(messageData.chatID);
-        chatInfo.history.push(messageData);
-        updateChatWindow(messageData);
-
         if (joinedChats.get(messageData.chatID).members.includes(pk)) {
             joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
         }
-        
         joinedChats.get(messageData.chatID).exMembers.add(pk);
     }
 
