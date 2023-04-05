@@ -398,4 +398,5 @@ button.card:hover {
 #showChatInfoBtn {
     display: flex;
     flex-direction: row;
+    align-content: center;
 }
