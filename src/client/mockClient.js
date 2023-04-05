@@ -112,7 +112,9 @@ function receivedSMessage (data) {
         case "ignored":
             console.log(`p${data.op.split(" ")[0]}`);
             const p = document.getElementById(`p${data.op.split(" ")[0]}`);
-            p.innerHTML = `${p.innerHTML}, ${data.from}`;
+            if (p) {
+                p.innerHTML = `${p.innerHTML}, ${data.from}`;
+            }
         case "text":
             store.get(data.chatID).history.push(data);
             updateChatWindow(data);
@@ -609,7 +611,7 @@ export async function selectIgnored(ignoredOp, chatID) {
         chatInfo.history = chatInfo.history.concat(rem.filter(msg => msg.type == "ignored"));
     }
 
-    const msg = { type: "ignored", op: `${ignoredOp.pk1} ${ignoredOp.action}s ${ignoredOp.pk2}`, from: localUsername, chatID: chatID };
+    const msg = addMsgID({ type: "ignored", op: `${ignoredOp.pk1} ${ignoredOp.action}s ${ignoredOp.pk2}`, from: localUsername, chatID: chatID });
     chatInfo.history.push(msg);
 
     const pa = document.getElementById(`p${ignoredOp.pk2}`);

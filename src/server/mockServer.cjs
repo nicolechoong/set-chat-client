@@ -209,7 +209,7 @@ async function onSetup (n) {
       break;
 
     case "3":
-      chats.set(3, {chatName: 'Scenario 1: CST Chat 2020', members: ['jimmyGourd', 'lauraCarrot', 'percyPea', 'bobTomato']});
+      chats.set(3, {chatName: 'Scenario 1: Iceland Trip 2023', members: ['jimmyGourd', 'lauraCarrot', 'percyPea', 'bobTomato']});
       addUser("tester", 3, "jimmyGourd");
       sendChatHistory("tester", 3, [
         {
@@ -223,15 +223,17 @@ async function onSetup (n) {
       ]);
       await new Promise(resolve => setTimeout(resolve, 2000));
       await sendMessages("tester", [
-        { type: "text", message: "has the info theory group class been scheduled?", from: "bobTomato", chatID: 3 },
-        { type: "text", message: "i don't think so", from: 'lauraCarrot', chatID: 3 },
-        { type: "text", message: "does smfejiwfwi", from: 'percyPea', chatID: 3 },
-        { type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 },
+        { type: "text", message: "how's the 18-20th for you guys?", from: "percyPea", chatID: 3 },
+        { type: "text", message: "i can't do those dates :( what about 22 to 24?", from: 'lauraCarrot', chatID: 3 },
+        { type: "text", message: "I can do the first but not the second", from: 'bobTomato', chatID: 3 },
+        { type: "text", message: "... vice versa", from: 'jimmyGourd', chatID: 3 },
+        { type: "text", message: "shall we split?", from: 'lauraCarrot', chatID: 3 },
+        { type: "text", message: "ok. remove me?", from: 'percyPea', chatID: 3 },
       ]);
       await new Promise(resolve => setTimeout(resolve, 1000));
       sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot"));
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "he's so annoying", from: 'lauraCarrot', chatID: 3 }));
+      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "interested part", from: 'lauraCarrot', chatID: 3 }));
       await new Promise(resolve => setTimeout(resolve, 2000));
       sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
       await new Promise(resolve => setTimeout(resolve, 3000));
@@ -266,7 +268,7 @@ async function onSetup (n) {
       break;
     
     case "4a":
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "jimmyGourd", chatID: 4 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "tester removes larryCucumber", from: "jimmyGourd", chatID: 4 }));
       await new Promise(resolve => setTimeout(resolve, 1000));
       sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "bobTomato", chatID: 4 }));
       await new Promise(resolve => setTimeout(resolve, 1500));

@@ -407,4 +407,5 @@ button.card:hover {
     display: flex;
     flex-direction: row;
     align-content: center;
+    flex-wrap: wrap;
 }
