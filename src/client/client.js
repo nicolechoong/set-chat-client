@@ -696,9 +696,11 @@ async function receivedIgnored (ignored, chatID, pk) {
                 if (graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                     console.log(`not resolved?`);
                     joinedChats.get(chatID).peerIgnored.set(pk, ignored);
-                    ignored.forEach(ig => {
-                        elem.updateSelectedMembers(keyMap.get(pk), testArrToStr(ig.sig));
-                    });
+                    if (chatID == currentChatID) {
+                        ignored.forEach(ig => {
+                            elem.updateSelectedMembers(keyMap.get(pk), testArrToStr(ig.sig));
+                        });
+                    }
                     await store.setItem("joinedChats", joinedChats);
                     resolve("WAITING FOR LOCAL IGNORED");
                     return;
@@ -897,6 +899,13 @@ function initChannel(channel) {
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data)) }
 }
+
+/* 
+modifications to make:
+    in-between getting the ignored, use a pending icon
+    need to sync some messages when they disagree
+    not sure if updating the p for members works, so should test
+*/
 
 async function receivedMessage(messageData) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
@@ -1311,7 +1320,7 @@ export function disableChatMods (chatID, conflict=false) {
     if (chatID == currentChatID) {
         document.getElementById('addUserCard').style.display = "none";
         chatBar.style.display = "none";
-        chatWindow.style.display = "flex";
+        chatWindowReversed.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
         conflictChatBar.style.display = conflict ? "flex" : "none";
 
@@ -1328,7 +1337,7 @@ export function disableChatMods (chatID, conflict=false) {
 export function enableChatMods (chatID) {
     if (chatID == currentChatID) {
         document.getElementById('addUserCard').style.display = "flex";
-        chatWindow.style.display = "flex";
+        chatWindowReversed.style.display = "flex";
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
         conflictChatBar.style.display = "none";

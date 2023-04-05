@@ -344,7 +344,7 @@ button.card:hover {
     overflow-y: auto;
     flex: 1 1 auto;
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     margin: 0 24px 16px;
     padding-top: 16px;
     border-top: 2px solid #121212;
