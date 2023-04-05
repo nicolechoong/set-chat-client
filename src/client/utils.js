@@ -19,9 +19,9 @@ export function objToArr (obj) {
 export function formatDate (now) {
     const date = new Date(now);
     const intl = new Intl.DateTimeFormat('en-US', {
-        year: 'two-digit',
-        month: 'two-digit',
-        day: 'two-digit'
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit'
       }).format(date);
     return `${intl} ${date.getHours() < 10 ? "0" : ""}${date.getHours()}:${date.getMinutes() < 10 ? "0" : ""}${date.getMinutes()}`;
 }
