@@ -170,7 +170,7 @@ async function onSetup (n) {
           pk2: "overlord"
         })
       ]);
-      sendTo(connectedUsers.get("overlord"), addMsgID({ type: "text", message: "enter stuff", from: "server", chatID: 100 }));
+      sendTo(connectedUsers.get("overlord"), addMsgID({ type: "text", message: "1, 2, 3, 4, 4a, 5, 6, 6a", from: "server", chatID: 100 }));
       break;
 
     case "1":
@@ -209,48 +209,32 @@ async function onSetup (n) {
       break;
 
     case "3":
-      chats.set(3, {chatName: 'Scenario 2: Iceland Trip 2023', members: ['jimmyGourd', 'lauraCarrot', 'percyPea', 'bobTomato']});
+      chats.set(3, {chatName: 'Scenario 1: Temple Run Appreciation Soc', members: ['jimmyGourd', 'bobTomato', 'percyPea']});
       addUser("tester", 3, "jimmyGourd");
-      sendChatHistory("tester", 3, [
-        {
-          type: "add",
-          username: "tester",
-          chatName: 'Scenario 2',
-          chatID: 3,
-          pk1: "jimmyGourd",
-          pk2: "tester"
-        }
-      ]);
-      await new Promise(resolve => setTimeout(resolve, 2000));
       await sendMessages("tester", [
-        { type: "text", message: "how's the 18-20th for you guys?", from: "percyPea", chatID: 3 },
-        { type: "text", message: "i can't do those dates :( what about 22 to 24?", from: 'lauraCarrot', chatID: 3 },
-        { type: "text", message: "I can do the first but not the second.", from: 'jimmyGourd', chatID: 3 },
-        { type: "text", message: "... vice versa", from: 'bobTomato', chatID: 3 },
-        { type: "text", message: "shall we split?", from: 'lauraCarrot', chatID: 3 },
-        { type: "text", message: "ok. remove me?", from: 'percyPea', chatID: 3 },
+        { type: "text", message: "new high score!! try to beat 32982900", from: "jimmyGourd", chatID: 3 },
+        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "bobTomato", chatID: 3 },
+        { type: "text", message: "oh no looks like someone got hacked", from: "percyPea", chatID: 3 },
+        { type: "text", message: "time to KICK", from: "percyPea", chatID: 3 }
       ]);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "lauraCarrot"));
+      sendTo(connectedUsers.get("tester"), removeUser("bobTomato", 3, "percyPea"));
       await new Promise(resolve => setTimeout(resolve, 2000));
-      sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "lauraCarrot removes percyPea", from: "jimmyGourd", chatID: 3 }));
-      break;
-    
-    case "3a":
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes lauraCarrot", from: "bobTomato", chatID: 3 }));
+      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good riddance", from: "percyPea", chatID: 3 }));
+      await new Promise(resolve => setTimeout(resolve, 4000));
+      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "bobTomato", JSON.stringify([{ pk1: "percyPea", action: "remove", pk2: "bobTomato" }, { pk1: "bobTomato", action: "remove", pk2: "percyPea" }])));
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "bobTomato removes percyPea", from: "jimmyGourd", chatID: 3 }));
       break;
 
     case "4":
-      chats.set(4, {chatName: 'Scenario 2: Top Secret Club', members: ['jimmyGourd', 'bobTomato', 'lauraCarrot', 'percyPea']});
+      chats.set(4, {chatName: 'Scenario 2: Iceland Trip 2023', members: ['jimmyGourd', 'lauraCarrot', 'percyPea', 'bobTomato']});
       addUser("tester", 4, "jimmyGourd");
       sendChatHistory("tester", 4, [
         {
           type: "add",
           username: "tester",
-          chatName: 'Scenario 2: Top Seret Club',
+          chatName: 'Scenario 2',
           chatID: 4,
           pk1: "jimmyGourd",
           pk2: "tester"
@@ -258,20 +242,34 @@ async function onSetup (n) {
       ]);
       await new Promise(resolve => setTimeout(resolve, 2000));
       await sendMessages("tester", [
-        { type: "text", message: "idk man there's too many of us here", from: "percyPea", chatID: 4 },
-        { type: "text", message: "what? just let them stay they're chill", from: "jimmyGourd", chatID: 4 },
+        { type: "text", message: "how's the 18-20th for you guys?", from: "percyPea", chatID: 4 },
+        { type: "text", message: "i can't do those dates :( what about 22 to 24?", from: 'lauraCarrot', chatID: 4 },
+        { type: "text", message: "I can do the first but not the second.", from: 'jimmyGourd', chatID: 4 },
+        { type: "text", message: "... vice versa", from: 'bobTomato', chatID: 4 },
+        { type: "text", message: "shall we split?", from: 'lauraCarrot', chatID: 4 },
+        { type: "text", message: "ok. remove me?", from: 'percyPea', chatID: 4 },
       ]);
-      removeUser("tester", 4, "percyPea", false, null);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 4, "lauraCarrot"));
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 4, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "lauraCarrot removes percyPea", from: "jimmyGourd", chatID: 4 }));
+      break;
+    
+    case "4a":
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes lauraCarrot", from: "bobTomato", chatID: 4 }));
       break;
 
     case "5":
-      chats.set(5, {chatName: 'Scenario 3', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
+      chats.set(5, {chatName: 'Scenario 3: Top Secret Club', members: ['jimmyGourd', 'bobTomato', 'lauraCarrot', 'percyPea']});
       addUser("tester", 5, "jimmyGourd");
       sendChatHistory("tester", 5, [
         {
           type: "add",
           username: "tester",
-          chatName: 'Scenario 3',
+          chatName: 'Scenario 3: Top Seret Club',
           chatID: 5,
           pk1: "jimmyGourd",
           pk2: "tester"
@@ -279,39 +277,42 @@ async function onSetup (n) {
       ]);
       await new Promise(resolve => setTimeout(resolve, 2000));
       await sendMessages("tester", [
-        { type: "text", message: "welcome!", from: "jimmyGourd", chatID: 5 },
-        { type: "text", message: "Raid Shadow Legends: RAID: Shadow Legends™ is an immersive online experience with everything you'd expect from a brand new RPG title. It's got an amazing storyline, awesome 3D graphics, giant boss fights, PVP battles, and hundreds of never before seen champions to collect and customize. I never expected to get this level of performance out of a mobile game. Look how crazy the level of detail is on these champions! So go ahead and check out the video description to find out more about RAID: Shadow Legends™. There, you will find a link to the store page and a special code to unlock all sorts of goodies. Using the special code, you can get 50,000 Silver immediately, and a FREE Epic Level Champion as part of the new players program, courtesy of course of the RAID: Shadow Legends devs.", from: "larryCucumber", chatID: 5 },
-        { type: "text", message: "LMAOOOO", from: "bobTomato", chatID: 5 },
-        { type: "text", message: "someone kick larry out", from: "bobTomato", chatID: 5 }
+        { type: "text", message: "idk man there's too many of us here", from: "percyPea", chatID: 5 },
+        { type: "text", message: "what? just let them stay they're chill", from: "jimmyGourd", chatID: 5 },
       ]);
-      break;
-
-    case "5a":
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "tester removes larryCucumber", from: "jimmyGourd", chatID: 4 }));
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "bobTomato", chatID: 4 }));
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "percyPea", chatID: 4 }));
+      removeUser("tester", 5, "percyPea", false, null);
       break;
 
     case "6":
-      chats.set(6, {chatName: 'Scenario 1: Temple Run Appreciation Soc', members: ['jimmyGourd', 'bobTomato', 'percyPea']});
+      chats.set(6, {chatName: 'Scenario 4', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
       addUser("tester", 6, "jimmyGourd");
-      await sendMessages("tester", [
-        { type: "text", message: "new high score!! try to beat 32982900", from: "jimmyGourd", chatID: 6 },
-        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "bobTomato", chatID: 6 },
-        { type: "text", message: "oh no looks like someone got hacked", from: "percyPea", chatID: 6 },
-        { type: "text", message: "time to KICK", from: "percyPea", chatID: 6 }
+      sendChatHistory("tester", 6, [
+        {
+          type: "add",
+          username: "tester",
+          chatName: 'Scenario 4',
+          chatID: 6,
+          pk1: "jimmyGourd",
+          pk2: "tester"
+        }
       ]);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get("tester"), removeUser("bobTomato", 6, "percyPea"));
       await new Promise(resolve => setTimeout(resolve, 2000));
-      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good riddance", from: "percyPea", chatID: 6 }));
-      await new Promise(resolve => setTimeout(resolve, 4000));
-      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 6, "bobTomato", JSON.stringify([{ pk1: "percyPea", action: "remove", pk2: "bobTomato" }, { pk1: "bobTomato", action: "remove", pk2: "percyPea" }])));
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "bobTomato removes percyPea", from: "jimmyGourd", chatID: 6 }));
+      await sendMessages("tester", [
+        { type: "text", message: "welcome!", from: "jimmyGourd", chatID: 6 },
+        { type: "text", message: "Raid Shadow Legends: RAID: Shadow Legends™ is an immersive online experience with everything you'd expect from a brand new RPG title. It's got an amazing storyline, awesome 3D graphics, giant boss fights, PVP battles, and hundreds of never before seen champions to collect and customize. I never expected to get this level of performance out of a mobile game. Look how crazy the level of detail is on these champions! So go ahead and check out the video description to find out more about RAID: Shadow Legends™. There, you will find a link to the store page and a special code to unlock all sorts of goodies. Using the special code, you can get 50,000 Silver immediately, and a FREE Epic Level Champion as part of the new players program, courtesy of course of the RAID: Shadow Legends devs.", from: "larryCucumber", chatID: 6 },
+        { type: "text", message: "LMAOOOO", from: "bobTomato", chatID: 6 },
+        { type: "text", message: "someone kick larry out", from: "bobTomato", chatID: 6 }
+      ]);
       break;
+
+    case "6a":
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "tester removes larryCucumber", from: "jimmyGourd", chatID: 6 }));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "bobTomato", chatID: 6 }));
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "percyPea", chatID: 6 }));
+      break;
+
   }
 }
 
