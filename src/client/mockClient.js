@@ -563,7 +563,7 @@ function generateConflictCard (ops, chatID) {
 
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
-            await selectIgnored(op);
+            await selectIgnored(op, currentChatID);
             conflictCardList.removeChild(document.getElementById('card123'));
         });
         card.appendChild(option);
@@ -582,7 +582,7 @@ async function getIgnored(cycles, chatID) {
         for (const cycle of cycles) {
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, localUsername));
             if (removeSelfIndex > -1) {
-                await selectIgnored(cycle.at(removeSelfIndex));
+                await selectIgnored(cycle.at(removeSelfIndex), chatID);
                 continue;
             }
         }
@@ -594,7 +594,7 @@ async function getIgnored(cycles, chatID) {
     });
 }
 
-export async function selectIgnored(ignoredOp) {
+export async function selectIgnored(ignoredOp, chatID) {
     sendToServer({
         type: "selectedIgnored",
         op: ignoredOp
@@ -608,6 +608,9 @@ export async function selectIgnored(ignoredOp) {
         const rem = chatInfo.history.splice(ignoredOpIndex);
         chatInfo.history = chatInfo.history.concat(rem.filter(msg => msg.type == "ignored"));
     }
+
+    const msg = { type: "ignored", op: `${ignoredOp.pk1} ${ignoredOp.action}s ${ignoredOp.pk2}`, from: localUsername, chatID: chatID };
+    chatInfo.history.push(msg);
 
     const pa = document.getElementById(`p${ignoredOp.pk2}`);
     const toAdd = pa.innerHTML.slice(11).split(", ");

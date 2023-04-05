@@ -237,8 +237,11 @@ async function onSetup (n) {
       await new Promise(resolve => setTimeout(resolve, 3000));
       sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "lauraCarrot removes percyPea", from: "jimmyGourd", chatID: 3 }));
       break;
-
     
+    case "3a":
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes lauraCarrot", from: "bobTomato", chatID: 3 }));
+      break;
 
     case "4":
       chats.set(4, {chatName: 'Scenario 2', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});

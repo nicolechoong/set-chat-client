@@ -303,7 +303,7 @@ button.card:hover {
 
 .chat-message {
     margin: 0;
-    padding: 4px 16px;
+    padding: 16px 4px 16px 8px;
 }
 
 #disputeCard {
@@ -375,11 +375,10 @@ button.card:hover {
 
 #chatInfo {
     display: none;
-    width: 300px;
+    width: 350px;
 }
 
 #chatInfoList {
-    width: 300px;
     overflow-y: auto;
 }
 
