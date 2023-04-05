@@ -223,6 +223,13 @@ h4 {
     margin: 16px 24px;
 }
 
+.card-chat h3 {
+    width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: "----"; 
+}
+
 .ignore-option h3 {
     margin: 16px 24px 4px;
 }
@@ -375,6 +382,11 @@ button.card:hover {
     min-width: 300px;
     max-width: 350px;
     flex-grow: 2;
+}
+
+#chatInfoList {
+    min-width: 300px;
+    max-width: 350px;
     overflow-y: auto;
 }
 
