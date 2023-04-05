@@ -258,11 +258,11 @@ async function onSetup (n) {
       break;
     
     case "4a":
-      sendTo(connectedUsers.get('tester'), { type: "ignored", ignored: "larryCucumber removes tester", from: "jimmyGourd" });
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", ignored: "larryCucumber removes tester", from: "jimmyGourd", chatID: 4 }));
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get('tester'), { type: "ignored", ignored: "larryCucumber removes tester", from: "bobTomato" });
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", ignored: "larryCucumber removes tester", from: "bobTomato", chatID: 4 }));
       await new Promise(resolve => setTimeout(resolve, 1500));
-      sendTo(connectedUsers.get('tester'), { type: "ignored", ignored: "larryCucumber removes tester", from: "percyPea" });
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", ignored: "larryCucumber removes tester", from: "percyPea", chatID: 4 }));
       break;
 
     case "5":
