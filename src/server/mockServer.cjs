@@ -225,8 +225,8 @@ async function onSetup (n) {
       await sendMessages("tester", [
         { type: "text", message: "how's the 18-20th for you guys?", from: "percyPea", chatID: 3 },
         { type: "text", message: "i can't do those dates :( what about 22 to 24?", from: 'lauraCarrot', chatID: 3 },
-        { type: "text", message: "I can do the first but not the second", from: 'bobTomato', chatID: 3 },
-        { type: "text", message: "... vice versa", from: 'jimmyGourd', chatID: 3 },
+        { type: "text", message: "I can do the first but not the second.", from: 'jimmyGourd', chatID: 3 },
+        { type: "text", message: "... vice versa", from: 'bobTomato', chatID: 3 },
         { type: "text", message: "shall we split?", from: 'lauraCarrot', chatID: 3 },
         { type: "text", message: "ok. remove me?", from: 'percyPea', chatID: 3 },
       ]);
@@ -299,18 +299,18 @@ async function onSetup (n) {
       addUser("tester", 6, "jimmyGourd");
       await sendMessages("tester", [
         { type: "text", message: "new high score!! try to beat 32982900", from: "jimmyGourd", chatID: 6 },
-        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "percyPea", chatID: 6 },
-        { type: "text", message: "oh no looks like someone got hacked", from: "bobTomato", chatID: 6 },
-        { type: "text", message: "time to KICK", from: "bobTomato", chatID: 6 }
+        { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "bobTomato", chatID: 6 },
+        { type: "text", message: "oh no looks like someone got hacked", from: "percyPea", chatID: 6 },
+        { type: "text", message: "time to KICK", from: "percyPea", chatID: 6 }
       ]);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 6, "bobTomato"));
+      sendTo(connectedUsers.get("tester"), removeUser("bobTomato", 6, "percyPea"));
       await new Promise(resolve => setTimeout(resolve, 2000));
-      sendTo(connectedUsers.get("tester"), { type: "text", message: "good riddance", from: "bobTomato", chatID: 6 });
+      sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good riddance", from: "percyPea", chatID: 6 }));
       await new Promise(resolve => setTimeout(resolve, 4000));
-      sendTo(connectedUsers.get("tester"), removeUser("bobTomato", 6, "percyPea", JSON.stringify([{ pk1: "bobTomato", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "bobTomato" }])));
+      sendTo(connectedUsers.get("tester"), removeUser("percyPea", 6, "bobTomato", JSON.stringify([{ pk1: "percyPea", action: "remove", pk2: "bobTomato" }, { pk1: "bobTomato", action: "remove", pk2: "percyPea" }])));
       await new Promise(resolve => setTimeout(resolve, 2000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes bobTomato", from: "jimmyGourd", chatID: 6 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "bobTomato removes percyPea", from: "jimmyGourd", chatID: 6 }));
       break;
   }
 }
@@ -406,7 +406,7 @@ function sendTo (connection, message) {
 function onSelectedIgnored (op) {
   console.log(op);
   if (op.pk1 == "percyPea") {
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good that he's gone", chatID: 3, from: "jimmyGourd"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "okay gang gang let's goooo", chatID: 3, from: "lauraCarrot"}));
   } else if (op.pk1 == "lauraCarrot") {
     sendChatHistory("tester", 3, [
       {
@@ -417,7 +417,11 @@ function onSelectedIgnored (op) {
         dispute: false,
       }
     ]);
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "wow, that was dumb", chatID: 3, from: "percyPea"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "hello hello", chatID: 3, from: "percyPea"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "let's start looking for flights", chatID: 3, from: "percyPea"}));
+  } else if (op.pk1 == "bobTomato") {
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "anyways...", chatID: 6, from: "percyPea"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "that score is only high until i double it hoho", chatID: 6, from: "percyPea"}));
   }
 }
 
