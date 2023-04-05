@@ -157,7 +157,7 @@ h4 {
 .chat-panel {
     min-width: 0;
     height: 100%;
-    flex-grow: 2;
+    flex-grow: 1;
     background-color: #ffffff;
     display: flex;
     flex-flow: column;
@@ -171,7 +171,7 @@ h4 {
 }
 
 #chatBox {
-    flex-grow: 4;
+    flex-grow: 2;
     height: 100%;
 }
 
@@ -209,8 +209,7 @@ h4 {
 }
 
 #chatInfo .card {
-    min-width: 300px;
-    max-width: 350px;
+    width: 350px;
 }
 
 .card:last-child {
@@ -356,8 +355,7 @@ button.card:hover {
 }
 
 #chatOptions {
-    min-width: 250px;
-    max-width: 300px;
+    width: 300px;
 }
 
 #chatBar {
@@ -381,14 +379,12 @@ button.card:hover {
 
 #chatInfo {
     display: none;
-    min-width: 300px;
-    max-width: 350px;
+    width: 350px;
     flex-grow: 2;
 }
 
 #chatInfoList {
-    min-width: 300px;
-    max-width: 350px;
+    width: 350px;
     overflow-y: auto;
 }
 
