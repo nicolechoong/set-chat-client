@@ -157,7 +157,7 @@ h4 {
 .chat-panel {
     min-width: 0;
     height: 100%;
-    flex-grow: 1;
+    flex-grow: 0;
     background-color: #ffffff;
     display: flex;
     flex-flow: column;
@@ -171,7 +171,7 @@ h4 {
 }
 
 #chatBox {
-    flex-grow: 2;
+    flex-grow: 1;
     height: 100%;
 }
 
@@ -380,7 +380,6 @@ button.card:hover {
 #chatInfo {
     display: none;
     width: 350px;
-    flex-grow: 2;
 }
 
 #chatInfoList {
