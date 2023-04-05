@@ -209,7 +209,7 @@ async function onSetup (n) {
       break;
 
     case "3":
-      chats.set(3, {chatName: 'Task 3', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
+      chats.set(3, {chatName: 'Scenario 1', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
       addUser("tester", 3, "jimmyGourd");
       sendChatHistory("tester", 3, [
         {
@@ -236,7 +236,7 @@ async function onSetup (n) {
       sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }]), [["jimmyGourd", "lauraCarrot"]]));
       break;
     case "4":
-      chats.set(4, {chatName: 'Task 4', members: ['jimmyGourd', 'bobTomato', 'lauraCarrot', 'percyPea']});
+      chats.set(4, {chatName: 'Scenario 2', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
       addUser("tester", 4, "jimmyGourd");
       sendChatHistory("tester", 4, [
         {
@@ -250,14 +250,23 @@ async function onSetup (n) {
       ]);
       await new Promise(resolve => setTimeout(resolve, 2000));
       await sendMessages("tester", [
-        { type: "text", message: "idk man there's too many of us here", from: "percyPea", chatID: 4 },
-        { type: "text", message: "what? just let them stay", from: "jimmyGourd", chatID: 4 },
+        { type: "text", message: "welcome!", from: "jimmyGourd", chatID: 4 },
+        { type: "text", message: "Raid Shadow Legends: RAID: Shadow Legends™ is an immersive online experience with everything you'd expect from a brand new RPG title. It's got an amazing storyline, awesome 3D graphics, giant boss fights, PVP battles, and hundreds of never before seen champions to collect and customize. I never expected to get this level of performance out of a mobile game. Look how crazy the level of detail is on these champions! So go ahead and check out the video description to find out more about RAID: Shadow Legends™. There, you will find a link to the store page and a special code to unlock all sorts of goodies. Using the special code, you can get 50,000 Silver immediately, and a FREE Epic Level Champion as part of the new players program, courtesy of course of the RAID: Shadow Legends devs.", from: "larryCucumber", chatID: 4 },
+        { type: "text", message: "LMAOOOO", from: "bobTomato", chatID: 4 },
+        { type: "text", message: "someone kick larry out", from: "bobTomato", chatID: 4 }
       ]);
-      removeUser("tester", 4, "percyPea", false, null);
+      break;
+    
+    case "4a":
+      sendTo(connectedUsers.get('tester'), { type: "ignored", ignored: "larryCucumber removes tester", from: "jimmyGourd" });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      sendTo(connectedUsers.get('tester'), { type: "ignored", ignored: "larryCucumber removes tester", from: "bobTomato" });
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      sendTo(connectedUsers.get('tester'), { type: "ignored", ignored: "larryCucumber removes tester", from: "percyPea" });
       break;
 
     case "5":
-      chats.set(5, {chatName: 'Task 5', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
+      chats.set(5, {chatName: 'Scenario 3', members: ['jimmyGourd', 'bobTomato', 'lauraCarrot', 'percyPea']});
       addUser("tester", 5, "jimmyGourd");
       sendChatHistory("tester", 5, [
         {
@@ -271,11 +280,11 @@ async function onSetup (n) {
       ]);
       await new Promise(resolve => setTimeout(resolve, 2000));
       await sendMessages("tester", [
-        { type: "text", message: "welcome!", from: "jimmyGourd", chatID: 5 },
-        { type: "text", message: "Raid Shadow Legends: RAID: Shadow Legends™ is an immersive online experience with everything you'd expect from a brand new RPG title. It's got an amazing storyline, awesome 3D graphics, giant boss fights, PVP battles, and hundreds of never before seen champions to collect and customize. I never expected to get this level of performance out of a mobile game. Look how crazy the level of detail is on these champions! So go ahead and check out the video description to find out more about RAID: Shadow Legends™. There, you will find a link to the store page and a special code to unlock all sorts of goodies. Using the special code, you can get 50,000 Silver immediately, and a FREE Epic Level Champion as part of the new players program, courtesy of course of the RAID: Shadow Legends devs.", from: "larryCucumber", chatID: 5 },
-        { type: "text", message: "LMAOOOO", from: "bobTomato", chatID: 5 },
-        { type: "text", message: "someone kick larry out", from: "bobTomato", chatID: 5 }
+        { type: "text", message: "idk man there's too many of us here", from: "percyPea", chatID: 5 },
+        { type: "text", message: "what? just let them stay", from: "jimmyGourd", chatID: 5 },
       ]);
+      removeUser("tester", 5, "percyPea", false, null);
+      break;
   }
 }
 

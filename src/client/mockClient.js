@@ -384,6 +384,9 @@ function updateChatWindow (data) {
             case "setup":
                 message.innerHTML = `[${formatDate(data.sentTime)}] $setup ${data.n}`;
                 break;
+            case "ignored":
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${data.from} chose 'ignore ${data.op}'`;
+                break;
             default:
                 break;
         }
