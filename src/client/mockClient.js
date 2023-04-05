@@ -373,6 +373,7 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] chat created by ${data.from}`;
                 break;
             case "text":
+            case "ignored":
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${data.from}: ${data.message}`;
                 break;
             case "add":
