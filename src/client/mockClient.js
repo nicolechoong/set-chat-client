@@ -110,6 +110,8 @@ function receivedSMessage (data) {
             onLogin();
             break;
         case "ignored":
+            const p = document.getElementById(`p${data.op.split(" ")[0]}`);
+            p.innerHTML = `${p.innerHTML}, ${data.from}`;
         case "text":
             store.get(data.chatID).history.push(data);
             updateChatWindow(data);
@@ -743,18 +745,6 @@ loginBtn.addEventListener("click", async function (event) {
 ///////////
 // UTILS //
 ///////////
-
-function mergeJoinedChats(localChats, receivedChats) {
-    const mergedChats = new Map([...localChats]);
-    if (receivedChats.size === 0) { return mergedChats; }
-    const localChatIDs = new Set([...localChats.keys()]);
-    for (const id of receivedChats.keys()) {
-        if (!localChatIDs.has(id)) {
-            mergedChats.set(id, receivedChats.get(id));
-        }
-    }
-    return mergedChats;
-}
 
 
 async function mergeChatHistory (chatID, receivedMsgs) {

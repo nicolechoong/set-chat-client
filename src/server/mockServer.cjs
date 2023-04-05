@@ -209,13 +209,13 @@ async function onSetup (n) {
       break;
 
     case "3":
-      chats.set(3, {chatName: 'Scenario 1', members: ['jimmyGourd', 'lauraCarrot', 'percyPea']});
+      chats.set(3, {chatName: 'Scenario 1: CST Chat 2020', members: ['jimmyGourd', 'lauraCarrot', 'percyPea', 'bobTomato']});
       addUser("tester", 3, "jimmyGourd");
       sendChatHistory("tester", 3, [
         {
           type: "add",
           username: "tester",
-          chatName: 'Task 3',
+          chatName: 'Scenario 1',
           chatID: 3,
           pk1: "jimmyGourd",
           pk2: "tester"
@@ -223,9 +223,9 @@ async function onSetup (n) {
       ]);
       await new Promise(resolve => setTimeout(resolve, 2000));
       await sendMessages("tester", [
-        { type: "text", message: "yo what's up guys", from: "lauraCarrot", chatID: 3 },
-        { type: "text", message: "no.", from: 'percyPea', chatID: 3 },
-        { type: "text", message: "???", from: 'lauraCarrot', chatID: 3 },
+        { type: "text", message: "has the info theory group class been scheduled?", from: "bobTomato", chatID: 3 },
+        { type: "text", message: "i don't think so", from: 'lauraCarrot', chatID: 3 },
+        { type: "text", message: "does smfejiwfwi", from: 'percyPea', chatID: 3 },
         { type: "text", message: "rude", from: 'lauraCarrot', chatID: 3 },
       ]);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -233,7 +233,7 @@ async function onSetup (n) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "he's so annoying", from: 'lauraCarrot', chatID: 3 }));
       await new Promise(resolve => setTimeout(resolve, 2000));
-      sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }]), [["jimmyGourd", "lauraCarrot"]]));
+      sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
       break;
     case "4":
       chats.set(4, {chatName: 'Scenario 2', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
@@ -258,11 +258,11 @@ async function onSetup (n) {
       break;
     
     case "4a":
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", ignored: "larryCucumber removes tester", from: "jimmyGourd", chatID: 4 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "jimmyGourd", chatID: 4 }));
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", ignored: "larryCucumber removes tester", from: "bobTomato", chatID: 4 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "bobTomato", chatID: 4 }));
       await new Promise(resolve => setTimeout(resolve, 1500));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", ignored: "larryCucumber removes tester", from: "percyPea", chatID: 4 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "percyPea", chatID: 4 }));
       break;
 
     case "5":
@@ -309,7 +309,9 @@ function sendChatHistory (to, chatID, history) {
 }
 
 function addMsgID (data) {
-  data.sentTime = Date.now();
+  if (data.sentTime) {
+    data.sentTime = Date.now();
+  }
   data.id = JSON.stringify(nacl.hash(enc.encode(`${data.from}:${data.sentTime}`)));
   return data;
 }
