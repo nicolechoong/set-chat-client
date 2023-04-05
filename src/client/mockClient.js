@@ -111,7 +111,7 @@ function receivedSMessage (data) {
             break;
         case "ignored":
             console.log(`p${data.op.split(" ")[0]}`);
-            const p = document.getElementById(`p${data.op.split(" ")[0]}`);
+            const p = document.getElementById(`p${data.op.split(" ")[2]}`);
             if (p) {
                 p.innerHTML = `${p.innerHTML}, ${data.from}`;
             }
@@ -192,6 +192,8 @@ async function onAdd (chatID, chatName, from, members) {
         },
         history: [],
     });
+
+    resolveGetIgnored.delete(chatID);
 
     updateChatOptions("remove", chatID);
     updateChatOptions("add", chatID);
