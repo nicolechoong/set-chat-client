@@ -234,7 +234,7 @@ async function onSetup (n) {
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "he's so annoying", from: 'lauraCarrot', chatID: 3 }));
       await new Promise(resolve => setTimeout(resolve, 2000));
       sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 3, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "lauraCarrot removes percyPea", from: "jimmyGourd", chatID: 3 }));
       break;
 

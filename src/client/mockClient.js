@@ -110,6 +110,7 @@ function receivedSMessage (data) {
             onLogin();
             break;
         case "ignored":
+            console.log(`p${data.op.split(" ")[0]}`);
             const p = document.getElementById(`p${data.op.split(" ")[0]}`);
             p.innerHTML = `${p.innerHTML}, ${data.from}`;
         case "text":
