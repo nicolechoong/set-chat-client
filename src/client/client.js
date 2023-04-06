@@ -21,6 +21,7 @@ const chatBar = document.getElementById('chatBar');
 const disabledChatBar = document.getElementById('disabledChatBar');
 const conflictChatBar = document.getElementById('conflictChatBar');
 const chatWindow = document.getElementById('chatWindow');
+const anchor = document.getElementById('anchor');
 
 const loginInput = document.getElementById('loginInput');
 const messageInput = document.getElementById('messageInput');
@@ -88,7 +89,7 @@ function initialiseClient () {
     [...document.getElementsByClassName('chat-bar')].forEach((elem) => {
         elem.style.display = "none";
     });
-    chatWindow.innerHTML = "";
+    chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
     currentChatID = 0;
 
     dim.style.display = "block";
@@ -1143,7 +1144,7 @@ async function removePeer (messageData) {
 
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
-        chatWindow.innerHTML = "";
+        chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
         await store.getItem(currentChatID).then(async (chatInfo) => {
             chatInfo.history.forEach(data => {
                 updateChatWindow(data);
@@ -1173,7 +1174,7 @@ function updateChatWindow (data) {
             default:
                 break;
         }
-        chatWindow.appendChild(message);
+        chatWindow.insertBefore(message, anchor);
     }
 }
 
@@ -1321,7 +1322,7 @@ export function disableChatMods (chatID, conflict=false) {
     if (chatID == currentChatID) {
         document.getElementById('addUserCard').style.display = "none";
         chatBar.style.display = "none";
-        chatWindowReversed.style.display = "flex";
+        chatWindow.style.display = "flex";
         disabledChatBar.style.display = conflict ? "none" : "flex";
         conflictChatBar.style.display = conflict ? "flex" : "none";
 
@@ -1338,7 +1339,7 @@ export function disableChatMods (chatID, conflict=false) {
 export function enableChatMods (chatID) {
     if (chatID == currentChatID) {
         document.getElementById('addUserCard').style.display = "flex";
-        chatWindowReversed.style.display = "flex";
+        chatWindow.style.display = "flex";
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
         conflictChatBar.style.display = "none";
