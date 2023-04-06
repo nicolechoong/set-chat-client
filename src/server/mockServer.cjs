@@ -211,13 +211,14 @@ async function onSetup (n) {
     case "3":
       chats.set(3, {chatName: 'Scenario 1: Temple Run Appreciation Soc', members: ['jimmyGourd', 'bobTomato', 'percyPea']});
       addUser("tester", 3, "jimmyGourd");
+      await new Promise(resolve => setTimeout(resolve, 5000));
       await sendMessages("tester", [
         { type: "text", message: "new high score!! try to beat 32982900", from: "jimmyGourd", chatID: 3 },
         { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "bobTomato", chatID: 3 },
         { type: "text", message: "oh no looks like someone got hacked", from: "percyPea", chatID: 3 },
         { type: "text", message: "time to KICK", from: "percyPea", chatID: 3 }
       ]);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       sendTo(connectedUsers.get("tester"), removeUser("bobTomato", 3, "percyPea"));
       await new Promise(resolve => setTimeout(resolve, 2000));
       sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "good riddance", from: "percyPea", chatID: 3 }));
