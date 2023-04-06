@@ -170,7 +170,7 @@ async function onSetup (n) {
           pk2: "overlord"
         })
       ]);
-      sendTo(connectedUsers.get("overlord"), addMsgID({ type: "text", message: "1, 2, 3, 4, 4a, 5, 6, 6a", from: "server", chatID: 100 }));
+      sendTo(connectedUsers.get("overlord"), addMsgID({ type: "text", message: "1, 2, 3, 4, 4a, 5, 5a, 6, 6a", from: "server", chatID: 100 }));
       break;
 
     case "1":
@@ -211,7 +211,6 @@ async function onSetup (n) {
     case "3":
       chats.set(3, {chatName: 'Scenario 1: Temple Run Appreciation Soc', members: ['jimmyGourd', 'bobTomato', 'percyPea']});
       addUser("tester", 3, "jimmyGourd");
-      await new Promise(resolve => setTimeout(resolve, 5000));
       await sendMessages("tester", [
         { type: "text", message: "new high score!! try to beat 32982900", from: "jimmyGourd", chatID: 3 },
         { type: "text", message: "Amazon is sending you a refund of $1233.20. Please reply with your bank account and routing number fo receive the refund. #$#%#$%#$#$%#@###@@##$$$%%%", from: "bobTomato", chatID: 3 },
@@ -225,7 +224,7 @@ async function onSetup (n) {
       await new Promise(resolve => setTimeout(resolve, 4000));
       sendTo(connectedUsers.get("tester"), removeUser("percyPea", 3, "bobTomato", JSON.stringify([{ pk1: "percyPea", action: "remove", pk2: "bobTomato" }, { pk1: "bobTomato", action: "remove", pk2: "percyPea" }])));
       await new Promise(resolve => setTimeout(resolve, 2000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "bobTomato removes percyPea", from: "jimmyGourd", chatID: 3 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "bobTomato removes percyPea", pk2: "percyPea", from: "jimmyGourd", chatID: 3 }));
       break;
 
     case "4":
@@ -255,12 +254,12 @@ async function onSetup (n) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       sendTo(connectedUsers.get("tester"), removeUser("lauraCarrot", 4, "percyPea", JSON.stringify([{ pk1: "lauraCarrot", action: "remove", pk2: "percyPea" }, { pk1: "percyPea", action: "remove", pk2: "lauraCarrot" }])));
       await new Promise(resolve => setTimeout(resolve, 3000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "lauraCarrot removes percyPea", from: "jimmyGourd", chatID: 4 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "lauraCarrot removes percyPea", pk2: "percyPea", from: "jimmyGourd", chatID: 4 }));
       break;
     
     case "4a":
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes lauraCarrot", from: "bobTomato", chatID: 4 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes lauraCarrot", pk2: "lauraCarrot", from: "bobTomato", chatID: 4 }));
       break;
 
     case "5":
@@ -286,10 +285,11 @@ async function onSetup (n) {
       break;
     
     case "5a":
+      await new Promise(resolve => setTimeout(resolve, 2000));
       sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", pk2: "tester", from: "jimmyGourd", chatID: 5 }));
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", pk2: "tester", from: "lauraCarrot", chatID: 5 }));
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 2500));
       sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", pk2: "tester", from: "bobTomato", chatID: 5 }));
       break;
 
@@ -316,11 +316,11 @@ async function onSetup (n) {
       break;
 
     case "6a":
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "tester removes larryCucumber", from: "jimmyGourd", chatID: 6 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "tester removes larryCucumber", pk2: "larryCucumber", from: "jimmyGourd", chatID: 6 }));
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "bobTomato", chatID: 6 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", pk2: "tester", from: "bobTomato", chatID: 6 }));
       await new Promise(resolve => setTimeout(resolve, 1500));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", from: "percyPea", chatID: 6 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "larryCucumber removes tester", pk2: "tester", from: "percyPea", chatID: 6 }));
       break;
 
   }

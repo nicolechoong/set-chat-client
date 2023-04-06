@@ -123,6 +123,7 @@ function receivedSMessage (data) {
                 }
                 joinedChats.get(currentChatID).exMembers.add(data.from);
             }
+            joinedChats.get(data.chatID).peerIgnored.set(data.from, data.pk2);
             updateChatInfo();
         case "text":
             store.get(data.chatID).history.push(data);
