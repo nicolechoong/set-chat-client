@@ -904,7 +904,7 @@ modifications to make:
     not sure if updating the p for members works, so should test
 */
 
-async function receivedMessage(messageData) {
+async function receivedMessage (messageData) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
     if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")
     && document.getElementById(`chatCard${messageData.chatID}`) !== null) {
@@ -925,12 +925,6 @@ async function receivedMessage(messageData) {
         case "ignored":
             if (!messageData.replay) {
                 messageData.ignored.forEach(op => unpackOp(op));
-                if (messageData.chatID == currentChatID) {
-                    messageData.ignored.forEach(ig => {
-                        console.log(JSON.stringify(ig));
-                        elem.updateSelectedMembers(keyMap.get(JSON.stringify(messageData.from)), testArrToStr(ig.sig));
-                    });
-                }
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
@@ -942,6 +936,17 @@ async function receivedMessage(messageData) {
                 }
             });
             break;
+        case "selectedIgnored":
+            if (messageData.chatID == currentChatID) {
+                messageData.ignored.forEach(ig => {
+                    console.log(JSON.stringify(ig));
+                    elem.updateSelectedMembers(keyMap.get(JSON.stringify(messageData.from)), testArrToStr(ig.sig));
+                });
+            }
+            updateChatWindow(messageData);
+            updateChatStore(messageData);
+            break;
+                
         case "advertisement":
             messageData.online.forEach((peer) => connectToPeer(peer));
             break;
@@ -1173,6 +1178,9 @@ function updateChatWindow (data) {
             case "remove":
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.op.pk1))} removed ${keyMap.get(JSON.stringify(data.op.pk2))}`;
                 break;
+            case "selectedIgnored":
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(JSON.stringify(data.from))} chose to ignore '${keyMap.get(JSON.stringify(data.op.pk1))} ${keyMap.get(JSON.stringify(data.op.action))} ${keyMap.get(JSON.stringify(data.op.pk2))}'`;
+                break;
             default:
                 break;
         }
@@ -1203,7 +1211,11 @@ function sendToMember(data, pk) {
 
 function addMsgID (data) {
     data.sentTime = Date.now();
-    data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
+    if (data.type == "create" || data.type == "add" || data.type == "remove") {
+        data.id = JSON.stringify(data.op.sig);
+    } else {
+        data.id = JSON.stringify(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
+    }
     return data;
 }
 
@@ -1390,7 +1402,7 @@ async function getIgnored(cycles, chatID) {
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
             if (removeSelfIndex > -1) {
                 console.log(`automatically resolved ${cycle.at(removeSelfIndex).action} ${keyMap.get(JSON.stringify(cycle.at(removeSelfIndex).pk2))}`);
-                await selectIgnored(cycle.at(removeSelfIndex));
+                await selectIgnored(cycle.at(removeSelfIndex), chatID);
                 continue;
             }
         }
@@ -1402,8 +1414,8 @@ async function getIgnored(cycles, chatID) {
     });
 }
 
-export async function selectIgnored(ignoredOp) {
-    await store.getItem(currentChatID).then(async (chatInfo) => {
+export async function selectIgnored(ignoredOp, chatID) {
+    await store.getItem(chatID).then(async (chatInfo) => {
         // unwinding chat history
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
 
@@ -1423,16 +1435,24 @@ export async function selectIgnored(ignoredOp) {
         // writing to storage
         chatInfo.metadata.ignored.push(ignoredOp);
         removeOp(chatInfo.metadata.operations, ignoredOp);
-        await store.setItem(currentChatID, chatInfo);
-        refreshChatWindow(currentChatID);
+        await store.setItem(chatID, chatInfo);
+        refreshChatWindow(chatID);
 
-        resolveGetIgnored.get(currentChatID)[0].splice(resolveGetIgnored.get(currentChatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
+        // sending to others
+        const msg = addMsgID({
+            type: "selectedIgnored",
+            op: ignoredOp,
+            from: keyPair.publicKey,
+        });
+        broadcastToMembers(msg, chatID);
+
+        resolveGetIgnored.get(chatID)[0].splice(resolveGetIgnored.get(chatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
     
-        if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
-            resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.ignored);
-            resolveGetIgnored.delete(currentChatID);
+        if (resolveGetIgnored.get(chatID)[0].length == 0) {
+            resolveGetIgnored.get(chatID)[1](chatInfo.metadata.ignored);
+            resolveGetIgnored.delete(chatID);
             chatBox.className = "chat-panel col-8";
-            enableChatMods(currentChatID);
+            enableChatMods(chatID);
         }
     });
 }

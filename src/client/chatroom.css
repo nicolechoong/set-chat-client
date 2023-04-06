@@ -331,12 +331,16 @@ button.card:hover {
     margin: 0;
 }
 
-.conflict #disabledChatBar, #conflictChatBar, .self .removeUserIcon, .exitIcon {
+.conflict #disabledChatBar, #conflictChatBar, .self .removeUserIcon, .exitIcon, .pendingIcon {
     display: none;
 }
 
-.conflict #conflictIcon, .self .exitIcon, .removeUserIcon{
+.conflict #conflictIcon, .self .exitIcon, .removeUserIcon, .pending > .pendingIcon {
     display: block;
+}
+
+.pending > .removeUserIcon {
+    display: none;
 }
 
 #chatWindow {

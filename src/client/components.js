@@ -40,6 +40,7 @@ export function generateUserCard (pk, username, chatID) {
     h3.appendChild(text);
 
     const button = card.getElementsByClassName("removeUserBtn")[0];
+    button.id = `rb${username}`;
     button.addEventListener("click", () => {
         removeFromChat(username, pk, chatID);
     });
@@ -72,7 +73,7 @@ export function generateConflictCard (ops, chatID) {
 
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
-            await selectIgnored(op);
+            await selectIgnored(op, chatID);
             card.parentNode.removeChild(card);
         });
         card.appendChild(option);

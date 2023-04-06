@@ -115,6 +115,8 @@ function receivedSMessage (data) {
             if (p) {
                 p.innerHTML = `${p.innerHTML}, ${data.from}`;
             }
+            const rem = document.getElementById(`rb${data.from}`);
+            rem.className = 'removeUserBtn';
         case "text":
             store.get(data.chatID).history.push(data);
             updateChatWindow(data);
@@ -379,7 +381,7 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] $setup ${data.n}`;
                 break;
             case "ignored":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${data.from} chose 'ignore ${data.op}'`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${data.from} chose to ignore '${data.op}'`;
                 break;
             default:
                 break;
@@ -494,9 +496,20 @@ export function disableChatMods (chatID, conflict=false) {
         document.getElementById('addUserCard').style.display = "none";
         chatBar.style.display = "none";
         chatWindow.style.display = "flex";
-        disabledChatBar.style.display = conflict ? "none" : "flex";
-        conflictChatBar.style.display = conflict ? "flex" : "none";
-        document.getElementById('conflictCardList').style.display = conflict ? "flex" : "none";
+
+        if (conflict) {
+            disabledChatBar.style.display = "none";
+            conflictChatBar.style.display = "flex";
+            document.getElementById('conflictCardList').style.display = "flex";
+
+            [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
+                elem.className = 'removeUserBtn pending';
+            });
+        } else {
+            disabledChatBar.style.display = "flex";
+            conflictChatBar.style.display = "none";
+            document.getElementById('conflictCardList').style.display = "none";
+        }
 
         document.getElementById('disputeCard').style.display = joinedChats.get(currentChatID).toDispute == null ? "none" : "flex";
         document.getElementById('defaultText').style.display = "none";
@@ -598,12 +611,12 @@ async function getIgnored(cycles, chatID) {
     });
 }
 
-export async function selectIgnored(ignoredOp, chatID) {
+export async function selectIgnored (ignoredOp, chatID) {
     sendToServer({
         type: "selectedIgnored",
         op: ignoredOp
     })
-    const chatInfo = store.get(currentChatID);
+    const chatInfo = store.get(chatID);
     // unwinding chat history
     const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.pk1 === ignoredOp.pk1);
 
@@ -619,31 +632,31 @@ export async function selectIgnored(ignoredOp, chatID) {
     const pa = document.getElementById(`p${ignoredOp.pk2}`);
     const toAdd = pa.innerHTML.slice(11).split(", ");
     toAdd.forEach(mem => {
-        if (!joinedChats.get(currentChatID).members.includes(mem)) {
-            joinedChats.get(currentChatID).members.push(mem);
+        if (!joinedChats.get(chatID).members.includes(mem)) {
+            joinedChats.get(chatID).members.push(mem);
         }
-        joinedChats.get(currentChatID).exMembers.delete(mem);
+        joinedChats.get(chatID).exMembers.delete(mem);
     });
 
     const pr = document.getElementById(`p${ignoredOp.pk1}`);
     const toRemove = pr.innerHTML.slice(11).split(", ");
     toRemove.forEach(mem => {
-        if (joinedChats.get(currentChatID).members.includes(mem)) {
-            joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(mem), 1);
+        if (joinedChats.get(chatID).members.includes(mem)) {
+            joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(mem), 1);
         }
-        joinedChats.get(currentChatID).exMembers.add(mem);
+        joinedChats.get(chatID).exMembers.add(mem);
     });
 
     updateChatInfo();
-    refreshChatWindow(currentChatID);
+    refreshChatWindow(chatID);
 
-    resolveGetIgnored.get(currentChatID)[0].splice(0, 1);
+    resolveGetIgnored.get(chatID)[0].splice(0, 1);
 
-    if (resolveGetIgnored.get(currentChatID)[0].length == 0) {
-        resolveGetIgnored.get(currentChatID)[1](chatInfo.metadata.ignored);
-        resolveGetIgnored.delete(currentChatID);
+    if (resolveGetIgnored.get(chatID)[0].length == 0) {
+        resolveGetIgnored.get(chatID)[1](chatInfo.metadata.ignored);
+        resolveGetIgnored.delete(chatID);
         chatBox.className = "chat-panel col-8";
-        enableChatMods(currentChatID);
+        enableChatMods(chatID);
     }
 }
 
