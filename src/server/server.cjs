@@ -178,11 +178,6 @@ function onLogin (connection, name, pubKey) {
   console.log(`User [${name}] with pubKey [${pubKey}] online`);
   // TODO: Need some username password stuff here later on
 
-  if (allUsers.has(pubKey)) {
-    onReconnect(connection, name, pubKey);
-    return;
-  }
-
   if(connectedUsers.has(pubKey)) { 
     sendTo(connection, { 
         type: "login", 
@@ -191,6 +186,11 @@ function onLogin (connection, name, pubKey) {
         joinedChats: []
     }); 
   } else { 
+    if (allUsers.has(pubKey)) {
+      onReconnect(connection, name, pubKey);
+      return;
+    }
+
     connectedUsers.set(pubKey, {connection: connection, groups: []}); 
     connection.pk = pubKey; 
     allUsers.set(pubKey, {msgQueue: [], username: name});

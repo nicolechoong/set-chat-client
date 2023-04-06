@@ -89,8 +89,8 @@ function initialiseClient () {
     [...document.getElementsByClassName('chat-bar')].forEach((elem) => {
         elem.style.display = "none";
     });
-    chatWindow.style.display = 'none';
-    chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
+    chatWindow.style.display = 'none'; 
+    chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; min-height: 1px; height: 1px" ></div>';
     currentChatID = 0;
 
     dim.style.display = "block";
@@ -700,6 +700,7 @@ async function receivedIgnored (ignored, chatID, pk) {
                     joinedChats.get(chatID).peerIgnored.set(pk, ignored);
                     if (chatID == currentChatID) {
                         ignored.forEach(ig => {
+                            console.log(JSON.stringify(ig));
                             elem.updateSelectedMembers(keyMap.get(pk), testArrToStr(ig.sig));
                         });
                     }

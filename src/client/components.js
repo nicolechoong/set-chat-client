@@ -82,6 +82,7 @@ export function generateConflictCard (ops, chatID) {
 }
 
 export function updateSelectedMembers (username, sig) {
+    console.log(`updateSelected ${username} ${sig}`);
     const p = document.getElementById(`p${sig}`);
     if (p !== null) {
         const cur = p.innerHTML.split(", ");
