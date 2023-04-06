@@ -252,6 +252,8 @@ async function onRemove (messageData) {
     // if the removal is disputable
     var chatInfo = store.get(messageData.chatID);
     chatInfo.history.push(messageData);
+    updateChatWindow(messageData);
+    
     if (!messageData.dispute) { 
         joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
     } else if (messageData.pk1 == "larryCucumber" && messageData.dispute) {
@@ -263,7 +265,6 @@ async function onRemove (messageData) {
     joinedChats.get(messageData.chatID).currentMember = false;
     if (joinedChats.get(messageData.chatID).members.includes(localUsername)) {
         joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(localUsername), 1);
-        updateChatWindow(messageData);
     }
     joinedChats.get(messageData.chatID).exMembers.add(localUsername);
 
