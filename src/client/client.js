@@ -89,8 +89,8 @@ function initialiseClient () {
     [...document.getElementsByClassName('chat-bar')].forEach((elem) => {
         elem.style.display = "none";
     });
-    chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
     chatWindow.style.display = 'none';
+    chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
     currentChatID = 0;
 
     dim.style.display = "block";
@@ -1175,7 +1175,7 @@ function updateChatWindow (data) {
             default:
                 break;
         }
-        chatWindow.insertBefore(message, anchor);
+        chatWindow.insertBefore(message, message.lastElementChild);
     }
 }
 
