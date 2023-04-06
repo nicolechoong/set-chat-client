@@ -384,7 +384,7 @@ export function updateChatWindow (data) {
             default:
                 break;
         }
-        chatWindow.appendChild(message);
+        chatWindow.insertBefore(message, chatWindow.lastElementChild);
     }
 }
 

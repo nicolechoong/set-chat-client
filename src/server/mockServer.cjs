@@ -417,22 +417,22 @@ function sendTo (connection, message) {
 function onSelectedIgnored (op) {
   console.log(op);
   if (op.pk1 == "percyPea") {
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "okay gang gang let's goooo", chatID: 3, from: "lauraCarrot"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "okay gang gang let's goooo", chatID: 4, from: "lauraCarrot"}));
   } else if (op.pk1 == "lauraCarrot") {
-    sendChatHistory("tester", 3, [
+    sendChatHistory("tester", 4, [
       {
         type: "remove",
         pk1: "percyPea",
         pk2: "lauraCarrot",
-        chatID: 3,
+        chatID: 4,
         dispute: false,
       }
     ]);
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "hello hello", chatID: 3, from: "percyPea"}));
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "let's start looking for flights", chatID: 3, from: "percyPea"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "hello hello", chatID: 4, from: "percyPea"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "let's start looking for flights", chatID: 4, from: "percyPea"}));
   } else if (op.pk1 == "bobTomato") {
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "anyways...", chatID: 6, from: "percyPea"}));
-    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "that score is only high until i double it hoho", chatID: 6, from: "percyPea"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "anyways...", chatID: 3, from: "percyPea"}));
+    sendTo(connectedUsers.get("tester"), addMsgID({ type: "text", message: "that score is only high until i double it hoho", chatID: 3, from: "percyPea"}));
   }
 }
 
