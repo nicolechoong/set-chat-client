@@ -250,6 +250,7 @@ async function onRemove (messageData) {
         joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
     } else if (messageData.pk1 == "larryCucumber" && messageData.dispute) {
         joinedChats.currentMember = true;
+        joinedChats.get(messageData.chatID).members.push(localUsername);
         return;
     }
 
