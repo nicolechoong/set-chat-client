@@ -206,6 +206,7 @@ async function onAdd (chatID, chatName, from, members) {
 
     updateChatOptions("remove", chatID);
     updateChatOptions("add", chatID);
+    document.getElementById(`chatCard${chatID}`).className = "card card-chat notif";
     updateChatInfo();
 }
 

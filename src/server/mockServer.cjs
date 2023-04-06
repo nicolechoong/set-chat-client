@@ -278,18 +278,19 @@ async function onSetup (n) {
       ]);
       await new Promise(resolve => setTimeout(resolve, 2000));
       await sendMessages("tester", [
-        { type: "text", message: "idk man there's too many of us here", from: "percyPea", chatID: 5 },
-        { type: "text", message: "what? just let them stay they're chill", from: "jimmyGourd", chatID: 5 },
+        { type: "text", message: "guys percy told me his account was hacked", from: "bobTomato", chatID: 5 },
+        { type: "text", message: "What? Oh no.", from: "jimmyGourd", chatID: 5 },
+        { type: "text", message: "yeah idk what's happening", from: "bobTomato", chatID: 5 },
       ]);
       removeUser("tester", 5, "percyPea", false, null);
       break;
     
     case "5a":
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", from: "jimmyGourd", chatID: 5 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", pk2: "tester", from: "jimmyGourd", chatID: 5 }));
       await new Promise(resolve => setTimeout(resolve, 1000));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "tester removes percyPea", from: "lauraCarrot", chatID: 5 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", pk2: "tester", from: "lauraCarrot", chatID: 5 }));
       await new Promise(resolve => setTimeout(resolve, 1500));
-      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", from: "bobTomato", chatID: 5 }));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", pk2: "tester", from: "bobTomato", chatID: 5 }));
       break;
 
     case "6":
@@ -397,7 +398,7 @@ function removeUser (to, chatID, from, dispute=null, peerIgnored=[]) {
 async function onRemove (connection, data) {
   if (data.pk2 == "larryCucumber") {
     await new Promise(resolve => setTimeout(resolve, 3000));
-    removeUser("tester", 5, "larryCucumber", dispute=true, null);
+    removeUser("tester", 6, "larryCucumber", dispute=true, null);
   }
 }
 
