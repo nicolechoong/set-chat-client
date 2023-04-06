@@ -293,13 +293,13 @@ async function onSetup (n) {
       break;
 
     case "6":
-      chats.set(6, {chatName: 'Scenario 4', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
+      chats.set(6, {chatName: 'Scenario 4: Gang gang', members: ['jimmyGourd', 'bobTomato', 'larryCucumber', 'percyPea']});
       addUser("tester", 6, "jimmyGourd");
       sendChatHistory("tester", 6, [
         {
           type: "add",
           username: "tester",
-          chatName: 'Scenario 4',
+          chatName: 'Scenario 4: Gang gang',
           chatID: 6,
           pk1: "jimmyGourd",
           pk2: "tester"

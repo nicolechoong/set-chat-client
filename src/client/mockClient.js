@@ -19,6 +19,7 @@ const conflictCardList = document.getElementById('conflictCardList');
 const chatBar = document.getElementById('chatBar');
 const disabledChatBar = document.getElementById('disabledChatBar');
 const chatWindow = document.getElementById('chatWindow');
+const anchor = document.getElementById('anchor');
 
 const messageInput = document.getElementById('messageInput');
 const addUserInput = document.getElementById('addUserInput');
@@ -62,6 +63,7 @@ function initialiseClient () {
     });
     chatWindow.innerHTML = "";
     currentChatID = 0;
+    chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; min-height: 1px; height: 1px" ></div>';
 
     dim.style.display = "block";
     loginPopup.style.display = "flex";
@@ -346,7 +348,7 @@ async function removePeer (messageData) {
 
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
-        chatWindow.innerHTML = "";
+        chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
         store.get(currentChatID).history.forEach(data => {
             updateChatWindow(data);
         });
