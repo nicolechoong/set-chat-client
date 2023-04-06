@@ -653,7 +653,7 @@ export async function selectIgnored (ignoredOp, chatID) {
     }
 }
 
-function updateChatInfo () {
+export function updateChatInfo () {
     if (currentChatID > 0) {
         document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
 
