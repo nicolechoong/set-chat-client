@@ -270,7 +270,7 @@ async function onSetup (n) {
         {
           type: "add",
           username: "tester",
-          chatName: 'Scenario 3: Top Seret Club',
+          chatName: 'Scenario 3: Top Secret Club',
           chatID: 5,
           pk1: "jimmyGourd",
           pk2: "tester"
@@ -282,6 +282,14 @@ async function onSetup (n) {
         { type: "text", message: "what? just let them stay they're chill", from: "jimmyGourd", chatID: 5 },
       ]);
       removeUser("tester", 5, "percyPea", false, null);
+      break;
+    
+    case "5a":
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", from: "jimmyGourd", chatID: 5 }));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "tester removes percyPea", from: "lauraCarrot", chatID: 5 }));
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      sendTo(connectedUsers.get('tester'), addMsgID({ type: "ignored", op: "percyPea removes tester", from: "bobTomato", chatID: 5 }));
       break;
 
     case "6":

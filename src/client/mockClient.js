@@ -357,7 +357,7 @@ async function refreshChatWindow (chatID) {
     }
 }
 
-function updateChatWindow (data) {
+export function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
         const message = document.createElement('p');
