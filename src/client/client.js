@@ -90,6 +90,7 @@ function initialiseClient () {
         elem.style.display = "none";
     });
     chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
+    chatWindow.style.display = 'none';
     currentChatID = 0;
 
     dim.style.display = "block";
