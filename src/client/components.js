@@ -101,6 +101,7 @@ document.getElementById('createChatBtn').onclick = (() => {
 
 document.getElementById('showChatInfoBtn').onclick = (() => {
     chatInfo.style.display = chatInfo.style.display === "flex" ? "none" : "flex";
+    updateChatInfo();
 });
 
 document.getElementById('closeChatInfo').onclick = (() => {
