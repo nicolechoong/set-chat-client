@@ -115,6 +115,12 @@ function receivedSMessage (data) {
             if (p) {
                 p.innerHTML = `${p.innerHTML}, ${data.from}`;
             }
+            if (data.chatID >= 5 && data.op.split(" ")[2] != localUsername) {
+                if (joinedChats.get(currentChatID).members.includes(data.from)) {
+                    joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(data.from), 1);
+                }
+                joinedChats.get(currentChatID).exMembers.add(data.from);
+            }
         case "text":
             store.get(data.chatID).history.push(data);
             updateChatWindow(data);
@@ -295,13 +301,6 @@ async function disputeRemoval(peer, chatID) {
     chatInfo.history.push(removeMessage);
     updateChatWindow(removeMessage);
     sendToServer(removeMessage);
-
-    await new Promise(resolve => setTimeout(resolve, 4000));
-
-    if (joinedChats.get(currentChatID).members.includes("bobTomato")) {
-        joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf("bobTomato"), 1);
-    }
-    joinedChats.get(currentChatID).exMembers.add("bobTomato");
     updateChatInfo();
 }
 
