@@ -698,12 +698,6 @@ async function receivedIgnored (ignored, chatID, pk) {
                 if (graphInfo.cycle && access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                     console.log(`not resolved?`);
                     joinedChats.get(chatID).peerIgnored.set(pk, ignored);
-                    if (chatID == currentChatID) {
-                        ignored.forEach(ig => {
-                            console.log(JSON.stringify(ig));
-                            elem.updateSelectedMembers(keyMap.get(pk), testArrToStr(ig.sig));
-                        });
-                    }
                     await store.setItem("joinedChats", joinedChats);
                     resolve("WAITING FOR LOCAL IGNORED");
                     return;
@@ -931,6 +925,12 @@ async function receivedMessage(messageData) {
         case "ignored":
             if (!messageData.replay) {
                 messageData.ignored.forEach(op => unpackOp(op));
+                if (messageData.chatID == currentChatID) {
+                    messageData.ignored.forEach(ig => {
+                        console.log(JSON.stringify(ig));
+                        elem.updateSelectedMembers(keyMap.get(JSON.stringify(messageData.from)), testArrToStr(ig.sig));
+                    });
+                }
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
