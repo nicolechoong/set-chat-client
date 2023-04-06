@@ -1,4 +1,4 @@
-import { joinedChats, keyMap, selectChat, removeFromChat, selectIgnored, updateChatInfo } from './client.js';
+import { joinedChats, keyMap, selectChat, removeFromChat, selectIgnored } from './client.js';
 import { hasOp } from './accessControl.js';
 import { testArrToStr } from './utils.js';
 
@@ -101,7 +101,7 @@ document.getElementById('createChatBtn').onclick = (() => {
 
 document.getElementById('showChatInfoBtn').onclick = (() => {
     chatInfo.style.display = chatInfo.style.display === "flex" ? "none" : "flex";
-    updateChatInfo();
+    // updateChatInfo();
 });
 
 document.getElementById('closeChatInfo').onclick = (() => {
