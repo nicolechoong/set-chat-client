@@ -121,6 +121,7 @@ function receivedSMessage (data) {
                 }
                 joinedChats.get(currentChatID).exMembers.add(data.from);
             }
+            updateChatInfo();
         case "text":
             store.get(data.chatID).history.push(data);
             updateChatWindow(data);
