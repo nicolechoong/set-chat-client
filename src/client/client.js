@@ -1175,7 +1175,7 @@ function updateChatWindow (data) {
             default:
                 break;
         }
-        chatWindow.insertBefore(message, message.lastElementChild);
+        chatWindow.insertBefore(message, chatWindow.lastElementChild);
     }
 }
 
