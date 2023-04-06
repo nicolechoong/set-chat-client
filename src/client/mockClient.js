@@ -115,8 +115,6 @@ function receivedSMessage (data) {
             if (p) {
                 p.innerHTML = `${p.innerHTML}, ${data.from}`;
             }
-            const rem = document.getElementById(`rb${data.from}`);
-            rem.className = 'removeUserBtn';
         case "text":
             store.get(data.chatID).history.push(data);
             updateChatWindow(data);
@@ -502,9 +500,6 @@ export function disableChatMods (chatID, conflict=false) {
             conflictChatBar.style.display = "flex";
             document.getElementById('conflictCardList').style.display = "flex";
 
-            [...document.getElementsByClassName('removeUserBtn')].map((elem) => {
-                elem.className = 'removeUserBtn pending';
-            });
         } else {
             disabledChatBar.style.display = "flex";
             conflictChatBar.style.display = "none";
