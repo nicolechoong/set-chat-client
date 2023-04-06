@@ -930,6 +930,7 @@ async function receivedMessage(messageData) {
                 messageData.ignored.forEach(op => unpackOp(op));
             }
             receivedIgnored(messageData.ignored, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
+                sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                 if (res == "ACCEPT") {
                     sendChatHistory(messageData.chatID, JSON.stringify(messageData.from));
                     sendAdvertisement(messageData.chatID, JSON.stringify(messageData.from));
