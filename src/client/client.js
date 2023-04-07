@@ -3,7 +3,6 @@ import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric, testArrToStr, testStrToArr} from "./utils.js";
-const { createDiffieHellmanGroup, verify, sign } = await import('node:crypto');
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -38,7 +37,8 @@ var localUsername;
 const enc = new TextEncoder();
 
 // private keypair for the client
-var keyPair;
+var keyPair = nacl.sign.keyPair();
+console.log(JSON.stringify(keyPair));
 
 // connection to stringified(peerPK)
 var connectionNames = new Map();
@@ -201,7 +201,8 @@ async function onInitDH (serverValue) {
 
     const res = await new Promise((res) => { resolveServerDH = res; });
 
-    if (success && macValue.equals(sign(null, serverPK, serverSessionKey)) && verify(null, receivedValues, clientSig)) {
+    const receivedValues = `${serverValue.toString('utf8')}${serverDH.getPublicKey('utf8')}`;
+    if (res.success && res.mac.equals(sign(null, res.pk, serverSessionKey)) && verify(null, receivedValues, res.sig)) {
         console.log(`Key exchange succeeded`);
     } else {
         alert('Key exchange failed');
