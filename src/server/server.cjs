@@ -2,6 +2,7 @@ const https = require('https');
 const WebSocketServer = require('ws').Server;
 const fs = require('fs');
 const path = require('path');
+const { generateKeyPair, createDiffieHellmanGroup, verify, sign } = require('node:crypto');
 
 const express = require('express');
 const app = express();
@@ -52,13 +53,13 @@ server.listen(port, () => {
 // stores all connections
 const connections = [];
 
-// (pk: stringified String, {msgQueue: Array of String, username: String})
+// (pk: stringified pubkey, {msgQueue: Array of String, username: String})
 const allUsers = new Map();
 
 // (username: String, pk: stringified String)
 const usernameToPK = new Map();
 
-// (pk: stringified String, {connection: WebSocket, chatrooms: Array of String})
+// (pk: stringified String, {connection: WebSocket, chatrooms: Array of String, dh: DiffieHellman object})
 const connectedUsers = new Map();
 
 // UNUSED FOR NOW
@@ -67,6 +68,14 @@ const chatrooms = new Map();
 
 // (chatID: String, {chatName: String, members: Array of String})
 const chats = new Map();
+
+const sessionKeys = new Map();
+
+var keyPair;
+
+generateKeyPair('ed25519', (err, pk, sk) => {
+  keyPair = { publicKey: pk, secretKey: sk };
+});
 
 var wsServer = new WebSocketServer({server});
 
@@ -77,10 +86,8 @@ if (!wsServer) {
 wsServer.on('connection', function(connection) {
   console.log("User connected");
   connections.push(connection);
-  sendTo(connection, {
-    type: "connectedUsers",
-    usernames: Array.from(connectedUsers.keys()).map(pk => allUsers.get(pk).username).sort(),
-  });
+
+  sendDHValue(connection);
 
   connection.onmessage = function(message) {
     var data;
@@ -93,6 +100,9 @@ wsServer.on('connection', function(connection) {
     }
 
     switch (data.type) { 
+      case "clientDH":
+        onClientDH(connection, data.value);
+        break;
       case "login":
         onLogin(connection, data.name, data.pubKey);
         break;     
@@ -159,6 +169,42 @@ wsServer.on('connection', function(connection) {
       }
     };
 })
+
+function sendDHValue (connection) {
+  const dh = createDiffieHellmanGroup("modp14");
+  sessionKeys.set(connection, { dh: dh });
+  console.log(sessionKeys.keys());
+
+  sendTo(connection, {
+    type: "initDH",
+    value: dh.generateKeys('utf8'),
+  })
+}
+
+function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
+  // clientValue: buffer, clientPK: uint8array, clientSig: buffer, macValue: Buffer
+  const dh = sessionKeys.get(connection);
+  const sessionKey = dh.computeSecret(clientValue);
+  
+  const receivedValues = `${dh.getPublicKey('utf8')}${clientValue.toString('utf8')}`;
+  if (macValue.equals(sign(null, clientPK, sessionKey)) && verify(null, receivedValues, clientSig)) {
+    const sentValues = `${clientValue.toString('utf8')}${dh.getPublicKey('utf8')}`;
+    const serverSig = sign(null, sentValues, keyPair.secretKey);
+    const serverMac = sign(null, keyPair.publicKey, sessionKey);
+
+    sendTo(connection, {
+      success: true,
+      type: "serverDH",
+      pk: keyPair.publicKey,
+      sig: serverSig,
+      mac: serverMac,
+    });
+  } else {
+    sendTo(connnection, {
+      success: false
+    });
+  }
+}
 
 function onLogin (connection, name, pubKey) {
   pubKey = JSON.stringify(pubKey);

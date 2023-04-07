@@ -3,6 +3,7 @@ import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric, testArrToStr, testStrToArr} from "./utils.js";
+const { createDiffieHellmanGroup, verify, sign } = await import('node:crypto');
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -66,6 +67,8 @@ const configuration = {
 
 var currentChatID, connections, msgQueue;
 export var joinedChats, keyMap;
+const serverDH = createDiffieHellmanGroup('modp14');
+var onServerDH;
 
 // local cache : localForage instance
 var store;
@@ -128,6 +131,12 @@ connection.onmessage = function (message) {
     var data = JSON.parse(message.data);
 
     switch (data.type) {
+        case "initDH":
+            onInitDH(data.value);
+            break;
+        case "serverDH":
+            onServerDH(data);
+            break;
         case "login":
             onLogin(data.success, data.username);
             break;
@@ -173,8 +182,34 @@ connection.onmessage = function (message) {
     }
 };
 
+async function onInitDH (serverValue) {
+    const clientValue = serverDH.generateKeyPair();
+    serverSessionKey = serverDH.computeSecret(serverValue);
+
+    const sentValues = `${serverDH.getPublicKey('utf8')}${serverValue.toString('utf8')}`;
+    const clientSig = sign(null, sentValues, keyPair.secretKey);
+    const clientMac = sign(null, keyPair.publicKey, serverSessionKey);
+  
+    sendToServer({
+        success: true,
+        type: "serverDH",
+        value: clientValue,
+        pk: keyPair.publicKey,
+        sig: clientSig,
+        mac: clientMac,
+    });
+
+    const res = await new Promise((res) => { resolveServerDH = res; });
+
+    if (success && macValue.equals(sign(null, serverPK, serverSessionKey)) && verify(null, receivedValues, clientSig)) {
+        console.log(`Key exchange succeeded`);
+    } else {
+        alert('Key exchange failed');
+    }
+}
+
 // Server approves Login
-async function onLogin(success, username) {
+async function onLogin (success, username) {
 
     if (success === false) {
         alert("oops...try a different username");
