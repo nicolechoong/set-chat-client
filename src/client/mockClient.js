@@ -112,12 +112,11 @@ function receivedSMessage (data) {
             onLogin();
             break;
         case "ignored":
-            console.log(`p${data.op.split(" ")[0]}`);
-            const p = document.getElementById(`p${data.op.split(" ")[2]}`);
+            const p = document.getElementById(`p${data.pk2}`);
             if (p) {
                 p.innerHTML = `${p.innerHTML}, ${data.from}`;
             }
-            if (data.chatID >= 5 && data.op.split(" ")[2] != localUsername) {
+            if ((data.chatID == 4 && joinedChats.get(4).members.includes(data.pk2)) || (data.chatID >= 5 && data.op.split(" ")[2] != localUsername)) {
                 if (joinedChats.get(currentChatID).members.includes(data.from)) {
                     joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(data.from), 1);
                 }
@@ -253,7 +252,7 @@ async function onRemove (messageData) {
     var chatInfo = store.get(messageData.chatID);
     chatInfo.history.push(messageData);
     updateChatWindow(messageData);
-    
+
     if (!messageData.dispute) { 
         joinedChats.get(messageData.chatID).toDispute = messageData.pk1;
     } else if (messageData.pk1 == "larryCucumber" && messageData.dispute) {
