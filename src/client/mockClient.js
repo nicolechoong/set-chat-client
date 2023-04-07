@@ -524,6 +524,7 @@ export function enableChatMods (chatID) {
         chatBar.style.display = "flex";
         disabledChatBar.style.display = "none";
         conflictChatBar.style.display = "none";
+        chatBox.className = "chat-panel col-8";
         
         document.getElementById('disputeCard').style.display = "none";
         document.getElementById('defaultText').style.display = "none";

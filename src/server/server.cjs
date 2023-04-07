@@ -29,18 +29,6 @@ app.get('/src/client/chatroom.css', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'chatroom.css'));
 });
 
-app.get('/assets/css/fontawesome.min.css', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','fontawesome.min.css'));
-});
-
-app.get('/assets/css/solid.css', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','css','solid.css'));
-});
-
-app.get('/assets/webfonts/fa-solid-900.woff2', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets','webfonts','fa-solid-900.woff2'));
-});
-
 app.get('/src/client/components.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'components.js'));
 });
@@ -65,7 +53,6 @@ server.listen(port, () => {
 const connections = [];
 
 // (pk: stringified String, {msgQueue: Array of String, username: String})
-// TODO: Extend with passwords, keys etc...
 const allUsers = new Map();
 
 // (username: String, pk: stringified String)

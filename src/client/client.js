@@ -129,7 +129,7 @@ connection.onmessage = function (message) {
 
     switch (data.type) {
         case "login":
-            onLogin(data.success, new Map(data.joinedChats), data.username);
+            onLogin(data.success, data.username);
             break;
         case "offer":
             onOffer(data.offer, data.from, objToArr(data.fromPK));
@@ -174,7 +174,7 @@ connection.onmessage = function (message) {
 };
 
 // Server approves Login
-async function onLogin(success, chats, username) {
+async function onLogin(success, username) {
 
     if (success === false) {
         alert("oops...try a different username");
@@ -188,7 +188,7 @@ async function onLogin(success, chats, username) {
             keyMap = storedKeyMap === null ? new Map() : storedKeyMap;
             keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
             store.setItem("keyMap", keyMap);
-        })
+        });
         store.getItem("msgQueue").then((storedMsgQueue) => {
             msgQueue = storedMsgQueue === null ? new Map() : storedMsgQueue;
         });
