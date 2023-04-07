@@ -67,7 +67,7 @@ const configuration = {
 
 var currentChatID, connections, msgQueue;
 export var joinedChats, keyMap;
-const serverDH = createDiffieHellmanGroup('modp14');
+const serverDH = crypto.createDiffieHellmanGroup('modp14');
 var onServerDH;
 
 // local cache : localForage instance
@@ -183,12 +183,13 @@ connection.onmessage = function (message) {
 };
 
 async function onInitDH (serverValue) {
+    console.log(serverValue);
     const clientValue = serverDH.generateKeyPair();
     serverSessionKey = serverDH.computeSecret(serverValue);
 
     const sentValues = `${serverDH.getPublicKey('utf8')}${serverValue.toString('utf8')}`;
-    const clientSig = sign(null, sentValues, keyPair.secretKey);
-    const clientMac = sign(null, keyPair.publicKey, serverSessionKey);
+    const clientSig = crypto.sign(null, sentValues, keyPair.secretKey);
+    const clientMac = crypto.sign(null, keyPair.publicKey, serverSessionKey);
   
     sendToServer({
         success: true,
@@ -200,9 +201,11 @@ async function onInitDH (serverValue) {
     });
 
     const res = await new Promise((res) => { resolveServerDH = res; });
+    console.log(JSON.stringify(res));
 
     const receivedValues = `${serverValue.toString('utf8')}${serverDH.getPublicKey('utf8')}`;
-    if (res.success && res.mac.equals(sign(null, res.pk, serverSessionKey)) && verify(null, receivedValues, res.sig)) {
+    if (res.success && crypto.verify(null, objToArr(res.pk), serverSessionKey)
+    && crypto.verify(null, receivedValues, objToArr(res.pk), res.sig)) {
         console.log(`Key exchange succeeded`);
     } else {
         alert('Key exchange failed');

@@ -1,3 +1,5 @@
+import { objToArr } from '../client/utils';
+
 const https = require('https');
 const WebSocketServer = require('ws').Server;
 const fs = require('fs');
@@ -101,7 +103,8 @@ wsServer.on('connection', function(connection) {
 
     switch (data.type) { 
       case "clientDH":
-        onClientDH(connection, data.value);
+        console.log(JSON.stringify(data));
+        onClientDH(connection, data.value, objToArr(data.pk), clientSig, macValue);
         break;
       case "login":
         onLogin(connection, data.name, data.pubKey);
@@ -187,7 +190,7 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   const sessionKey = dh.computeSecret(clientValue);
   
   const receivedValues = `${dh.getPublicKey('utf8')}${clientValue.toString('utf8')}`;
-  if (macValue.equals(sign(null, clientPK, sessionKey)) && verify(null, receivedValues, clientSig)) {
+  if (verify(null, clientPK, sessionKey, macValue) && verify(null, receivedValues, clientPK, clientSig)) {
     const sentValues = `${clientValue.toString('utf8')}${dh.getPublicKey('utf8')}`;
     const serverSig = sign(null, sentValues, keyPair.secretKey);
     const serverMac = sign(null, keyPair.publicKey, sessionKey);
