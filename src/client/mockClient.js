@@ -116,7 +116,7 @@ function receivedSMessage (data) {
             if (p) {
                 p.innerHTML = `${p.innerHTML}, ${data.from}`;
             }
-            if ((data.chatID == 4 && joinedChats.get(4).members.includes(data.pk2)) || (data.chatID >= 5 && data.op.split(" ")[2] != localUsername)) {
+            if ((data.chatID == 4 && !joinedChats.get(4).members.includes(data.pk2)) || (data.chatID >= 5 && data.op.split(" ")[2] != localUsername)) {
                 if (joinedChats.get(currentChatID).members.includes(data.from)) {
                     joinedChats.get(currentChatID).members.splice(joinedChats.get(currentChatID).members.indexOf(data.from), 1);
                 }
