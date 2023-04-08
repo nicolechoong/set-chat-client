@@ -1,5 +1,3 @@
-import { objToArr } from '../client/utils';
-
 const https = require('https');
 const WebSocketServer = require('ws').Server;
 const fs = require('fs');
@@ -549,4 +547,8 @@ function onReconnect (connection, name, pk) {
 
 function objToStr (obj) {
   return JSON.stringify(Uint8Array.from(Object.values(obj)))
+}
+
+function objToArr (obj) {
+  return Uint8Array.from(Object.values(obj));
 }
