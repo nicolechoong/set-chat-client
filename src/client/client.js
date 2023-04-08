@@ -1750,3 +1750,7 @@ function closeConnections (pk, chatID, initiated) {
         console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
     // }
 }
+
+export function objToArr (obj) {
+    return Uint8Array.from(Object.values(obj));
+}
