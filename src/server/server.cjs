@@ -200,8 +200,9 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   receivedValues.set(clientValue);
   receivedValues.set(serverValue, clientValue.length);
 
-  if (nacl.sign.detached.verify(sentValues, clientSig, clientPK) 
+  if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
   && nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey)) {
+    
     const sentValues = new Uint8Array(serverValue.length + clientValue.length);
     sentValues.set(serverValue);
     sentValues.set(clientValue, serverValue.length);
