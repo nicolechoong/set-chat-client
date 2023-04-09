@@ -76,7 +76,6 @@ const serverKeyRaw = new Uint8Array(keyPair.publicKey.export({
   format: 'der',
   type: 'spki',
 }).buffer);
-console.log(serverKeyRaw);
 
 var wsServer = new WebSocketServer({server});
 
