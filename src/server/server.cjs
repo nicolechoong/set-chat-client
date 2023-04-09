@@ -194,14 +194,10 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   const serverValue = sessionKeys.get(connection).publicKey;
   const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
   const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
-  console.log(macKey.pub);
 
   const receivedValues = new Uint8Array(serverValue.length + clientValue.length);
   receivedValues.set(serverValue);
   receivedValues.set(clientValue, serverValue.length);
-
-  console.log(nacl.sign.detached.verify(receivedValues, clientSig, clientPK));
-  console.log(nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey));
 
   if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
   && nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey)) {
@@ -209,16 +205,13 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
     const sentValues = new Uint8Array(clientValue.length + serverValue.length);
     sentValues.set(clientValue);
     sentValues.set(serverValue, clientValue.length);
-
-    const serverSig = nacl.sign.detached(sentValues, keyPair.secretKey);
-    const serverMac = nacl.sign.detached(keyPair.publicKey, macKey.secretKey);
-
+    
     sendTo(connection, {
       success: true,
       type: "serverDH",
       pk: keyPair.publicKey,
-      sig: serverSig,
-      mac: serverMac,
+      sig: nacl.sign.detached(sentValues, keyPair.secretKey),
+      mac: nacl.sign.detached(keyPair.publicKey, macKey.secretKey),
     });
   } else {
     sendTo(connection, {

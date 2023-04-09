@@ -65,7 +65,7 @@ const configuration = {
     ]
 };
 
-var currentChatID, connections, msgQueue, resolveServerDH;
+var currentChatID, connections, msgQueue, onServerDH;
 export var joinedChats, keyMap;
 
 // local cache : localForage instance
@@ -191,21 +191,17 @@ async function onInitDH (serverValue) {
     const sentValues = new Uint8Array(serverValue.length + clientValue.length);
     sentValues.set(serverValue);
     sentValues.set(clientValue, serverValue.length);
-
-    const clientSig = nacl.sign.detached(sentValues, keyPair.secretKey); // verifying secret key possession 
-    const clientMac = nacl.sign.detached(keyPair.publicKey, macKey.secretKey) // verifying identity
   
     sendToServer({
         success: true,
         type: "clientDH",
         value: clientValue, // Uint8Array
         pk: keyPair.publicKey, // Uint8Array
-        sig: clientSig, // Uint8Array
-        mac: clientMac, // Uint8Array
+        sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
+        mac: nacl.sign.detached(keyPair.publicKey, macKey.secretKey) // verifying identity
     });
 
-    const res = await new Promise((res) => { resolveServerDH = res; });
-    console.log(JSON.stringify(res));
+    const res = await new Promise((res) => { onServerDH = res; });
 
     const receivedValues = new Uint8Array(clientValue.length + serverValue.length);
     receivedValues.set(clientValue);
