@@ -207,7 +207,7 @@ async function onInitDH (serverValue) {
     const res = await new Promise((res) => { resolveServerDH = res; });
     console.log(JSON.stringify(res));
 
-    const receivedValues = new Uint8Array(serverValue.length + clientValue.length);
+    const receivedValues = new Uint8Array(clientValue.length + serverValue.length);
     receivedValues.set(clientValue);
     receivedValues.set(serverValue, clientValue.length);
 

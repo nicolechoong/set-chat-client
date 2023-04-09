@@ -194,11 +194,11 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   const serverValue = sessionKeys.get(connection).publicKey;
   const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
   const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
-  console.log(macKey.publicKey);
+  console.log(macKey.pub);
 
-  const receivedValues = new Uint8Array(clientValue.length + serverValue.length);
-  receivedValues.set(clientValue);
-  receivedValues.set(serverValue, clientValue.length);
+  const receivedValues = new Uint8Array(serverValue.length + clientValue.length);
+  receivedValues.set(serverValue);
+  receivedValues.set(clientValue, serverValue.length);
 
   console.log(nacl.sign.detached.verify(receivedValues, clientSig, clientPK));
   console.log(nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey));
@@ -206,9 +206,9 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
   && nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey)) {
 
-    const sentValues = new Uint8Array(serverValue.length + clientValue.length);
-    sentValues.set(serverValue);
-    sentValues.set(clientValue, serverValue.length);
+    const sentValues = new Uint8Array(clientValue.length + serverValue.length);
+    sentValues.set(clientValue);
+    sentValues.set(serverValue, clientValue.length);
 
     const serverSig = nacl.sign.detached(sentValues, keyPair.secretKey);
     const serverMac = nacl.sign.detached(keyPair.publicKey, macKey.secretKey);
