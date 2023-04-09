@@ -187,10 +187,11 @@ connection.onmessage = function (message) {
 
 async function onInitDH (serverValueRaw) {
     // serverValueRaw: Uint8Array
-    const serverValue = await crypto.subtle.importKey("raw", serverValueRaw, ecdhParams, true, ['deriveKey']);
+    const serverValue = await crypto.subtle.importKey("raw", serverValueRaw.buffer, ecdhParams, true, ['deriveKey']);
     const ecdhKeyPair = await crypto.subtle.generateKey(ecdhParams, true, ['sign', 'verify', 'deriveKey']);
-    const clientKey = ecdhKeyPair.publicKey;
-    const clientValueRaw = new Uint8Array(await exportKey("raw", clientKey));
+    const clientValue = ecdhKeyPair.publicKey;
+    const clientValueRaw = new Uint8Array(await exportKey("raw", clientValue));
+    console.log(clientValueRaw);
 
     const serverSessionKey = await crypto.subtle.deriveKey({
         name: "ECDH",
@@ -225,7 +226,7 @@ async function onInitDH (serverValueRaw) {
     receivedValues.set(serverValueRaw, clientValueRaw.length);
 
     const serverKeyRaw = objToArr(res.pk);
-    const serverKey = await crypto.subtle.importKey("raw", serverKeyRaw, ecdhParams, true, ['verify']);
+    const serverKey = await crypto.subtle.importKey("raw", serverKeyRaw.buffer, ecdhParams, true, ['verify']);
     if (res.success && crypto.subtle.verify("HMAC", serverKey, serverSessionKey, receivedValues)
     && crypto.verify("HMAC", sessionKey, objToArr(res.sig), serverKeyRaw)) {
         console.log(`Key exchange succeeded`);
