@@ -192,8 +192,8 @@ async function onInitDH (serverValue) {
     sentValues.set(serverValue);
     sentValues.set(clientValue, serverValue.length);
 
-    const clientSig = nacl.sign(sentValues, keyPair.secretKey); // verifying secret key possession 
-    const clientMac = nacl.sign(keyPair.publicKey, macKey.secretKey) // verifying identity
+    const clientSig = nacl.sign.detached(sentValues, keyPair.secretKey); // verifying secret key possession 
+    const clientMac = nacl.sign.detached(keyPair.publicKey, macKey.secretKey) // verifying identity
   
     sendToServer({
         success: true,
