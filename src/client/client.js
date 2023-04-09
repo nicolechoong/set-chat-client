@@ -67,7 +67,10 @@ const configuration = {
 
 var currentChatID, connections, msgQueue;
 export var joinedChats, keyMap;
-const serverDH = crypto.createDiffieHellmanGroup('modp14');
+const ecdhParams = {
+    name: 'ECDH',
+    namedCurve: 'P-256',
+};
 var onServerDH;
 
 // local cache : localForage instance
@@ -182,30 +185,49 @@ connection.onmessage = function (message) {
     }
 };
 
-async function onInitDH (serverValue) {
-    console.log(serverValue);
-    const clientValue = serverDH.generateKeyPair();
-    serverSessionKey = serverDH.computeSecret(serverValue);
+async function onInitDH (serverValueRaw) {
+    // serverValueRaw: Uint8Array
+    const serverValue = await importKey("raw", serverValueRaw, ecdhParams, true, ['deriveKey']);
+    const ecdhKeyPair = await crypto.subtle.generateKey(ecdhParams, true, ['sign', 'verify', 'deriveKey']);
+    const clientKey = ecdhKeyPair.publicKey;
+    const clientValueRaw = new Uint8Array(await exportKey("raw", clientKey));
 
-    const sentValues = `${serverDH.getPublicKey('utf8')}${serverValue.toString('utf8')}`;
-    const clientSig = crypto.sign(null, sentValues, keyPair.secretKey);
-    const clientMac = crypto.sign(null, keyPair.publicKey, serverSessionKey);
+    const serverSessionKey = await crypto.subtle.deriveKey({
+        name: "ECDH",
+        public: serverValue,
+    }, ecdhKeyPair.publicKey, {
+        name: "AES-GCM",
+        length: 256,
+      }, true, ['sign', 'verify']);
+    console.log(serverSessionKey);
+
+    const sentValues = new Uint8Array(serverValueRaw.length + clientValueRaw.length);
+    sentValues.set(serverValueRaw);
+    sentValues.set(clientValueRaw, serverValueRaw.length);
+
+    const clientSig = new Uint8Array(crypto.subtle.sign("HMAC", keyPair.secretKey, sentValues)); // verifying secret key possession 
+    const clientMac = new Uint8Array(crypto.subtle.sign("HMAC", serverSessionKey, keyPair.publicKey)); // verifying identity
   
     sendToServer({
         success: true,
         type: "serverDH",
-        value: clientValue,
-        pk: keyPair.publicKey,
-        sig: clientSig,
-        mac: clientMac,
+        value: clientValueRaw, // Uint8Array
+        pk: keyPair.publicKey, // Uint8Array
+        sig: clientSig, // Uint8Array
+        mac: clientMac, // Uint8Array
     });
 
     const res = await new Promise((res) => { resolveServerDH = res; });
     console.log(JSON.stringify(res));
 
-    const receivedValues = `${serverValue.toString('utf8')}${serverDH.getPublicKey('utf8')}`;
-    if (res.success && crypto.verify(null, objToArr(res.pk), serverSessionKey)
-    && crypto.verify(null, receivedValues, objToArr(res.pk), res.sig)) {
+    const receivedValues = new Uint8Array(serverValueRaw.length + clientValueRaw.length);
+    receivedValues.set(clientValueRaw);
+    receivedValues.set(serverValueRaw, clientValueRaw.length);
+
+    const serverKeyRaw = objToArr(res.pk);
+    const serverKey = await importKey("raw", serverKeyRaw, ecdhParams, true, ['verify']);
+    if (res.success && crypto.subtle.verify("HMAC", serverKey, serverSessionKey, receivedValues)
+    && crypto.verify("HMAC", sessionKey, objToArr(res.sig), serverKeyRaw)) {
         console.log(`Key exchange succeeded`);
     } else {
         alert('Key exchange failed');

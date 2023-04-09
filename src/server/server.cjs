@@ -2,7 +2,7 @@ const https = require('https');
 const WebSocketServer = require('ws').Server;
 const fs = require('fs');
 const path = require('path');
-const { generateKeyPair, createDiffieHellmanGroup, verify, sign } = require('node:crypto');
+const { generateKeyPairSync, createECDH, verify, sign } = require('node:crypto');
 
 const express = require('express');
 const app = express();
@@ -71,11 +71,12 @@ const chats = new Map();
 
 const sessionKeys = new Map();
 
-var keyPair;
-
-generateKeyPair('ed25519', (err, pk, sk) => {
-  keyPair = { publicKey: pk, secretKey: sk };
-});
+const keyPair = generateKeyPairSync('ed25519');
+const serverKeyRaw = new Uint8Array(keyPair.publicKey.export({
+  format: 'der',
+  type: 'spki',
+}).buffer);
+console.log(serverKeyRaw);
 
 var wsServer = new WebSocketServer({server});
 
@@ -102,7 +103,7 @@ wsServer.on('connection', function(connection) {
     switch (data.type) { 
       case "clientDH":
         console.log(JSON.stringify(data));
-        onClientDH(connection, data.value, objToArr(data.pk), clientSig, macValue);
+        onClientDH(connection, objToArr(data.value), objToArr(data.pk), objToArr(clientSig), objToArr(macValue));
         break;
       case "login":
         onLogin(connection, data.name, data.pubKey);
@@ -172,36 +173,44 @@ wsServer.on('connection', function(connection) {
 })
 
 function sendDHValue (connection) {
-  const dh = createDiffieHellmanGroup("modp14");
+  const dh = createECDH('secp256k1');
   sessionKeys.set(connection, { dh: dh });
   console.log(sessionKeys.keys());
+  const serverValueRaw = new Uint8Array(dh.generateKeys());
+  console.log(serverValueRaw);
 
   sendTo(connection, {
     type: "initDH",
-    value: dh.generateKeys('utf8'),
-  })
+    value: serverValueRaw,
+  });
 }
 
-function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
-  // clientValue: buffer, clientPK: uint8array, clientSig: buffer, macValue: Buffer
+function onClientDH (connection, clientValueRaw, clientPK, clientSig, macValue) {
+  // clientValue: uint8array, clientPK: uint8array, clientSig: uint8array, macValue: uint8array
   const dh = sessionKeys.get(connection);
-  const sessionKey = dh.computeSecret(clientValue);
+  const sessionKey = dh.computeSecret(clientValueRaw);
+  console.log(sessionKey);
   
-  const receivedValues = `${dh.getPublicKey('utf8')}${clientValue.toString('utf8')}`;
+  const receivedValues = new Uint8Array(serverValueRaw.length + clientValueRaw.length);
+  receivedValues.set(serverValueRaw);
+  receivedValues.set(clientValueRaw, serverValueRaw.length);
+
   if (verify(null, clientPK, sessionKey, macValue) && verify(null, receivedValues, clientPK, clientSig)) {
-    const sentValues = `${clientValue.toString('utf8')}${dh.getPublicKey('utf8')}`;
-    const serverSig = sign(null, sentValues, keyPair.secretKey);
-    const serverMac = sign(null, keyPair.publicKey, sessionKey);
+    const receivedValues = new Uint8Array(clientValueRaw.length + serverValueRaw.length);
+    receivedValues.set(clientValueRaw);
+    receivedValues.set(serverValueRaw, clientValueRaw.length);
+    const serverSig = new Uint8Array(sign(null, sentValues, keyPair.secretKey));
+    const serverMac = new Uint8Array(sign(null, serverKeyRaw, sessionKey));
 
     sendTo(connection, {
       success: true,
       type: "serverDH",
-      pk: keyPair.publicKey,
+      pk: serverKeyRaw,
       sig: serverSig,
       mac: serverMac,
     });
   } else {
-    sendTo(connnection, {
+    sendTo(connection, {
       success: false
     });
   }
