@@ -194,11 +194,14 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   const serverValue = sessionKeys.get(connection).publicKey;
   const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
   const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
-  console.log(sessionKey);
+  console.log(macKey.publicKey);
 
   const receivedValues = new Uint8Array(clientValue.length + serverValue.length);
   receivedValues.set(clientValue);
   receivedValues.set(serverValue, clientValue.length);
+
+  console.log(nacl.sign.detached.verify(receivedValues, clientSig, clientPK));
+  console.log(nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey));
 
   if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
   && nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey)) {

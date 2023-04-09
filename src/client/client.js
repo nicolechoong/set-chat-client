@@ -186,7 +186,7 @@ async function onInitDH (serverValue) {
     const clientValue = clientKeyPair.publicKey;
     const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
     const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
-    console.log(sessionKey);
+    console.log(macKey.publicKey);
 
     const sentValues = new Uint8Array(serverValue.length + clientValue.length);
     sentValues.set(serverValue);
