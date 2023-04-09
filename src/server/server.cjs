@@ -171,7 +171,6 @@ wsServer.on('connection', function(connection) {
 function sendDHValue (connection) {
   const box = nacl.box.keyPair();
   sessionKeys.set(connection, box);
-  console.log(sessionKeys);
 
   sendTo(connection, {
     type: "initDH",
@@ -195,6 +194,7 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   const serverValue = sessionKeys.get(connection).publicKey;
   const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
   const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
+  console.log(sessionKey);
 
   const receivedValues = new Uint8Array(clientValue.length + serverValue.length);
   receivedValues.set(clientValue);

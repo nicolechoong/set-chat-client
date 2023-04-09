@@ -65,7 +65,7 @@ const configuration = {
     ]
 };
 
-var currentChatID, connections, msgQueue;
+var currentChatID, connections, msgQueue, resolveServerDH;
 export var joinedChats, keyMap;
 
 // local cache : localForage instance
@@ -186,6 +186,7 @@ async function onInitDH (serverValue) {
     const clientValue = clientKeyPair.publicKey;
     const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
     const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
+    console.log(sessionKey);
 
     const sentValues = new Uint8Array(serverValue.length + clientValue.length);
     sentValues.set(serverValue);
