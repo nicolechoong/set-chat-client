@@ -197,7 +197,7 @@ async function onInitDH (serverValue) {
   
     sendToServer({
         success: true,
-        type: "serverDH",
+        type: "clientDH",
         value: clientValue, // Uint8Array
         pk: keyPair.publicKey, // Uint8Array
         sig: clientSig, // Uint8Array
