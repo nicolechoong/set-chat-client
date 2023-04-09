@@ -99,7 +99,7 @@ wsServer.on('connection', function(connection) {
     switch (data.type) { 
       case "clientDH":
         console.log(JSON.stringify(data));
-        onClientDH(connection, objToArr(data.value), objToArr(data.pk), objToArr(clientSig), objToArr(macValue));
+        onClientDH(connection, objToArr(data.value), objToArr(data.pk), objToArr(data.sig), objToArr(data.mac));
         break;
       case "login":
         onLogin(connection, data.name, data.pubKey);
