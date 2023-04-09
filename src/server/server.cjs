@@ -2,6 +2,7 @@ const https = require('https');
 const WebSocketServer = require('ws').Server;
 const fs = require('fs');
 const path = require('path');
+const nacl = require('tweetnacl');
 const { generateKeyPairSync, createECDH, verify, sign } = require('node:crypto');
 
 const express = require('express');
@@ -71,11 +72,7 @@ const chats = new Map();
 
 const sessionKeys = new Map();
 
-const keyPair = generateKeyPairSync('ed25519');
-const serverKeyRaw = new Uint8Array(keyPair.publicKey.export({
-  format: 'der',
-  type: 'spki',
-}).buffer);
+const keyPair = nacl.sign.keyPair();
 
 var wsServer = new WebSocketServer({server});
 
@@ -172,39 +169,50 @@ wsServer.on('connection', function(connection) {
 })
 
 function sendDHValue (connection) {
-  const dh = createECDH('secp256k1');
-  sessionKeys.set(connection, { dh: dh });
-  console.log(sessionKeys.keys());
-  const serverValueRaw = new Uint8Array(dh.generateKeys());
-  console.log(serverValueRaw);
+  const box = nacl.box.keyPair();
+  sessionKeys.set(connection, box);
+  console.log(sessionKeys);
 
   sendTo(connection, {
     type: "initDH",
-    value: serverValueRaw,
+    value: box.publicKey,
   });
 }
 
-function onClientDH (connection, clientValueRaw, clientPK, clientSig, macValue) {
-  // clientValue: uint8array, clientPK: uint8array, clientSig: uint8array, macValue: uint8array
-  const dh = sessionKeys.get(connection);
-  const sessionKey = dh.computeSecret(clientValueRaw);
-  console.log(sessionKey);
-  
-  const receivedValues = new Uint8Array(serverValueRaw.length + clientValueRaw.length);
-  receivedValues.set(serverValueRaw);
-  receivedValues.set(clientValueRaw, serverValueRaw.length);
+/*
+use nacl.box.keyPair() for ephemeral keys
+send the public key from that to the other side
+use nacl.box.before() to get the session key...
 
-  if (verify(null, clientPK, sessionKey, macValue) && verify(null, receivedValues, clientPK, clientSig)) {
-    const receivedValues = new Uint8Array(clientValueRaw.length + serverValueRaw.length);
-    receivedValues.set(clientValueRaw);
-    receivedValues.set(serverValueRaw, clientValueRaw.length);
-    const serverSig = new Uint8Array(sign(null, sentValues, keyPair.secretKey));
-    const serverMac = new Uint8Array(sign(null, serverKeyRaw, sessionKey));
+use nacl.sign.keyPair() for permanent key,
+also use nacl.sign.keyPair.fromSeed(seed) for MAC key
+sign the permanent public key using nacl.sign(message, secretKey)
+use nacl.sign.detached.verify(message, signature, publicKey)
+*/
+
+function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
+  // clientValue: uint8array, clientPK: uint8array, clientSig: uint8array, macValue: uint8array
+  const serverValue = sessionKeys.get(connection).publicKey;
+  const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
+  const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
+
+  const receivedValues = new Uint8Array(clientValue.length + serverValue.length);
+  receivedValues.set(clientValue);
+  receivedValues.set(serverValue, clientValue.length);
+
+  if (nacl.sign.detached.verify(sentValues, clientSig, clientPK) 
+  && nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey)) {
+    const sentValues = new Uint8Array(serverValue.length + clientValue.length);
+    sentValues.set(serverValue);
+    sentValues.set(clientValue, serverValue.length);
+
+    const serverSig = nacl.sign(sentValues, keyPair.secretKey);
+    const serverMac = nacl.sign(keyPair.publicKey, macKey.secretKey);
 
     sendTo(connection, {
       success: true,
       type: "serverDH",
-      pk: serverKeyRaw,
+      pk: keyPair.publicKey,
       sig: serverSig,
       mac: serverMac,
     });

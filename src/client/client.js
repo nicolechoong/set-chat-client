@@ -67,11 +67,6 @@ const configuration = {
 
 var currentChatID, connections, msgQueue;
 export var joinedChats, keyMap;
-const ecdhParams = {
-    name: 'ECDH',
-    namedCurve: 'P-256',
-};
-var onServerDH;
 
 // local cache : localForage instance
 var store;
@@ -135,7 +130,7 @@ connection.onmessage = function (message) {
 
     switch (data.type) {
         case "initDH":
-            onInitDH(data.value);
+            onInitDH(objToArr(data.value));
             break;
         case "serverDH":
             onServerDH(data);
@@ -185,34 +180,24 @@ connection.onmessage = function (message) {
     }
 };
 
-async function onInitDH (serverValueRaw) {
+async function onInitDH (serverValue) {
     // serverValueRaw: Uint8Array
-    const serverValue = await crypto.subtle.importKey("raw", serverValueRaw.buffer, ecdhParams, true, ['deriveKey']);
-    const ecdhKeyPair = await crypto.subtle.generateKey(ecdhParams, true, ['sign', 'verify', 'deriveKey']);
-    const clientValue = ecdhKeyPair.publicKey;
-    const clientValueRaw = new Uint8Array(await exportKey("raw", clientValue));
-    console.log(clientValueRaw);
+    const clientKeyPair = nacl.box.keyPair();
+    const clientValue = clientKeyPair.publicKey;
+    const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
+    const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
 
-    const serverSessionKey = await crypto.subtle.deriveKey({
-        name: "ECDH",
-        public: serverValue,
-    }, ecdhKeyPair.publicKey, {
-        name: "AES-GCM",
-        length: 256,
-      }, true, ['sign', 'verify']);
-    console.log(serverSessionKey);
+    const sentValues = new Uint8Array(serverValue.length + clientValue.length);
+    sentValues.set(serverValue);
+    sentValues.set(clientValue, serverValue.length);
 
-    const sentValues = new Uint8Array(serverValueRaw.length + clientValueRaw.length);
-    sentValues.set(serverValueRaw);
-    sentValues.set(clientValueRaw, serverValueRaw.length);
-
-    const clientSig = new Uint8Array(crypto.subtle.sign("HMAC", keyPair.secretKey, sentValues)); // verifying secret key possession 
-    const clientMac = new Uint8Array(crypto.subtle.sign("HMAC", serverSessionKey, keyPair.publicKey)); // verifying identity
+    const clientSig = nacl.sign(sentValues, keyPair.secretKey); // verifying secret key possession 
+    const clientMac = nacl.sign(keyPair.publicKey, macKey.secretKey) // verifying identity
   
     sendToServer({
         success: true,
         type: "serverDH",
-        value: clientValueRaw, // Uint8Array
+        value: clientValue, // Uint8Array
         pk: keyPair.publicKey, // Uint8Array
         sig: clientSig, // Uint8Array
         mac: clientMac, // Uint8Array
@@ -221,17 +206,18 @@ async function onInitDH (serverValueRaw) {
     const res = await new Promise((res) => { resolveServerDH = res; });
     console.log(JSON.stringify(res));
 
-    const receivedValues = new Uint8Array(serverValueRaw.length + clientValueRaw.length);
-    receivedValues.set(clientValueRaw);
-    receivedValues.set(serverValueRaw, clientValueRaw.length);
+    const receivedValues = new Uint8Array(serverValue.length + clientValue.length);
+    receivedValues.set(clientValue);
+    receivedValues.set(serverValue, clientValue.length);
 
-    const serverKeyRaw = objToArr(res.pk);
-    const serverKey = await crypto.subtle.importKey("raw", serverKeyRaw.buffer, ecdhParams, true, ['verify']);
-    if (res.success && crypto.subtle.verify("HMAC", serverKey, serverSessionKey, receivedValues)
-    && crypto.verify("HMAC", sessionKey, objToArr(res.sig), serverKeyRaw)) {
-        console.log(`Key exchange succeeded`);
-    } else {
-        alert('Key exchange failed');
+    const serverKey = objToArr(res.pk);
+    if (res.success) {
+        if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), serverKey)
+        && nacl.sign.detached.verify(serverKey, objToArr(res.mac), macKey.publicKey)) {
+            console.log(`Key exchange succeeded`);
+        } else {
+            alert('Key exchange failed');
+        }
     }
 }
 
