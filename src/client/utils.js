@@ -56,6 +56,3 @@ export function xorArr (arr1, arr2) {
     }
     return res;
 }
-
-const ipad = new Uint8Array(Array(128).fill([54]));
-const opad = new Uint8Array(Array(128).fill([92]));

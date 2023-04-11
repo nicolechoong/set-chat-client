@@ -2,7 +2,7 @@ import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js"
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
-import {strToArr, objToArr, concatArr, formatDate, arrEqual, isAlphanumeric, testArrToStr, testStrToArr, hmac512} from "./utils.js";
+import {strToArr, objToArr, concatArr, formatDate, arrEqual, isAlphanumeric, testArrToStr, testStrToArr} from "./utils.js";
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');

@@ -254,6 +254,10 @@ export async function members (ops, ignored) {
     return pks;
 }
 
+const ipad = new Uint8Array(Array(128).fill([54]));
+const opad = new Uint8Array(Array(128).fill([92]));
+
+
 export function hmac512 (k, m) {
     const kp = new Uint8Array(128);
     kp.set(k);
