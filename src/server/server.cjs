@@ -3,7 +3,6 @@ const WebSocketServer = require('ws').Server;
 const fs = require('fs');
 const path = require('path');
 const nacl = require('tweetnacl');
-const { generateKeyPairSync, createECDH, verify, sign } = require('node:crypto');
 
 const express = require('express');
 const app = express();
@@ -178,40 +177,28 @@ function sendDHValue (connection) {
   });
 }
 
-/*
-use nacl.box.keyPair() for ephemeral keys
-send the public key from that to the other side
-use nacl.box.before() to get the session key...
-
-use nacl.sign.keyPair() for permanent key,
-also use nacl.sign.keyPair.fromSeed(seed) for MAC key
-sign the permanent public key using nacl.sign(message, secretKey)
-use nacl.sign.detached.verify(message, signature, publicKey)
-*/
+// unique application identifier ('set-chat-client')
+const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
 
 function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   // clientValue: uint8array, clientPK: uint8array, clientSig: uint8array, macValue: uint8array
   const serverValue = sessionKeys.get(connection).publicKey;
   const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
-  const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
+  const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
-  const receivedValues = new Uint8Array(serverValue.length + clientValue.length);
-  receivedValues.set(serverValue);
-  receivedValues.set(clientValue, serverValue.length);
+  const receivedValues = concatArr(serverValue, clientValue);
 
   if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
-  && nacl.sign.detached.verify(clientPK, macValue, macKey.publicKey)) {
+  && nacl.verify(macValue, nacl.sign.detached(clientPK, macKey))) {
 
-    const sentValues = new Uint8Array(clientValue.length + serverValue.length);
-    sentValues.set(clientValue);
-    sentValues.set(serverValue, clientValue.length);
+    const sentValues = concatArr(clientValue, serverValue);
     
     sendTo(connection, {
       success: true,
       type: "serverDH",
       pk: keyPair.publicKey,
       sig: nacl.sign.detached(sentValues, keyPair.secretKey),
-      mac: nacl.sign.detached(keyPair.publicKey, macKey.secretKey),
+      mac: nacl.sign.detached(keyPair.publicKey, macKey),
     });
   } else {
     sendTo(connection, {
@@ -564,4 +551,11 @@ function objToStr (obj) {
 
 function objToArr (obj) {
   return Uint8Array.from(Object.values(obj));
+}
+
+export function concatArr (arr1, arr2) {
+  const merged = new Uint8Array(arr1.length + arr2.length);
+  merged.set(arr1);
+  merged.set(arr2, arr1.length);
+  return merged;
 }

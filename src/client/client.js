@@ -2,7 +2,7 @@ import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js"
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
-import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric, testArrToStr, testStrToArr} from "./utils.js";
+import {strToArr, objToArr, concatArr, formatDate, arrEqual, isAlphanumeric, testArrToStr, testStrToArr} from "./utils.js";
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -180,17 +180,17 @@ connection.onmessage = function (message) {
     }
 };
 
+// unique application identifier ('set-chat-client')
+const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
+
 async function onInitDH (serverValue) {
     // serverValueRaw: Uint8Array
     const clientKeyPair = nacl.box.keyPair();
     const clientValue = clientKeyPair.publicKey;
     const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
-    const macKey = nacl.sign.keyPair.fromSeed(sessionKey);
-    console.log(macKey.publicKey);
+    const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
-    const sentValues = new Uint8Array(serverValue.length + clientValue.length);
-    sentValues.set(serverValue);
-    sentValues.set(clientValue, serverValue.length);
+    const sentValues = concatArr(serverValue, clientValue);
   
     sendToServer({
         success: true,
@@ -198,19 +198,17 @@ async function onInitDH (serverValue) {
         value: clientValue, // Uint8Array
         pk: keyPair.publicKey, // Uint8Array
         sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
-        mac: nacl.sign.detached(keyPair.publicKey, macKey.secretKey) // verifying identity
+        mac: nacl.sign.detached(keyPair.publicKey, macKey) // verifying identity
     });
 
     const res = await new Promise((res) => { onServerDH = res; });
 
-    const receivedValues = new Uint8Array(clientValue.length + serverValue.length);
-    receivedValues.set(clientValue);
-    receivedValues.set(serverValue, clientValue.length);
+    const receivedValues = concatArr(clientValue, serverValue);
 
     const serverKey = objToArr(res.pk);
     if (res.success) {
         if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), serverKey)
-        && nacl.sign.detached.verify(serverKey, objToArr(res.mac), macKey.publicKey)) {
+        && nacl.verify(objToArr(res.mac), nacl.sign.detached(serverKey, macKey))) {
             console.log(`Key exchange succeeded`);
         } else {
             alert('Key exchange failed');

@@ -16,6 +16,13 @@ export function objToArr (obj) {
     return Uint8Array.from(Object.values(obj));
 }
 
+export function concatArr (arr1, arr2) {
+    const merged = new Uint8Array(arr1.length + arr2.length);
+    merged.set(arr1);
+    merged.set(arr2, arr1.length);
+    return merged;
+}
+
 export function formatDate (now) {
     const date = new Date(now);
     const intl = new Intl.DateTimeFormat('en-US', {
