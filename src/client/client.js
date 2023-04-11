@@ -189,9 +189,6 @@ async function onInitDH (serverValue) {
     const clientValue = clientKeyPair.publicKey;
     const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
     const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
-    console.log(macKey);
-    console.log(keyPair.publicKey);
-    console.log(access.hmac512(macKey, keyPair.publicKey));
 
     const sentValues = concatArr(serverValue, clientValue);
   
@@ -201,17 +198,17 @@ async function onInitDH (serverValue) {
         value: clientValue, // Uint8Array
         pk: keyPair.publicKey, // Uint8Array
         sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
-        mac: access.hmac512(macKey,keyPair.publicKey) // verifying identity
+        mac: access.hmac512(macKey, keyPair.publicKey) // verifying identity
     });
 
     const res = await new Promise((res) => { onServerDH = res; });
 
     const receivedValues = concatArr(clientValue, serverValue);
 
-    const serverKey = objToArr(res.pk);
+    const serverPK = objToArr(res.pk);
     if (res.success) {
-        if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), serverKey)
-        && nacl.verify(objToArr(res.mac), nacl.sign.detached(serverKey, macKey))) {
+        if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), serverPK)
+        && nacl.verify(objToArr(res.mac), access.hmac512(macKey, serverPK))) {
             console.log(`Key exchange succeeded`);
         } else {
             alert('Key exchange failed');

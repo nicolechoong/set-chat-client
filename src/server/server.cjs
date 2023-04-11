@@ -3,9 +3,6 @@ const WebSocketServer = require('ws').Server;
 const fs = require('fs');
 const path = require('path');
 const nacl = require('tweetnacl');
-const {
-  createHmac,
-} = require('node:crypto');
 
 const express = require('express');
 const app = express();
@@ -188,18 +185,11 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   const serverValue = sessionKeys.get(connection).publicKey;
   const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
   const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
-  const kp = new Uint8Array(128);
-  kp.set(macKey);
-  console.log(kp);
 
   const receivedValues = concatArr(serverValue, clientValue);
-  const hmac = createHmac('sha512', kp);
-  hmac.update(clientPK);
-  console.log(clientPK);
-  console.log(new Uint8Array(hmac.digest()));
 
   if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
-  && false) {
+  && nacl.verify(macValue, hmac512(macKey, clientPK))) {
 
     const sentValues = concatArr(clientValue, serverValue);
     
@@ -208,7 +198,7 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
       type: "serverDH",
       pk: keyPair.publicKey,
       sig: nacl.sign.detached(sentValues, keyPair.secretKey),
-      mac: nacl.sign.detached(keyPair.publicKey, macKey),
+      mac: hmac512(macKey, keyPair.publicKey),
     });
   } else {
     sendTo(connection, {
@@ -559,6 +549,16 @@ function objToStr (obj) {
   return JSON.stringify(Uint8Array.from(Object.values(obj)))
 }
 
+export function xorArr (arr1, arr2) {
+  if (arr1.length != arr2.length) { return false; }
+
+  const res = new Uint8Array(arr1.length);
+  for (let i=0; i < arr1.length; i++) {
+      res[i] = arr1[i] ^ arr2[i];
+  }
+  return res;
+}
+
 function objToArr (obj) {
   return Uint8Array.from(Object.values(obj));
 }
@@ -568,4 +568,13 @@ function concatArr (arr1, arr2) {
   merged.set(arr1);
   merged.set(arr2, arr1.length);
   return merged;
+}
+
+const ipad = new Uint8Array(Array(128).fill(54));
+const opad = new Uint8Array(Array(128).fill(92));
+
+export function hmac512 (k, m) {
+  const kp = new Uint8Array(128);
+  kp.set(k);
+  return nacl.hash(concatArr(xorArr(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
 }
