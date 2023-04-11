@@ -2,7 +2,7 @@ import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js"
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
-import {strToArr, objToArr, concatArr, formatDate, arrEqual, isAlphanumeric, testArrToStr, testStrToArr} from "./utils.js";
+import {strToArr, objToArr, concatArr, formatDate, arrEqual, isAlphanumeric, testArrToStr, testStrToArr, hmac512} from "./utils.js";
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -189,6 +189,9 @@ async function onInitDH (serverValue) {
     const clientValue = clientKeyPair.publicKey;
     const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
     const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+    console.log(macKey);
+    console.log(keyPair.publicKey.toString());
+    console.log(hmac512(macKey,keyPair.publicKey));
 
     const sentValues = concatArr(serverValue, clientValue);
   
@@ -198,7 +201,7 @@ async function onInitDH (serverValue) {
         value: clientValue, // Uint8Array
         pk: keyPair.publicKey, // Uint8Array
         sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
-        mac: nacl.sign.detached(keyPair.publicKey, macKey) // verifying identity
+        mac: hmac512(macKey,keyPair.publicKey) // verifying identity
     });
 
     const res = await new Promise((res) => { onServerDH = res; });

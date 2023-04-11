@@ -46,3 +46,26 @@ export function arrEqual (arr1, arr2) {
 export function isAlphanumeric (str) {
     return str === str.replace(/[^a-z0-9]/gi, '');
 }
+
+export function xorArr (arr1, arr2) {
+    if (arr1.length != arr2.length) { return false; }
+
+    const res = new Uint8Array();
+    for (const i in arr1) {
+        res[i] = arr1[i] ^ arr2[i];
+    }
+    return res;
+}
+
+const ipad = new Uint8Array(Array(128).fill([54]));
+const opad = new Uint8Array(Array(128).fill([92]));
+
+export function hmac512 (k, m) {
+    const kp = new Uint8Array(128);
+    kp.set(k);
+    if (k.length < 128) {
+        kp.set(0, k.length);
+    }
+    
+    return nacl.hash(concatArr(xor(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
+}
