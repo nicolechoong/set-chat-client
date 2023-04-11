@@ -265,5 +265,5 @@ export function hmac512 (k, m) {
         kp.set(0, k.length);
     }
     
-    return nacl.hash(concatArr(xor(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
+    return nacl.hash(concatArr(xorArr(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
 }

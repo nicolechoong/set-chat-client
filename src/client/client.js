@@ -190,7 +190,7 @@ async function onInitDH (serverValue) {
     const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
     const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
     console.log(macKey);
-    console.log(keyPair.publicKey.toString());
+    console.log(keyPair.publicKey);
     console.log(access.hmac512(macKey,keyPair.publicKey));
 
     const sentValues = concatArr(serverValue, clientValue);
