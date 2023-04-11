@@ -191,7 +191,7 @@ async function onInitDH (serverValue) {
     const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
     console.log(macKey);
     console.log(keyPair.publicKey.toString());
-    console.log(hmac512(macKey,keyPair.publicKey));
+    console.log(access.hmac512(macKey,keyPair.publicKey));
 
     const sentValues = concatArr(serverValue, clientValue);
   
@@ -201,7 +201,7 @@ async function onInitDH (serverValue) {
         value: clientValue, // Uint8Array
         pk: keyPair.publicKey, // Uint8Array
         sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
-        mac: hmac512(macKey,keyPair.publicKey) // verifying identity
+        mac: access.hmac512(macKey,keyPair.publicKey) // verifying identity
     });
 
     const res = await new Promise((res) => { onServerDH = res; });

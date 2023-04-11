@@ -1,4 +1,4 @@
-import { arrEqual } from "./utils.js";
+import { arrEqual, xorArr, concatArr } from "./utils.js";
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 // import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
@@ -252,4 +252,14 @@ export async function members (ops, ignored) {
     }
     console.log(`calculated member set ${[...pks]}      number of members ${pks.size}}`);
     return pks;
+}
+
+export function hmac512 (k, m) {
+    const kp = new Uint8Array(128);
+    kp.set(k);
+    if (k.length < 128) {
+        kp.set(0, k.length);
+    }
+    
+    return nacl.hash(concatArr(xor(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
 }

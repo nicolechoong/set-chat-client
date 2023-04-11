@@ -59,13 +59,3 @@ export function xorArr (arr1, arr2) {
 
 const ipad = new Uint8Array(Array(128).fill([54]));
 const opad = new Uint8Array(Array(128).fill([92]));
-
-export function hmac512 (k, m) {
-    const kp = new Uint8Array(128);
-    kp.set(k);
-    if (k.length < 128) {
-        kp.set(0, k.length);
-    }
-    
-    return nacl.hash(concatArr(xor(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
-}
