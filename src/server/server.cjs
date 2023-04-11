@@ -553,7 +553,7 @@ function objToArr (obj) {
   return Uint8Array.from(Object.values(obj));
 }
 
-export function concatArr (arr1, arr2) {
+function concatArr (arr1, arr2) {
   const merged = new Uint8Array(arr1.length + arr2.length);
   merged.set(arr1);
   merged.set(arr2, arr1.length);
