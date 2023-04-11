@@ -51,7 +51,7 @@ export function xorArr (arr1, arr2) {
     if (arr1.length != arr2.length) { return false; }
 
     const res = new Uint8Array();
-    for (const i=0; i < arr1.length; i++) {
+    for (let i=0; i < arr1.length; i++) {
         res[i] = arr1[i] ^ arr2[i];
     }
     return res;
