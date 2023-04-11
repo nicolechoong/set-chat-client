@@ -188,9 +188,11 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   const serverValue = sessionKeys.get(connection).publicKey;
   const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
   const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+  const kp = new Uint8Array(128);
+  kp.set(macKey);
 
   const receivedValues = concatArr(serverValue, clientValue);
-  const hmac = createHmac('sha512', macKey);
+  const hmac = createHmac('sha512', kp);
   hmac.update(clientPK);
   console.log(new Uint8Array(hmac.digest()));
 
