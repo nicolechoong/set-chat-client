@@ -3,6 +3,9 @@ const WebSocketServer = require('ws').Server;
 const fs = require('fs');
 const path = require('path');
 const nacl = require('tweetnacl');
+const {
+  createHmac,
+} = require('node:crypto');
 
 const express = require('express');
 const app = express();
@@ -187,9 +190,12 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
   const receivedValues = concatArr(serverValue, clientValue);
+  const hmac = createHmac('sha512', macKey);
+  hmac.update(concatArr(setAppIdentifier, clientPK));
+  console.log(hmac.digest());
 
   if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
-  && nacl.verify(macValue, nacl.sign.detached(clientPK, macKey))) {
+  && false) {
 
     const sentValues = concatArr(clientValue, serverValue);
     
