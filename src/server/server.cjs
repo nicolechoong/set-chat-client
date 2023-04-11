@@ -191,8 +191,8 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
 
   const receivedValues = concatArr(serverValue, clientValue);
   const hmac = createHmac('sha512', macKey);
-  hmac.update(concatArr(setAppIdentifier, clientPK));
-  console.log(hmac.digest());
+  hmac.update(clientPK);
+  console.log(new Uint8Array(hmac.digest()));
 
   if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
   && false) {
