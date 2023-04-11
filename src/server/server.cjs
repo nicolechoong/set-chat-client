@@ -549,7 +549,7 @@ function objToStr (obj) {
   return JSON.stringify(Uint8Array.from(Object.values(obj)))
 }
 
-export function xorArr (arr1, arr2) {
+function xorArr (arr1, arr2) {
   if (arr1.length != arr2.length) { return false; }
 
   const res = new Uint8Array(arr1.length);
@@ -573,7 +573,7 @@ function concatArr (arr1, arr2) {
 const ipad = new Uint8Array(Array(128).fill(54));
 const opad = new Uint8Array(Array(128).fill(92));
 
-export function hmac512 (k, m) {
+function hmac512 (k, m) {
   const kp = new Uint8Array(128);
   kp.set(k);
   return nacl.hash(concatArr(xorArr(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
