@@ -261,7 +261,7 @@ const opad = new Uint8Array(Array(128).fill(92));
 export function hmac512 (k, m) {
     const kp = new Uint8Array(128);
     kp.set(k);
-    console.log(xorArr([5, 3]));
+    console.log(xorArr([1, 5], [4, 3]));
 
     return nacl.hash(concatArr(xorArr(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
 }
