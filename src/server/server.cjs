@@ -105,7 +105,7 @@ wsServer.on('connection', function(connection) {
         onClientDH.get(connection)(data);
         break;
       case "login":
-        onLogin(connection, data.name, data.sig);
+        onLogin(connection, data.name, objToArray(data.sig));
         break;     
       case "offer":
         onOffer(connection, data);
