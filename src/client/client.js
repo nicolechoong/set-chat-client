@@ -34,7 +34,7 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, unauthenticatedConnections, msgQueue, serverValue, onServerDH, sessionKeys, store;
+var currentChatID, connections, msgQueue, serverValue, sessionKeys, store;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 export var joinedChats, keyMap;
 
@@ -213,6 +213,9 @@ async function onSIGMA1 (peerValue, connection) {
             if (nacl.sign.detached.verify(concatArr(localValue, peerValue), objToArr(res.sig), peerPK)
             && nacl.verify(objToArr(res.mac), access.hmac512(macKey, peerPK))) {
                 resolve(true);
+                if (connections.has(JSON.stringify(peerPK))) {
+                    connections.get(JSON.stringify(peerPK)).auth = true;
+                }
             }
 
         } else {
@@ -280,7 +283,7 @@ function sendOffer(peerName, peerPK) {
     if (peerName !== null && peerPK !== null) {
         const newConnection = initPeerConnection(peerName);
         console.log(`offer pk key ${JSON.stringify(peerPK)}`);
-        connections.set(JSON.stringify(peerPK), { connection: newConnection, sendChannel: null });
+        connections.set(JSON.stringify(peerPK), { connection: newConnection, sendChannel: null, auth: false });
         connectionNames.set(newConnection, JSON.stringify(peerPK));
         const peerConnection = connections.get(JSON.stringify(peerPK));
 
@@ -322,7 +325,7 @@ async function onOffer(offer, peerName, peerPK) {
     // offer: JSON, peerName: String, peerPK: Uint8Array
     if (connections.has(JSON.stringify(peerPK))) { return; }
 
-    connections.set(JSON.stringify(peerPK), { connection: initPeerConnection(), sendChannel: null });
+    connections.set(JSON.stringify(peerPK), { connection: initPeerConnection(), sendChannel: null, auth: false });
     const peerConnection = connections.get(JSON.stringify(peerPK));
 
     keyMap.set(JSON.stringify(peerPK), peerName);
@@ -670,7 +673,7 @@ async function onGetOnline(online, chatID) {
 
 var resolveGetOnline = new Map();
 
-function getOnline(chatID) {
+function getOnline (chatID) {
     return new Promise((resolve) => {
         resolveGetOnline.set(chatID, resolve);
         sendToServer({
@@ -966,7 +969,7 @@ async function receivedMessage (messageData, channel=null) {
     }
     switch (messageData.type) {
         case "SIGMA1":
-            onSIGMA1(messageData.value, channel);
+            onSIGMA1(objToArr(messageData.value), channel);
             break;
         case "SIGMA2":
             onSIGMA2.get(channel)(messageData.value);
@@ -1084,8 +1087,10 @@ async function initSIGMA (channel) {
     
         if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), peerPK) 
         && nacl.verify(objToArr(res.mac), hmac512(macKey, peerPK))) {
-
-            connections.set(peerPK, )
+            if (connections.has(JSON.stringify(peerPK))) {
+                connections.get(JSON.stringify(peerPK)).auth = true;
+            }
+            
             sendToMember({
                 success: true,
                 type: "SIGMA3",
@@ -1197,7 +1202,14 @@ function connectToPeer (peer) {
     // peer: JSON {peerName: String, peerPK: Uint8Array}
     return new Promise((resolve) => {
         if (peer.peerName === localUsername) { resolve(false); return; }
-        if (connections.has(JSON.stringify(peer.peerPK))) { resolve(true); return; }
+        if (connections.has(JSON.stringify(peer.peerPK))) { 
+            if (connections.get(JSON.stringify(peer.PK)).auth) {
+                resolve(true); 
+            } else {
+                resolve(false);
+            }
+            return;
+        }
 
         resolveConnectToPeer.set(JSON.stringify(peer.peerPK), resolve);
         keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
@@ -1205,7 +1217,7 @@ function connectToPeer (peer) {
 
         sendOffer(peer.peerName, peer.peerPK);
         setTimeout(() => {
-            closeConnections(peer.peerPK, )
+            closeConnections(peer.peerPK, 0);
             resolve(false);
         }, 8000);
     });
