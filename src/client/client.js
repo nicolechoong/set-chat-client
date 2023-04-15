@@ -955,7 +955,7 @@ function initPeerConnection() {
 function initChannel(channel) {
     channel.onopen = (event) => { onChannelOpen(event); }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
-    channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data), event.channel) }
+    channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data), event.target) }
 }
 
 async function receivedMessage (messageData, channel=null) {
@@ -1110,8 +1110,7 @@ async function onChannelOpen(event) {
     const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
 
     if (resolveConnectToPeer.has(peerPK)) {
-        console.log(event);
-        if (await initSIGMA(event.channel)) {
+        if (await initSIGMA(event.target)) {
             resolveConnectToPeer.get(peerPK)(true);
             for (const chatID of joinedChats.keys()) {
                 if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
