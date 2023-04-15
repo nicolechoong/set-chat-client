@@ -101,7 +101,7 @@ wsServer.on('connection', function(connection) {
 
     switch (data.type) { 
       case "clientDH":
-        onClientDH(data);
+        onClientDH.get(connection)(data);
         break;
       case "login":
         onLogin(connection, data.name, data.sig);

@@ -40,8 +40,7 @@ export var joinedChats, keyMap;
 const enc = new TextEncoder();
 
 // private keypair for the client
-var keyPair = nacl.sign.keyPair();
-console.log(JSON.stringify(keyPair));
+var keyPair;
 
 // connection to stringified(peerPK)
 var connectionNames = new Map();
@@ -191,36 +190,38 @@ async function initSIGMA () {
 
 async function onSIGMA (serverValue) {
     // serverValueRaw: Uint8Array
-    const clientKeyPair = nacl.box.keyPair();
-    const clientValue = clientKeyPair.publicKey;
-    const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
-    const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+    return new Promise(async (res, reject) => {
+        const clientKeyPair = nacl.box.keyPair();
+        const clientValue = clientKeyPair.publicKey;
+        const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
+        const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
-    const sentValues = concatArr(serverValue, clientValue);
-  
-    sendToServer({
-        success: true,
-        type: "clientDH",
-        value: clientValue, // Uint8Array
-        pk: keyPair.publicKey, // Uint8Array
-        sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
-        mac: access.hmac512(macKey, keyPair.publicKey) // verifying identity
-    });
+        const sentValues = concatArr(serverValue, clientValue);
+    
+        sendToServer({
+            success: true,
+            type: "clientDH",
+            value: clientValue, // Uint8Array
+            pk: keyPair.publicKey, // Uint8Array
+            sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
+            mac: access.hmac512(macKey, keyPair.publicKey) // verifying identity
+        });
 
-    const res = await new Promise((res) => { onServerDH = res; });
+        const res = await new Promise((res) => { onServerDH = res; });
 
-    const receivedValues = concatArr(clientValue, serverValue);
+        const receivedValues = concatArr(clientValue, serverValue);
 
-    const serverPK = objToArr(res.pk);
-    if (res.success) {
-        if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), serverPK)
-        && nacl.verify(objToArr(res.mac), access.hmac512(macKey, serverPK))) {
-            return true;
+        const serverPK = objToArr(res.pk);
+        if (res.success) {
+            if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), serverPK)
+            && nacl.verify(objToArr(res.mac), access.hmac512(macKey, serverPK))) {
+                resolve(true);
+            }
+        } else {
+            alert('Key exchange failed');
+            reject('Key exchanged failed');
         }
-    } else {
-        alert('Key exchange failed');
-        return false;
-    }
+    });
 }
 
 // Server approves Login
@@ -1323,15 +1324,13 @@ loginBtn.addEventListener("click", async function (event) {
             }
         });
 
-        if (onSIGMA(serverValue)) {
+        if (await onSIGMA(serverValue)) {
             sendToServer({
                 type: "login",
                 username: username,
                 sig: nacl.sign.detached(username, keyPair.secretKey),
             });
         }
-
-        connectToServer();
     }
 });
 
