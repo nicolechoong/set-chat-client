@@ -190,7 +190,7 @@ async function initSIGMA () {
 
 async function onSIGMA (serverValue) {
     // serverValueRaw: Uint8Array
-    return new Promise(async (res, reject) => {
+    return new Promise(async (resolve, reject) => {
         const clientKeyPair = nacl.box.keyPair();
         const clientValue = clientKeyPair.publicKey;
         const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
@@ -207,7 +207,7 @@ async function onSIGMA (serverValue) {
             mac: access.hmac512(macKey, keyPair.publicKey) // verifying identity
         });
 
-        const res = await new Promise((res) => { onServerDH = res; });
+        const res = await new Promise((res2) => { onServerDH = res2; });
 
         const receivedValues = concatArr(clientValue, serverValue);
 
