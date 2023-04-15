@@ -59,7 +59,7 @@ const allUsers = new Map();
 // (username: String, pk: stringified String)
 const usernameToPK = new Map();
 
-// (pk: stringified String, {connection: WebSocket, chatrooms: Array of String, dh: DiffieHellman object})
+// (pk: stringified String, {connection: WebSocket, chatrooms: Array of String})
 const connectedUsers = new Map();
 
 // UNUSED FOR NOW
@@ -69,11 +69,15 @@ const chatrooms = new Map();
 // (chatID: String, {chatName: String, members: Array of String})
 const chats = new Map();
 
-const sessionKeys = new Map();
+// const sessionKeys = new Map();
+const onClientDH = new Map();
 
 const keyPair = nacl.sign.keyPair();
 
 var wsServer = new WebSocketServer({server});
+
+// unique application identifier ('set-chat-client')
+const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
 
 if (!wsServer) {
   log("ERROR: Unable to create WebSocket server");
@@ -83,7 +87,7 @@ wsServer.on('connection', function(connection) {
   console.log("User connected");
   connections.push(connection);
 
-  sendDHValue(connection);
+  initSIGMA(connection);
 
   connection.onmessage = function(message) {
     var data;
@@ -97,11 +101,10 @@ wsServer.on('connection', function(connection) {
 
     switch (data.type) { 
       case "clientDH":
-        console.log(JSON.stringify(data));
-        onClientDH(connection, objToArr(data.value), objToArr(data.pk), objToArr(data.sig), objToArr(data.mac));
+        onClientDH(data);
         break;
       case "login":
-        onLogin(connection, data.name, data.pubKey);
+        onLogin(connection, data.name, data.sig);
         break;     
       case "offer":
         onOffer(connection, data);
@@ -167,30 +170,27 @@ wsServer.on('connection', function(connection) {
     };
 })
 
-function sendDHValue (connection) {
+async function initSIGMA (connection) {
   const box = nacl.box.keyPair();
-  sessionKeys.set(connection, box);
+  // sessionKeys.set(connection, box);
 
   sendTo(connection, {
     type: "initDH",
     value: box.publicKey,
   });
-}
 
-// unique application identifier ('set-chat-client')
-const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
+  const res = await new Promise((res) => { onClientDH.set(connection, res); });
 
-function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
-  // clientValue: uint8array, clientPK: uint8array, clientSig: uint8array, macValue: uint8array
-  const serverValue = sessionKeys.get(connection).publicKey;
-  const sessionKey = nacl.box.before(clientValue, sessionKeys.get(connection).secretKey);
+  const serverValue = box.publicKey;
+  const clientValue = objToArr(res.value);
+  const sessionKey = nacl.box.before(clientValue, box.secretKey);
   const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
   const receivedValues = concatArr(serverValue, clientValue);
 
-  if (nacl.sign.detached.verify(receivedValues, clientSig, clientPK) 
-  && nacl.verify(macValue, hmac512(macKey, clientPK))) {
-
+  if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), objToArr(res.pk)) 
+  && nacl.verify(objToArr(res.mac), hmac512(macKey, objToArr(client.pk)))) {
+    connection.pk = JSON.stringify(res.pk);
     const sentValues = concatArr(clientValue, serverValue);
     
     sendTo(connection, {
@@ -207,38 +207,39 @@ function onClientDH (connection, clientValue, clientPK, clientSig, macValue) {
   }
 }
 
-function onLogin (connection, name, pubKey) {
-  pubKey = JSON.stringify(pubKey);
-  console.log(`User [${name}] with pubKey [${pubKey}] online`);
-  // TODO: Need some username password stuff here later on
+function onLogin (connection, name, sig) {
+  console.log(`User [${name}] online`);
 
-  if(connectedUsers.has(pubKey)) { 
-    sendTo(connection, { 
+  const pubKey = connection.pk;
+  if (nacl.sign.detached.verify(name, sig, objToArr(JSON.parse(pubKey)))) {
+
+    if(connectedUsers.has(pubKey)) { 
+      sendTo(connection, { 
+          type: "login", 
+          success: false,
+          username: name,
+          joinedChats: []
+      });
+    } else { 
+      if (allUsers.has(pubKey)) {
+        onReconnect(connection, name, pubKey);
+        return;
+      }
+
+      connectedUsers.set(pubKey, {connection: connection, groups: []}); 
+      allUsers.set(pubKey, {msgQueue: [], username: name});
+      usernameToPK.set(name, pubKey);
+
+      sendTo(connection, { 
         type: "login", 
-        success: false,
+        success: true,
         username: name,
         joinedChats: []
-    }); 
-  } else { 
-    if (allUsers.has(pubKey)) {
-      onReconnect(connection, name, pubKey);
-      return;
-    }
+      });
 
-    connectedUsers.set(pubKey, {connection: connection, groups: []}); 
-    connection.pk = pubKey; 
-    allUsers.set(pubKey, {msgQueue: [], username: name});
-    usernameToPK.set(name, pubKey);
-
-    sendTo(connection, { 
-      type: "login", 
-      success: true,
-      username: name,
-      joinedChats: []
-    });
-
-    broadcastActiveUsernames();
-  } 
+      broadcastActiveUsernames();
+    } 
+  }
 }
 
 function onOffer (connection, data) {

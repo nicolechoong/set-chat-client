@@ -34,6 +34,9 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
+var currentChatID, connections, msgQueue, serverValue, onServerDH, store;
+export var joinedChats, keyMap;
+
 const enc = new TextEncoder();
 
 // private keypair for the client
@@ -64,12 +67,6 @@ const configuration = {
         }
     ]
 };
-
-var currentChatID, connections, msgQueue, onServerDH;
-export var joinedChats, keyMap;
-
-// local cache : localForage instance
-var store;
 
 function initialiseClient () {
     currentChatID = 0;
@@ -106,84 +103,93 @@ initialiseClient();
 // WebSocket to Server //
 /////////////////////////
 
-var connection = new WebSocket('wss://35.178.80.94:3000/');
+var connection;
 // var connection = new WebSocket('wss://localhost:3000');
 
-connection.onopen = function () {
-    console.log("Connected to server");
-};
+function connectToServer () {
+    connection = new WebSocket('wss://35.178.80.94:3000/');
 
-connection.onerror = function (err) {
-    console.log("Error: ", err);
-    alert("Please authorise wss://35.178.80.94:3000/ on your device before refreshing! ")
-};
+    connection.onopen = function () {
+        console.log("Connected to server");
+    };
+
+    connection.onerror = function (err) {
+        console.log("Error: ", err);
+        alert("Please authorise wss://35.178.80.94:3000/ on your device before refreshing! ")
+    };
+
+    connection.onmessage = function (message) {
+        console.log("Got message", message.data);
+        var data = JSON.parse(message.data);
+
+        switch (data.type) {
+            case "initDH":
+                serverValue = objToArr(data.value);
+                break;
+            case "serverDH":
+                onServerDH(data);
+                break;
+            case "login":
+                onLogin(data.success, data.username);
+                break;
+            case "offer":
+                onOffer(data.offer, data.from, objToArr(data.fromPK));
+                break;
+            case "answer":
+                onAnswer(data.answer, objToArr(data.fromPK));
+                break;
+            case "candidate":
+                onCandidate(data.candidate, objToArr(data.from));
+                break;
+            case "connectedUsers":
+                onConnectedUsers(data.usernames);
+                break;
+            case "join":
+                onJoin(data.usernames);
+                break;
+            case "leave":
+                onLeave(JSON.stringify(data.from));
+                break;
+            case "createChat":
+                onCreateChat(data.chatID, data.chatName);
+                break;
+            case "add":
+                data.ignored.forEach(ig => unpackOp(ig));
+                onAdd(data.chatID, data.chatName, objToArr(data.from), data.ignored, data.id);
+                break;
+            case "remove":
+                onRemove(data);
+                break;
+            case "getUsername":
+                onGetUsername(data.username, data.success, data.pk);
+                break;
+            case "getPK":
+                onGetPK(data.username, data.success, objToArr(data.pk));
+                break;
+            case "getOnline":
+                onGetOnline(data.online, data.chatID);
+                break;
+            default:
+                break;
+        }
+    };
+}
+
+connectToServer();
 
 function sendToServer(message) {
     console.log(JSON.stringify(message));
     connection.send(JSON.stringify(message));
 };
 
-// Handle messages from the server 
-connection.onmessage = function (message) {
-    console.log("Got message", message.data);
-    var data = JSON.parse(message.data);
-
-    switch (data.type) {
-        case "initDH":
-            onInitDH(objToArr(data.value));
-            break;
-        case "serverDH":
-            onServerDH(data);
-            break;
-        case "login":
-            onLogin(data.success, data.username);
-            break;
-        case "offer":
-            onOffer(data.offer, data.from, objToArr(data.fromPK));
-            break;
-        case "answer":
-            onAnswer(data.answer, objToArr(data.fromPK));
-            break;
-        case "candidate":
-            onCandidate(data.candidate, objToArr(data.from));
-            break;
-        case "connectedUsers":
-            onConnectedUsers(data.usernames);
-            break;
-        case "join":
-            onJoin(data.usernames);
-            break;
-        case "leave":
-            onLeave(JSON.stringify(data.from));
-            break;
-        case "createChat":
-            onCreateChat(data.chatID, data.chatName);
-            break;
-        case "add":
-            data.ignored.forEach(ig => unpackOp(ig));
-            onAdd(data.chatID, data.chatName, objToArr(data.from), data.ignored, data.id);
-            break;
-        case "remove":
-            onRemove(data);
-            break;
-        case "getUsername":
-            onGetUsername(data.username, data.success, data.pk);
-            break;
-        case "getPK":
-            onGetPK(data.username, data.success, objToArr(data.pk));
-            break;
-        case "getOnline":
-            onGetOnline(data.online, data.chatID);
-            break;
-        default:
-            break;
-    }
-};
-
 // unique application identifier ('set-chat-client')
 const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
 
-async function onInitDH (serverValue) {
+async function initSIGMA () {
+
+}
+
+async function onSIGMA (serverValue) {
     // serverValueRaw: Uint8Array
     const clientKeyPair = nacl.box.keyPair();
     const clientValue = clientKeyPair.publicKey;
@@ -209,10 +215,11 @@ async function onInitDH (serverValue) {
     if (res.success) {
         if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), serverPK)
         && nacl.verify(objToArr(res.mac), access.hmac512(macKey, serverPK))) {
-            console.log(`Key exchange succeeded`);
-        } else {
-            alert('Key exchange failed');
+            return true;
         }
+    } else {
+        alert('Key exchange failed');
+        return false;
     }
 }
 
@@ -1303,7 +1310,7 @@ loginBtn.addEventListener("click", async function (event) {
     if (username.length > 0 && isAlphanumeric(username)) {
         await initialiseStore(username);
 
-        store.getItem("keyPair").then((kp) => {
+        await store.getItem("keyPair").then((kp) => {
             if (kp === null) {
                 keyPair = nacl.sign.keyPair();
                 console.log("keyPair generated");
@@ -1314,13 +1321,17 @@ loginBtn.addEventListener("click", async function (event) {
                 console.log(`keypair ${JSON.stringify(kp)}`);
                 keyPair = kp;
             }
+        });
 
+        if (onSIGMA(serverValue)) {
             sendToServer({
                 type: "login",
-                name: username,
-                pubKey: keyPair.publicKey
+                username: username,
+                sig: nacl.sign.detached(username, keyPair.secretKey),
             });
-        });
+        }
+
+        connectToServer();
     }
 });
 
