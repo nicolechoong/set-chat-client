@@ -395,6 +395,7 @@ async function onCreateChat(chatID, chatName) {
     const createMsg = addMsgID({
         type: "create",
         from: keyPair.publicKey,
+        op: createOp,
         chatID: chatID,
     });
 
