@@ -128,7 +128,7 @@ function connectToServer () {
                 serverValue = objToArr(data.value);
                 break;
             case "SIGMA3":
-                onSIGMA3(data);
+                onSIGMA3.get(connection)(data);
                 break;
             case "login":
                 onLogin(data.success, data.username);
