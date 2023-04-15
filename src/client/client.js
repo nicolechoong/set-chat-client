@@ -1307,7 +1307,10 @@ loginInput.addEventListener("keypress", ((event) => {
 
 // Send Login attempt
 loginBtn.addEventListener("click", async function (event) {
-    const username = loginInput.value;
+    login(loginInput.value);
+});
+
+async function login (username) {
     console.log(username);
     if (username.length > 0 && isAlphanumeric(username)) {
         await initialiseStore(username);
@@ -1328,12 +1331,12 @@ loginBtn.addEventListener("click", async function (event) {
         if (await onSIGMA(serverValue)) {
             sendToServer({
                 type: "login",
-                username: username,
+                name: username,
                 sig: nacl.sign.detached(enc.encode(username), keyPair.secretKey),
             });
         }
     }
-});
+}
 
 chatNameInput.addEventListener("keypress", function (event) {
     if (event.key === "Enter") {

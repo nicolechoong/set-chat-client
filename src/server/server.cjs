@@ -69,7 +69,7 @@ const chatrooms = new Map();
 // (chatID: String, {chatName: String, members: Array of String})
 const chats = new Map();
 
-// const sessionKeys = new Map();
+const sessionKeys = new Map();
 const onClientDH = new Map();
 
 const keyPair = nacl.sign.keyPair();
@@ -172,20 +172,24 @@ wsServer.on('connection', function(connection) {
 })
 
 async function initSIGMA (connection) {
-  const box = nacl.box.keyPair();
-  // sessionKeys.set(connection, box);
+  const dh = nacl.box.keyPair();
+  sessionKeys.set(connection, {
+    dh: box
+  });
 
   sendTo(connection, {
     type: "initDH",
-    value: box.publicKey,
+    value: dh.publicKey,
   });
 
   const res = await new Promise((res) => { onClientDH.set(connection, res); });
 
-  const serverValue = box.publicKey;
+  const serverValue = dh.publicKey;
   const clientValue = objToArr(res.value);
-  const sessionKey = nacl.box.before(clientValue, box.secretKey);
+  const sessionKey = nacl.box.before(clientValue, dh.secretKey);
   const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+  sessionKeys.get(connection)[session] = sessionKey;
+  sessionKeys.get(connection)[mac] = macKey;
 
   const receivedValues = concatArr(serverValue, clientValue);
 
