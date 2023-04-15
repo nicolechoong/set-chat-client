@@ -173,9 +173,6 @@ wsServer.on('connection', function(connection) {
 
 async function initSIGMA (connection) {
   const dh = nacl.box.keyPair();
-  sessionKeys.set(connection, {
-    dh: box
-  });
 
   sendTo(connection, {
     type: "initDH",
@@ -188,8 +185,12 @@ async function initSIGMA (connection) {
   const clientValue = objToArr(res.value);
   const sessionKey = nacl.box.before(clientValue, dh.secretKey);
   const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
-  sessionKeys.get(connection)[session] = sessionKey;
-  sessionKeys.get(connection)[mac] = macKey;
+
+  sessionKeys.set(connection, {
+    dh: dh,
+    session: sessionKey,
+    mac: macKey,
+  });
 
   const receivedValues = concatArr(serverValue, clientValue);
 
