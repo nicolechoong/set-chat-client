@@ -34,7 +34,7 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, msgQueue, serverValue, onServerDH, sessionKeys, store;
+var currentChatID, connections, unauthenticatedConnections, msgQueue, serverValue, onServerDH, sessionKeys, store;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 export var joinedChats, keyMap;
 
@@ -74,7 +74,10 @@ function initialiseClient () {
     joinedChats = new Map(); // (chatID: String, {chatName: String, members: Array of String})
     keyMap = new Map(); // map from public key : stringify(pk) to username : String
     msgQueue = new Map(); // map from public key : stringify(pk) to array of JSON object representing the message data
+    unauthenticatedConnections = new Map(); // map from connection to 
     sessionKeys = new Map();
+    onSIGMA2 = new Map();
+    onSIGMA3 = new Map();
 
     // layout
     [...chatList.childNodes].forEach((node) => {
@@ -186,83 +189,36 @@ function sendToServer(message) {
 // unique application identifier ('set-chat-client')
 const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
 
-async function initSIGMA (connection) {
-    // only used for p2p connections
-    const dh = nacl.box.keyPair();
-
-    sendTo(connection, {
-      type: "SIGMA1",
-      value: dh.publicKey,
-    });
-  
-    const res = await new Promise((res) => { onSIGMA2.set(connection, res); });
-  
-    const localValue = dh.publicKey;
-    const peerValue = objToArr(res.value);
-    const sessionKey = nacl.box.before(peerValue, dh.secretKey);
-    const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
-  
-    sessionKeys.set(connection, {
-      dh: dh,
-      session: sessionKey,
-      mac: macKey,
-    });
-  
-    const receivedValues = concatArr(localValue, peerValue);
-  
-    if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), objToArr(res.pk)) 
-    && nacl.verify(objToArr(res.mac), hmac512(macKey, objToArr(res.pk)))) {
-      connection.pk = JSON.stringify(res.pk);
-      const sentValues = concatArr(peerValue, localValue);
-      
-      sendTo(connection, {
-        success: true,
-        type: "SIGMA3",
-        pk: keyPair.publicKey,
-        sig: nacl.sign.detached(sentValues, keyPair.secretKey),
-        mac: access.hmac512(macKey, keyPair.publicKey),
-      });
-  
-    } else {
-      sendTo(connection, {
-        success: false
-      });
-    }
-}
-
-async function onSIGMA (peerValue, connection) {
+async function onSIGMA1 (peerValue, connection) {
     // peerValue: Uint8Array
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
         const localKeyPair = nacl.box.keyPair();
         const localValue = localKeyPair.publicKey;
         const sessionKey = nacl.box.before(peerValue, localKeyPair.secretKey);
         const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
-        const sentValues = concatArr(peerValue, localValue);
-    
-        sendToServer({
+        connection.send(JSON.stringify({
             success: true,
             type: "SIGMA2",
             value: localValue, // Uint8Array
             pk: keyPair.publicKey, // Uint8Array
-            sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
+            sig: nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey), // verifying secret key possession 
             mac: access.hmac512(macKey, keyPair.publicKey) // verifying identity
-        });
+        }));
 
         const res = await new Promise((res2) => { onSIGMA3.set(connection, res2); });
 
-        const receivedValues = concatArr(localValue, peerValue);
-
         const peerPK = objToArr(res.pk);
         if (res.success) {
-            if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), peerPK)
+            if (nacl.sign.detached.verify(concatArr(localValue, peerValue), objToArr(res.sig), peerPK)
             && nacl.verify(objToArr(res.mac), access.hmac512(macKey, peerPK))) {
                 resolve(true);
             }
 
         } else {
             alert('Key exchange failed');
-            reject('Key exchanged failed');
+            resolve(false);
+            closeConnections(peerPK);
         }
     });
 }
@@ -354,9 +310,18 @@ function sendOffer(peerName, peerPK) {
     }
 };
 
+/*
+TODO after dinner:
+1. replace sendOffer and onOffer connections Map with a unauthenticatedConnections : connection -> pk, sendChannel
+2. connect sendOffer + onAnswer using Promises
+3. 
+*/
+
 // Receiving Offer + Sending Answer to Peer
 async function onOffer(offer, peerName, peerPK) {
     // offer: JSON, peerName: String, peerPK: Uint8Array
+    if (connections.has(JSON.stringify(peerPK))) { return; }
+
     connections.set(JSON.stringify(peerPK), { connection: initPeerConnection(), sendChannel: null });
     const peerConnection = connections.get(JSON.stringify(peerPK));
 
@@ -751,7 +716,7 @@ function getPK(username) {
     });
 }
 
-async function sendOperations(chatID, pk) {
+async function sendOperations(chatID, pk, ack=false) {
     // chatID : String, pk : String
     console.log(`sending operations to ${keyMap.get(pk)}`);
     store.getItem(chatID).then((chatInfo) => {
@@ -760,6 +725,7 @@ async function sendOperations(chatID, pk) {
             ops: chatInfo.metadata.operations,
             chatID: chatID,
             from: keyPair.publicKey,
+            sigmaAck: ack
         }, pk);
     });
 }
@@ -989,24 +955,26 @@ function initPeerConnection() {
 function initChannel(channel) {
     channel.onopen = (event) => { onChannelOpen(event); }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
-    channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data)) }
+    channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data), event.channel) }
 }
 
-/* 
-modifications to make:
-    in-between getting the ignored, use a pending icon
-    need to sync some messages when they disagree
-    not sure if updating the p for members works, so should test
-*/
-
-async function receivedMessage (messageData) {
+async function receivedMessage (messageData, channel=null) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(JSON.stringify(messageData.from))}`);
     if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")
     && document.getElementById(`chatCard${messageData.chatID}`) !== null) {
         document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
     }
     switch (messageData.type) {
+        case "SIGMA1":
+            onSIGMA1(messageData.value, channel);
+            break;
+        case "SIGMA2":
+            onSIGMA2.get(channel)(messageData.value);
+            break;
+        case "SIGMA3":
+            onSIGMA3.get(channel)(messageData.value);
         case "ops":
+            if (messageData.sigmaAck) { sendOperations(messageData.chatID, JSON.stringify(messageData.from)); }
             messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, JSON.stringify(messageData.from)).then(async (res) => {
                 if (res == "ACCEPT") {
@@ -1088,20 +1056,71 @@ async function receivedMessage (messageData) {
     }
 }
 
-function onChannelOpen(event) {
+async function initSIGMA (channel) {
+    // only used for p2p connections
+    return new Promise(async (resolve) => {
+        const dh = nacl.box.keyPair();
+
+        channel.send(JSON.stringify({
+            type: "SIGMA1",
+            value: dh.publicKey,
+        }));
+    
+        const res = await new Promise((res) => { onSIGMA2.set(channel, res); });
+    
+        const localValue = dh.publicKey;
+        const peerValue = objToArr(res.value);
+        const peerPK = objToArr(res.pk);
+        const sessionKey = nacl.box.before(peerValue, dh.secretKey);
+        const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+    
+        sessionKeys.set(channel, {
+            dh: dh,
+            session: sessionKey,
+            mac: macKey,
+        });
+    
+        const receivedValues = concatArr(localValue, peerValue);
+    
+        if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), peerPK) 
+        && nacl.verify(objToArr(res.mac), hmac512(macKey, peerPK))) {
+
+            connections.set(peerPK, )
+            sendToMember({
+                success: true,
+                type: "SIGMA3",
+                pk: keyPair.publicKey,
+                sig: nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey),
+                mac: access.hmac512(macKey, keyPair.publicKey),
+            }, peerPK);
+            resolve(true);
+
+        } else {
+            sendToMember({
+                success: false
+            }, peerPK);
+            resolve(false);
+        }
+    });
+}
+
+async function onChannelOpen(event) {
     console.log(`Channel ${event.target.label} opened`);
     const channelLabel = JSON.parse(event.target.label);
     const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
 
     if (resolveConnectToPeer.has(peerPK)) {
-        resolveConnectToPeer.get(peerPK)(true);
-        resolveConnectToPeer.delete(peerPK);
-    }
-
-    for (const chatID of joinedChats.keys()) {
-        if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
-            sendOperations(chatID, peerPK);
+        if (await initSIGMA(event.channel)) {
+            resolveConnectToPeer.get(peerPK)(true);
+            for (const chatID of joinedChats.keys()) {
+                if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
+                    sendOperations(chatID, peerPK, true);
+                }
+            }
+        } else {
+            resolveConnectToPeer.get(peerPK)(false);
         }
+        resolveConnectToPeer.delete(peerPK);
     }
 }
 
@@ -1183,10 +1202,12 @@ function connectToPeer (peer) {
         resolveConnectToPeer.set(JSON.stringify(peer.peerPK), resolve);
         keyMap.set(JSON.stringify(peer.peerPK), peer.peerName);
         store.setItem("keyMap", keyMap);
+
         sendOffer(peer.peerName, peer.peerPK);
         setTimeout(() => {
+            closeConnections(peer.peerPK, )
             resolve(false);
-        }, 5000);
+        }, 8000);
     });
 }
 
@@ -1290,7 +1311,7 @@ async function updateChatStore (messageData) {
     });
 }
 
-function sendToMember(data, pk) {
+function sendToMember (data, pk) {
     // data: JSON, pk: String
     if (pk === JSON.stringify(keyPair.publicKey)) { return receivedMessage(data); }
     console.log(`sending ${JSON.stringify(data.type)}   to ${keyMap.get(pk)}`);
@@ -1371,7 +1392,7 @@ async function login (username) {
             }
         });
 
-        if (await onSIGMA(serverValue, connection)) {
+        if (await onSIGMA1(serverValue, connection)) {
             sendToServer({
                 type: "login",
                 name: username,
@@ -1780,34 +1801,25 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
     });
 }
 
-function closeConnections (pk, chatID, initiated) {
-    // pk : string, chatID : string
-    // if (initiated) {
-    //     console.log(`sending request to close`);
-    //     sendToMember({
-    //         type: "close",
-    //         chatID: chatID,
-    //         from: keyPair.publicKey,
-    //     }, pk);
-    // } else {
-    //     console.log(`connection with ${keyMap.get(pk)} closed`);
+function closeConnections (pk, chatID=0) {
+    if (chatID !== 0) {
         for (const id of joinedChats.keys()) {
             if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
                 return;
             }
         }
-        if (connections.has(pk) && !offerSent.has(pk)) {
-            connectionNames.delete(connections.get(pk).connection);
-            if (connections.get(pk).sendChannel) {
-                connections.get(pk).sendChannel.close();
-                connections.get(pk).sendChannel = null;
-            }
-            if (connections.get(pk).connection) {
-                connections.get(pk).connection.close();
-                connections.get(pk).connection = null;
-            }
-            connections.delete(pk);
+    }
+    if (connections.has(pk) && !offerSent.has(pk)) {
+        connectionNames.delete(connections.get(pk).connection);
+        if (connections.get(pk).sendChannel) {
+            connections.get(pk).sendChannel.close();
+            connections.get(pk).sendChannel = null;
         }
-        console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
-    // }
+        if (connections.get(pk).connection) {
+            connections.get(pk).connection.close();
+            connections.get(pk).connection = null;
+        }
+        connections.delete(pk);
+    }
+    console.log(`active connections ${[...connections.keys()].map((pk) => keyMap.get(pk))}`);
 }
