@@ -34,7 +34,8 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, msgQueue, serverValue, onServerDH, store;
+var currentChatID, connections, msgQueue, serverValue, onServerDH, sessionKeys, store;
+var onSIGMA2, onSIGMA3; // for SIGMA protocol
 export var joinedChats, keyMap;
 
 const enc = new TextEncoder();
@@ -73,6 +74,7 @@ function initialiseClient () {
     joinedChats = new Map(); // (chatID: String, {chatName: String, members: Array of String})
     keyMap = new Map(); // map from public key : stringify(pk) to username : String
     msgQueue = new Map(); // map from public key : stringify(pk) to array of JSON object representing the message data
+    sessionKeys = new Map();
 
     // layout
     [...chatList.childNodes].forEach((node) => {
@@ -122,11 +124,11 @@ function connectToServer () {
         var data = JSON.parse(message.data);
 
         switch (data.type) {
-            case "initDH":
+            case "SIGMA1":
                 serverValue = objToArr(data.value);
                 break;
-            case "serverDH":
-                onServerDH(data);
+            case "SIGMA3":
+                onSIGMA3(data);
                 break;
             case "login":
                 onLogin(data.success, data.username);
@@ -184,37 +186,77 @@ function sendToServer(message) {
 // unique application identifier ('set-chat-client')
 const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
 
-async function initSIGMA () {
+async function initSIGMA (connection) {
+    // only used for p2p connections
+    const dh = nacl.box.keyPair();
 
+    sendTo(connection, {
+      type: "SIGMA1",
+      value: dh.publicKey,
+    });
+  
+    const res = await new Promise((res) => { onSIGMA2.set(connection, res); });
+  
+    const localValue = dh.publicKey;
+    const peerValue = objToArr(res.value);
+    const sessionKey = nacl.box.before(peerValue, dh.secretKey);
+    const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+  
+    sessionKeys.set(connection, {
+      dh: dh,
+      session: sessionKey,
+      mac: macKey,
+    });
+  
+    const receivedValues = concatArr(localValue, peerValue);
+  
+    if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), objToArr(res.pk)) 
+    && nacl.verify(objToArr(res.mac), hmac512(macKey, objToArr(res.pk)))) {
+      connection.pk = JSON.stringify(res.pk);
+      const sentValues = concatArr(peerValue, localValue);
+      
+      sendTo(connection, {
+        success: true,
+        type: "SIGMA3",
+        pk: keyPair.publicKey,
+        sig: nacl.sign.detached(sentValues, keyPair.secretKey),
+        mac: access.hmac512(macKey, keyPair.publicKey),
+      });
+  
+    } else {
+      sendTo(connection, {
+        success: false
+      });
+    }
 }
 
-async function onSIGMA (serverValue) {
-    // serverValueRaw: Uint8Array
+async function onSIGMA (peerValue, connection) {
+    // peerValue: Uint8Array
     return new Promise(async (resolve, reject) => {
-        const clientKeyPair = nacl.box.keyPair();
-        const clientValue = clientKeyPair.publicKey;
-        const sessionKey = nacl.box.before(serverValue, clientKeyPair.secretKey);
+        const localKeyPair = nacl.box.keyPair();
+        const localValue = localKeyPair.publicKey;
+        const sessionKey = nacl.box.before(peerValue, localKeyPair.secretKey);
         const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
-        const sentValues = concatArr(serverValue, clientValue);
+        const sentValues = concatArr(peerValue, localValue);
     
         sendToServer({
             success: true,
-            type: "clientDH",
-            value: clientValue, // Uint8Array
+            type: "SIGMA2",
+            value: localValue, // Uint8Array
             pk: keyPair.publicKey, // Uint8Array
             sig: nacl.sign.detached(sentValues, keyPair.secretKey), // verifying secret key possession 
             mac: access.hmac512(macKey, keyPair.publicKey) // verifying identity
         });
 
-        const res = await new Promise((res2) => { onServerDH = res2; });
+        const res = await new Promise((res2) => { onSIGMA3.set(connection, res2); });
 
-        const receivedValues = concatArr(clientValue, serverValue);
+        const receivedValues = concatArr(localValue, peerValue);
 
-        const serverPK = objToArr(res.pk);
+        const peerPK = objToArr(res.pk);
         if (res.success) {
-            if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), serverPK)
-            && nacl.verify(objToArr(res.mac), access.hmac512(macKey, serverPK))) {
+            if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), peerPK)
+            && nacl.verify(objToArr(res.mac), access.hmac512(macKey, peerPK))) {
                 resolve(true);
             }
 
@@ -1329,7 +1371,7 @@ async function login (username) {
             }
         });
 
-        if (await onSIGMA(serverValue)) {
+        if (await onSIGMA(serverValue, connection)) {
             sendToServer({
                 type: "login",
                 name: username,

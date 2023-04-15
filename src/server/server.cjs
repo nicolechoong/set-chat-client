@@ -101,7 +101,7 @@ wsServer.on('connection', function(connection) {
     }
 
     switch (data.type) { 
-      case "clientDH":
+      case "SIGMA2":
         onClientDH.get(connection)(data);
         break;
       case "login":
@@ -175,7 +175,7 @@ async function initSIGMA (connection) {
   const dh = nacl.box.keyPair();
 
   sendTo(connection, {
-    type: "initDH",
+    type: "SIGMA1",
     value: dh.publicKey,
   });
 
@@ -201,7 +201,7 @@ async function initSIGMA (connection) {
     
     sendTo(connection, {
       success: true,
-      type: "serverDH",
+      type: "SIGMA3",
       pk: keyPair.publicKey,
       sig: nacl.sign.detached(sentValues, keyPair.secretKey),
       mac: hmac512(macKey, keyPair.publicKey),
