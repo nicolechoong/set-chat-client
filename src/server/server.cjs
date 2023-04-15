@@ -189,7 +189,7 @@ async function initSIGMA (connection) {
   const receivedValues = concatArr(serverValue, clientValue);
 
   if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), objToArr(res.pk)) 
-  && nacl.verify(objToArr(res.mac), hmac512(macKey, objToArr(client.pk)))) {
+  && nacl.verify(objToArr(res.mac), hmac512(macKey, objToArr(res.pk)))) {
     connection.pk = JSON.stringify(res.pk);
     const sentValues = concatArr(clientValue, serverValue);
     
@@ -200,6 +200,7 @@ async function initSIGMA (connection) {
       sig: nacl.sign.detached(sentValues, keyPair.secretKey),
       mac: hmac512(macKey, keyPair.publicKey),
     });
+    
   } else {
     sendTo(connection, {
       success: false

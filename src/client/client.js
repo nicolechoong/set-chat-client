@@ -217,6 +217,7 @@ async function onSIGMA (serverValue) {
             && nacl.verify(objToArr(res.mac), access.hmac512(macKey, serverPK))) {
                 resolve(true);
             }
+            
         } else {
             alert('Key exchange failed');
             reject('Key exchanged failed');
