@@ -74,7 +74,6 @@ function initialiseClient () {
     joinedChats = new Map(); // (chatID: String, {chatName: String, members: Array of String})
     keyMap = new Map(); // map from public key : stringify(pk) to username : String
     msgQueue = new Map(); // map from public key : stringify(pk) to array of JSON object representing the message data
-    unauthenticatedConnections = new Map(); // map from connection to 
     sessionKeys = new Map();
     onSIGMA2 = new Map();
     onSIGMA3 = new Map();
@@ -1090,7 +1089,7 @@ async function initSIGMA (channel) {
             if (connections.has(JSON.stringify(peerPK))) {
                 connections.get(JSON.stringify(peerPK)).auth = true;
             }
-            
+
             sendToMember({
                 success: true,
                 type: "SIGMA3",
