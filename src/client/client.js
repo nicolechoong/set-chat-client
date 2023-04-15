@@ -971,10 +971,10 @@ async function receivedMessage (messageData, channel=null) {
             onSIGMA1(objToArr(messageData.value), channel);
             break;
         case "SIGMA2":
-            onSIGMA2.get(channel)(messageData.value);
+            onSIGMA2.get(channel)(messageData);
             break;
         case "SIGMA3":
-            onSIGMA3.get(channel)(messageData.value);
+            onSIGMA3.get(channel)(messageData);
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, JSON.stringify(messageData.from)); }
             messageData.ops.forEach(op => unpackOp(op));
