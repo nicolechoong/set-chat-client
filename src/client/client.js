@@ -217,7 +217,7 @@ async function onSIGMA (serverValue) {
             && nacl.verify(objToArr(res.mac), access.hmac512(macKey, serverPK))) {
                 resolve(true);
             }
-            
+
         } else {
             alert('Key exchange failed');
             reject('Key exchanged failed');
@@ -1329,7 +1329,7 @@ loginBtn.addEventListener("click", async function (event) {
             sendToServer({
                 type: "login",
                 username: username,
-                sig: nacl.sign.detached(username, keyPair.secretKey),
+                sig: nacl.sign.detached(enc.encode(username), keyPair.secretKey),
             });
         }
     }

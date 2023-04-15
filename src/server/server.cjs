@@ -78,6 +78,7 @@ var wsServer = new WebSocketServer({server});
 
 // unique application identifier ('set-chat-client')
 const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
+const enc = new TextEncoder();
 
 if (!wsServer) {
   log("ERROR: Unable to create WebSocket server");
@@ -200,7 +201,7 @@ async function initSIGMA (connection) {
       sig: nacl.sign.detached(sentValues, keyPair.secretKey),
       mac: hmac512(macKey, keyPair.publicKey),
     });
-    
+
   } else {
     sendTo(connection, {
       success: false
@@ -212,7 +213,7 @@ function onLogin (connection, name, sig) {
   console.log(`User [${name}] online`);
 
   const pubKey = connection.pk;
-  if (nacl.sign.detached.verify(name, sig, objToArr(JSON.parse(pubKey)))) {
+  if (nacl.sign.detached.verify(enc.encode(name), sig, objToArr(JSON.parse(pubKey)))) {
 
     if(connectedUsers.has(pubKey)) { 
       sendTo(connection, { 
