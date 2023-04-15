@@ -1110,6 +1110,7 @@ async function onChannelOpen(event) {
     const peerPK = channelLabel.senderPK === JSON.stringify(keyPair.publicKey) ? channelLabel.receiverPK : channelLabel.senderPK;
 
     if (resolveConnectToPeer.has(peerPK)) {
+        console.log(event);
         if (await initSIGMA(event.channel)) {
             resolveConnectToPeer.get(peerPK)(true);
             for (const chatID of joinedChats.keys()) {
