@@ -84,6 +84,7 @@ function initialiseClient () {
             chatList.removeChild(node);
         }
     });
+    document.getElementById('heading').innerHTML = "Hello I am a Chat";
     document.getElementById('defaultText').style.display = "block";
     document.getElementById('chatInfo').style.display = "none";
     document.getElementById('chatBoxHeading').style.display = "none";
@@ -1574,6 +1575,7 @@ export async function selectIgnored(ignoredOp, chatID) {
         const msg = addMsgID({
             type: "selectedIgnored",
             op: ignoredOp,
+            chatID: chatID,
             from: keyPair.publicKey,
         });
         broadcastToMembers(msg, chatID);
