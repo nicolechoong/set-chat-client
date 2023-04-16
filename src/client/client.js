@@ -134,7 +134,7 @@ function connectToServer () {
                 onSIGMA3.get(connection)(data);
                 break;
             case "login":
-                onLogin(data.success, data.username);
+                onLogin(data.success, data.username, Map.from(data.joinedChats));
                 break;
             case "offer":
                 onOffer(data.offer, data.from, objToArr(data.fromPK));
@@ -227,13 +227,13 @@ async function onSIGMA1 (peerValue, connection) {
 }
 
 // Server approves Login
-async function onLogin (success, username) {
+async function onLogin (success, username, receivedChats) {
 
     if (success === false) {
         alert("oops...try a different username");
     } else {
         localUsername = username;
-        joinedChats = mergeJoinedChats(joinedChats, new Map());
+        joinedChats = mergeJoinedChats(joinedChats, receivedChats);
         store.setItem("joinedChats", joinedChats);
 
         keyMap.set(JSON.stringify(keyPair.publicKey), localUsername);
@@ -250,6 +250,7 @@ async function onLogin (success, username) {
         dim.style.display = "none";
         document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
 
+        console.log(joinedChats.keys());
         for (const chatID of joinedChats.keys()) {
             updateChatOptions("add", chatID);
             getOnline(chatID);
@@ -1384,6 +1385,7 @@ loginInput.addEventListener("keypress", ((event) => {
 // Send Login attempt
 loginBtn.addEventListener("click", async function (event) {
     login(loginInput.value);
+    loginInput.value = "";
 });
 
 async function login (username) {
