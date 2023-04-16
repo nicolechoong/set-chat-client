@@ -134,7 +134,7 @@ function connectToServer () {
                 onSIGMA3.get(connection)(data);
                 break;
             case "login":
-                onLogin(data.success, data.username, Map.from(data.joinedChats));
+                onLogin(data.success, data.username, new Map(data.joinedChats));
                 break;
             case "offer":
                 onOffer(data.offer, data.from, objToArr(data.fromPK));
