@@ -36,6 +36,7 @@ var localUsername;
 
 var currentChatID, connections, msgQueue, serverValue, sessionKeys, store;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
+var onlineMode = false;
 export var joinedChats, keyMap;
 
 const enc = new TextEncoder();
@@ -73,7 +74,7 @@ function initialiseClient () {
     connections = new Map(); // map from stringify(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
     joinedChats = new Map(); // (chatID: String, {chatName: String, members: Array of String})
     keyMap = new Map(); // map from public key : stringify(pk) to username : String
-    msgQueue = new Map(); // map from public key : stringify(pk) to array of JSON object representing the message data
+    msgQueue = [];
     sessionKeys = new Map();
     onSIGMA2 = new Map();
     onSIGMA3 = new Map();
@@ -115,6 +116,7 @@ function connectToServer () {
 
     connection.onopen = function () {
         console.log("Connected to server");
+        onlineMode = true;
     };
 
     connection.onerror = function (err) {
@@ -182,6 +184,9 @@ function connectToServer () {
 connectToServer();
 
 function sendToServer(message) {
+    if (onlineMode) {
+
+    }
     console.log(JSON.stringify(message));
     connection.send(JSON.stringify(message));
 };
@@ -243,15 +248,15 @@ async function onLogin (success, username, receivedChats) {
             store.setItem("keyMap", keyMap);
         });
         store.getItem("msgQueue").then((storedMsgQueue) => {
-            msgQueue = storedMsgQueue === null ? new Map() : storedMsgQueue;
+            msgQueue = storedMsgQueue === null ? [] : storedMsgQueue;
         });
 
         loginPopup.style.display = "none";
         dim.style.display = "none";
         document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
 
-        console.log(joinedChats.keys());
         for (const chatID of joinedChats.keys()) {
+            console.log(chatID);
             updateChatOptions("add", chatID);
             getOnline(chatID);
         }
@@ -364,12 +369,7 @@ function onCandidate(candidate, peerPK) {
 }
 
 function onConnectedUsers(usernames) {
-    if (localUsername) {
-        const toSend = [...msgQueue.entries()].filter(entry => usernames.has(keyMap.get(entry[0]))).map(entry => entry[0]);
-        for (const pk of toSend) {
-            onQueuedOnline(objToArr(pk));
-        }
-    }
+
 }
 
 // Depreciated: For now
@@ -683,17 +683,6 @@ function getOnline (chatID) {
             chatID: chatID
         });
     });
-}
-
-async function onQueuedOnline(pk) {
-    // pk: Uint8Array
-    if (await connectToPeer(pk)) {
-        const queue = msgQueue.get(JSON.stringify(pk));
-        while (queue.length > 0) {
-            sendToMember(queue.shift(), JSON.stringify(pk));
-        }
-        msgQueue.delete(JSON.stringify(pk)); // honestly so fucking crude
-    }
 }
 
 //////////////////////////////
@@ -1657,6 +1646,7 @@ const chatOptions = new Set();
 
 function updateChatOptions (operation, chatID) {
     if (operation === "add" && !chatOptions.has(chatID)) {
+        console.log(joinedChats.get(chatID).chatName);
         elem.generateChatCard(chatID, joinedChats.get(chatID).chatName);
         chatOptions.add(chatID);
         return;
@@ -1687,6 +1677,11 @@ function logout () {
         type: "leave",
         pk: keyPair.publicKey,
     });
+}
+
+function goOffline () {
+    connection.close();
+
 }
 
 
