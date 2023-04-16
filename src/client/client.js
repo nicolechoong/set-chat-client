@@ -184,11 +184,12 @@ function connectToServer () {
 connectToServer();
 
 function sendToServer(message) {
+    console.log(`online mode ${onlineMode} message ${JSON.stringify(message)}`);
     if (onlineMode) {
-
+        connection.send(JSON.stringify(message));
+    } else {
+        msgQueue.push(message);
     }
-    console.log(JSON.stringify(message));
-    connection.send(JSON.stringify(message));
 };
 
 // unique application identifier ('set-chat-client')
@@ -256,9 +257,13 @@ async function onLogin (success, username, receivedChats) {
         document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
 
         for (const chatID of joinedChats.keys()) {
-            console.log(chatID);
+            console.log(chatID, joinedChats.get(chatID));
             updateChatOptions("add", chatID);
             getOnline(chatID);
+        }
+
+        for (const msg of msgQueue) {
+            sendToServer(msg);
         }
     }
 };
@@ -1646,7 +1651,6 @@ const chatOptions = new Set();
 
 function updateChatOptions (operation, chatID) {
     if (operation === "add" && !chatOptions.has(chatID)) {
-        console.log(joinedChats.get(chatID).chatName);
         elem.generateChatCard(chatID, joinedChats.get(chatID).chatName);
         chatOptions.add(chatID);
         return;
@@ -1680,8 +1684,8 @@ function logout () {
 }
 
 function goOffline () {
+    onlineMode = false;
     connection.close();
-
 }
 
 
