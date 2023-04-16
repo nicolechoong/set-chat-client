@@ -138,7 +138,7 @@ wsServer.on('connection', function(connection) {
         onRemove(connection, data);
         break;
       case "leave":
-        onLeave(data);
+        onLeave(connection, data);
         break;
       default:
         sendTo(connection, {
@@ -292,22 +292,11 @@ function onCandidate (connection, data) {
 }
 
 
-function onLeave (data) {
+function onLeave (connection, data) {
   console.log(`Disconnecting from ${data.pk}`);
-  var conn = connectedUsers.get(JSON.stringify(data.pk)).connection;
   connectedUsers.delete(JSON.stringify(data.pk));
-
-  // const index = conn.otherNames.indexOf(JSON.stringify(data.pk));
-  // if (index > -1) {
-  //   conn.otherNames.splice(index, 1);
-  // }
-
-  // if (conn != null) {
-  //   sendTo(conn, {
-  //     type: "leave",
-  //     from: data.pk
-  //   });
-  // }
+  connection.pk = null;
+  initSIGMA(connection);
 }
 
 // Depreciated: For joining public chatrooms (maybe revive later!!)

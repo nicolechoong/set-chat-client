@@ -1203,7 +1203,7 @@ function connectToPeer (peer) {
     return new Promise((resolve) => {
         if (peer.peerName === localUsername) { resolve(false); return; }
         if (connections.has(JSON.stringify(peer.peerPK))) { 
-            if (connections.get(JSON.stringify(peer.PK)).auth) {
+            if (connections.get(JSON.stringify(peer.peerPK)).auth) {
                 resolve(true); 
             } else {
                 resolve(false);
