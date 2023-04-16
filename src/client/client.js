@@ -1085,7 +1085,7 @@ async function initSIGMA (channel) {
         const receivedValues = concatArr(localValue, peerValue);
     
         if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), peerPK) 
-        && nacl.verify(objToArr(res.mac), hmac512(macKey, peerPK))) {
+        && nacl.verify(objToArr(res.mac), access.hmac512(macKey, peerPK))) {
             if (connections.has(JSON.stringify(peerPK))) {
                 connections.get(JSON.stringify(peerPK)).auth = true;
             }
