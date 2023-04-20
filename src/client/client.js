@@ -1686,7 +1686,13 @@ function logout () {
     });
 }
 
+wifiSlash.addEventListener("click", () => {
+    if (onlineMode) { goOffline(); }
+    else { connectToServer(); }
+});
+
 function goOffline () {
+    console.log(`goOffline`);
     onlineMode = false;
     wifiSlash.style.display = "block";
     connection.close();
