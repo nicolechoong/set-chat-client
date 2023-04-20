@@ -585,7 +585,7 @@ async function disputeRemoval(peer, chatID) {
             dispute: true,
         });
 
-        broadcastToMembers(removeMessage, keyPair.publicKey);
+        broadcastToMembers(removeMessage, chatID);
         sendToServer({
             to: peer.peerPK,
             type: "remove",
@@ -948,17 +948,18 @@ async function receivedMessage (messageData, channel=null) {
     }
     switch (messageData.type) {
         case "ack":
+            console.log(`removing ack ${messageData.id}`);
             acks.delete(messageData.id);
             return;
         case "SIGMA1":
             onSIGMA1(strToArr(messageData.value), channel);
-            break;
+            return;
         case "SIGMA2":
             onSIGMA2.get(channel)(messageData);
-            break;
+            return;
         case "SIGMA3":
             onSIGMA3.get(channel)(messageData);
-            break;
+            return;
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
