@@ -585,7 +585,7 @@ async function disputeRemoval(peer, chatID) {
             dispute: true,
         });
 
-        sendToMember(removeMessage, keyPair.publicKey);
+        broadcastToMembers(removeMessage, keyPair.publicKey);
         sendToServer({
             to: peer.peerPK,
             type: "remove",
@@ -1034,7 +1034,7 @@ async function receivedMessage (messageData, channel=null) {
     sendToMember({
         type: "ack",
         id: `${messageData.id}${keyPair.publicKey}`
-    });
+    }, messageData.from);
 }
 
 async function initSIGMA (channel) {
@@ -1835,6 +1835,7 @@ function closeConnections (pk, chatID=0) {
             }
         }
     }
+    console.log([...acks]);
     if (connections.has(pk) && !offerSent.has(pk) && [...acks].findIndex((id) => id.slice(128) === pk) == -1) {
         connectionNames.delete(connections.get(pk).connection);
         if (connections.get(pk).sendChannel) {
