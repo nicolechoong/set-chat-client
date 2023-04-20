@@ -1392,6 +1392,7 @@ async function login (username) {
         });
 
         if (await onSIGMA1(serverValue, connection)) {
+            console.log(`sending login`);
             sendToServer({
                 type: "login",
                 name: username,

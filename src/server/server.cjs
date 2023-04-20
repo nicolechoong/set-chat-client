@@ -204,7 +204,7 @@ async function initSIGMA (connection) {
       type: "SIGMA3",
       pk: keyPair.publicKey,
       sig: arrToStr(nacl.sign.detached(concatArr(clientValue, serverValue), keyPair.secretKey)),
-      mac: arrToStr(hmac512(macKey, keyPair.publicKey)),
+      mac: arrToStr(hmac512(macKey, strToArr(keyPair.publicKey))),
     });
 
   } else {
