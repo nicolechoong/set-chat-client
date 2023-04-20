@@ -463,7 +463,6 @@ async function onAdd(chatID, chatName, fromPK, ignored, msgID) {
         if (!(await connectToPeer({ peerName: from, peerPK: fromPK }))) {
             if (!getOnline(chatID)) {
                 console.log(`no one is online :(`);
-
             }
         }
     }
@@ -1193,6 +1192,7 @@ function connectToPeer (peer) {
                 resolve(true); 
             } else {
                 resolve(false);
+                closeConnections(peer.peerPK, 0);
             }
             return;
         }
@@ -1203,7 +1203,7 @@ function connectToPeer (peer) {
 
         sendOffer(peer.peerName, peer.peerPK);
         setTimeout(() => {
-            closeConnections(peer.peerPK, 0);
+            console.log(`closing from connect`);
             resolve(false);
         }, 8000);
     });
@@ -1287,13 +1287,13 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.from)}: ${data.message}`;
                 break;
             case "add":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.op.pk1)} <span style="color: #169873;">added</span> ${keyMap.get(data.op.pk2)}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] <span style="color: #169873;">${keyMap.get(data.op.pk1)} added ${keyMap.get(data.op.pk2)}</span>`;
                 break;
             case "remove":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.op.pk1)} <span style="color: #fc5c65;">removed</span> ${keyMap.get(data.op.pk2)}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] <span style="color: #fc5c65;">${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}</span>`;
                 break;
             case "selectedIgnored":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.from)} chose to <span style="color: #5E6472;">ignore '${keyMap.get(data.op.pk1)} ${keyMap.get(data.op.action)} ${keyMap.get(data.op.pk2)}</span>'`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] <span style="color: #5E6472;">${keyMap.get(data.from)} chose to ignore '${keyMap.get(data.op.pk1)} ${keyMap.get(data.op.action)} ${keyMap.get(data.op.pk2)}</span>'`;
                 break;
             default:
                 break;
