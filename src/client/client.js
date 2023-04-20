@@ -954,7 +954,7 @@ async function receivedMessage (messageData, channel=null) {
     }
     switch (messageData.type) {
         case "SIGMA1":
-            onSIGMA1(objToArr(messageData.value), channel);
+            onSIGMA1(strToArr(messageData.value), channel);
             break;
         case "SIGMA2":
             onSIGMA2.get(channel)(messageData);
@@ -1386,7 +1386,7 @@ async function login (username) {
                 store.setItem("keyMap", keyMap);  // TODO: worry about what if we log out
                 store.setItem("msgQueue", msgQueue);
             } else {
-                console.log(`keypair ${kp}`);
+                console.log(`keypair ${JSON.stringify(kp)}`);
                 keyPair = kp;
             }
         });

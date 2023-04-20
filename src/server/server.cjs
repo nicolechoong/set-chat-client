@@ -180,6 +180,7 @@ async function initSIGMA (connection) {
   });
 
   const res = await new Promise((res) => { onClientDH.set(connection, res); });
+  console.log(JSON.stringify(res));
 
   const serverValue = dh.publicKey;
   const clientValue = strToArr(res.value);
