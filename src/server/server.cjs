@@ -73,6 +73,7 @@ const sessionKeys = new Map();
 const onClientDH = new Map();
 
 const keyPair = nacl.sign.keyPair();
+keyPair.publicKey = arrToStr(keyPair.publicKey);
 
 var wsServer = new WebSocketServer({server});
 
@@ -175,7 +176,7 @@ async function initSIGMA (connection) {
 
   sendTo(connection, {
     type: "SIGMA1",
-    value: dh.publicKey,
+    value: arrToStr(dh.publicKey),
   });
 
   const res = await new Promise((res) => { onClientDH.set(connection, res); });
@@ -199,8 +200,8 @@ async function initSIGMA (connection) {
       success: true,
       type: "SIGMA3",
       pk: keyPair.publicKey,
-      sig: nacl.sign.detached(concatArr(clientValue, serverValue), keyPair.secretKey),
-      mac: hmac512(macKey, keyPair.publicKey),
+      sig: arrToStr(nacl.sign.detached(concatArr(clientValue, serverValue), keyPair.secretKey)),
+      mac: arrToStr(hmac512(macKey, keyPair.publicKey)),
     });
 
   } else {
@@ -522,6 +523,16 @@ function xorArr (arr1, arr2) {
 
 function objToArr (obj) {
   return Uint8Array.from(Object.values(obj));
+}
+
+function strToArr (str) {
+  return Uint8Array.from(str.match(/.{1,2}/g).map(s => parseInt(s, 16)));
+}
+
+function arrToStr (arr) {
+  return Array.from(arr).map(n => {
+      return n.toString(16).padStart(2, '0');
+  }).join("");
 }
 
 function concatArr (arr1, arr2) {

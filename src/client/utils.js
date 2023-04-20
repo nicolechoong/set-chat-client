@@ -1,12 +1,8 @@
 export function strToArr (str) {
-    return objToArr(JSON.parse(str));
-}
-
-export function testStrToArr (str) {
     return Uint8Array.from(str.match(/.{1,2}/g).map(s => parseInt(s, 16)));
 }
 
-export function testArrToStr (arr) {
+export function arrToStr (arr) {
     return Array.from(arr).map(n => {
         return n.toString(16).padStart(2, '0');
     }).join("");
