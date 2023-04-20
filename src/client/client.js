@@ -988,10 +988,8 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "selectedIgnored":
             if (messageData.chatID == currentChatID) {
-                messageData.ignored.forEach(ig => {
-                    console.log(ig);
-                    elem.updateSelectedMembers(keyMap.get(messageData.from), testArrToStr(ig.sig));
-                });
+                console.log(JSON.stringify(messageData.op));
+                elem.updateSelectedMembers(keyMap.get(messageData.from), arrToStr(messageData.op.sig));
             }
             updateChatWindow(messageData);
             updateChatStore(messageData);
