@@ -209,7 +209,7 @@ async function onSIGMA1 (peerValue, connection) {
             value: arrToStr(localValue), // Uint8Array
             pk: keyPair.publicKey, // string
             sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)), // verifying secret key possession 
-            mac: arrToStr(access.hmac512(macKey, keyPair.publicKey)) // verifying identity
+            mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))) // verifying identity
         }));
 
         const res = await new Promise((res2) => { onSIGMA3.set(connection, res2); });
@@ -508,7 +508,7 @@ async function onRemove (messageData) {
         chatInfo.currentMember = false;
 
         // if the removal is disputable
-        if (!messageData.dispute && !arrEqual(fromPK, keyPair.publicKey)) { 
+        if (!messageData.dispute && fromPK !== keyPair.publicKey) { 
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
 
@@ -559,13 +559,13 @@ export async function removeFromChat (username, pk, chatID) {
 
 async function disputeRemoval(peer, chatID) {
     store.getItem(chatID).then(async (chatInfo) => {
-        const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+        const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
         const ignoredOp = chatInfo.metadata.operations.at(end);
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
         const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
 
         console.log(`${chatInfo.history.map(msg => msg.type)}`);
-        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(objToArr(msg.op.sig), ignoredOp.sig));
+        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
         if (ignoredOpIndex > -1) {
             chatInfo.history.splice(ignoredOpIndex);
         }
@@ -1008,7 +1008,7 @@ async function receivedMessage (messageData, channel=null) {
             unpackOp(messageData.op);
             receivedOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
                 if (res === "ACCEPT") { 
-                    if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
+                    if (messageData.op.pk2 === keyPair.publicKey) {
                         onRemove(messageData);
                     } else {
                         removePeer(messageData); 
@@ -1021,7 +1021,7 @@ async function receivedMessage (messageData, channel=null) {
         case "add":
             unpackOp(messageData.op);
             messageData.ignored.forEach(ig => unpackOp(ig));
-            if (arrEqual(messageData.op.pk2, keyPair.publicKey)) {
+            if (messageData.op.pk2 === keyPair.publicKey) {
                 onAdd(messageData.chatID, messageData.chatName, objToArr(messageData.from), messageData.ignored, messageData.msgID);
             } else {
                 receivedOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
@@ -1519,7 +1519,7 @@ async function getIgnored(cycles, chatID) {
         resolveGetIgnored.set(chatID, [cycles, resolve]); 
 
         for (const cycle of cycles) {
-            const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && arrEqual(op.pk2, keyPair.publicKey));
+            const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
             if (removeSelfIndex > -1) {
                 console.log(`automatically resolved ${cycle.at(removeSelfIndex).action} ${keyMap.get(cycle.at(removeSelfIndex).pk2)}`);
                 await selectIgnored(cycle.at(removeSelfIndex), chatID);
@@ -1537,7 +1537,7 @@ async function getIgnored(cycles, chatID) {
 export async function selectIgnored(ignoredOp, chatID) {
     await store.getItem(chatID).then(async (chatInfo) => {
         // unwinding chat history
-        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && arrEqual(msg.op.sig, ignoredOp.sig));
+        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
 
         if (ignoredOpIndex > -1) {
             console.log(`found ignored op`);
@@ -1719,7 +1719,7 @@ function opsArrEqual (ops1, ops2) {
 
 function removeOp(ops, op) {
     for (let i = 0; i < ops.length; i++) {
-        if (arrEqual(ops[i].sig, op.sig)) {
+        if (ops[i].sig === op.sig) {
             ops.splice(i, 1);
         }
     }
@@ -1773,7 +1773,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                         if (msg.type === "text") { continue; }
 
                         // rolling forward changes to history table
-                        if (!arrEqual(msg.op.pk2, keyPair.publicKey)) {
+                        if (msg.op.pk2 !== keyPair.publicKey) {
                             pk2 = msg.op.pk2;
                             if (msg.type === "add") {
                                 if (!chatInfo.historyTable.has(pk2)) {
