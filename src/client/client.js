@@ -21,7 +21,7 @@ const chatBar = document.getElementById('chatBar');
 const disabledChatBar = document.getElementById('disabledChatBar');
 const conflictChatBar = document.getElementById('conflictChatBar');
 const chatWindow = document.getElementById('chatWindow');
-const anchor = document.getElementById('anchor');
+const wifiSlash = document.getElementById('wifiSlash');
 
 const loginInput = document.getElementById('loginInput');
 const messageInput = document.getElementById('messageInput');
@@ -114,6 +114,7 @@ var connection;
 
 function connectToServer () {
     connection = new WebSocket('wss://35.178.80.94:3000/');
+    // wifiSlash.style.display = "none";
 
     connection.onopen = function () {
         console.log("Connected to server");
@@ -162,7 +163,7 @@ function connectToServer () {
                 break;
             case "add":
                 // data.ignored.forEach(ig => unpackOp(ig));
-                onAdd(data.chatID, data.chatName, data.from, data.ignored, data.id);
+                onAdd(data.chatID, data.chatName, data.from, data.ignored, data);
                 break;
             case "remove":
                 onRemove(data);
@@ -422,7 +423,7 @@ async function onCreateChat(chatID, chatName) {
 }
 
 // When being added to a new chat
-async function onAdd(chatID, chatName, fromPK, ignored, msgID) {
+async function onAdd(chatID, chatName, fromPK, ignored, msg) {
     // chatID: String, chatName: String, from: String, fromPK: Uint8Array, msgID: 
 
     // we want to move this actual joining to after syncing with someone from the chat
@@ -448,11 +449,11 @@ async function onAdd(chatID, chatName, fromPK, ignored, msgID) {
                 operations: [],
                 ignored: ignored
             },
-            history: [],
+            history: [msg],
             historyTable: new Map(),
         });
 
-        initChatHistoryTable(chatID, msgID);
+        initChatHistoryTable(chatID, msg.id);
     }
 
     if (connections.has(fromPK)) {
@@ -705,13 +706,13 @@ async function sendOperations(chatID, pk, ack=false) {
     // chatID : String, pk : String
     console.log(`sending operations to ${keyMap.get(pk)}`);
     store.getItem(chatID).then((chatInfo) => {
-        sendToMember({
+        sendToMember(addMsgID({
             type: "ops",
             ops: chatInfo.metadata.operations,
             chatID: chatID,
             from: keyPair.publicKey,
             sigmaAck: ack
-        }, pk);
+        }, pk));
     });
 }
 
@@ -876,7 +877,7 @@ function initPeerConnection() {
         connection.ondatachannel = receiveChannelCallback;
         connection.onclose = function (event) {
             console.log(`received onclose`);
-            closeConnections(connectionNames.get(connection), 0, false);
+            closeConnections(connectionNames.get(connection), 0);
         };
         connection.onicecandidate = function (event) {
             console.log("New candidate");
@@ -968,7 +969,7 @@ async function receivedMessage (messageData, channel=null) {
                     await sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res == "REJECT") {
-                    // closeConnections(messageData.from, messageData.chatID, true);
+                    // closeConnections(messageData.from, messageData.chatID);
                 }
             });
             break;
@@ -979,7 +980,7 @@ async function receivedMessage (messageData, channel=null) {
                     sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res === "REJECT") {
-                    // closeConnections(messageData.from, messageData.chatID, true);
+                    // closeConnections(messageData.from, messageData.chatID);
                 }
             });
             break;
@@ -1013,7 +1014,7 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "add":
             if (messageData.op.pk2 === keyPair.publicKey) {
-                onAdd(messageData.chatID, messageData.chatName, messageData.from, messageData.ignored, messageData.msgID);
+                onAdd(messageData.chatID, messageData.chatName, messageData.from, messageData.ignored, messageData);
             } else {
                 receivedOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
                     if (res === "ACCEPT") { addPeer(messageData); }
@@ -1028,7 +1029,7 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "close":
             sendChatHistory(messageData.chatID, messageData.from);
-            closeConnections(messageData.from, messageData.chatID, false);
+            closeConnections(messageData.from, messageData.chatID);
             break;
         default:
             console.log(`Unrecognised message type ${messageData.type}`);
@@ -1199,7 +1200,6 @@ function connectToPeer (peer) {
 
         sendOffer(peer.peerName, peer.peerPK);
         setTimeout(() => {
-            console.log(`closing from connect`);
             resolve(false);
         }, 8000);
     });
@@ -1256,7 +1256,7 @@ async function removePeer (messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-    closeConnections(pk, messageData.chatID, true);
+    closeConnections(pk, messageData.chatID);
 }
 
 const chatMessageIDs = new Set();
@@ -1312,7 +1312,7 @@ function sendToMember (data, pk, requireAck=true) {
     // data: JSON, pk: String
     if (pk === keyPair.publicKey) { return receivedMessage(data); }
     console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
-    if (connections.has(pk)) {
+    if (connections.has(pk) && onlineMode) {
         try {
             connections.get(pk).sendChannel.send(JSON.stringify(data));
             if (requireAck && pk !== keyPair.publicKey) { acks.add(`${data.id}${pk}`); }
@@ -1328,7 +1328,7 @@ function addMsgID (data) {
     if (data.type == "create" || data.type == "add" || data.type == "remove") {
         data.id = data.op.sig;
     } else {
-        data.id = arrToStr(nacl.hash(enc.encode(`${localUsername}:${data.sentTime}`)));
+        data.id = arrToStr(nacl.hash(enc.encode(`${keyPair.publicKey}:${data.sentTime}`)));
     }
     return data;
 }
@@ -1676,7 +1676,7 @@ function createNewChat () {
 function logout () {
     for (const chatID of joinedChats.keys()) {
         joinedChats.get(chatID).members.forEach((pk) => {
-            closeConnections(pk, chatID, true);
+            closeConnections(pk, chatID);
         });
     }
     initialiseClient();
@@ -1688,7 +1688,11 @@ function logout () {
 
 function goOffline () {
     onlineMode = false;
+    wifiSlash.style.display = "block";
     connection.close();
+    for (const pk of connection.keys()) {
+        closeConnections(pk, 0);
+    }
 }
 
 
@@ -1838,7 +1842,7 @@ function closeConnections (pk, chatID=0) {
         }
     }
     console.log([...acks]);
-    if (connections.has(pk) && !offerSent.has(pk) && [...acks].findIndex((id) => id.slice(128) === pk) == -1) {
+    if (connections.has(pk) && !offerSent.has(pk) && (chatID == 0 || [...acks].findIndex((id) => id.slice(128) === pk) == -1)) {
         connectionNames.delete(connections.get(pk).connection);
         if (connections.get(pk).sendChannel) {
             connections.get(pk).sendChannel.close();
