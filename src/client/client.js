@@ -115,7 +115,7 @@ var connection;
 
 function connectToServer () {
     connection = new WebSocket('wss://35.178.80.94:3000/');
-    // wifiSlash.style.display = "none";
+    wifiSlash.style.display = "none";
 
     connection.onopen = function () {
         console.log("Connected to server");
@@ -1697,7 +1697,7 @@ function goOffline () {
     onlineMode = false;
     wifiSlash.style.display = "block";
     connection.close();
-    for (const pk of connection.keys()) {
+    for (const pk of connections.keys()) {
         closeConnections(pk, 0);
     }
 }
