@@ -1,4 +1,4 @@
-import { arrEqual, xorArr, concatArr } from "./utils.js";
+import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 // import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
@@ -119,14 +119,14 @@ export function verifyOperations (ops) {
     const createOps = ops.filter((op) => op.action === "create");
     if (createOps.length != 1) { console.log("op verification failed: not one create"); return false; }
     const createOp = createOps[0];
-    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
+    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), strToArr(createOp.sig), strToArr(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => op.action !== "create");
     const hashedOps = ops.map((op) => hashOp(op));
 
     for (const op of otherOps) {
         // valid signature
-        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), op.sig, op.pk1)) { console.log("op verification failed: key verif failed"); return false; }
+        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1))) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
