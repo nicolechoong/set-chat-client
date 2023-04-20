@@ -658,7 +658,6 @@ async function onGetOnline(online, chatID) {
         resolveGetOnline.get(chatID)(false);
     }
     for (const peer of online) {
-        peer.peerPK = objToArr(peer.peerPK);
         if (await connectToPeer(peer)) {
             sendOperations(chatID, peer.peerPK);
             resolveGetOnline.get(true); // doesn't mean that it synced
@@ -1184,7 +1183,7 @@ function initChatHistoryTable (chatID, msgID) {
 var resolveConnectToPeer = new Map();
 
 function connectToPeer (peer) {
-    // peer: JSON {peerName: String, peerPK: Uint8Array}
+    // peer: JSON {peerName: String, peerPK: string}
     return new Promise((resolve) => {
         if (peer.peerName === localUsername) { resolve(false); return; }
         if (connections.has(peer.peerPK)) { 
@@ -1729,7 +1728,7 @@ function removeOp(ops, op) {
 function mergeJoinedChats(localChats, receivedChats) {
     const mergedChats = new Map([...localChats]);
     if (receivedChats.size === 0) { return mergedChats; }
-    const localChatIDs = new Set([...localChats.keys()]);
+    const localChatIDs = new Set(localChats.keys());
     for (const id of receivedChats.keys()) {
         if (!localChatIDs.has(id)) {
             mergedChats.set(id, {

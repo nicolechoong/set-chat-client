@@ -291,7 +291,7 @@ function onCandidate (connection, data) {
   broadcast({
     type: "candidate",
     candidate: data.candidate,
-    from: Uint8Array.from(Object.values(JSON.parse(connection.pk)))
+    from: connection.pk
   }, data.chatroomID);
 }
 
@@ -345,7 +345,7 @@ function onGetPK (connection, data) {
     type: "getPK",
     username: data.username,
     success: true,
-    pk: Uint8Array.from(Object.values(JSON.parse(usernameToPK.get(data.username))))
+    pk: usernameToPK.get(data.username)
   });
 }
 
@@ -357,7 +357,7 @@ function getOnline (pk, chatID) {
       if (connectedUsers.has(mem) && mem !== pk) {
         onlineMembers.push({
           peerName: allUsers.get(mem).username,
-          peerPK: Uint8Array.from(Object.values(JSON.parse(mem)))
+          peerPK: mem
         });
       }
     }
