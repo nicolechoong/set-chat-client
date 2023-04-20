@@ -21,16 +21,16 @@ export function unresolvedCycles (cycles, ignored) {
 function findCycle (fromOp, visited, stack, cycle) {
     // assume start is create
     const cur = stack.at(-1);
-    for (const next of fromOp.get(JSON.stringify(cur.sig))) {
-        if (visited.get(JSON.stringify(next.sig)) === "IN STACK") {
-            cycle.push([...stack.slice(stack.findIndex((op) => arrEqual(op.sig, next.sig)))]);
-        } else if (visited.get(JSON.stringify(next.sig)) === "NOT VISITED") {
+    for (const next of fromOp.get(cur.sig)) {
+        if (visited.get(next.sig) === "IN STACK") {
+            cycle.push([...stack.slice(stack.findIndex((op) => (op.sig === next.sig)))]);
+        } else if (visited.get(next.sig) === "NOT VISITED") {
             stack.push(next);
-            visited.set(JSON.stringify(next.sig), "IN STACK");
+            visited.set(next.sig, "IN STACK");
             findCycle(fromOp, visited, stack, cycle);
         }
     }
-    visited.set(JSON.stringify(cur.sig), "DONE");
+    visited.set(cur.sig, "DONE");
     stack.pop();
 }
 
@@ -40,28 +40,28 @@ export function hasCycles (ops) {
     const fromOp = new Map();
 
     for (const edge of edges) {
-        if (!fromOp.has(JSON.stringify(edge[0].sig))) {
-            fromOp.set(JSON.stringify(edge[0].sig), []);
+        if (!fromOp.has(edge[0].sig)) {
+            fromOp.set(edge[0].sig, []);
         }
         if (edge[1].action !== "mem") {
-            fromOp.get(JSON.stringify(edge[0].sig)).push(edge[1]);
+            fromOp.get(edge[0].sig).push(edge[1]);
         }
     }
 
     const cycles = [];
-    findCycle(fromOp, new Map(ops.map((op) => [JSON.stringify(op.sig), "NOT VISITED"])), [start], cycles);
+    findCycle(fromOp, new Map(ops.map((op) => [op.sig, "NOT VISITED"])), [start], cycles);
     if (cycles.length === 0) {
         return { cycle: false };
     }
 
-    const toOp = new Map(cycles.flat().map((op) => [JSON.stringify(op.sig), 0]));
+    const toOp = new Map(cycles.flat().map((op) => [op.sig, 0]));
     for (let i=0; i < cycles.length; i++) {
         for (const edge of edges) {
             if (hasOp(cycles[i], edge[1])) {
-                toOp.set(JSON.stringify(edge[1].sig), toOp.get(JSON.stringify(edge[1].sig))+1);
+                toOp.set(edge[1].sig, toOp.get(edge[1].sig)+1);
             }
         }
-        cycles[i] = cycles[i].filter((op) => toOp.get(JSON.stringify(op.sig)) >= 2);
+        cycles[i] = cycles[i].filter((op) => toOp.get(op.sig) >= 2);
     }
     return { cycle: true, concurrent: cycles };
 }
@@ -84,20 +84,20 @@ function concatOp (op) {
 
 export function hasOp(ops, op) {
     for (const curOp of ops) {
-        if (arrEqual(curOp.sig, op.sig)) { return true; }
+        if (curOp.sig === op.sig) { return true; }
     }
     return false;
 }
 
 export async function generateOp (action, keyPair, pk2 = null, ops = []) {
-    // action: String, chatID: String, pk2: Uint8Array, ops: Array of Object
+    // action: String, chatID: String, pk2: string, ops: Array of Object
     return new Promise(function (resolve) {
         var op;
         if (action === "create") {
             op = {
                 action: 'create',
                 pk: keyPair.publicKey,
-                nonce: nacl.randomBytes(64),
+                nonce: arrToStr(nacl.randomBytes(64)),
             };
         } else if (action === "add" || action === "remove") {
             op = {
@@ -107,7 +107,7 @@ export async function generateOp (action, keyPair, pk2 = null, ops = []) {
                 deps: getDeps(ops)
             };
         }
-        op["sig"] = nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey);
+        op["sig"] = arrToStr(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
         resolve(op);
     });
 }
@@ -122,7 +122,7 @@ export function verifyOperations (ops) {
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), createOp.sig, createOp.pk)) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => op.action !== "create");
-    const hashedOps = ops.map((op) => JSON.stringify(hashOp(op)));
+    const hashedOps = ops.map((op) => hashOp(op));
 
     for (const op of otherOps) {
         // valid signature
@@ -130,7 +130,7 @@ export function verifyOperations (ops) {
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
-            if (!hashedOps.includes(JSON.stringify(dep))) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+            if (!hashedOps.includes(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
 
@@ -138,18 +138,18 @@ export function verifyOperations (ops) {
 }
 
 export function hashOp (op) {
-    return nacl.hash(enc.encode(concatOp(op)));
+    return arrToStr(nacl.hash(enc.encode(concatOp(op))));
 }
 
 export function hashOpArray (ops) {
-    return nacl.hash(enc.encode(ops.map(op => op.sig).join("")));
+    return arrToStr(nacl.hash(enc.encode(ops.map(op => op.sig).join(""))));
 }
 
 function getOpFromHash(ops, hashedOp) {
-    if (hashedOps.has(JSON.stringify(hashedOp))) { return hashedOps.get(JSON.stringify(hashedOp)); }
+    if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
     for (const op of ops) {
-        if (arrEqual(hashedOp, hashOp(op))) {
-            hashedOps.set(JSON.stringify(hashedOp), op);
+        if (hashedOp === hashOp(op)) {
+            hashedOps.set(hashedOp, op);
             return op;
         }
     }
@@ -164,7 +164,7 @@ function precedes (ops, op1, op2) {
     while (toVisit.length > 0) {
         curOp = toVisit.shift();
         for (const hashedDep of curOp.deps) {
-            if (arrEqual(hashedDep, target)) {
+            if (hashedDep === target) {
                 return true;
             } else {
                 dep = getOpFromHash(ops, hashedDep);
@@ -178,22 +178,22 @@ function precedes (ops, op1, op2) {
 }
 
 function concurrent (ops, op1, op2) {
-    if (hasOp(ops, op1) && hasOp(ops, op2) && !arrEqual(op1.sig, op2.sig) && !precedes(ops, op1, op2) && !precedes(ops, op2, op1)) { return true; }
+    if (hasOp(ops, op1) && hasOp(ops, op2) && op1.sig !== op2.sig && !precedes(ops, op1, op2) && !precedes(ops, op2, op1)) { return true; }
     return false;
 }
 
 function printEdge (op1, op2 = null) {
     var output = "";
     if (op1.action === "create") {
-        output = `op1 ${keyMap.get(JSON.stringify(op1.pk))} ${op1.action} ${JSON.stringify(op1.sig)} `;
+        output = `op1 ${keyMap.get(op1.pk)} ${op1.action} ${op1.sig} `;
     } else {
-        output = `op1 ${keyMap.get(JSON.stringify(op1.pk1))} ${op1.action} ${keyMap.get(JSON.stringify(op1.pk2))} ${JSON.stringify(op1.sig)} `;
+        output = `op1 ${keyMap.get(op1.pk1)} ${op1.action} ${keyMap.get(op1.pk2)} ${op1.sig} `;
     }
     if (op2) {
         if (op2.action === "mem") {
-            output = `-> ${output} mem ${JSON.stringify(op2.member)}`;
+            output = `-> ${output} mem ${op2.member}`;
         } else {
-            output = `-> ${output} op2 ${keyMap.get(JSON.stringify(op2.pk1))} ${op2.action} ${keyMap.get(JSON.stringify(op2.pk2))}`;
+            output = `-> ${output} op2 ${keyMap.get(op2.pk1)} ${op2.action} ${keyMap.get(op2.pk2)}`;
         }
     }
     console.log(output);
@@ -206,8 +206,8 @@ export function authority (ops) {
     for (const op1 of ops) {
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
-            if ((((op1.action === "create" && arrEqual(op1.pk, op2.pk1)) || (op1.action === "add" && arrEqual(op1.pk2, op2.pk1))) && precedes(ops, op1, op2))
-                || ((op1.action === "remove" && arrEqual(op1.pk2, op2.pk1)) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
+            if ((((op1.action === "create" && op1.pk === op2.pk1) || (op1.action === "add" && op1.pk2 === op2.pk1)) && precedes(ops, op1, op2))
+                || ((op1.action === "remove" && op1.pk2 === op2.pk1) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
                 edges.push([op1, op2]);
             }
         }
@@ -224,7 +224,7 @@ function valid (ops, ignored, op, authorityGraph) {
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
-        return arrEqual(op.sig, edge[1].sig) && valid(ops, ignored, edge[0], authorityGraph);
+        return op.sig === edge[1].sig && valid(ops, ignored, edge[0], authorityGraph);
     }).map(edge => edge[0]);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
@@ -247,7 +247,7 @@ export async function members (ops, ignored) {
     for (const op of ops) {
         pk = op.action === "create" ? op.pk : op.pk2;
         if (valid(ops, ignored, { "member": pk, "sig": pk, "action": "mem" }, authorityGraph)) {
-            pks.add(JSON.stringify(pk));
+            pks.add(pk);
         }
     }
     console.log(`calculated member set ${[...pks]}      number of members ${pks.size}}`);

@@ -53,13 +53,13 @@ server.listen(port, () => {
 // stores all connections
 const connections = [];
 
-// (pk: stringified pubkey, {msgQueue: Array of String, username: String})
+// (pk: stringified pubkey, {username: String, msgQueue: Array of String})
 const allUsers = new Map();
 
 // (username: String, pk: stringified String)
 const usernameToPK = new Map();
 
-// (pk: stringified String, {connection: WebSocket, chatrooms: Array of String})
+// (pk: stringified String, connection: WebSocket
 const connectedUsers = new Map();
 
 // UNUSED FOR NOW
@@ -105,7 +105,7 @@ wsServer.on('connection', function(connection) {
         onClientDH.get(connection)(data);
         break;
       case "login":
-        onLogin(connection, data.name, objToArr(data.sig));
+        onLogin(connection, data.name, strToArr(data.sig));
         break;     
       case "offer":
         onOffer(connection, data);
@@ -153,7 +153,6 @@ wsServer.on('connection', function(connection) {
     connection.onclose = function() {
       if (connection.pk) {
         console.log(`User [${allUsers.get(connection.pk).username}] disconnected`);
-        // const removeFrom = connectedUsers.get(connection.pk).groups;
         connectedUsers.delete(connection.pk);
         connections.splice(connections.indexOf(connection), 1);
 
@@ -182,7 +181,7 @@ async function initSIGMA (connection) {
   const res = await new Promise((res) => { onClientDH.set(connection, res); });
 
   const serverValue = dh.publicKey;
-  const clientValue = objToArr(res.value);
+  const clientValue = strToArr(res.value);
   const sessionKey = nacl.box.before(clientValue, dh.secretKey);
   const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
@@ -192,10 +191,10 @@ async function initSIGMA (connection) {
     mac: macKey,
   });
 
-  if (nacl.sign.detached.verify(concatArr(serverValue, clientValue), objToArr(res.sig), objToArr(res.pk)) 
-  && nacl.verify(objToArr(res.mac), hmac512(macKey, objToArr(res.pk)))) {
+  if (nacl.sign.detached.verify(concatArr(serverValue, clientValue), strToArr(res.sig), strToArr(res.pk)) 
+  && nacl.verify(strToArr(res.mac), hmac512(macKey, strToArr(res.pk)))) {
 
-    connection.pk = JSON.stringify(res.pk);
+    connection.pk = res.pk;
     sendTo(connection, {
       success: true,
       type: "SIGMA3",
@@ -212,10 +211,11 @@ async function initSIGMA (connection) {
 }
 
 function onLogin (connection, name, sig) {
+  // connection: websocket, name: string, sig: Uint8Array
   console.log(`User [${name}] online`);
 
   const pubKey = connection.pk;
-  if (nacl.sign.detached.verify(enc.encode(name), sig, objToArr(JSON.parse(pubKey)))) {
+  if (nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) {
 
     if(connectedUsers.has(pubKey)) { 
       sendTo(connection, { 
@@ -230,7 +230,7 @@ function onLogin (connection, name, sig) {
         return;
       }
 
-      connectedUsers.set(pubKey, {connection: connection, groups: []}); 
+      connectedUsers.set(pubKey, connection); 
       allUsers.set(pubKey, {msgQueue: [], username: name});
       usernameToPK.set(name, pubKey);
 
@@ -247,13 +247,13 @@ function onLogin (connection, name, sig) {
 }
 
 function onOffer (connection, data) {
-  const receiverPK = JSON.stringify(data.to);
-  console.log(`received ${JSON.stringify(data)}`);
+  const receiverPK = data.to;
+  console.log(`received ${data}`);
   console.log(`decoded pk ${receiverPK} as sent by user ${connection.pk}`);
   if (connectedUsers.has(receiverPK)) {
     console.log(`Sending offer to: ${allUsers.get(receiverPK).username}`);
 
-    const conn = connectedUsers.get(receiverPK).connection;
+    const conn = connectedUsers.get(receiverPK);
 
     if (conn != null) {
       connection.otherNames = connection.otherNames || [];
@@ -265,11 +265,11 @@ function onOffer (connection, data) {
 }
 
 function onAnswer (connection, data) {
-  const receiverPK = JSON.stringify(data.to);
+  const receiverPK = data.to;
   if (connectedUsers.has(receiverPK)) {
     console.log(`Sending answer to: ${allUsers.get(receiverPK).username}`);
     
-    const conn = connectedUsers.get(receiverPK).connection;
+    const conn = connectedUsers.get(receiverPK);
 
     if (conn != null) {
       connection.otherNames = connection.otherNames || [];
@@ -294,30 +294,9 @@ function onCandidate (connection, data) {
 
 function onLeave (connection, data) {
   console.log(`Disconnecting from ${data.pk}`);
-  connectedUsers.delete(JSON.stringify(data.pk));
+  connectedUsers.delete(data.pk);
   connection.pk = null;
   initSIGMA(connection);
-}
-
-// Depreciated: For joining public chatrooms (maybe revive later!!)
-function onJoin (connection, data) {
-  const chatroomID = data.id;
-
-  if (!chatrooms.has(chatroomID)) {
-    chatrooms.set(chatroomID, []);
-  }
-
-  if (chatrooms.get(chatroomID).indexOf(data.name) < 0) {
-    chatrooms.get(chatroomID).push(data.name);
-    connectedUsers.get(data.name).groups.push(chatroomID);
-  }
-  
-  console.log(`Chatroom ${chatroomID} members: ${chatrooms.get(chatroomID)}`)
-
-  sendTo(connection, {
-    type: "join",
-    usernames: chatrooms.get(chatroomID)
-  });
 }
 
 function generateUID () {
@@ -333,10 +312,9 @@ function onCreateChat (connection, data) {
   const chatID = generateUID();
 
   // add to list of chats
-  chats.set(chatID, {chatName: data.chatName, members: [JSON.stringify(data.from)]});
+  chats.set(chatID, {chatName: data.chatName, members: [data.from]});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
-  // console.log(`validMemberPKs ${JSON.stringify(Array.from(validMemberPubKeys))}`);
   const createChatMessage = {
     type: "createChat",
     chatID: chatID,
@@ -413,7 +391,7 @@ function onGetUsername (connection, data) {
 function onAdd (connection, data) {
   // data = {type: 'add', to: username of invited user, chatID: chat id}
   console.log(JSON.stringify(data));
-  const toPK = JSON.stringify(data.to);
+  const toPK = data.to;
 
   console.log(`adding member ${toPK} to chats store ${data.msg.chatID} ${chats.has(data.msg.chatID)} ${[...chats.keys()]}`);
   chats.get(data.msg.chatID).members.push(toPK);
@@ -422,19 +400,19 @@ function onAdd (connection, data) {
   if (connectedUsers.get(toPK) == null) {
     sendTo(null, data.msg, toPK);
   } else {
-    sendTo(connectedUsers.get(toPK).connection, data.msg);
+    sendTo(connectedUsers.get(toPK), data.msg);
   }
 }
 
 function onRemove (connection, data) {
-  const toPK = JSON.stringify(data.to);
+  const toPK = data.to;
   // chats.get(data.chatID).members.splice(chats.get(data.chatID).members.indexOf(toPK), 1);
 
   console.log(`sending remove message for chat ${data.msg.chatID} to ${allUsers.get(toPK).username}`);
   if (connectedUsers.get(toPK) == null) {
     sendTo(null, data.msg, toPK);
   } else {
-    sendTo(connectedUsers.get(toPK).connection, data.msg);
+    sendTo(connectedUsers.get(toPK), data.msg);
   }
 }
 
@@ -466,7 +444,7 @@ function broadcast(message, id = 0) {
   if (id) {
     for (const memPK of chats.get(id).members) {
       if (connectedUsers.has(memPK)) {
-        sendTo(connectedUsers.get(memPK).connection, message);
+        sendTo(connectedUsers.get(memPK), message);
       }
     }
   } else {
@@ -500,7 +478,7 @@ function onReconnect (connection, name, pk) {
   // connection: WebSocket, pk: String
   const msgQueue = allUsers.get(pk).msgQueue;
   const joinedChats = getJoinedChats(pk);
-  connectedUsers.set(pk, {connection: connection, groups: joinedChats}); 
+  connectedUsers.set(pk, connection); 
   connection.pk = pk;
 
   console.log(`User ${allUsers.get(pk).username} has rejoined`);

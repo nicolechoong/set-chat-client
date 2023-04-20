@@ -34,13 +34,7 @@ export function formatDate (now) {
 }
 
 export function arrEqual (arr1, arr2) {
-    if (arr1.length !== arr2.length) { return false; }
-    let index = 0;
-    while (index < arr1.length) {
-        if (arr1[index] !== arr2[index]) { return false; }
-        index++;
-    }
-    return true;
+    return arr1.length === arr2.length && arr1.every((element, index) => element === arr2[index]);
 }
 
 export function isAlphanumeric (str) {
