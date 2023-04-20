@@ -585,6 +585,7 @@ async function disputeRemoval(peer, chatID) {
             dispute: true,
         });
 
+        sendToMember(removeMessage, keyPair.publicKey, false);
         broadcastToMembers(removeMessage, chatID);
         sendToServer({
             to: peer.peerPK,
@@ -1035,7 +1036,7 @@ async function receivedMessage (messageData, channel=null) {
     sendToMember({
         type: "ack",
         id: `${messageData.id}${keyPair.publicKey}`
-    }, messageData.from);
+    }, messageData.from, false);
 }
 
 async function initSIGMA (channel) {
@@ -1076,13 +1077,13 @@ async function initSIGMA (channel) {
                 pk: keyPair.publicKey,
                 sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)),
                 mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))),
-            }, res.pk);
+            }, res.pk, false);
             resolve(true);
 
         } else {
             sendToMember({
                 success: false
-            }, res.pk);
+            }, res.pk, false);
             resolve(false);
         }
     });
@@ -1307,14 +1308,14 @@ async function updateChatStore (messageData) {
     });
 }
 
-function sendToMember (data, pk) {
+function sendToMember (data, pk, requireAck=true) {
     // data: JSON, pk: String
     if (pk === keyPair.publicKey) { return receivedMessage(data); }
     console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
     if (connections.has(pk)) {
         try {
             connections.get(pk).sendChannel.send(JSON.stringify(data));
-            acks.add(`${data.id}${pk}`);
+            if (requireAck && pk !== keyPair.publicKey) { acks.add(`${data.id}${pk}`); }
         } catch {
             console.log(`failed to send ${data.type}`);
         }
