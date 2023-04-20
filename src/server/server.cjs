@@ -180,7 +180,6 @@ async function initSIGMA (connection) {
   });
 
   const res = await new Promise((res) => { onClientDH.set(connection, res); });
-  console.log(JSON.stringify(res));
 
   const serverValue = dh.publicKey;
   const clientValue = strToArr(res.value);
@@ -194,7 +193,6 @@ async function initSIGMA (connection) {
     mac: macKey,
   });
 
-  console.log(`${nacl.sign.detached.verify(concatArr(serverValue, clientValue), strToArr(res.sig), strToArr(res.pk))} 2${nacl.verify(strToArr(res.mac), hmac512(macKey, strToArr(res.pk)))}`);
   if (nacl.sign.detached.verify(concatArr(serverValue, clientValue), strToArr(res.sig), strToArr(res.pk)) 
   && nacl.verify(strToArr(res.mac), hmac512(macKey, strToArr(res.pk)))) {
 

@@ -960,6 +960,7 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "SIGMA3":
             onSIGMA3.get(channel)(messageData);
+            break;
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             // messageData.ops.forEach(op => unpackOp(op));
@@ -1286,13 +1287,13 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.from)}: ${data.message}`;
                 break;
             case "add":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.op.pk1)} added ${keyMap.get(data.op.pk2)}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.op.pk1)} <span style="color: #169873;">added</span> ${keyMap.get(data.op.pk2)}`;
                 break;
             case "remove":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.op.pk1)} <span style="color: #fc5c65;">removed</span> ${keyMap.get(data.op.pk2)}`;
                 break;
             case "selectedIgnored":
-                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.from)} chose to ignore '${keyMap.get(data.op.pk1)} ${keyMap.get(data.op.action)} ${keyMap.get(data.op.pk2)}'`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.from)} chose to <span style="color: #5E6472;">ignore '${keyMap.get(data.op.pk1)} ${keyMap.get(data.op.action)} ${keyMap.get(data.op.pk2)}</span>'`;
                 break;
             default:
                 break;
