@@ -160,7 +160,7 @@ function connectToServer () {
                 onCreateChat(data.chatID, data.chatName);
                 break;
             case "add":
-                data.ignored.forEach(ig => unpackOp(ig));
+                // data.ignored.forEach(ig => unpackOp(ig));
                 onAdd(data.chatID, data.chatName, data.from, data.ignored, data.id);
                 break;
             case "remove":
@@ -501,7 +501,7 @@ async function addToChat (name, pk, chatID) {
 
 
 async function onRemove (messageData) {
-    const fromPK = objToArr(messageData.from);
+    const fromPK = messageData.from;
     var chatInfo = joinedChats.get(messageData.chatID);
     if (chatInfo.validMembers.has(fromPK)) {
         const from = await getUsername(fromPK);
@@ -599,7 +599,7 @@ async function disputeRemoval(peer, chatID) {
         console.log(joinedChats.get(chatID).members);
         await updateMembers(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
         for (const mem of oldMembers) {
-            connectToPeer({ peerName: await getUsername(mem), peerPK: objToArr(JSON.parse(mem)) });
+            connectToPeer({ peerName: await getUsername(mem), peerPK: mem });
         }
     });
 }
@@ -962,7 +962,7 @@ async function receivedMessage (messageData, channel=null) {
             onSIGMA3.get(channel)(messageData);
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
-            messageData.ops.forEach(op => unpackOp(op));
+            // messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                 if (res == "ACCEPT") {
                     sendChatHistory(messageData.chatID, messageData.from);
@@ -974,7 +974,7 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "ignored":
             if (!messageData.replay) {
-                messageData.ignored.forEach(op => unpackOp(op));
+                // messageData.ignored.forEach(op => unpackOp(op));
             }
             receivedIgnored(messageData.ignored, messageData.chatID, messageData.from).then(async (res) => {
                 sendChatHistory(messageData.chatID, messageData.from);
@@ -1004,7 +1004,7 @@ async function receivedMessage (messageData, channel=null) {
             await mergeChatHistory(messageData.chatID, messageData.from, messageData.history);
             break;
         case "remove":
-            unpackOp(messageData.op);
+            // unpackOp(messageData.op);
             receivedOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
                 if (res === "ACCEPT") { 
                     if (messageData.op.pk2 === keyPair.publicKey) {
@@ -1018,10 +1018,10 @@ async function receivedMessage (messageData, channel=null) {
             });
             break;
         case "add":
-            unpackOp(messageData.op);
-            messageData.ignored.forEach(ig => unpackOp(ig));
+            // unpackOp(messageData.op);
+            // messageData.ignored.forEach(ig => unpackOp(ig));
             if (messageData.op.pk2 === keyPair.publicKey) {
-                onAdd(messageData.chatID, messageData.chatName, objToArr(messageData.from), messageData.ignored, messageData.msgID);
+                onAdd(messageData.chatID, messageData.chatName, messageData.from, messageData.ignored, messageData.msgID);
             } else {
                 receivedOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
                     if (res === "ACCEPT") { addPeer(messageData); }
@@ -1069,10 +1069,10 @@ async function initSIGMA (channel) {
     
         const receivedValues = concatArr(localValue, peerValue);
     
-        if (nacl.sign.detached.verify(receivedValues, objToArr(res.sig), peerPK) 
-        && nacl.verify(objToArr(res.mac), access.hmac512(macKey, peerPK))) {
-            if (connections.has(peerPK)) {
-                connections.get(peerPK).auth = true;
+        if (nacl.sign.detached.verify(receivedValues, strToArr(res.sig), peerPK) 
+        && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
+            if (connections.has(res.pk)) {
+                connections.get(res.pk).auth = true;
             }
 
             sendToMember({
@@ -1080,14 +1080,14 @@ async function initSIGMA (channel) {
                 type: "SIGMA3",
                 pk: keyPair.publicKey,
                 sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)),
-                mac: access.hmac512(macKey, keyPair.publicKey),
-            }, peerPK);
+                mac: access.hmac512(macKey, strToArr(keyPair.publicKey)),
+            }, res.pk);
             resolve(true);
 
         } else {
             sendToMember({
                 success: false
-            }, peerPK);
+            }, res.pk);
             resolve(false);
         }
     });
@@ -1126,7 +1126,7 @@ function sendAdvertisement(chatID, pk) {
     const online = [];
     for (const mem of joinedChats.get(chatID).members) {
         if (connections.has(mem) && mem !== pk) {
-            online.push({ peerName: keyMap.get(mem), peerPK: objToArr(JSON.parse(mem)) });
+            online.push({ peerName: keyMap.get(mem), peerPK: mem });
         }
     }
 
@@ -1685,14 +1685,14 @@ function goOffline () {
 ///////////
 
 function unpackOp(op) {
-    op.sig = objToArr(op.sig);
+    op.sig = strToArr(op.sig);
     if (op.action === "create") {
-        op.pk = objToArr(op.pk);
-        op.nonce = objToArr(op.nonce);
+        op.pk = strToArr(op.pk);
+        op.nonce = strToArr(op.nonce);
     } else {
-        op.pk1 = objToArr(op.pk1);
-        op.pk2 = objToArr(op.pk2);
-        op.deps = op.deps.map(dep => objToArr(dep));
+        op.pk1 = strToArr(op.pk1);
+        op.pk2 = strToArr(op.pk2);
+        op.deps = op.deps.map(dep => strToArr(dep));
     }
 }
 
