@@ -252,7 +252,6 @@ function onLogin (connection, name, sig) {
 
 function onOffer (connection, data) {
   const receiverPK = data.to;
-  console.log(`received ${data}`);
   console.log(`decoded pk ${receiverPK} as sent by user ${connection.pk}`);
   if (connectedUsers.has(receiverPK)) {
     console.log(`Sending offer to: ${allUsers.get(receiverPK).username}`);

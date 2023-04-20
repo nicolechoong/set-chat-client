@@ -1080,7 +1080,7 @@ async function initSIGMA (channel) {
                 type: "SIGMA3",
                 pk: keyPair.publicKey,
                 sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)),
-                mac: access.hmac512(macKey, strToArr(keyPair.publicKey)),
+                mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))),
             }, res.pk);
             resolve(true);
 
@@ -1310,7 +1310,7 @@ async function updateChatStore (messageData) {
 function sendToMember (data, pk) {
     // data: JSON, pk: String
     if (pk === keyPair.publicKey) { return receivedMessage(data); }
-    console.log(`sending ${data.type}   to ${keyMap.get(pk)}`);
+    console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
     if (connections.has(pk)) {
         try {
             connections.get(pk).sendChannel.send(JSON.stringify(data));
