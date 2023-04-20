@@ -186,6 +186,7 @@ async function initSIGMA (connection) {
   const clientValue = strToArr(res.value);
   const sessionKey = nacl.box.before(clientValue, dh.secretKey);
   const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+  console.log(JSON.stringify(sessionKey));
 
   sessionKeys.set(connection, {
     dh: dh,
@@ -193,6 +194,7 @@ async function initSIGMA (connection) {
     mac: macKey,
   });
 
+  console.log(`${nacl.sign.detached.verify(concatArr(serverValue, clientValue), strToArr(res.sig), strToArr(res.pk))} 2${nacl.verify(strToArr(res.mac), hmac512(macKey, strToArr(res.pk)))}`);
   if (nacl.sign.detached.verify(concatArr(serverValue, clientValue), strToArr(res.sig), strToArr(res.pk)) 
   && nacl.verify(strToArr(res.mac), hmac512(macKey, strToArr(res.pk)))) {
 

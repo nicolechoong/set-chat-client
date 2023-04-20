@@ -202,9 +202,9 @@ async function onSIGMA1 (peerValue, connection) {
         const localValue = localKeyPair.publicKey;
         const sessionKey = nacl.box.before(peerValue, localKeyPair.secretKey);
         const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+        console.log(JSON.stringify(sessionKey));
 
         connection.send(JSON.stringify({
-            success: true,
             type: "SIGMA2",
             value: arrToStr(localValue), // Uint8Array
             pk: keyPair.publicKey, // string
