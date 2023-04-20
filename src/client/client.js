@@ -1522,8 +1522,12 @@ async function getIgnored(cycles, chatID) {
 
         for (const cycle of cycles) {
             cycle.forEach((op) => {
+                console.log
                 if (!chatMessageIDs.has(op.sig)) {
-                    updateChatWindow(op);
+                    updateChatWindow(addMsgID({
+                        op: op,
+                        chatID: chatID
+                    }));
                 }
             });
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
