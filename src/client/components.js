@@ -1,6 +1,5 @@
 import { joinedChats, keyMap, selectChat, removeFromChat, selectIgnored, updateChatInfo } from './client.js';
 import { hasOp } from './accessControl.js';
-import { testArrToStr } from './utils.js';
 
 const createPopup = document.getElementById('createPopup');
 const loginPopup = document.getElementById('loginPopup');
@@ -58,10 +57,10 @@ export function generateConflictCard (ops, chatID) {
         option = optionTemplate.cloneNode(true);
         option.id = "";
 
-        option.getElementsByTagName("h3")[0].innerHTML = `${keyMap.get(JSON.stringify(op.pk1))} ${op.action}s ${keyMap.get(JSON.stringify(op.pk2))}`;
+        option.getElementsByTagName("h3")[0].innerHTML = `${keyMap.get(op.pk1)} ${op.action}s ${keyMap.get(op.pk2)}`;
         const p = option.getElementsByTagName("p")[0];
 
-        const mems = [keyMap.get(JSON.stringify(op.pk2))];
+        const mems = [keyMap.get(op.pk2)];
         joinedChats.get(chatID).peerIgnored.forEach((value, key) => {
             if (hasOp(value, op) && !mems.includes(keyMap.get(key))) {
                 mems.push(keyMap.get(key));
@@ -69,7 +68,7 @@ export function generateConflictCard (ops, chatID) {
         });
 
         p.innerHTML = `↪ Members: ${mems.join(", ")}`;
-        p.id = `p${testArrToStr(op.sig)}`;
+        p.id = `p${op.sig}`;
 
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
