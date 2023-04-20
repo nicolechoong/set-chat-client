@@ -1103,6 +1103,7 @@ async function onChannelOpen(event) {
             resolveConnectToPeer.get(peerPK)(true);
             for (const chatID of joinedChats.keys()) {
                 if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
+                    console.log(`send ops ${chatID}`);
                     sendOperations(chatID, peerPK, true);
                 }
             }
