@@ -2,7 +2,7 @@ import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js"
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
-import {strToArr, objToArr, concatArr, formatDate, arrEqual, isAlphanumeric, arrToStr} from "./utils.js";
+import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr} from "./utils.js";
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -11,6 +11,7 @@ const disputeBtn = document.getElementById('disputeBtn');
 const acceptRemovalBtn = document.getElementById('acceptRemovalBtn');
 const newChatBtn = document.getElementById('newChatBtn');
 const resetStoreBtn = document.getElementById('resetStoreBtn');
+const connectBtn = document.getElementById('connectBtn');
 const chatBox = document.getElementById('chatBox');
 
 const chatList = document.getElementById('chatList');
@@ -1686,7 +1687,7 @@ function logout () {
     });
 }
 
-wifiSlash.addEventListener("click", () => {
+connectBtn.addEventListener("click", () => {
     if (onlineMode) { goOffline(); }
     else { connectToServer(); }
 });
