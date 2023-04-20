@@ -34,7 +34,7 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, msgQueue, serverValue, sessionKeys, store;
+var currentChatID, connections, msgQueue, serverValue, sessionKeys, store, acks;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 var onlineMode = false;
 export var joinedChats, keyMap;
@@ -78,6 +78,7 @@ function initialiseClient () {
     sessionKeys = new Map();
     onSIGMA2 = new Map();
     onSIGMA3 = new Map();
+    acks = new Set();
 
     // layout
     [...chatList.childNodes].forEach((node) => {
@@ -202,7 +203,6 @@ async function onSIGMA1 (peerValue, connection) {
         const localValue = localKeyPair.publicKey;
         const sessionKey = nacl.box.before(peerValue, localKeyPair.secretKey);
         const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
-        console.log(JSON.stringify(sessionKey));
 
         connection.send(JSON.stringify({
             type: "SIGMA2",
@@ -293,7 +293,6 @@ function sendOffer(peerName, peerPK) {
 
     if (peerName !== null && peerPK !== null) {
         const newConnection = initPeerConnection(peerName);
-        console.log(`offer pk key ${peerPK}`);
         connections.set(peerPK, { connection: newConnection, sendChannel: null, auth: false });
         connectionNames.set(newConnection, peerPK);
         const peerConnection = connections.get(peerPK);
@@ -354,7 +353,6 @@ async function onOffer(offer, peerName, peerPK) {
 
 // Receiving Answer from Peer
 function onAnswer(answer, peerPK) {
-    console.log(`onAnswer connections ${[...connections.keys()]}`);
     connections.get(peerPK).connection.setRemoteDescription(answer);
     offerSent.delete(peerPK);
 }
@@ -723,7 +721,6 @@ async function sendIgnored (ignored, chatID, pk) {
         ignored: ignored,
         chatID: chatID,
         from: keyPair.publicKey,
-        replay: false
     });
     broadcastToMembers(ignoredMessage, chatID);
     if (!joinedChats.get(chatID).members.includes(pk)) {
@@ -815,7 +812,6 @@ async function receivedOperations (ops, chatID, pk) {
                                 ignored: queuedIg,
                                 chatID: chatID,
                                 from: strToArr(queuedPk),
-                                replay: true
                             });
                             joinedChats.get(chatID).peerIgnored.delete(queuedPk);
                             await store.setItem("joinedChats", joinedChats);
@@ -951,6 +947,9 @@ async function receivedMessage (messageData, channel=null) {
         document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
     }
     switch (messageData.type) {
+        case "ack":
+            acks.delete(messageData.id);
+            return;
         case "SIGMA1":
             onSIGMA1(strToArr(messageData.value), channel);
             break;
@@ -962,34 +961,30 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
-            // messageData.ops.forEach(op => unpackOp(op));
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                 if (res == "ACCEPT") {
-                    sendChatHistory(messageData.chatID, messageData.from);
+                    await sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res == "REJECT") {
-                    closeConnections(messageData.from, messageData.chatID, true);
+                    // closeConnections(messageData.from, messageData.chatID, true);
                 }
             });
             break;
         case "ignored":
-            if (!messageData.replay) {
-                // messageData.ignored.forEach(op => unpackOp(op));
-            }
             receivedIgnored(messageData.ignored, messageData.chatID, messageData.from).then(async (res) => {
-                sendChatHistory(messageData.chatID, messageData.from);
+                await sendChatHistory(messageData.chatID, messageData.from);
                 if (res == "ACCEPT") {
                     sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res === "REJECT") {
-                    closeConnections(messageData.from, messageData.chatID, true);
+                    // closeConnections(messageData.from, messageData.chatID, true);
                 }
             });
             break;
         case "selectedIgnored":
             if (messageData.chatID == currentChatID) {
                 console.log(JSON.stringify(messageData.op));
-                elem.updateSelectedMembers(keyMap.get(messageData.from), arrToStr(messageData.op.sig));
+                elem.updateSelectedMembers(keyMap.get(messageData.from), messageData.op.sig);
             }
             updateChatWindow(messageData);
             updateChatStore(messageData);
@@ -1002,7 +997,6 @@ async function receivedMessage (messageData, channel=null) {
             await mergeChatHistory(messageData.chatID, messageData.from, messageData.history);
             break;
         case "remove":
-            // unpackOp(messageData.op);
             receivedOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
                 if (res === "ACCEPT") { 
                     if (messageData.op.pk2 === keyPair.publicKey) {
@@ -1016,8 +1010,6 @@ async function receivedMessage (messageData, channel=null) {
             });
             break;
         case "add":
-            // unpackOp(messageData.op);
-            // messageData.ignored.forEach(ig => unpackOp(ig));
             if (messageData.op.pk2 === keyPair.publicKey) {
                 onAdd(messageData.chatID, messageData.chatName, messageData.from, messageData.ignored, messageData.msgID);
             } else {
@@ -1039,6 +1031,10 @@ async function receivedMessage (messageData, channel=null) {
         default:
             console.log(`Unrecognised message type ${messageData.type}`);
     }
+    sendToMember({
+        type: "ack",
+        id: `${messageData.id}${keyPair.publicKey}`
+    });
 }
 
 async function initSIGMA (channel) {
@@ -1317,6 +1313,7 @@ function sendToMember (data, pk) {
     if (connections.has(pk)) {
         try {
             connections.get(pk).sendChannel.send(JSON.stringify(data));
+            acks.add(`${data.id}${pk}`);
         } catch {
             console.log(`failed to send ${data.type}`);
         }
@@ -1522,7 +1519,7 @@ async function getIgnored(cycles, chatID) {
 
         for (const cycle of cycles) {
             cycle.forEach((op) => {
-                console.log
+                console.log(`op ${JSON.stringify(op)}`);
                 if (!chatMessageIDs.has(op.sig)) {
                     updateChatWindow(addMsgID({
                         op: op,
@@ -1778,7 +1775,6 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                 
                 const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
                 for (const msg of receivedMsgs) {
-                    console.log(`msg ${msg.type}`);
                     if (!localMsgIDs.has(msg.id)) { // if we don't have this message
                         mergedChatHistory.push(msg);
                         newMessage = true;
@@ -1839,7 +1835,7 @@ function closeConnections (pk, chatID=0) {
             }
         }
     }
-    if (connections.has(pk) && !offerSent.has(pk)) {
+    if (connections.has(pk) && !offerSent.has(pk) && [...acks].findIndex((id) => id.slice(128) === pk) == -1) {
         connectionNames.delete(connections.get(pk).connection);
         if (connections.get(pk).sendChannel) {
             connections.get(pk).sendChannel.close();
