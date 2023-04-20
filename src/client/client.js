@@ -1261,11 +1261,14 @@ async function removePeer (messageData) {
     closeConnections(pk, messageData.chatID, true);
 }
 
+const chatMessageIDs = new Set();
+
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
         await store.getItem(currentChatID).then(async (chatInfo) => {
             chatInfo.history.forEach(data => {
+                chatMessageIDs.add(data.id);
                 updateChatWindow(data);
             });
         });
@@ -1291,7 +1294,7 @@ function updateChatWindow (data) {
                 message.innerHTML = `[${formatDate(data.sentTime)}] <span style="color: #fc5c65;">${keyMap.get(data.op.pk1)} removed ${keyMap.get(data.op.pk2)}</span>`;
                 break;
             case "selectedIgnored":
-                message.innerHTML = `[${formatDate(data.sentTime)}] <span style="color: #5E6472;">${keyMap.get(data.from)} chose to ignore '${keyMap.get(data.op.pk1)} ${keyMap.get(data.op.action)} ${keyMap.get(data.op.pk2)}</span>'`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] <span style="color: #5E6472;">${keyMap.get(data.from)} chose to ignore '${keyMap.get(data.op.pk1)} ${data.op.action} ${keyMap.get(data.op.pk2)}</span>'`;
                 break;
             default:
                 break;
@@ -1514,11 +1517,15 @@ resetStoreBtn.addEventListener("click", () => {
 var resolveGetIgnored = new Map();
 
 async function getIgnored(cycles, chatID) {
-
     return new Promise(async (resolve) => { 
         resolveGetIgnored.set(chatID, [cycles, resolve]); 
 
         for (const cycle of cycles) {
+            cycle.forEach((op) => {
+                if (!chatMessageIDs.has(op.sig)) {
+                    updateChatWindow(op);
+                }
+            });
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
             if (removeSelfIndex > -1) {
                 console.log(`automatically resolved ${cycle.at(removeSelfIndex).action} ${keyMap.get(cycle.at(removeSelfIndex).pk2)}`);
@@ -1559,13 +1566,15 @@ export async function selectIgnored(ignoredOp, chatID) {
         refreshChatWindow(chatID);
 
         // sending to others
-        const msg = addMsgID({
-            type: "selectedIgnored",
-            op: ignoredOp,
-            chatID: chatID,
-            from: keyPair.publicKey,
-        });
-        broadcastToMembers(msg, chatID);
+        if (ignoredOp.pk2 !== keyPair.publicKey) {
+            const msg = addMsgID({
+                type: "selectedIgnored",
+                op: ignoredOp,
+                chatID: chatID,
+                from: keyPair.publicKey,
+            });
+            broadcastToMembers(msg, chatID);
+        }
 
         resolveGetIgnored.get(chatID)[0].splice(resolveGetIgnored.get(chatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
     
