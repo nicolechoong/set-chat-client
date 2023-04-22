@@ -180,12 +180,19 @@ async function initSIGMA (connection) {
     mac: macKey,
   });
 
+  if (connectedUsers.has(res.pk)) {
+    sendTo(connection, {
+      status: "PK_IN_USE"
+    });
+    return
+  }
+
   if (nacl.sign.detached.verify(concatArr(serverValue, clientValue), strToArr(res.sig), strToArr(res.pk)) 
   && nacl.verify(strToArr(res.mac), hmac512(macKey, strToArr(res.pk)))) {
 
     connection.pk = res.pk;
     sendTo(connection, {
-      success: true,
+      status: "SUCCESS",
       type: "SIGMA3",
       pk: keyPair.publicKey,
       sig: arrToStr(nacl.sign.detached(concatArr(clientValue, serverValue), keyPair.secretKey)),
@@ -194,7 +201,7 @@ async function initSIGMA (connection) {
 
   } else {
     sendTo(connection, {
-      success: false
+      status: "VERIF_FAILED"
     });
   }
 }
@@ -208,6 +215,7 @@ function onLogin (connection, name, sig) {
   if (!nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) { status = "VERIF_FAILED"; }
   else if (connectedUsers.has(pubKey)) { 
     status = "NAME_IN_USE"; 
+    connection.pk = null;
     initSIGMA(connection);
   }
   else if (usernameToPK.has(name) && usernameToPK.get(name) !== pubKey) { status = "NAME_TAKEN"; }
@@ -461,8 +469,7 @@ function onReconnect (connection, name, pk) {
   // connection: WebSocket, pk: String
   const msgQueue = allUsers.get(pk).msgQueue;
   const joinedChats = getJoinedChats(pk);
-  connectedUsers.set(pk, connection); 
-  connection.pk = pk;
+  connectedUsers.set(pk, connection);
 
   console.log(`User ${allUsers.get(pk).username} has rejoined`);
   console.log(`all chats..? ${JSON.stringify([...chats])}`);

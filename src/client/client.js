@@ -218,19 +218,24 @@ async function onSIGMA1 (peerValue, connection) {
         const res = await new Promise((res2) => { onSIGMA3.set(connection, res2); });
 
         const peerPK = strToArr(res.pk);
-        if (res.success) {
-            if (nacl.sign.detached.verify(concatArr(localValue, peerValue), strToArr(res.sig), peerPK)
-            && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
-                resolve(true);
-                if (connections.has(res.pk)) {
-                    connections.get(res.pk).auth = true;
+        switch (res.status) {
+            case "SUCCESS":
+                if (nacl.sign.detached.verify(concatArr(localValue, peerValue), strToArr(res.sig), peerPK)
+                && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
+                    resolve(true);
+                    if (connections.has(res.pk)) {
+                        connections.get(res.pk).auth = true;
+                    }
                 }
-            }
-
-        } else {
-            alert('Key exchange failed');
-            resolve(false);
-            closeConnections(res.pk);
+                return;
+            case "PK_IN_USE":
+                alert("This username is being used on another tab. Please try a different username.");
+                store = null;
+                break;
+            case "VERIF_FAILED":
+                alert('Key exchange failed');
+                resolve(false);
+                closeConnections(res.pk);
         }
     });
 }
@@ -267,10 +272,6 @@ async function onLogin (status, username, receivedChats) {
             for (const msg of msgQueue) {
                 sendToServer(msg);
             }
-            return;
-        case "NAME_IN_USE":
-            alert("This username is being used on another tab. Please try a different username.");
-            store = null;
             return;
         case "NAME_TAKEN":
             alert("This username is associated with another device. Please try a different username.");
