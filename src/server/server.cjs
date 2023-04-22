@@ -183,8 +183,9 @@ async function initSIGMA (connection) {
   if (connectedUsers.has(res.pk)) {
     sendTo(connection, {
       type: "SIGMA3",
-      status: "PK_IN_USE"
+      status: "PK_IN_USE",
     });
+    initSIGMA(connection);
     return
   }
 
@@ -215,11 +216,6 @@ function onLogin (connection, name, sig) {
 
   const pubKey = connection.pk;
   if (!nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) { status = "VERIF_FAILED"; }
-  else if (connectedUsers.has(pubKey)) { 
-    status = "NAME_IN_USE"; 
-    connection.pk = null;
-    initSIGMA(connection);
-  }
   else if (usernameToPK.has(name) && usernameToPK.get(name) !== pubKey) { status = "NAME_TAKEN"; }
   else {
       if (allUsers.has(pubKey)) {

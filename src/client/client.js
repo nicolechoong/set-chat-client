@@ -216,10 +216,9 @@ async function onSIGMA1 (peerValue, connection) {
         }));
 
         const res = await new Promise((res2) => { onSIGMA3.set(connection, res2); });
-
-        const peerPK = strToArr(res.pk);
         switch (res.status) {
             case "SUCCESS":
+                const peerPK = strToArr(res.pk);
                 if (nacl.sign.detached.verify(concatArr(localValue, peerValue), strToArr(res.sig), peerPK)
                 && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
                     resolve(true);
@@ -231,7 +230,7 @@ async function onSIGMA1 (peerValue, connection) {
             case "PK_IN_USE":
                 alert("This username is being used on another tab. Please try a different username.");
                 store = null;
-                break;
+                return;
             case "VERIF_FAILED":
                 alert('Key exchange failed');
                 resolve(false);
