@@ -140,7 +140,7 @@ function connectToServer () {
                 onSIGMA3.get(connection)(data);
                 break;
             case "login":
-                onLogin(data.success, data.username, new Map(data.joinedChats));
+                onLogin(data.success, data.username, new Map(data.joinedChats), data.reason);
                 break;
             case "offer":
                 onOffer(data.offer, data.from, data.fromPK);
@@ -236,7 +236,7 @@ async function onSIGMA1 (peerValue, connection) {
 }
 
 // Server approves Login
-async function onLogin (success, username, receivedChats) {
+async function onLogin (success, username, receivedChats, reason) {
 
     if (success === false) {
         if (reason === "pkTaken") {
