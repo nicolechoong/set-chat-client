@@ -239,7 +239,13 @@ async function onSIGMA1 (peerValue, connection) {
 async function onLogin (success, username, receivedChats) {
 
     if (success === false) {
-        alert("oops...try a different username");
+        if (reason === "pkTaken") {
+            alert("This username is being used on another tab. Please try a different username.");
+            store = null;
+        } else if (reason === "nameTaken") {
+            alert("This username is associated with another device. Please try a different username.");
+        }
+
     } else {
         localUsername = username;
         joinedChats = mergeJoinedChats(joinedChats, new Map());

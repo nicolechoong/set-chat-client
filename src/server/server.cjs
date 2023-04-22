@@ -234,6 +234,7 @@ function onLogin (connection, name, sig) {
       sendTo(connection, { 
         type: "login", 
         success: false,
+        reason: (allUsers.has(pubKey)) ? "pkTaken" : "nameTaken",
         username: name,
         joinedChats: []
     });
