@@ -205,14 +205,14 @@ function onLogin (connection, name, sig) {
 
   const pubKey = connection.pk;
   console.log(nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey)));
-  console.log(`${[...connectedUsers.keys()]}    ${pubKey}`);
+  console.log(`${[...allUsers.keys()]}    ${pubKey}`);
   console.log(connectedUsers.has(pubKey));
   console.log(usernameToPK.has(name));
   if (nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) {
 
     // either a new pubKey and new username OR existing pubKey with matching username
-    if((!connectedUsers.has(pubKey) && !usernameToPK.has(name)) 
-    || (connectedUsers.has(pubKey) && usernameToPK.has(name) && usernameToPK.get(name) === pubKey)) { 
+    if((!allUsers.has(pubKey) && !usernameToPK.has(name)) 
+    || (allUsers.has(pubKey) && !connectedUsers.has(pubKey) && usernameToPK.has(name) && usernameToPK.get(name) === pubKey)) { 
       if (allUsers.has(pubKey)) {
         onReconnect(connection, name, pubKey);
         return;
