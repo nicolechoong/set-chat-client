@@ -1383,10 +1383,10 @@ async function login (username) {
     if (username.length > 0 && isAlphanumeric(username)) {
         
         if (store) {
-            store.config({
+            await store.config({
                 storeName: arrToStr(nacl.hash(enc.encode(username)))
             });
-            console.log(store);
+            store.getItem("keyPair").then((kp) => console.log(kp.publicKey));
         } else {
             await initialiseStore(username);
             await store.getItem("keyPair").then((kp) => {
