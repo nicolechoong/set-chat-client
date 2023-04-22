@@ -240,8 +240,6 @@ async function onLogin (success, username, receivedChats) {
 
     if (success === false) {
         alert("oops...try a different username");
-
-        login()
     } else {
         localUsername = username;
         joinedChats = mergeJoinedChats(joinedChats, new Map());

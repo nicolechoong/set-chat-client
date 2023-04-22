@@ -206,7 +206,7 @@ function onLogin (connection, name, sig) {
   const pubKey = connection.pk;
   if (nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) {
 
-    if(connectedUsers.has(pubKey) || usernameToPK.has(name)) { 
+    if(connectedUsers.has(pubKey) ^ usernameToPK.has(name)) { 
       sendTo(connection, { 
           type: "login", 
           success: false,
