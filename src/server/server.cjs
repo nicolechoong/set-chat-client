@@ -182,6 +182,7 @@ async function initSIGMA (connection) {
 
   if (connectedUsers.has(res.pk)) {
     sendTo(connection, {
+      type: "SIGMA3",
       status: "PK_IN_USE"
     });
     return
@@ -201,6 +202,7 @@ async function initSIGMA (connection) {
 
   } else {
     sendTo(connection, {
+      type: "SIGMA3",
       status: "VERIF_FAILED"
     });
   }
