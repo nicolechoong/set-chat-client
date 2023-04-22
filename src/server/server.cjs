@@ -202,17 +202,13 @@ async function initSIGMA (connection) {
 function onLogin (connection, name, sig) {
   // connection: websocket, name: string, sig: Uint8Array
   console.log(`User [${name}] online`);
+  var status = "SUCCESS";
 
   const pubKey = connection.pk;
-  console.log(nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey)));
-  console.log(`${[...allUsers.keys()]}    ${pubKey}`);
-  console.log(connectedUsers.has(pubKey));
-  console.log(usernameToPK.has(name));
-  if (nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) {
-
-    // either a new pubKey and new username OR existing pubKey with matching username
-    if((!allUsers.has(pubKey) && !usernameToPK.has(name)) 
-    || (allUsers.has(pubKey) && !connectedUsers.has(pubKey) && usernameToPK.has(name) && usernameToPK.get(name) === pubKey)) { 
+  if (!nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) { status = "VERIF_FAILED"; }
+  else if (connectedUsers.has(pubKey)) { status = "NAME_IN_USE"; }
+  else if (usernameToPK.has(name) && usernameToPK.get(name) !== pubKey) { status = "NAME_TAKEN"; }
+  else {
       if (allUsers.has(pubKey)) {
         onReconnect(connection, name, pubKey);
         return;
@@ -221,25 +217,14 @@ function onLogin (connection, name, sig) {
       connectedUsers.set(pubKey, connection); 
       allUsers.set(pubKey, {msgQueue: [], username: name});
       usernameToPK.set(name, pubKey);
-
-      sendTo(connection, { 
-        type: "login", 
-        success: true,
-        username: name,
-        joinedChats: []
-      });
-
-      broadcastActiveUsernames();
-    } else {
-      sendTo(connection, { 
-        type: "login", 
-        success: false,
-        reason: (allUsers.has(pubKey)) ? "pkTaken" : "nameTaken",
-        username: name,
-        joinedChats: []
-    });
-    }
-  }
+  } 
+  sendTo(connection, { 
+    type: "login", 
+    status: status,
+    username: name,
+    joinedChats: []
+  });
+  broadcastActiveUsernames();
 }
 
 function onOffer (connection, data) {

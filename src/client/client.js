@@ -140,7 +140,7 @@ function connectToServer () {
                 onSIGMA3.get(connection)(data);
                 break;
             case "login":
-                onLogin(data.success, data.username, new Map(data.joinedChats), data.reason);
+                onLogin(data.status, data.username, new Map(data.joinedChats));
                 break;
             case "offer":
                 onOffer(data.offer, data.from, data.fromPK);
@@ -236,44 +236,48 @@ async function onSIGMA1 (peerValue, connection) {
 }
 
 // Server approves Login
-async function onLogin (success, username, receivedChats, reason) {
+async function onLogin (status, username, receivedChats) {
 
-    if (success === false) {
-        if (reason === "pkTaken") {
+    switch (status) {
+        case "SUCCESS":
+            localUsername = username;
+            joinedChats = mergeJoinedChats(joinedChats, new Map());
+            store.setItem("joinedChats", joinedChats);
+    
+            keyMap.set(keyPair.publicKey, localUsername);
+            store.getItem("keyMap").then((storedKeyMap) => {
+                keyMap = storedKeyMap === null ? new Map() : storedKeyMap;
+                keyMap.set(keyPair.publicKey, localUsername);
+                store.setItem("keyMap", keyMap);
+            });
+            store.getItem("msgQueue").then((storedMsgQueue) => {
+                msgQueue = storedMsgQueue === null ? [] : storedMsgQueue;
+            });
+    
+            loginPopup.style.display = "none";
+            dim.style.display = "none";
+            document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
+    
+            for (const chatID of joinedChats.keys()) {
+                console.log(chatID, joinedChats.get(chatID));
+                updateChatOptions("add", chatID);
+                getOnline(chatID);
+            }
+    
+            for (const msg of msgQueue) {
+                sendToServer(msg);
+            }
+            return;
+        case "NAME_IN_USE":
             alert("This username is being used on another tab. Please try a different username.");
             store = null;
-        } else if (reason === "nameTaken") {
+            return;
+        case "NAME_TAKEN":
             alert("This username is associated with another device. Please try a different username.");
-        }
-
-    } else {
-        localUsername = username;
-        joinedChats = mergeJoinedChats(joinedChats, new Map());
-        store.setItem("joinedChats", joinedChats);
-
-        keyMap.set(keyPair.publicKey, localUsername);
-        store.getItem("keyMap").then((storedKeyMap) => {
-            keyMap = storedKeyMap === null ? new Map() : storedKeyMap;
-            keyMap.set(keyPair.publicKey, localUsername);
-            store.setItem("keyMap", keyMap);
-        });
-        store.getItem("msgQueue").then((storedMsgQueue) => {
-            msgQueue = storedMsgQueue === null ? [] : storedMsgQueue;
-        });
-
-        loginPopup.style.display = "none";
-        dim.style.display = "none";
-        document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
-
-        for (const chatID of joinedChats.keys()) {
-            console.log(chatID, joinedChats.get(chatID));
-            updateChatOptions("add", chatID);
-            getOnline(chatID);
-        }
-
-        for (const msg of msgQueue) {
-            sendToServer(msg);
-        }
+            return;
+        case "VERIF_FAILED":
+            alert("Failed to verify identity. Please try a different username.");
+            return;
     }
 };
 
