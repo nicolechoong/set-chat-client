@@ -204,16 +204,14 @@ function onLogin (connection, name, sig) {
   console.log(`User [${name}] online`);
 
   const pubKey = connection.pk;
+  console.log(nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey)));
+  console.log(connectedUsers.has(pubKey));
+  console.log(usernameToPK.has(name));
   if (nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) {
 
-    if(connectedUsers.has(pubKey) ^ usernameToPK.has(name)) { 
-      sendTo(connection, { 
-          type: "login", 
-          success: false,
-          username: name,
-          joinedChats: []
-      });
-    } else { 
+    // either a new pubKey and new username OR existing pubKey with matching username
+    if((!connectedUsers.has(pubKey) && !usernameToPK.has(name)) 
+    || (connectedUsers.has(pubKey) && usernameToPK.has(name) && usernameToPK.get(name) === pubKey)) { 
       if (allUsers.has(pubKey)) {
         onReconnect(connection, name, pubKey);
         return;
@@ -231,7 +229,14 @@ function onLogin (connection, name, sig) {
       });
 
       broadcastActiveUsernames();
-    } 
+    } else {
+      sendTo(connection, { 
+        type: "login", 
+        success: false,
+        username: name,
+        joinedChats: []
+    });
+    }
   }
 }
 
