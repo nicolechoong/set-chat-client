@@ -277,9 +277,11 @@ async function initialiseStore(username) {
     // new user: creates new store
     // returning user: will just point to the same instance
     console.log(`init store local user: ${username}`);
-    localforage.createInstance({
+    store = localforage.createInstance({
         storeName: arrToStr(nacl.hash(enc.encode(username)))
-    }).ready().then(() => {
+    });
+    
+    localforage.ready().then(() => {
         store.getItem("joinedChats").then(async (chats) => {
             if (chats === null) {
                 joinedChats = [];
@@ -1389,20 +1391,18 @@ async function login (username) {
             console.log(store);
         } else {
             await initialiseStore(username);
-            await store.ready().then(() => {
-                store.getItem("keyPair").then((kp) => {
-                    if (kp === null) {
-                        keyPair = nacl.sign.keyPair();
-                        keyPair.publicKey = arrToStr(keyPair.publicKey);
-                        console.log("keyPair generated");
-                        store.setItem("keyPair", keyPair);
-                        store.setItem("keyMap", keyMap);
-                        store.setItem("msgQueue", msgQueue);
-                    } else {
-                        console.log(`keypair ${JSON.stringify(kp)}`);
-                        keyPair = kp;
-                    }
-                });
+            await store.getItem("keyPair").then((kp) => {
+                if (kp) {
+                    console.log(`keypair ${JSON.stringify(kp)}`);
+                    keyPair = kp;
+                } else {
+                    keyPair = nacl.sign.keyPair();
+                    keyPair.publicKey = arrToStr(keyPair.publicKey);
+                    console.log("keyPair generated");
+                    store.setItem("keyPair", keyPair);
+                    store.setItem("keyMap", keyMap);
+                    store.setItem("msgQueue", msgQueue);
+                }
             });
 
             if (!await onSIGMA1(serverValue, connection)) {
