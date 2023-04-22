@@ -469,14 +469,14 @@ function onReconnect (connection, name, pk) {
   
   sendTo(connection, { 
     type: "login", 
-    success: true,
+    status: "SUCCESS",
     username: name,
     joinedChats: Array.from(joinedChats)
   });
 
   console.log(JSON.stringify({ 
     type: "login", 
-    success: true,
+    status: "SUCCESS",
     username: name,
     joinedChats: Array.from(joinedChats)
   }));
