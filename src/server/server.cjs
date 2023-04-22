@@ -206,7 +206,10 @@ function onLogin (connection, name, sig) {
 
   const pubKey = connection.pk;
   if (!nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) { status = "VERIF_FAILED"; }
-  else if (connectedUsers.has(pubKey)) { status = "NAME_IN_USE"; }
+  else if (connectedUsers.has(pubKey)) { 
+    status = "NAME_IN_USE"; 
+    initSIGMA(connection);
+  }
   else if (usernameToPK.has(name) && usernameToPK.get(name) !== pubKey) { status = "NAME_TAKEN"; }
   else {
       if (allUsers.has(pubKey)) {
