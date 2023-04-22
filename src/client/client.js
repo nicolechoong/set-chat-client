@@ -135,13 +135,6 @@ function connectToServer () {
         switch (data.type) {
             case "SIGMA1":
                 serverValue = strToArr(data.value);
-                if (localUsername !== null) {
-                    sendToServer({
-                        type: "login",
-                        name: localUsername,
-                        sig: arrToStr(nacl.sign.detached(enc.encode(username), keyPair.secretKey)),
-                    });
-                }
                 break;
             case "SIGMA3":
                 onSIGMA3.get(connection)(data);
