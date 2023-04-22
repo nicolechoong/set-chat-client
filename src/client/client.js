@@ -71,6 +71,7 @@ const configuration = {
 };
 
 function initialiseClient () {
+    store = null;
     currentChatID = 0;
     connections = new Map(); // map from stringify(pk):string to {connection: RTCPeerConnection, sendChannel: RTCDataChannel}
     joinedChats = new Map(); // (chatID: String, {chatName: String, members: Array of String})
@@ -127,13 +128,20 @@ function connectToServer () {
         alert("Please authorise wss://35.178.80.94:3000/ on your device before refreshing! ")
     };
 
-    connection.onmessage = function (message) {
+    connection.onmessage = async function (message) {
         console.log("Got message", message.data);
         var data = JSON.parse(message.data);
 
         switch (data.type) {
             case "SIGMA1":
                 serverValue = strToArr(data.value);
+                if (localUsername !== null) {
+                    sendToServer({
+                        type: "login",
+                        name: localUsername,
+                        sig: arrToStr(nacl.sign.detached(enc.encode(username), keyPair.secretKey)),
+                    });
+                }
                 break;
             case "SIGMA3":
                 onSIGMA3.get(connection)(data);
@@ -239,6 +247,8 @@ async function onLogin (success, username, receivedChats) {
 
     if (success === false) {
         alert("oops...try a different username");
+
+        login()
     } else {
         localUsername = username;
         joinedChats = mergeJoinedChats(joinedChats, new Map());
@@ -274,16 +284,17 @@ async function initialiseStore(username) {
     // new user: creates new store
     // returning user: will just point to the same instance
     console.log(`init store local user: ${username}`);
-    store = localforage.createInstance({
-        storeName: username
-    });
-    store.getItem("joinedChats").then((chats) => {
-        if (chats === null) {
-            joinedChats = [];
-        } else {
-            joinedChats = chats;
-        }
-        store.setItem("joinedChats", joinedChats).then(console.log(`store initialised to ${joinedChats}`));
+    localforage.createInstance({
+        storeName: arrToStr(nacl.hash(enc.encode(username)))
+    }).ready().then(() => {
+        store.getItem("joinedChats").then(async (chats) => {
+            if (chats === null) {
+                joinedChats = [];
+            } else {
+                joinedChats = chats;
+            }
+            await store.setItem("joinedChats", joinedChats).then(console.log(`store initialised to ${joinedChats}`));
+        });
     });
 }
 
@@ -887,7 +898,7 @@ function initPeerConnection() {
                     type: "candidate",
                     candidate: event.candidate,
                     name: localUsername,
-                    chatroomID: currentChatID
+                    chatID: currentChatID
                 });
             }
         };
@@ -1377,30 +1388,41 @@ loginBtn.addEventListener("click", async function (event) {
 async function login (username) {
     console.log(username);
     if (username.length > 0 && isAlphanumeric(username)) {
-        await initialiseStore(username);
-
-        await store.getItem("keyPair").then((kp) => {
-            if (kp === null) {
-                keyPair = nacl.sign.keyPair();
-                keyPair.publicKey = arrToStr(keyPair.publicKey);
-                console.log("keyPair generated");
-                store.setItem("keyPair", keyPair);
-                store.setItem("keyMap", keyMap);  // TODO: worry about what if we log out
-                store.setItem("msgQueue", msgQueue);
-            } else {
-                console.log(`keypair ${JSON.stringify(kp)}`);
-                keyPair = kp;
-            }
-        });
-
-        if (await onSIGMA1(serverValue, connection)) {
-            console.log(`sending login`);
-            sendToServer({
-                type: "login",
-                name: username,
-                sig: arrToStr(nacl.sign.detached(enc.encode(username), keyPair.secretKey)),
+        
+        if (store) {
+            store.config({
+                storeName: arrToStr(nacl.hash(enc.encode(username)))
             });
+            console.log(store);
+        } else {
+            await initialiseStore(username);
+            await store.ready().then(() => {
+                store.getItem("keyPair").then((kp) => {
+                    if (kp === null) {
+                        keyPair = nacl.sign.keyPair();
+                        keyPair.publicKey = arrToStr(keyPair.publicKey);
+                        console.log("keyPair generated");
+                        store.setItem("keyPair", keyPair);
+                        store.setItem("keyMap", keyMap);
+                        store.setItem("msgQueue", msgQueue);
+                    } else {
+                        console.log(`keypair ${JSON.stringify(kp)}`);
+                        keyPair = kp;
+                    }
+                });
+            });
+
+            if (!await onSIGMA1(serverValue, connection)) {
+                alert("failed to authenticate connection");
+                return;
+            }
         }
+        console.log(`sending login`);
+        sendToServer({
+            type: "login",
+            name: username,
+            sig: arrToStr(nacl.sign.detached(enc.encode(username), keyPair.secretKey)),
+        });
     }
 }
 

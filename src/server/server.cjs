@@ -59,12 +59,8 @@ const allUsers = new Map();
 // (username: String, pk: stringified String)
 const usernameToPK = new Map();
 
-// (pk: stringified String, connection: WebSocket
+// (pk: stringified String, connection: WebSocket)
 const connectedUsers = new Map();
-
-// UNUSED FOR NOW
-// (chatroomID: String, members: Array of username)
-const chatrooms = new Map();
 
 // (chatID: String, {chatName: String, members: Array of String})
 const chats = new Map();
@@ -158,15 +154,6 @@ wsServer.on('connection', function(connection) {
         connections.splice(connections.indexOf(connection), 1);
 
         broadcastActiveUsernames();
-
-        // for (chatroomID of removeFrom) {
-        //   chatrooms.get(chatroomID).splice(chatrooms.get(chatroomID).indexOf(connection.name), 1);
-        //   console.log(`${connection.name} has left ${chatroomID}`);
-        //   broadcast({
-        //     type: "leave",
-        //     from: connection.name
-        //   }, chatroomID);
-        // }
       }
     };
 })
@@ -219,7 +206,7 @@ function onLogin (connection, name, sig) {
   const pubKey = connection.pk;
   if (nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) {
 
-    if(connectedUsers.has(pubKey)) { 
+    if(connectedUsers.has(pubKey) || usernameToPK.has(name)) { 
       sendTo(connection, { 
           type: "login", 
           success: false,
@@ -289,7 +276,7 @@ function onCandidate (connection, data) {
     type: "candidate",
     candidate: data.candidate,
     from: connection.pk
-  }, data.chatroomID);
+  }, data.chatID);
 }
 
 
