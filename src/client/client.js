@@ -523,7 +523,7 @@ async function onRemove (messageData) {
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
             const ops = unionOps(chatInfo.metadata.operations, [messageData.op]);
             if (access.verifyOperations(ops)) {
-                chatInfo.operations.metadata = ops;
+                chatInfo.metadata.operations = ops;
             }
             await store.setItem(messageData.chatID, chatInfo);
         });
