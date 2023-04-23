@@ -157,6 +157,7 @@ function getOpFromHash(ops, hashedOp) {
 
 // takes in set of ops
 function precedes (ops, op1, op2) {
+    console.log(concatOp(op1), concatOp(op2));
     if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; }
     const toVisit = [op2];
     const target = hashOp(op1);
