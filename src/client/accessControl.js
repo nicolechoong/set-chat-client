@@ -185,15 +185,15 @@ function concurrent (ops, op1, op2) {
 function printEdge (op1, op2 = null) {
     var output = "";
     if (op1.action === "create") {
-        output = `op1 ${op1.pk} ${op1.action} ${op1.sig} `;
+        output = `op1 ${op1.pk} ${op1.action}    ${op1.sig} `;
     } else {
-        output = `op1 ${op1.pk1} ${op1.action} ${op1.pk2} ${op1.sig} `;
+        output = `op1 ${op1.pk1} ${op1.action} ${op1.pk2}    ${op1.sig} `;
     }
     if (op2) {
         if (op2.action === "mem") {
             output = `-> ${output} mem ${op2.member}`;
         } else {
-            output = `-> ${output} op2 ${op2.pk1} ${op2.action} ${op2.pk2}`;
+            output = `-> ${output} op2 ${op2.pk1} ${op2.action} ${op2.pk2}    ${op2.sig}`;
         }
     }
     console.log(output);
@@ -232,6 +232,7 @@ function valid (ops, ignored, op, authorityGraph) {
     // ADD COMMENTS
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
+            console.log(`does remove preceed add ${precedes(ops, opA, removeIn[0])}`);
             if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
                 return true;
             }
