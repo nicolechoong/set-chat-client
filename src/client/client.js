@@ -515,10 +515,10 @@ async function addToChat (name, pk, chatID) {
 
 async function onRemove (messageData) {
     const fromPK = messageData.from;
-    var chatInfo = joinedChats.get(messageData.chatID);
-    if (chatInfo.validMembers.has(fromPK)) {
+    var joinedChatInfo = joinedChats.get(messageData.chatID);
+    if (joinedChatInfo.validMembers.has(fromPK)) {
         const from = await getUsername(fromPK);
-        chatInfo.currentMember = false;
+        joinedChatInfo.currentMember = false;
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
             const ops = unionOps(chatInfo.operations.metadata, [messageData.op]);
@@ -530,23 +530,23 @@ async function onRemove (messageData) {
 
         // if the removal is disputable
         if (!messageData.dispute && fromPK !== keyPair.publicKey) { 
-            chatInfo.toDispute = { peerName: from, peerPK: fromPK };
+            joinedChatInfo.toDispute = { peerName: from, peerPK: fromPK };
         }
 
-        if (chatInfo.members.includes(keyPair.publicKey)) {
-            chatInfo.members.splice(chatInfo.members.indexOf(keyPair.publicKey), 1);
+        if (joinedChatInfo.members.includes(keyPair.publicKey)) {
+            joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
             updateChatWindow(messageData);
             updateChatStore(messageData);
         }
-        chatInfo.exMembers.add(keyPair.publicKey);
+        joinedChatInfo.exMembers.add(keyPair.publicKey);
         await store.setItem("joinedChats", joinedChats);
 
         if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
         disableChatMods(messageData.chatID);
         
-        console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
+        console.log(`you've been removed from chat ${joinedChatInfo.chatName} by ${from}`);
 
-        for (const pk of chatInfo.members) {
+        for (const pk of joinedChatInfo.members) {
             closeConnections(pk, messageData.chatID, true);
         }
     }
@@ -974,6 +974,7 @@ async function receivedMessage (messageData, channel=null) {
     }
     switch (messageData.type) {
         case "ack":
+            console.log(`ack received ${messageData.id}`);
             acks.delete(messageData.id);
             return;
         case "SIGMA1":
