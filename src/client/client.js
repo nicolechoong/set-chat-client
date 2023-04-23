@@ -249,7 +249,6 @@ async function onLogin (status, username, receivedChats) {
             joinedChats = mergeJoinedChats(joinedChats, new Map());
             store.setItem("joinedChats", joinedChats);
     
-            keyMap.set(keyPair.publicKey, localUsername);
             store.getItem("keyMap").then((storedKeyMap) => {
                 keyMap = storedKeyMap === null ? new Map() : storedKeyMap;
                 keyMap.set(keyPair.publicKey, localUsername);
@@ -968,7 +967,6 @@ async function receivedMessage (messageData, channel=null) {
     }
     switch (messageData.type) {
         case "ack":
-            console.log(`removing ack ${messageData.id}`);
             acks.delete(messageData.id);
             return;
         case "SIGMA1":
@@ -1161,7 +1159,9 @@ function sendAdvertisement (chatID, pk) {
 }
 
 function isPeerConnected (chatID) {
-    return joinedChats.get(chatID).members.findIndex((pk) => {new Set(connections.keys()).has(pk)}) > -1;
+    const connectedpks = new Set(connections.keys());
+    console.log(connectedpks);
+    return joinedChats.get(chatID).members.findIndex((pk) => {connectedpks.has(pk)}) > -1;
 }
 
 async function sendChatHistory (chatID, pk) {
@@ -1336,8 +1336,7 @@ async function updateChatStore (messageData) {
 
 function sendToMember (data, pk, requireAck=true) {
     // data: JSON, pk: String
-    if (pk === keyPair.publicKey) { return receivedMessage(data); }
-    console.log(`${pk}   ${[...keyMap]}`);
+    if (pk === keyPair.publicKey && data.type !== "ack") { return receivedMessage(data); }
     console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
     if (connections.has(pk) && onlineMode) {
         try {
@@ -1883,7 +1882,6 @@ function closeConnections (pk, chatID=0) {
             }
         }
     }
-    console.log([...acks]);
     if (connections.has(pk) && !offerSent.has(pk) && (chatID == 0 || [...acks].findIndex((id) => id.slice(128) === pk) == -1)) {
         connectionNames.delete(connections.get(pk).connection);
         if (connections.get(pk).sendChannel) {
