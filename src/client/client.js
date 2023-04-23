@@ -305,7 +305,7 @@ var offerSent = new Set()
 
 // Sending Offer to Peer
 function sendOffer(peerName, peerPK) {
-    // peerName: String username, peerPK: Uint8Array
+    // peerName: String username, peerPK: string
 
     if (peerName !== null && peerPK !== null) {
         const newConnection = initPeerConnection(peerName);
@@ -721,6 +721,7 @@ async function sendOperations(chatID, pk, ack=false) {
     // chatID : String, pk : String
     console.log(`sending operations to ${keyMap.get(pk)}`);
     store.getItem(chatID).then((chatInfo) => {
+        console.log(pk);
         sendToMember(addMsgID({
             type: "ops",
             ops: chatInfo.metadata.operations,
@@ -1116,6 +1117,7 @@ async function onChannelOpen(event) {
             for (const chatID of joinedChats.keys()) {
                 if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
                     console.log(`send ops ${chatID}`);
+                    console.log(peerPK);
                     sendOperations(chatID, peerPK, true);
                 }
             }
