@@ -239,7 +239,7 @@ function valid (ops, ignored, op, authorityGraph) {
             }
         }
     }
-    console.log(`rejecting op ${concatOp(op)}`);
+    console.log(`rejecting op ${op.pk1} ${op.action} ${op.pk2} ${op.pk}`);
     return false;
 }
 
