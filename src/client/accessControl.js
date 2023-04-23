@@ -233,7 +233,7 @@ function valid (ops, ignored, op, authorityGraph) {
     // ADD COMMENTS
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
-            console.log(`does remove preceed add ${precedes(ops, opA, removeIn[0])}`);
+            if (removeIn.length > 0) { console.log(`does remove preceed add ${precedes(ops, opA, removeIn[0])}`);}
             if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
                 return true;
             }
