@@ -207,6 +207,7 @@ async function onSIGMA1 (peerValue, connection) {
         const sessionKey = nacl.box.before(peerValue, localKeyPair.secretKey);
         const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
+        console.log(`confused`);
         connection.send(JSON.stringify({
             type: "SIGMA2",
             value: arrToStr(localValue), // Uint8Array
@@ -226,11 +227,11 @@ async function onSIGMA1 (peerValue, connection) {
                         connections.get(res.pk).auth = true;
                     }
                 }
-                return;
+                break;
             case "PK_IN_USE":
                 alert("This username is being used on another tab. Please try a different username.");
                 store = null;
-                return;
+                break;
             case "VERIF_FAILED":
                 alert('Key exchange failed');
                 resolve(false);
@@ -971,6 +972,7 @@ async function receivedMessage (messageData, channel=null) {
             return;
         case "SIGMA1":
             onSIGMA1(strToArr(messageData.value), channel);
+            console.log(`confused ${channel.label}`);
             return;
         case "SIGMA2":
             onSIGMA2.get(channel)(messageData);

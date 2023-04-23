@@ -215,7 +215,6 @@ export function authority (ops) {
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.push([op1, { "member": pk, "sig": pk, "action": "mem" }]);
     }
-    edges.forEach((edge) => {printEdge(edge[0], edge[1])});
     return edges;
 }
 
