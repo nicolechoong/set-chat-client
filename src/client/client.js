@@ -207,7 +207,7 @@ async function onSIGMA1 (peerValue, connection) {
         const sessionKey = nacl.box.before(peerValue, localKeyPair.secretKey);
         const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
-        console.log(`confused`);
+        console.log(`confused ${connection instanceof RTCDataChannel}`);
         connection.send(JSON.stringify({
             type: "SIGMA2",
             value: arrToStr(localValue), // Uint8Array
@@ -520,6 +520,14 @@ async function onRemove (messageData) {
         const from = await getUsername(fromPK);
         chatInfo.currentMember = false;
 
+        await store.getItem(messageData.chatID).then(async (chatInfo) => {
+            const ops = unionOps(chatInfo.operations.metadata, [messageData.removeMsg.op]);
+            if (access.verifyOperations(ops)) {
+                chatInfo.operations.metadata = ops;
+            }
+            await store.setItem(messageData.chatID, chatInfo);
+        });
+
         // if the removal is disputable
         if (!messageData.dispute && fromPK !== keyPair.publicKey) { 
             chatInfo.toDispute = { peerName: from, peerPK: fromPK };
@@ -537,7 +545,6 @@ async function onRemove (messageData) {
         disableChatMods(messageData.chatID);
         
         console.log(`you've been removed from chat ${chatInfo.chatName} by ${from}`);
-        await store.setItem("joinedChats", joinedChats);
 
         for (const pk of chatInfo.members) {
             closeConnections(pk, messageData.chatID, true);
@@ -723,7 +730,6 @@ async function sendOperations(chatID, pk, ack=false) {
     // chatID : String, pk : String
     console.log(`sending operations to ${keyMap.get(pk)}`);
     store.getItem(chatID).then((chatInfo) => {
-        console.log(pk);
         sendToMember(addMsgID({
             type: "ops",
             ops: chatInfo.metadata.operations,
