@@ -78,7 +78,7 @@ function getDeps (operations) {
     return deps;
 }
 
-function concatOp (op) {
+export function concatOp (op) {
     return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
 }
 
@@ -245,6 +245,7 @@ export async function members (ops, ignored) {
     const authorityGraph = authority(ops);
     var pk;
     for (const op of ops) {
+        console.log(concatOp(op));
         pk = op.action === "create" ? op.pk : op.pk2;
         if (valid(ops, ignored, { "member": pk, "sig": pk, "action": "mem" }, authorityGraph)) {
             pks.add(pk);
