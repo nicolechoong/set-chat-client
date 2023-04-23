@@ -991,11 +991,12 @@ async function receivedMessage (messageData, channel=null) {
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                 if (res == "ACCEPT") {
+                    updateConnectStatus(messageData.from, true);
                     await sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res == "REJECT") {
+                    updateConnectStatus(messageData.from, false);
                     // closeConnections(messageData.from, messageData.chatID);
-                    if (!isPeerConnected(messageData.chatID)) { getOnline(messageData.chatID); }
                 }
             });
             break;
@@ -1003,10 +1004,17 @@ async function receivedMessage (messageData, channel=null) {
             receivedIgnored(messageData.ignored, messageData.chatID, messageData.from).then(async (res) => {
                 await sendChatHistory(messageData.chatID, messageData.from);
                 if (res == "ACCEPT") {
+                    if (resolveConnectToPeer.has(messageData.from)) { 
+                        resolveConnectToPeer.get(peerPK)(true);
+                        resolveConnectToPeer.delete(peerPK);
+                    }
                     sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res === "REJECT") {
-                    if (!isPeerConnected(messageData.chatID)) { getOnline(messageData.chatID); }
+                    if (resolveConnectToPeer.has(messageData.from)) { 
+                        resolveConnectToPeer.get(peerPK)(false);
+                        resolveConnectToPeer.delete(peerPK);
+                    }
                     // closeConnections(messageData.from, messageData.chatID);
                 }
             });
@@ -1124,16 +1132,14 @@ async function onChannelOpen(event) {
 
     if (resolveConnectToPeer.has(peerPK)) {
         if (await initSIGMA(event.target)) {
-            resolveConnectToPeer.get(peerPK)(true);
             for (const chatID of joinedChats.keys()) {
                 if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
                     sendOperations(chatID, peerPK, true);
                 }
             }
         } else {
-            resolveConnectToPeer.get(peerPK)(false);
+            updateConnectStatus(peerPK, false);
         }
-        resolveConnectToPeer.delete(peerPK);
     }
 }
 
@@ -1215,7 +1221,7 @@ var resolveConnectToPeer = new Map();
 function connectToPeer (peer) {
     // peer: JSON {peerName: String, peerPK: string}
     return new Promise((resolve) => {
-        if (peer.peerName === localUsername) { resolve(false); return; }
+        if (peer.peerName === localUsername || resolveConnectToPeer.has(peer.peerPK)) { resolve(false); return; }
         if (connections.has(peer.peerPK)) { 
             if (connections.get(peer.peerPK).auth) {
                 resolve(true); 
@@ -1234,6 +1240,13 @@ function connectToPeer (peer) {
             resolve(false);
         }, 8000);
     });
+}
+
+function updateConnectStatus (pk, success) {
+    if (resolveConnectToPeer.has(pk)) { 
+        resolveConnectToPeer.get(peerPK)(success);
+        resolveConnectToPeer.delete(peerPK);
+    }
 }
 
 async function addPeer(messageData) {
