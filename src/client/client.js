@@ -1118,9 +1118,6 @@ async function onChannelOpen(event) {
             resolveConnectToPeer.get(peerPK)(true);
             for (const chatID of joinedChats.keys()) {
                 if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
-                    console.log(`send ops ${chatID}`);
-                    console.log(peerPK);
-                    console.log([...keyMap]);
                     sendOperations(chatID, peerPK, true);
                 }
             }
