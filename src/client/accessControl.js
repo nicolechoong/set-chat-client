@@ -157,7 +157,7 @@ function getOpFromHash(ops, hashedOp) {
 
 // takes in set of ops
 function precedes (ops, op1, op2) {
-    if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; } // TODO
+    if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; }
     const toVisit = [op2];
     const target = hashOp(op1);
     var curOp, dep;
@@ -215,7 +215,7 @@ export function authority (ops) {
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.push([op1, { "member": pk, "sig": pk, "action": "mem" }]);
     }
-    edges.forEach((edge) => {printEdge([edge[0], edge[1]])});
+    edges.forEach((edge) => {printEdge(edge[0], edge[1])});
     return edges;
 }
 
@@ -237,6 +237,7 @@ function valid (ops, ignored, op, authorityGraph) {
             }
         }
     }
+    console.log(`rejecting op ${concatOp(op)}`);
     return false;
 }
 
