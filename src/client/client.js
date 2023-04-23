@@ -675,7 +675,8 @@ async function onGetOnline(online, chatID) {
     for (const peer of online) {
         if (await connectToPeer(peer)) {
             sendOperations(chatID, peer.peerPK);
-            resolveGetOnline.get(true); // doesn't mean that it synced
+            resolveGetOnline.get(true);
+            break;
         }
     }
     resolveGetOnline.delete(chatID);
@@ -987,6 +988,7 @@ async function receivedMessage (messageData, channel=null) {
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res == "REJECT") {
                     // closeConnections(messageData.from, messageData.chatID);
+                    if (!isPeerConnected(messageData.chatID)) { getOnline(messageData.chatID); }
                 }
             });
             break;
@@ -997,6 +999,7 @@ async function receivedMessage (messageData, channel=null) {
                     sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res === "REJECT") {
+                    if (!isPeerConnected(messageData.chatID)) { getOnline(messageData.chatID); }
                     // closeConnections(messageData.from, messageData.chatID);
                 }
             });
@@ -1138,7 +1141,7 @@ function receiveChannelCallback(event) {
     initChannel(peerConnection.sendChannel);
 }
 
-function sendAdvertisement(chatID, pk) {
+function sendAdvertisement (chatID, pk) {
     // chatID: String, pk: stringify(pk)
     const online = [];
     for (const mem of joinedChats.get(chatID).members) {
@@ -1155,6 +1158,10 @@ function sendAdvertisement(chatID, pk) {
             from: keyPair.publicKey
         }), pk);
     }
+}
+
+function isPeerConnected (chatID) {
+    return joinedChats.get(chatID).members.findIndex((pk) => {new Set(connections.keys()).has(pk)}) > -1;
 }
 
 async function sendChatHistory (chatID, pk) {
