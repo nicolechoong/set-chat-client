@@ -157,7 +157,6 @@ function getOpFromHash(ops, hashedOp) {
 
 // takes in set of ops
 function precedes (ops, op1, op2) {
-    console.log(concatOp(op1), concatOp(op2));
     if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; }
     const toVisit = [op2];
     const target = hashOp(op1);
@@ -233,13 +232,11 @@ function valid (ops, ignored, op, authorityGraph) {
     // ADD COMMENTS
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
-            if (removeIn.length > 0) { console.log(`does remove preceed add ${precedes(ops, opA, removeIn[0])}`);}
             if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
                 return true;
             }
         }
     }
-    console.log(`rejecting op ${op.pk1} ${op.action} ${op.pk2} ${op.pk}`);
     return false;
 }
 
@@ -249,7 +246,6 @@ export async function members (ops, ignored) {
     const authorityGraph = authority(ops);
     var pk;
     for (const op of ops) {
-        console.log(concatOp(op));
         pk = op.action === "create" ? op.pk : op.pk2;
         if (valid(ops, ignored, { "member": pk, "sig": pk, "action": "mem" }, authorityGraph)) {
             pks.add(pk);

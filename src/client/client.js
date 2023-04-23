@@ -570,7 +570,7 @@ export async function removeFromChat (username, pk, chatID) {
 }
 
 async function disputeRemoval(peer, chatID) {
-    store.getItem(chatID).then(async (chatInfo) => {
+    await store.getItem(chatID).then(async (chatInfo) => {
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
         console.log(end);
         const ignoredOp = chatInfo.metadata.operations.at(end);
@@ -1339,8 +1339,9 @@ function sendToMember (data, pk, requireAck=true) {
         try {
             connections.get(pk).sendChannel.send(JSON.stringify(data));
             if (requireAck && pk !== keyPair.publicKey) { acks.add(`${data.id}${pk}`); }
-        } catch {
+        } catch (err) {
             console.log(`failed to send ${data.type}`);
+            console.error(err.message);
         }
     }
     return;
