@@ -521,7 +521,7 @@ async function onRemove (messageData) {
         chatInfo.currentMember = false;
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
-            const ops = unionOps(chatInfo.operations.metadata, [messageData.removeMessage.op]);
+            const ops = unionOps(chatInfo.operations.metadata, [messageData.op]);
             if (access.verifyOperations(ops)) {
                 chatInfo.operations.metadata = ops;
             }
@@ -1220,7 +1220,6 @@ function connectToPeer (peer) {
                 resolve(true); 
             } else {
                 resolve(false);
-                closeConnections(peer.peerPK, 0);
             }
             return;
         }
