@@ -1,5 +1,6 @@
 import * as unit from '../../src/client/accessControl.js';
 import * as nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+import { arrToStr } from '../../src/client/utils.js';
 import { expect, test, describe, beforeAll, beforeEach } from '@jest/globals';
 
 const keyPairs = {
@@ -8,6 +9,10 @@ const keyPairs = {
     "c": nacl.sign.keyPair(),
     "d": nacl.sign.keyPair(),
 }
+keyPairs.a.publicKey = arrToStr(keyPairs.a.publicKey);
+keyPairs.b.publicKey = arrToStr(keyPairs.b.publicKey);
+keyPairs.c.publicKey = arrToStr(keyPairs.c.publicKey);
+keyPairs.d.publicKey = arrToStr(keyPairs.d.publicKey);
 var createOp, ops, ignored;
 
 beforeAll(() => {
@@ -17,48 +22,48 @@ beforeAll(() => {
     })
 });
 
-// describe('verifyOperations', () => {
+describe('verifyOperations', () => {
 
-//     beforeEach(() => {
-//         ops = [createOp];
-//     });
+    beforeEach(() => {
+        ops = [createOp];
+    });
 
-//     test("fails without create operation", async () => {
+    test("fails without create operation", async () => {
 
-//         ops = [await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops)];
+        ops = [await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops)];
 
-//         expect(unit.verifyOperations(ops)).toBe(false);
-//     });
+        expect(unit.verifyOperations(ops)).toBe(false);
+    });
 
-//     test("fails without multiple create operation", async () => {
-//         ops.push(await unit.generateOp("create", keyPairs["b"]));
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops));
+    test("fails without multiple create operation", async () => {
+        ops.push(await unit.generateOp("create", keyPairs["b"]));
+        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops));
 
-//         expect(unit.verifyOperations(ops)).toBe(false);
-//     });
+        expect(unit.verifyOperations(ops)).toBe(false);
+    });
 
-//     test("fails due to incorrect key", async () => {
-//         ops = [await unit.generateOp("create", keyPairs["a"])];
-//         ops[0]["sig"] = nacl.sign.detached(unit.enc.encode(`create${ops[0].pk}${ops[0].nonce}`), keyPairs["b"].secretKey);
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
+    test("fails due to incorrect key", async () => {
+        ops = [await unit.generateOp("create", keyPairs["a"])];
+        ops[0]["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(`create${ops[0].pk}${ops[0].nonce}`), keyPairs["b"].secretKey));
+        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
 
-//         expect(unit.verifyOperations(ops)).toBe(false);
-//     });
+        expect(unit.verifyOperations(ops)).toBe(false);
+    });
 
-//     test("fails due to missing dependency", async () => {
-//         const addB = await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops);
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops.concat([addB])));
+    test("fails due to missing dependency", async () => {
+        const addB = await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops);
+        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops.concat([addB])));
 
-//         expect(unit.verifyOperations(ops)).toBe(false);
-//     });
+        expect(unit.verifyOperations(ops)).toBe(false);
+    });
 
-//     test("passes", async () => {
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
-//         ops.push(await unit.generateOp("add", keyPairs["b"], keyPairs["c"].publicKey, ops));
+    test("passes", async () => {
+        ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
+        ops.push(await unit.generateOp("add", keyPairs["b"], keyPairs["c"].publicKey, ops));
 
-//         expect(unit.verifyOperations(ops)).toBe(true);
-//     });
-// });
+        expect(unit.verifyOperations(ops)).toBe(true);
+    });
+});
 
 describe('hasCycles', () => {
 
@@ -154,10 +159,10 @@ describe('members add', () => {
         const members = await unit.members(ops, ignored);
 
         expect(members.size).toBe(4);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["d"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
     });
 
     test("correct when concurrently adding different devices", async () => {
@@ -168,10 +173,10 @@ describe('members add', () => {
         const members = await unit.members(ops.concat(concOp1, concOp2), ignored);
 
         expect(members.size).toBe(4);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["d"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
     });
 
     test("correct when concurrently adding the same device", async () => {
@@ -182,9 +187,9 @@ describe('members add', () => {
         const members = await unit.members(ops.concat(concOp1, concOp2), ignored);
 
         expect(members.size).toBe(3);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
     });
 
     test("correct when concurrently adding and removing the same device", async () => {
@@ -195,9 +200,9 @@ describe('members add', () => {
 
         const members = await unit.members(ops.concat(concOp1a, concOp1b, concOp2), ignored);
         expect(members.size).toBe(3);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
     });
 });
 
@@ -226,7 +231,7 @@ describe("member remove", () => {
 
         const members = await unit.members(ops, ignored);
         expect(members.size).toBe(1);
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+        expect(members).toContain(keyPairs["c"].publicKey);
     });
 
     test("correct when concurrently removing different devices", async () => {
@@ -236,8 +241,8 @@ describe("member remove", () => {
         const members = await unit.members(ops.concat(concOp1, concOp2), ignored);
 
         expect(members.size).toBe(2);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
     });
 
     test("correct when concurrently removing same device", async () => {
@@ -247,9 +252,9 @@ describe("member remove", () => {
         const members = await unit.members(ops.concat(concOp1, concOp2), ignored);
 
         expect(members.size).toBe(3);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
     });
 
     test("correct when removing after concurrent add", async () => {
@@ -263,8 +268,8 @@ describe("member remove", () => {
         const members = await unit.members(ops, ignored);
 
         expect(members.size).toBe(2);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
     });
 
     test("correct when concurrently removing same device after concurrent add", async () => {
@@ -278,8 +283,8 @@ describe("member remove", () => {
         const members = await unit.members(ops, ignored);
 
         expect(members.size).toBe(2);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
     });
 });
 
@@ -307,8 +312,8 @@ describe("member ignore", () => {
         const members = await unit.members(ops, ignored);
 
         expect(members.size).toBe(2);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
     });
 
     test("correct when ignoring member from two device removal cycle with extra ops", async () => {
@@ -320,8 +325,8 @@ describe("member ignore", () => {
         const members = await unit.members(ops.concat(concOps), ignored);
 
         expect(members.size).toBe(2);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
     });
 
     test("correct when ignoring member of three device removal cycle", async () => {
@@ -333,8 +338,8 @@ describe("member ignore", () => {
 
         console.log(members);
         expect(members.size).toBe(2);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["b"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
     });
 
     test("correct when two removal cycles", async () => {
@@ -348,7 +353,7 @@ describe("member ignore", () => {
 
         console.log(members);
         expect(members.size).toBe(2);
-        expect(members).toContain(JSON.stringify(keyPairs["a"].publicKey));
-        expect(members).toContain(JSON.stringify(keyPairs["c"].publicKey));
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
     });
 });

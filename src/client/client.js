@@ -216,7 +216,6 @@ async function onSIGMA1 (peerValue, connection) {
         }));
 
         const res = await new Promise((res2) => { onSIGMA3.set(connection, res2); });
-        console.log(res);
         switch (res.status) {
             case "SUCCESS":
                 const peerPK = strToArr(res.pk);

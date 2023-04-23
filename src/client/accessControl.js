@@ -1,6 +1,6 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
-import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-// import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
 export const enc = new TextEncoder();
 var hashedOps = new Map();
@@ -215,6 +215,7 @@ export function authority (ops) {
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.push([op1, { "member": pk, "sig": pk, "action": "mem" }]);
     }
+    edges.forEach((edge) => {printEdge([edge[0], edge[1]])});
     return edges;
 }
 
