@@ -1118,6 +1118,7 @@ async function onChannelOpen(event) {
                 if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
                     console.log(`send ops ${chatID}`);
                     console.log(peerPK);
+                    console.log([...keyMap]);
                     sendOperations(chatID, peerPK, true);
                 }
             }
