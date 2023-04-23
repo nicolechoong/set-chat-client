@@ -729,7 +729,7 @@ async function sendOperations(chatID, pk, ack=false) {
             chatID: chatID,
             from: keyPair.publicKey,
             sigmaAck: ack
-        }, pk));
+        }), pk);
     });
 }
 
