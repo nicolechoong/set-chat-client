@@ -521,7 +521,7 @@ async function onRemove (messageData) {
         chatInfo.currentMember = false;
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
-            const ops = unionOps(chatInfo.operations.metadata, [messageData.removeMsg.op]);
+            const ops = unionOps(chatInfo.operations.metadata, [messageData.removeMessage.op]);
             if (access.verifyOperations(ops)) {
                 chatInfo.operations.metadata = ops;
             }

@@ -117,7 +117,7 @@ export function verifyOperations (ops) {
 
     // only one create
     const createOps = ops.filter((op) => op.action === "create");
-    if (createOps.length != 1) { console.log("op verification failed: not one create"); return false; }
+    if (createOps.length != 1) { console.log("op verification failed: not one create"); console.log(createOps); return false; }
     const createOp = createOps[0];
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), strToArr(createOp.sig), strToArr(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
 
