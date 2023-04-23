@@ -185,15 +185,15 @@ function concurrent (ops, op1, op2) {
 function printEdge (op1, op2 = null) {
     var output = "";
     if (op1.action === "create") {
-        output = `op1 ${keyMap.get(op1.pk)} ${op1.action} ${op1.sig} `;
+        output = `op1 ${op1.pk} ${op1.action} ${op1.sig} `;
     } else {
-        output = `op1 ${keyMap.get(op1.pk1)} ${op1.action} ${keyMap.get(op1.pk2)} ${op1.sig} `;
+        output = `op1 ${op1.pk1} ${op1.action} ${op1.pk2} ${op1.sig} `;
     }
     if (op2) {
         if (op2.action === "mem") {
             output = `-> ${output} mem ${op2.member}`;
         } else {
-            output = `-> ${output} op2 ${keyMap.get(op2.pk1)} ${op2.action} ${keyMap.get(op2.pk2)}`;
+            output = `-> ${output} op2 ${op2.pk1} ${op2.action} ${op2.pk2}`;
         }
     }
     console.log(output);
