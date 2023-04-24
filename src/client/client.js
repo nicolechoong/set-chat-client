@@ -1755,18 +1755,6 @@ function goOffline () {
 // UTILS //
 ///////////
 
-function unpackOp(op) {
-    op.sig = strToArr(op.sig);
-    if (op.action === "create") {
-        op.pk = strToArr(op.pk);
-        op.nonce = strToArr(op.nonce);
-    } else {
-        op.pk1 = strToArr(op.pk1);
-        op.pk2 = strToArr(op.pk2);
-        op.deps = op.deps.map(dep => strToArr(dep));
-    }
-}
-
 function unionOps(ops1, ops2) {
     const sigSet = new Set(ops1.map(op => op.sig));
     const ops = [...ops1];

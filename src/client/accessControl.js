@@ -1,5 +1,5 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
-import { keyPair } from './client.js';
+import { clientKeyPair } from './client.js';
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 // import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
@@ -90,7 +90,7 @@ export function hasOp(ops, op) {
     return false;
 }
 
-export function generateCreateOp (keyPair=keyPair) {
+export function generateCreateOp (keyPair=clientKeyPair) {
     return {
         action: 'create',
         pk: keyPair.publicKey,
@@ -98,7 +98,7 @@ export function generateCreateOp (keyPair=keyPair) {
     };
 }
 
-export function generateOp (action, pk2 = null, ops = [], keyPair=keyPair) {
+export function generateOp (action, pk2 = null, ops = [], keyPair=clientKeyPair) {
     // action: String, chatID: String, pk2: string, ops: Array of Object
     const op = {
         action: action,
