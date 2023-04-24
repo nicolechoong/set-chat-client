@@ -91,11 +91,13 @@ export function hasOp(ops, op) {
 }
 
 export function generateCreateOp (keyPair=clientKeyPair) {
-    return {
+    const op = {
         action: 'create',
         pk: keyPair.publicKey,
         nonce: arrToStr(nacl.randomBytes(64)),
     };
+    op["sig"] = arrToStr(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
+    return op;
 }
 
 export function generateOp (action, pk2 = null, ops = [], keyPair=clientKeyPair) {
