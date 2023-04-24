@@ -1,5 +1,5 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
-import keyPair from './client.js';
+import { keyPair } from './client.js';
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 // import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
@@ -69,7 +69,7 @@ export function hasCycles (ops) {
 
 function getDeps (operations) {
     // operations : Array of Object
-    var deps = []; //TODO: change to set
+    var deps = [];
     for (const op of operations) {
         const hashedOp = hashOp(op);
         if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
@@ -104,7 +104,7 @@ export function generateOp (action, pk2 = null, ops = [], keyPair=keyPair) {
         action: action,
         pk1: keyPair.publicKey,
         pk2: pk2,
-        deps: [...getDeps(ops)]
+        deps: getDeps(ops)
     };
     op["sig"] = arrToStr(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
     return op;
