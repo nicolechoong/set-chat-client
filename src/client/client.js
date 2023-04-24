@@ -992,7 +992,7 @@ async function receivedMessage (messageData, channel=null) {
                 resolveSyncIgnored.delete(syncID);
             } else {
                 console.log(`premature ignored`);
-                peerIgnored.set(syncID, { pk: messageData.from, ignored: ignored });
+                peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
             }
             // receivedIgnored(messageData.ignored, messageData.chatID, messageData.from).then(async (res) => {
             //     await sendChatHistory(messageData.chatID, messageData.from);
@@ -1025,6 +1025,8 @@ async function receivedMessage (messageData, channel=null) {
             syncOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
                 if (res) { 
                     if (messageData.op.pk2 === keyPair.publicKey) {
+                        updateChatWindow(messageData);
+                        updateChatStore(messageData);
                         onRemove(messageData);
                     } else {
                         removePeer(messageData); 
