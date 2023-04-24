@@ -1225,7 +1225,7 @@ function connectToPeer (peer) {
         sendOffer(peer.peerName, peer.peerPK);
         setTimeout(() => {
             resolve(false);
-        }, 8000);
+        }, 10000);
     });
 }
 
