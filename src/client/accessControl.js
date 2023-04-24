@@ -67,12 +67,20 @@ export function hasCycles (ops) {
     return { cycle: true, concurrent: cycles };
 }
 
+const seenDepsOps = new Set();
+const seenDeps = new Set();
+
 function getDeps (operations) {
     // operations : Array of Object
     var deps = [];
     for (const op of operations) {
         const hashedOp = hashOp(op);
-        if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
+        // if no other operation's deps contains hashedOp
+        if (!seenDepsOps.has(op.sig)) {
+            op.deps.forEach(Set.add, seenDeps);
+            seenDepsOps.add(op.sig);
+        }
+        if (op.action === "create" || !seenDeps.has(hashedOp)) {
             deps.push(hashedOp);
         }
     }
@@ -100,7 +108,7 @@ export function generateCreateOp (keyPair=clientKeyPair) {
     return op;
 }
 
-export function generateOp (action, pk2 = null, ops = [], keyPair=clientKeyPair) {
+export function generateOp (action, pk2, ops, keyPair=clientKeyPair) {
     // action: String, chatID: String, pk2: string, ops: Array of Object
     const op = {
         action: action,
@@ -122,7 +130,8 @@ export function verifyOperations (ops) {
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), strToArr(createOp.sig), strToArr(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
 
     const otherOps = ops.filter((op) => op.action !== "create");
-    const hashedOps = ops.map((op) => hashOp(op));
+    const hashedOps = new Set();
+    ops.forEach((op) => hashedOps.add(hashOp(op)));
 
     for (const op of otherOps) {
         // valid signature
@@ -130,7 +139,7 @@ export function verifyOperations (ops) {
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
-            if (!hashedOps.includes(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+            if (!hashedOps.has(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
         }
     }
 
@@ -208,12 +217,12 @@ export function authority (ops) {
             if (op2.action === "create") { continue; }
             if ((((op1.action === "create" && op1.pk === op2.pk1) || (op1.action === "add" && op1.pk2 === op2.pk1)) && precedes(ops, op1, op2))
                 || ((op1.action === "remove" && op1.pk2 === op2.pk1) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
-                edges.push([op1, op2]);
+                edges.push({from: op1, to: op2});
             }
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        edges.push([op1, { "member": pk, "sig": pk, "action": "mem" }]);
+        edges.push({from: op1, to: { "member": pk, "sig": pk, "action": "mem" }});
     }
     return edges;
 }
@@ -224,8 +233,8 @@ function valid (ops, ignored, op, authorityGraph) {
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
-        return op.sig === edge[1].sig && valid(ops, ignored, edge[0], authorityGraph);
-    }).map(edge => edge[0]);
+        return op.sig === edge.to.sig && valid(ops, ignored, edge.from, authorityGraph);
+    }).map(edge => edge.from);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
     // ADD COMMENTS
