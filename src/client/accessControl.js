@@ -1,5 +1,5 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
-import { clientKeyPair } from './client.js';
+import { keyPair as clientKeyPair } from './client.js';
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 // import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
