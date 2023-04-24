@@ -76,7 +76,7 @@ function getDeps (operations) {
     for (const op of operations) {
         const hashedOp = hashOp(op);
         // if no other operation's deps contains hashedOp
-        if (!seenDepsOps.has(op.sig)) {
+        if (op.action !== "create" && !seenDepsOps.has(op.sig)) {
             op.deps.forEach(Set.add, seenDeps);
             seenDepsOps.add(op.sig);
         }
