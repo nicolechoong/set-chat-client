@@ -43,7 +43,7 @@ export var joinedChats, keyMap;
 const enc = new TextEncoder();
 
 // private keypair for the client
-var keyPair;
+export var keyPair;
 
 // connection to stringified(peerPK)
 var connectionNames = new Map();
@@ -413,7 +413,7 @@ async function onCreateChat(chatID, chatName) {
     });
     await store.setItem("joinedChats", joinedChats);
 
-    const createOp = await access.generateOp("create", keyPair);
+    const createOp = access.generateCreateOp();
     const operations = [createOp];
 
     const createMsg = addMsgID({
@@ -486,7 +486,7 @@ async function addToChat (name, pk, chatID) {
     // members is the list: username: string, pk: string
     store.getItem(chatID).then(async (chatInfo) => {
         console.log(`we are now adding ${name} who has pk ${pk} and the ops are ${chatInfo.metadata.operations}`);
-        const op = await access.generateOp("add", keyPair, pk, chatInfo.metadata.operations);
+        const op = access.generateOp("add", pk, chatInfo.metadata.operations);
         chatInfo.metadata.operations.push(op);
 
         const addMessage = addMsgID({
@@ -556,7 +556,7 @@ export async function removeFromChat (username, pk, chatID) {
     // username : string, public key : string, chatID : string
     store.getItem(chatID).then(async (chatInfo) => {
         console.log(`we are now removing ${username} and the ops are ${chatInfo.metadata.operations.map(op => op.action)}`);
-        const op = await access.generateOp("remove", keyPair, pk, chatInfo.metadata.operations);
+        const op = access.generateOp("remove", pk, chatInfo.metadata.operations);
         chatInfo.metadata.operations.push(op);
         await store.setItem(chatID, chatInfo).then(console.log(`${username} has been removed from ${chatID}`));
 
@@ -583,7 +583,7 @@ async function disputeRemoval(peer, chatID) {
         console.log(end);
         const ignoredOp = chatInfo.metadata.operations.at(end);
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-        const op = await access.generateOp("remove", keyPair, peer.peerPK, chatInfo.metadata.operations.slice(0, end));
+        const op = access.generateOp("remove", peer.peerPK, chatInfo.metadata.operations.slice(0, end));
 
         console.log(`${chatInfo.history.map(msg => msg.type)}`);
         const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
@@ -1004,17 +1004,11 @@ async function receivedMessage (messageData, channel=null) {
             receivedIgnored(messageData.ignored, messageData.chatID, messageData.from).then(async (res) => {
                 await sendChatHistory(messageData.chatID, messageData.from);
                 if (res == "ACCEPT") {
-                    if (resolveConnectToPeer.has(messageData.from)) { 
-                        resolveConnectToPeer.get(peerPK)(true);
-                        resolveConnectToPeer.delete(peerPK);
-                    }
+                    updateConnectStatus(messageData.from, true);
                     sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else if (res === "REJECT") {
-                    if (resolveConnectToPeer.has(messageData.from)) { 
-                        resolveConnectToPeer.get(peerPK)(false);
-                        resolveConnectToPeer.delete(peerPK);
-                    }
+                    updateConnectStatus(messageData.from, false);
                     // closeConnections(messageData.from, messageData.chatID);
                 }
             });

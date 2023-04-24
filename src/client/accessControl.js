@@ -1,4 +1,5 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
+import keyPair from './client.js';
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 // import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
 
@@ -68,7 +69,7 @@ export function hasCycles (ops) {
 
 function getDeps (operations) {
     // operations : Array of Object
-    var deps = [];
+    var deps = []; //TODO: change to set
     for (const op of operations) {
         const hashedOp = hashOp(op);
         if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
@@ -89,27 +90,24 @@ export function hasOp(ops, op) {
     return false;
 }
 
-export async function generateOp (action, keyPair, pk2 = null, ops = []) {
+export function generateCreateOp (keyPair=keyPair) {
+    return {
+        action: 'create',
+        pk: keyPair.publicKey,
+        nonce: arrToStr(nacl.randomBytes(64)),
+    };
+}
+
+export function generateOp (action, pk2 = null, ops = [], keyPair=keyPair) {
     // action: String, chatID: String, pk2: string, ops: Array of Object
-    return new Promise(function (resolve) {
-        var op;
-        if (action === "create") {
-            op = {
-                action: 'create',
-                pk: keyPair.publicKey,
-                nonce: arrToStr(nacl.randomBytes(64)),
-            };
-        } else if (action === "add" || action === "remove") {
-            op = {
-                action: action,
-                pk1: keyPair.publicKey,
-                pk2: pk2,
-                deps: getDeps(ops)
-            };
-        }
-        op["sig"] = arrToStr(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
-        resolve(op);
-    });
+    const op = {
+        action: action,
+        pk1: keyPair.publicKey,
+        pk2: pk2,
+        deps: [...getDeps(ops)]
+    };
+    op["sig"] = arrToStr(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
+    return op;
 }
 
 // takes in set of ops
