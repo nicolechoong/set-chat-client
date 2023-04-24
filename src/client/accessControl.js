@@ -41,11 +41,11 @@ export function hasCycles (ops) {
     const fromOp = new Map();
 
     for (const edge of edges) {
-        if (!fromOp.has(edge[0].sig)) {
-            fromOp.set(edge[0].sig, []);
+        if (!fromOp.has(edge.from.sig)) {
+            fromOp.set(edge.from.sig, []);
         }
-        if (edge[1].action !== "mem") {
-            fromOp.get(edge[0].sig).push(edge[1]);
+        if (edge.to.action !== "mem") {
+            fromOp.get(edge.from.sig).push(edge.to);
         }
     }
 
@@ -58,8 +58,8 @@ export function hasCycles (ops) {
     const toOp = new Map(cycles.flat().map((op) => [op.sig, 0]));
     for (let i=0; i < cycles.length; i++) {
         for (const edge of edges) {
-            if (hasOp(cycles[i], edge[1])) {
-                toOp.set(edge[1].sig, toOp.get(edge[1].sig)+1);
+            if (hasOp(cycles[i], edge.to)) {
+                toOp.set(edge.to.sig, toOp.get(edge.to.sig)+1);
             }
         }
         cycles[i] = cycles[i].filter((op) => toOp.get(op.sig) >= 2);
@@ -124,12 +124,14 @@ export function generateOp (action, pk2, ops, keyPair=clientKeyPair) {
 export function verifyOperations (ops) {
 
     // only one create
-    const createOps = ops.filter((op) => op.action === "create");
+    const createOps = [];
+    const otherOps = [];
+    ops.forEach((op) => { if (op.action === "create") { createOps.push(op) } else { otherOps.push(op) }} );
+    
     if (createOps.length != 1) { console.log("op verification failed: not one create"); console.log(createOps); return false; }
     const createOp = createOps[0];
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), strToArr(createOp.sig), strToArr(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
 
-    const otherOps = ops.filter((op) => op.action !== "create");
     const hashedOps = new Set();
     ops.forEach((op) => hashedOps.add(hashOp(op)));
 
