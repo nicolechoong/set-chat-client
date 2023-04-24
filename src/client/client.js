@@ -537,7 +537,7 @@ async function onRemove (messageData) {
         if (joinedChatInfo.members.includes(keyPair.publicKey)) {
             joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
             updateChatWindow(messageData);
-            updateChatStore(messageData);
+            await updateChatStore(messageData);
         }
         joinedChatInfo.exMembers.add(keyPair.publicKey);
         await store.setItem("joinedChats", joinedChats);
@@ -994,17 +994,6 @@ async function receivedMessage (messageData, channel=null) {
                 console.log(`premature ignored`);
                 peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
             }
-            // receivedIgnored(messageData.ignored, messageData.chatID, messageData.from).then(async (res) => {
-            //     await sendChatHistory(messageData.chatID, messageData.from);
-            //     if (res == "ACCEPT") {
-            //         updateConnectStatus(messageData.from, true);
-            //         await sendChatHistory(messageData.chatID, messageData.from);
-            //         sendAdvertisement(messageData.chatID, messageData.from);
-            //     } else if (res === "REJECT") {
-            //         updateConnectStatus(messageData.from, false);
-            //         // closeConnections(messageData.from, messageData.chatID);
-            //     }
-            // });
             break;
         case "selectedIgnored":
             if (messageData.chatID == currentChatID) {
@@ -1012,7 +1001,7 @@ async function receivedMessage (messageData, channel=null) {
                 elem.updateSelectedMembers(keyMap.get(messageData.from), messageData.op.sig);
             }
             updateChatWindow(messageData);
-            updateChatStore(messageData);
+            await updateChatStore(messageData);
             break;
                 
         case "advertisement":
@@ -1022,11 +1011,11 @@ async function receivedMessage (messageData, channel=null) {
             await mergeChatHistory(messageData.chatID, messageData.from, messageData.history);
             break;
         case "remove":
-            syncOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
+            await syncOperations([messageData.op], messageData.chatID, messageData.from).then(async (res) => {
                 if (res) { 
                     if (messageData.op.pk2 === keyPair.publicKey) {
                         updateChatWindow(messageData);
-                        updateChatStore(messageData);
+                        await updateChatStore(messageData);
                         onRemove(messageData);
                     } else {
                         removePeer(messageData); 
@@ -1040,7 +1029,7 @@ async function receivedMessage (messageData, channel=null) {
             if (messageData.op.pk2 === keyPair.publicKey) {
                 onAdd(messageData.chatID, messageData.chatName, messageData.from, messageData.ignored, messageData);
             } else {
-                syncOperations([messageData.op], messageData.chatID, messageData.from).then((res) => {
+                await syncOperations([messageData.op], messageData.chatID, messageData.from).then(async (res) => {
                     if (res) { addPeer(messageData); }
                 });
             }
@@ -1048,7 +1037,7 @@ async function receivedMessage (messageData, channel=null) {
         case "text":
             if (joinedChats.get(messageData.chatID).members.includes(messageData.from)) {
                 updateChatWindow(messageData);
-                updateChatStore(messageData);
+                await updateChatStore(messageData);
             }
             break;
         case "close":
@@ -1336,9 +1325,9 @@ function updateChatWindow (data) {
 }
 
 async function updateChatStore (messageData) {
-    await store.getItem(messageData.chatID).then((chatInfo) => {
+    await store.getItem(messageData.chatID).then(async (chatInfo) => {
         chatInfo.history.push(messageData);
-        store.setItem(messageData.chatID, chatInfo);
+        await store.setItem(messageData.chatID, chatInfo);
     });
 }
 
