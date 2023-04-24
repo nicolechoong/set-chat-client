@@ -1239,8 +1239,8 @@ function connectToPeer (peer) {
 function updateConnectStatus (pk, success) {
     console.log(`updating connect status of ${keyMap.get(pk)} to ${success}`);
     if (resolveConnectToPeer.has(pk)) { 
-        resolveConnectToPeer.get(peerPK)(success);
-        resolveConnectToPeer.delete(peerPK);
+        resolveConnectToPeer.get(pk)(success);
+        resolveConnectToPeer.delete(pk);
     }
 }
 
