@@ -2,7 +2,7 @@ import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js"
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
-import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr} from "./utils.js";
+import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr, unionOps} from "./utils.js";
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -35,10 +35,10 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, msgQueue, serverValue, sessionKeys, store, acks, peerIgnored;
+var currentChatID, connections, msgQueue, serverValue, sessionKeys, acks, peerIgnored;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 var onlineMode = false;
-export var joinedChats, keyMap;
+export var joinedChats, keyMap, store;
 
 const enc = new TextEncoder();
 
@@ -429,7 +429,8 @@ async function onCreateChat(chatID, chatName) {
         metadata: {
             chatName: chatName,
             operations: operations,
-            ignored: []
+            ignored: [],
+            unresolved: new Map(),
         },
         history: [createMsg],
         historyTable: new Map(),
@@ -463,7 +464,8 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
             metadata: {
                 chatName: chatName,
                 operations: [],
-                ignored: ignored
+                ignored: ignored,
+                unresolved: new Map(),
             },
             history: [msg],
             historyTable: new Map(),
@@ -522,10 +524,8 @@ async function onRemove (messageData) {
         joinedChatInfo.currentMember = false;
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
-            const ops = unionOps(chatInfo.metadata.operations, [messageData.op]);
-            if (access.verifyOperations(ops, fromPK)) {
-                chatInfo.metadata.operations = ops;
-            }
+            const ops = unionOps(chatInfo.metadata.operations, access.verifiedOperations([messageData.op], fromPK, messageData.chatID));
+            chatInfo.metadata.operations = ops;
             await store.setItem(messageData.chatID, chatInfo);
         });
 
@@ -801,7 +801,7 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
 
 const resolveSyncIgnored = new Map();
 
-async function syncOperations (ops, chatID, pk) {
+async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID} from ${keyMap.get(pk)}`);
     return new Promise(async (resolve) => {
@@ -809,47 +809,40 @@ async function syncOperations (ops, chatID, pk) {
         if (pk === keyPair.publicKey) { return resolve(true); }
 
         await store.getItem(chatID).then(async (chatInfo) => {
-            ops.forEach(op => {
-                console.log(`${op.action} ${keyMap.get(op.pk2)}`);
-            });
-            ops = unionOps(chatInfo.metadata.operations, ops);
-            var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
+            
+            ops = unionOps(chatInfo.metadata.operations, access.verifyOperations(ops, chatInfo.metadata.unresolved));
+            var ignoredSet = chatInfo.metadata.ignored;
 
-            if (access.verifyOperations(ops, pk)) {
-                console.log(`ops verified`);
-                chatInfo.metadata.operations = ops;
-                await store.setItem(chatID, chatInfo);
+            chatInfo.metadata.operations = ops;
+            await store.setItem(chatID, chatInfo);
 
-                const graphInfo = access.hasCycles(ops);
-                console.log(`graph Info ${graphInfo.cycle}`);
-                if (graphInfo.cycle) {
-                    if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
-                        console.log(`cycle detected`);
-                        ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
-                    }
-
-                    sendIgnored(ignoredSet, chatID, pk);
-                    const queuedIgnoredSets = [...peerIgnored.keys()].filter((id) => {id.split("_")[0] == chatID});
-                    for (const [syncID, queuedIg] of queuedIgnoredSets) {
-                        receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
-                        joinedChats.get(chatID).peerIgnored.delete(syncID);
-                    }
-                }
-                
-                const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
-                console.log(`valid?`);
-                if (memberSet.has(pk)) {
-                    updateMembers(memberSet, chatID);
+            const graphInfo = access.hasCycles(ops);
+            console.log(`graph Info ${graphInfo.cycle}`);
+            if (graphInfo.cycle) {
+                if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
+                    console.log(`cycle detected`);
+                    ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
                 }
 
-                if (graphInfo.cycle) {
-                    resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
-                    return;
-                } else {
-                    return memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
+                sendIgnored(ignoredSet, chatID, pk);
+                const queuedIgnoredSets = [...peerIgnored.keys()].filter((id) => {id.split("_")[0] == chatID});
+                for (const [syncID, queuedIg] of queuedIgnoredSets) {
+                    receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
+                    joinedChats.get(chatID).peerIgnored.delete(syncID);
                 }
+            }
+            
+            const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
+            console.log(`valid?`);
+            if (memberSet.has(pk)) {
+                updateMembers(memberSet, chatID);
+            }
+
+            if (graphInfo.cycle) {
+                resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
+                return;
             } else {
-                return resolve(false);
+                return memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
             }
         });
     });
@@ -980,7 +973,7 @@ async function receivedMessage (messageData, channel=null) {
             return;
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
-            syncOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
+            receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                 if (res) {
                     console.log(`res success`);
                     updateConnectStatus(messageData.from, true);
@@ -988,10 +981,10 @@ async function receivedMessage (messageData, channel=null) {
                     sendAdvertisement(messageData.chatID, messageData.from);
                     if (access.unresolvedHashes.size > 0) {
                         for (const op of messageData.ops) {
-                            for (const [pk, set] of access.unresolvedHashes) {
+                            for (const [key, set] of access.unresolvedHashes) {
                                 if (set.delete(access.hashOp(op)) && set.size == 0) {
-                                    connectToPeer(pk); 
-                                    access.unresolvedHashes.delete(pk);
+                                    connectToPeer(key.split("_")[1]); 
+                                    access.unresolvedHashes.delete(key);
                                 }
                             }
                         }
@@ -1031,7 +1024,7 @@ async function receivedMessage (messageData, channel=null) {
             await mergeChatHistory(messageData.chatID, messageData.from, messageData.history);
             break;
         case "remove":
-            await syncOperations([messageData.op], messageData.chatID, messageData.from).then(async (res) => {
+            await receivedOperations([messageData.op], messageData.chatID, messageData.from).then(async (res) => {
                 if (res) { 
                     if (messageData.op.pk2 === keyPair.publicKey) {
                         updateChatWindow(messageData);
@@ -1049,7 +1042,7 @@ async function receivedMessage (messageData, channel=null) {
             if (messageData.op.pk2 === keyPair.publicKey) {
                 onAdd(messageData.chatID, messageData.chatName, messageData.from, messageData.ignored, messageData);
             } else {
-                await syncOperations([messageData.op], messageData.chatID, messageData.from).then(async (res) => {
+                await receivedOperations([messageData.op], messageData.chatID, messageData.from).then(async (res) => {
                     if (res) { addPeer(messageData); }
                 });
             }
@@ -1759,15 +1752,6 @@ function goOffline () {
 ///////////
 // UTILS //
 ///////////
-
-function unionOps(ops1, ops2) {
-    const sigSet = new Set(ops1.map(op => op.sig));
-    const ops = [...ops1];
-    for (const op of ops2) {
-        if (!sigSet.has(op.sig)) { ops.push(op); }
-    }
-    return ops;
-}
 
 function opsArrEqual (ops1, ops2) {
     if (ops1.length !== ops2.length) { return false; }

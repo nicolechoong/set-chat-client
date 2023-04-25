@@ -1,4 +1,4 @@
-import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
+import { arrToStr, strToArr, xorArr, concatArr, unionOps } from "./utils.js";
 import { keyPair as clientKeyPair } from './client.js';
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 // import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
@@ -36,7 +36,7 @@ function findCycle (fromOp, visited, stack, cycle) {
 }
 
 export function hasCycles (ops) {
-    const edges = authority(ops);
+    const edges = authority(ops).edges;
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const fromOp = new Map();
 
@@ -77,7 +77,6 @@ function getDeps (operations) {
         const hashedOp = hashOp(op);
         // if no other operation's deps contains hashedOp
         if (op.action !== "create" && !seenDepsOps.has(op.sig)) {
-            console.log(op);
             op.deps.forEach((op) => seenDeps.add(op));
             seenDepsOps.add(op.sig);
         }
@@ -121,43 +120,69 @@ export function generateOp (action, pk2, ops, keyPair=clientKeyPair) {
     return op;
 }
 
-export const unresolvedHashes = new Map();
+function checkUnresolvedHashes(ops, unresolved) {
+    const resolved = []
+    for (const op of ops) {
+        for (const unres of unresolved) {
+            if (unres.hashes.delete(hashOp(op)) && unres.hashes.size == 0) {
+                resolved.push(unres.op);
+            }
+        }
+    }
+    return resolved
+}
 
 // takes in set of ops
-export function verifyOperations (ops, pk) {
+export async function verifiedOperations (ops, unresolvedHashes) {
 
     // only one create
+    const verifiedOps = []
     const createOps = [];
     const otherOps = [];
     ops.forEach((op) => { if (op.action === "create") { createOps.push(op) } else { otherOps.push(op) }} );
 
-    if (createOps.length != 1) { console.log("op verification failed: not one create"); console.log(createOps); return false; }
-    const createOp = createOps[0];
-    if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), strToArr(createOp.sig), strToArr(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
-
     ops.forEach((op) => {
-        hashedOps.set(hashOp(op), op);
+        const hash = hashOp(op);
+        hashedOps.set(hash, op);
     });
 
-    const unresolved = new Set();
+    if (unresolvedHashes.size > 0) {
+        ops = unionOps(ops, checkUnresolvedHashes(ops, unresolved))
+    }
+
+    if (createOps.length == 1) {
+        const createOp = createOps[0];
+        if (nacl.sign.detached.verify(enc.encode(concatOp(createOp)), strToArr(createOp.sig), strToArr(createOp.pk))) { 
+            verifiedOps.push(createOp);
+        } else {
+            console.log("op verification failed: create key verif failed");
+        }
+    } else {
+        console.log("op verification failed: not one create"); 
+    }
+
     for (const op of otherOps) {
         // valid signature
-        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1))) { console.log("op verification failed: key verif failed"); return false; }
+        if (nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1))) { 
 
-        // non-empty deps and all hashes in deps resolve to an operation in o
-        for (const dep of op.deps) {
-            if (!hashedOps.has(dep)) { 
-                console.log("op verification failed: missing dep"); 
-                unresolved.add(dep);
-            } // as we are transmitting the whole set
+            // non-empty deps and all hashes in deps resolve to an operation in o
+            const unresolved = new Set();
+            for (const dep of op.deps) {
+                if (!hashedOps.has(dep)) { unresolved.add(dep) }
+            }
+            if (unresolved.size == 0) { 
+                verifiedOps.push(op); 
+            } else {
+                console.log("op verification failed: missing dep");
+                unresolvedHashes.set(op.sig, unresolved);
+            }
+
+        } else {
+            console.log("op verification failed: key verif failed"); 
         }
     }
-    if (unresolved.length > 0) {
-        unresolvedHashes.set(pk, unresolved);
-        return false;
-    }
 
-    return true;
+    return verifiedOps;
 }
 
 export function hashOp (op) {
@@ -232,17 +257,17 @@ export function authority (ops) {
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        if (!memberVertices.has(pk)) { memberVertices.set(pk, { "member": pk, "sig": pk, "action": "mem" })};
+        if (!memberVertices.has(pk)) { memberVertices.set(pk, { "pk": pk, "sig": pk, "action": "mem" })};
         edges.push({from: op1, to: memberVertices.get(pk)});
     }
     new Set(edges.map(edge => edge.to)).forEach(v => console.log(JSON.stringify(v)));
-    return edges;
+    return { edges: edges, members: [...memberVertices.values()] };
 }
 
 function valid (ops, ignored, op, authorityGraph) {
     if (op.action === "create") { return true; }
     if (op.action !== "mem" && hasOp(ignored, op)) { return false; }
-    new Set(authorityGraph.map(edge => edge.to)).forEach(v => console.log(JSON.stringify(v)));
+
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
         return op.sig === edge.to.sig && valid(ops, ignored, edge.from, authorityGraph);
@@ -264,11 +289,9 @@ export async function members (ops, ignored) {
     // assert that there are no cycles
     const pks = new Set();
     const authorityGraph = authority(ops);
-    var pk;
-    for (const op of ops) {
-        pk = op.action === "create" ? op.pk : op.pk2;
-        if (valid(ops, ignored, { "member": pk, "sig": pk, "action": "mem" }, authorityGraph)) {
-            pks.add(pk);
+    for (const memVertex of authorityGraph.members) {
+        if (valid(ops, ignored, memVertex, authorityGraph.edges)) {
+            pks.add(memVertex.pk);
         }
     }
     console.log(`calculated member set ${[...pks]}      number of members ${pks.size}}`);
