@@ -159,7 +159,6 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
         change = false;
         for (const op of receivedOps) {
             if (localSet.has(op.sig)) { 
-                console.log(`here ${op.action}`);
                 receivedOps.delete(op);
                 continue;
             }
@@ -169,7 +168,6 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
             }
             if (unresolved.size == 0) {
                 change = true;
-                console.log(`here ${op.action}`);
                 hashedOps.set(hashOp(op), op);
                 receivedOps.delete(op);
                 verifiedOps.push(op);

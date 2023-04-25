@@ -519,24 +519,23 @@ async function addToChat (name, pk, chatID) {
 async function onRemove (messageData) {
     const fromPK = messageData.from;
     var joinedChatInfo = joinedChats.get(messageData.chatID);
-    if (joinedChatInfo.validMembers.has(fromPK)) {
-        const from = await getUsername(fromPK);
+    if (joinedChatInfo.currentMember) {
         joinedChatInfo.currentMember = false;
+        updateChatWindow(messageData);
+        await updateChatStore(messageData);
+
+        // if the removal is disputable
+        if (!messageData.dispute && fromPK !== keyPair.publicKey) { 
+            joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
+        }
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
             chatInfo.metadata.operations = access.verifiedOperations([messageData.op], chatInfo.metadata.operations, chatInfo.metadata.unresolved);
             await store.setItem(messageData.chatID, chatInfo);
         });
 
-        // if the removal is disputable
-        if (!messageData.dispute && fromPK !== keyPair.publicKey) { 
-            joinedChatInfo.toDispute = { peerName: from, peerPK: fromPK };
-        }
-
         if (joinedChatInfo.members.includes(keyPair.publicKey)) {
             joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
-            updateChatWindow(messageData);
-            await updateChatStore(messageData);
         }
         joinedChatInfo.exMembers.add(keyPair.publicKey);
         await store.setItem("joinedChats", joinedChats);
@@ -808,7 +807,6 @@ async function receivedOperations (ops, chatID, pk) {
         if (pk === keyPair.publicKey) { return resolve(true); }
 
         await store.getItem(chatID).then(async (chatInfo) => {
-            console.log(`${ops.length}   ${ops[0].action}`);
             var ignoredSet = chatInfo.metadata.ignored;
             chatInfo.metadata.operations = access.verifiedOperations(ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved);
             console.log(chatInfo.metadata.operations.map((op) => { op.action }));
