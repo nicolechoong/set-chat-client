@@ -146,6 +146,7 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
         if (nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk))
         && localOps.filter((op) => op.action === "create").length == 0) {
             hashedOps.set(hashOp(op), op);
+            localSet.add(op.sig);
             verifiedOps.push(op);
         }
     }
