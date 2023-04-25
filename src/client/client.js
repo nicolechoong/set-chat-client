@@ -430,7 +430,7 @@ async function onCreateChat(chatID, chatName) {
             chatName: chatName,
             operations: operations,
             ignored: [],
-            unresolved: new Map(),
+            unresolved: [],
         },
         history: [createMsg],
         historyTable: new Map(),
@@ -465,7 +465,7 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
                 chatName: chatName,
                 operations: [msg.op],
                 ignored: ignored,
-                unresolved: new Map(),
+                unresolved: [],
             },
             history: [msg],
             historyTable: new Map(),
@@ -976,16 +976,6 @@ async function receivedMessage (messageData, channel=null) {
                     updateConnectStatus(messageData.from, true);
                     await sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
-                    if (access.unresolvedHashes.size > 0) {
-                        for (const op of messageData.ops) {
-                            for (const [key, set] of access.unresolvedHashes) {
-                                if (set.delete(access.hashOp(op)) && set.size == 0) {
-                                    connectToPeer(key.split("_")[1]); 
-                                    access.unresolvedHashes.delete(key);
-                                }
-                            }
-                        }
-                    }
                 } else {
                     console.log(`res fail`);
                     updateConnectStatus(messageData.from, false);
