@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "jest --silent"
+    "test": "jest"
   },
   "repository": {
     "type": "git",

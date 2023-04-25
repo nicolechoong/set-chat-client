@@ -19,229 +19,240 @@ beforeAll(() => {
     createOp = unit.generateCreateOp(keyPairs["a"]);
 });
 
-describe('verifiedOperations', () => {
-
-    beforeEach(() => {
-        ops = [createOp];
-    });
-
-    test("fails without create operation", async () => {
-
-        ops = [unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])];
-        const verifiedOps = unit.verifiedOperations(ops, [], []);
-        expect(verifiedOps.length).toBe(0);
-    });
-
-    test("fails due to multiple create operation (empty local)", async () => {
-        const createOp = unit.generateCreateOp(keyPairs["b"]);
-        ops.push(createOp);
-        const addOp = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]);
-        ops.push(addOp);
-        const verifiedOps = unit.verifiedOperations(ops, [], []);
-
-        expect(verifiedOps.length).toBe(0);
-    });
-
-    test("fails due to multiple create operation (non-empty local)", async () => {
-        const createOp = unit.generateCreateOp(keyPairs["b"]);
-        ops.push(createOp);
-        const addOp = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]);
-        ops.push(addOp);
-        const verifiedOps = unit.verifiedOperations(ops, [createOp], []);
-
-        expect(verifiedOps.length).toBe(1);
-        expect(verifiedOps).toContain(createOp);
-    });
-
-    test("fails due to incorrect key (create)", async () => {
-        const createOp = unit.generateCreateOp(keyPairs["a"]);
-        ops = [createOp];
-        createOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(createOp)), keyPairs["b"].secretKey));
-        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-        const verifiedOps = unit.verifiedOperations(ops, [], []);
-
-        expect(verifiedOps.length).toBe(0);
-    });
-
-    test("fails due to incorrect key (add, empty local)", async () => {
-        const createOp = unit.generateCreateOp(keyPairs["a"]);
-        ops = [createOp];
-        const addOp = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
-        ops.push(addOp);
-        addOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(createOp)), keyPairs["c"].secretKey));
-        const verifiedOps = unit.verifiedOperations(ops, [], []);
-
-        expect(verifiedOps.length).toBe(1);
-        expect(verifiedOps).toContain(createOp);
-    });
-
-    test("fails due to incorrect key (add, non-empty local)", async () => {
-        const createOp = unit.generateCreateOp(keyPairs["a"]);
-        ops = [createOp];
-        const addOp = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
-        ops.push(addOp);
-        addOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(addOp)), keyPairs["c"].secretKey));
-        const verifiedOps = unit.verifiedOperations(ops, [createOp], []);
-        console.log(verifiedOps);
-
-        expect(verifiedOps.length).toBe(1);
-        expect(verifiedOps).toContain(createOp);
-    });
-
-    test("fails due to missing dependency", async () => {
-        const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])
-        const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops.concat([addB]), keyPairs["a"]);
-        ops.push(addC);
-        const unresolvedHashes = [];
-        const verifiedOps = unit.verifiedOperations(ops, [], unresolvedHashes);
-
-        expect(verifiedOps.length).toBe(1);
-        expect(verifiedOps).toContain(ops[0]); // createOp
-        expect(unresolvedHashes.length).toBe(1);
-        expect(unresolvedHashes[0].op).toEqual(addC);
-    });
-
-    test("gains missing dependency (1)", async () => {
-        const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])
-        const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops.concat([addB]), keyPairs["a"]);
-        ops.push(addC);
-        const unresolvedHashes = [];
-        const verifiedOps = unit.verifiedOperations([addB], ops, unresolvedHashes);
-
-        expect(verifiedOps.length).toBe(3);
-        expect(verifiedOps).toContain(ops[0]); // createOp
-        expect(verifiedOps).toContain(addB);
-        expect(verifiedOps).toContain(addC);
-        expect(unresolvedHashes.length).toBe(0);
-    });
-
-    test("passes (empty local 1)", async () => {
-        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
-
-        const verifiedOps = unit.verifiedOperations(ops, [], []);
-
-        expect(verifiedOps.length).toBe(3);
-    });
-
-    test("passes (non-empty local 1)", async () => {
-        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
-        const addOp = unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]);
-
-        const verifiedOps = unit.verifiedOperations([addOp], ops, []);
-
-        expect(verifiedOps.length).toBe(4);
-        expect(verifiedOps).toContain(addOp);
-    });
-
-    test("passes (non-empty local 2)", async () => {
-        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
-        const addOp = unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]);
-        ops.push(unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["a"]));
-
-        const verifiedOps = unit.verifiedOperations([addOp], ops, []);
-
-        expect(verifiedOps.length).toBe(5);
-        expect(verifiedOps).toContain(addOp);
-    });
-
-    test("passes (non-empty local 2)", async () => {
-        const createOp = unit.generateCreateOp(keyPairs["a"]);
-        ops = [createOp];
-        const ops2 = [createOp];
-        const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
-        ops.push(addB);
-        ops2.push(addB);
-        const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]);
-        ops2.push(addC);
-
-        const verifiedOps = unit.verifiedOperations(ops2, ops, []);
-
-        expect(verifiedOps.length).toBe(3);
-        expect(verifiedOps).toContain(addC);
-    });
-});
-
-// describe('hasCycles', () => {
-
-//     function checkOpsMatch (concurrent, ops) {
-//         const missing = ops.filter(op => !unit.hasOp(concurrent, op));
-//         return missing.length == 0;
-//     }
+// describe('verifiedOperations', () => {
 
 //     beforeEach(() => {
 //         ops = [createOp];
-//         ignored = [];
 //     });
 
-//     test("correct when no cycles", async () => {
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops));
-//         ops.push(await unit.generateOp("add", keyPairs["b"], keyPairs["d"].publicKey, ops));
+//     test("fails without create operation", async () => {
 
-//         const graphInfo = unit.hasCycles(ops);
-
-//         expect(graphInfo.cycle).toBe(false);
+//         ops = [unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])];
+//         const verifiedOps = unit.verifiedOperations(ops, [], []);
+//         expect(verifiedOps.length).toBe(0);
 //     });
 
-//     test("correct when two conflict removal cycle", async () => {
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
-//         const concOps = [ await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops), 
-//                         await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops)];
+//     test("fails due to multiple create operation (empty local)", async () => {
+//         const createOp = unit.generateCreateOp(keyPairs["b"]);
+//         ops.push(createOp);
+//         const addOp = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]);
+//         ops.push(addOp);
+//         const verifiedOps = unit.verifiedOperations(ops, [], []);
 
-//         const graphInfo = unit.hasCycles(ops.concat(concOps));
-
-//         expect(graphInfo.cycle).toBe(true);
-//         expect(graphInfo.concurrent.length).toBe(1);
-//         expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
+//         expect(verifiedOps.length).toBe(0);
 //     });
 
-//     test("correct when two conflict removal cycle with extra ops", async () => {
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
-//         const concOps = [ await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops), 
-//                         await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops)];
-//         ops.push(await unit.generateOp("remove", keyPairs["c"], keyPairs["b"].publicKey, ops.concat(concOps[0])));
+//     test("fails due to multiple create operation (non-empty local)", async () => {
+//         const createOp = unit.generateCreateOp(keyPairs["b"]);
+//         ops.push(createOp);
+//         const addOp = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]);
+//         ops.push(addOp);
+//         const verifiedOps = unit.verifiedOperations(ops, [createOp], []);
 
-//         const graphInfo = unit.hasCycles(ops.concat(concOps));
-
-//         expect(graphInfo.cycle).toBe(true);
-//         expect(graphInfo.concurrent.length).toBe(1);
-//         expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
+//         expect(verifiedOps.length).toBe(1);
+//         expect(verifiedOps).toContain(createOp);
 //     });
 
-//     test("correct when three conflict removal cycle", async () => {
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops));
-//         const concOps = [ await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops),
-//                         await unit.generateOp("remove", keyPairs["b"], keyPairs["c"].publicKey, ops),
-//                         await unit.generateOp("remove", keyPairs["c"], keyPairs["a"].publicKey, ops)];
+//     test("fails due to incorrect key (create)", async () => {
+//         const createOp = unit.generateCreateOp(keyPairs["a"]);
+//         ops = [createOp];
+//         createOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(createOp)), keyPairs["b"].secretKey));
+//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+//         const verifiedOps = unit.verifiedOperations(ops, [], []);
 
-//         const graphInfo = unit.hasCycles(ops.concat(concOps));
-
-//         expect(graphInfo.cycle).toBe(true);
-//         expect(graphInfo.concurrent.length).toBe(1);
-//         expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
+//         expect(verifiedOps.length).toBe(0);
 //     });
 
-//     test("correct when two removal cycles", async () => {
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops));
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["d"].publicKey, ops));
-//         const concOps1 = [ await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops),
-//                         await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops)];
-//         const concOps2 = [ await unit.generateOp("remove", keyPairs["d"], keyPairs["c"].publicKey, ops),
-//                         await unit.generateOp("remove", keyPairs["c"], keyPairs["d"].publicKey, ops)];
+//     test("fails due to incorrect key (add, empty local)", async () => {
+//         const createOp = unit.generateCreateOp(keyPairs["a"]);
+//         ops = [createOp];
+//         const addOp = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
+//         ops.push(addOp);
+//         addOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(createOp)), keyPairs["c"].secretKey));
+//         const verifiedOps = unit.verifiedOperations(ops, [], []);
 
-//         const graphInfo = unit.hasCycles(ops.concat(concOps1, concOps2));
+//         expect(verifiedOps.length).toBe(1);
+//         expect(verifiedOps).toContain(createOp);
+//     });
 
-//         expect(graphInfo.cycle).toBe(true);
-//         expect(graphInfo.concurrent.length).toBe(2);
-//         expect(checkOpsMatch(graphInfo.concurrent[0], concOps1) || checkOpsMatch(graphInfo.concurrent[0], concOps2)).toBe(true);
-//         expect(checkOpsMatch(graphInfo.concurrent[1], concOps1) || checkOpsMatch(graphInfo.concurrent[1], concOps2)).toBe(true);
+//     test("fails due to incorrect key (add, non-empty local)", async () => {
+//         const createOp = unit.generateCreateOp(keyPairs["a"]);
+//         ops = [createOp];
+//         const addOp = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
+//         ops.push(addOp);
+//         addOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(addOp)), keyPairs["c"].secretKey));
+//         const verifiedOps = unit.verifiedOperations(ops, [createOp], []);
+//         console.log(verifiedOps);
+
+//         expect(verifiedOps.length).toBe(1);
+//         expect(verifiedOps).toContain(createOp);
+//     });
+
+//     test("fails due to missing dependency", async () => {
+//         const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])
+//         const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops.concat([addB]), keyPairs["a"]);
+//         ops.push(addC);
+//         const unresolvedHashes = [];
+//         const verifiedOps = unit.verifiedOperations(ops, [], unresolvedHashes);
+
+//         expect(verifiedOps.length).toBe(1);
+//         expect(verifiedOps).toContain(ops[0]); // createOp
+//         expect(unresolvedHashes.length).toBe(1);
+//         expect(unresolvedHashes[0].op).toEqual(addC);
+//     });
+
+//     test("gains missing dependency (1)", async () => {
+//         const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])
+//         const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops.concat([addB]), keyPairs["a"]);
+//         ops.push(addC);
+//         const unresolvedHashes = [];
+//         const verifiedOps = unit.verifiedOperations([addB], ops, unresolvedHashes);
+
+//         expect(verifiedOps.length).toBe(3);
+//         expect(verifiedOps).toContain(ops[0]); // createOp
+//         expect(verifiedOps).toContain(addB);
+//         expect(verifiedOps).toContain(addC);
+//         expect(unresolvedHashes.length).toBe(0);
+//     });
+
+//     test("passes (empty local 1)", async () => {
+//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+//         ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
+
+//         const verifiedOps = unit.verifiedOperations(ops, [], []);
+
+//         expect(verifiedOps.length).toBe(3);
+//     });
+
+//     test("passes (non-empty local 1)", async () => {
+//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+//         ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
+//         const addOp = unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]);
+
+//         const verifiedOps = unit.verifiedOperations([addOp], ops, []);
+
+//         expect(verifiedOps.length).toBe(4);
+//         expect(verifiedOps).toContain(addOp);
+//     });
+
+//     test("passes (non-empty local 2)", async () => {
+//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+//         ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
+//         const addOp = unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]);
+//         ops.push(unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["a"]));
+
+//         const verifiedOps = unit.verifiedOperations([addOp], ops, []);
+
+//         expect(verifiedOps.length).toBe(5);
+//         expect(verifiedOps).toContain(addOp);
+//     });
+
+//     test("passes (non-empty local 2)", async () => {
+//         const createOp = unit.generateCreateOp(keyPairs["a"]);
+//         ops = [createOp];
+//         const ops2 = [createOp];
+//         const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
+//         ops.push(addB);
+//         ops2.push(addB);
+//         const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]);
+//         ops2.push(addC);
+
+//         const verifiedOps = unit.verifiedOperations(ops2, ops, []);
+
+//         expect(verifiedOps.length).toBe(3);
+//         expect(verifiedOps).toContain(addC);
 //     });
 // });
+
+describe('hasCycles', () => {
+
+    function checkOpsMatch (concurrent, ops) {
+        const missing = ops.filter(op => !unit.hasOp(concurrent, op));
+        return missing.length == 0;
+    }
+
+    beforeEach(() => {
+        ops = [createOp];
+        ignored = [];
+        unit.hashedOps.clear();
+    });
+
+    test("correct when no cycles", async () => {
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]));
+        ops.push(unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]));
+
+        ops.forEach((op) => {unit.hashedOps.set(unit.hashOp(op), op)});
+        const graphInfo = unit.hasCycles(ops);
+
+        expect(graphInfo.cycle).toBe(false);
+    });
+
+    test("correct when two conflict removal cycle", async () => {
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        const concOps = [unit.generateOp("remove", keyPairs["b"].publicKey, ops, keyPairs["a"]), 
+                        unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["b"])];
+
+        ops = ops.concat(concOps);
+        console.log(JSON.stringify(ops));
+        ops.forEach((op) => {unit.hashedOps.set(unit.hashOp(op), op)});
+        const graphInfo = unit.hasCycles(ops);
+
+        expect(graphInfo.cycle).toBe(true);
+        expect(graphInfo.concurrent.length).toBe(1);
+        expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
+    });
+
+    test("correct when two conflict removal cycle with extra ops", async () => {
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        const concOps = [unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]), 
+                        unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["b"])];
+        ops.push(unit.generateOp("remove", keyPairs["b"].publicKey, ops.concat(concOps[0]), keyPairs["c"]));
+
+        ops = ops.concat(concOps)
+        ops.forEach((op) => {unit.hashedOps.set(unit.hashOp(op), op)});
+        const graphInfo = unit.hasCycles(ops);
+
+        expect(graphInfo.cycle).toBe(true);
+        expect(graphInfo.concurrent.length).toBe(1);
+        expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
+    });
+
+    test("correct when three conflict removal cycle", async () => {
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]));
+        const concOps = [unit.generateOp("remove", keyPairs["b"].publicKey, ops, keyPairs["a"]),
+                        unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["b"]),
+                        unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["c"])];
+
+        ops = ops.concat(concOps)
+        ops.forEach((op) => {unit.hashedOps.set(unit.hashOp(op), op)});
+        const graphInfo = unit.hasCycles(ops);
+
+        expect(graphInfo.cycle).toBe(true);
+        expect(graphInfo.concurrent.length).toBe(1);
+        expect(checkOpsMatch(graphInfo.concurrent[0], concOps)).toBe(true);
+    });
+
+    test("correct when two removal cycles", async () => {
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]));
+        ops.push(unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["a"]));
+        const concOps1 = [unit.generateOp("remove", keyPairs["b"].publicKey, ops, keyPairs["a"]),
+                        unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["b"])];
+        const concOps2 = [unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["d"]),
+                        unit.generateOp("remove", keyPairs["d"].publicKey, ops, keyPairs["c"])];
+
+        ops = ops.concat(concOps1, concOps2)
+        ops.forEach((op) => {unit.hashedOps.set(unit.hashOp(op), op)});
+        const graphInfo = unit.hasCycles(ops);
+
+        expect(graphInfo.cycle).toBe(true);
+        expect(graphInfo.concurrent.length).toBe(2);
+        expect(checkOpsMatch(graphInfo.concurrent[0], concOps1) || checkOpsMatch(graphInfo.concurrent[0], concOps2)).toBe(true);
+        expect(checkOpsMatch(graphInfo.concurrent[1], concOps1) || checkOpsMatch(graphInfo.concurrent[1], concOps2)).toBe(true);
+    });
+});
 
 // describe('members add', () => {
 

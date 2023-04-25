@@ -1,11 +1,11 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
-import { keyPair as clientKeyPair } from './client.js';
-import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-// import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
-// const clientKeyPair = nacl.box.keyPair();
+// import { keyPair as clientKeyPair } from './client.js';
+// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+const clientKeyPair = nacl.box.keyPair();
 
 export const enc = new TextEncoder();
-var hashedOps = new Map();
+export var hashedOps = new Map();
 
 export function unresolvedCycles (cycles, ignored) {
     cycleloop:
@@ -38,6 +38,7 @@ function findCycle (fromOp, visited, stack, cycle) {
 
 export function hasCycles (ops) {
     const edges = authority(ops).edges;
+    edges.forEach(edge => printEdge(edge.from, edge.to));
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const fromOp = new Map();
 
@@ -56,6 +57,7 @@ export function hasCycles (ops) {
         return { cycle: false };
     }
 
+    console.log(cycles[0]);
     const toOp = new Map(cycles.flat().map((op) => [op.sig, 0]));
     for (let i=0; i < cycles.length; i++) {
         for (const edge of edges) {
@@ -68,20 +70,12 @@ export function hasCycles (ops) {
     return { cycle: true, concurrent: cycles };
 }
 
-const seenDepsOps = new Set();
-const seenDeps = new Set();
-
 function getDeps (operations) {
     // operations : Array of Object
     var deps = [];
     for (const op of operations) {
         const hashedOp = hashOp(op);
-        // if no other operation's deps contains hashedOp
-        if (op.action !== "create" && !seenDepsOps.has(op.sig)) {
-            op.deps.forEach((op) => seenDeps.add(op));
-            seenDepsOps.add(op.sig);
-        }
-        if (op.action === "create" || !seenDeps.has(hashedOp)) {
+        if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
             deps.push(hashedOp);
         }
     }
@@ -92,7 +86,7 @@ export function concatOp (op) {
     return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
 }
 
-export function hasOp(ops, op) {
+export function hasOp (ops, op) {
     for (const curOp of ops) {
         if (curOp.sig === op.sig) { return true; }
     }
@@ -227,13 +221,13 @@ function printEdge (op1, op2 = null) {
     if (op1.action === "create") {
         output = `op1 ${op1.pk} ${op1.action}    ${op1.sig} `;
     } else {
-        output = `op1 ${op1.pk1} ${op1.action} ${op1.pk2}    ${op1.sig} `;
+        output = `op1 ${op1.pk1} ${op1.action} ${op1.pk2}`;
     }
     if (op2) {
         if (op2.action === "mem") {
-            output = `-> ${output} mem ${op2.member}`;
+            output = `${output} -> mem ${op2.pk}`;
         } else {
-            output = `-> ${output} op2 ${op2.pk1} ${op2.action} ${op2.pk2}    ${op2.sig}`;
+            output = `${output} -> op2 ${op2.pk1} ${op2.action} ${op2.pk2}`;
         }
     }
     console.log(output);
@@ -257,7 +251,6 @@ export function authority (ops) {
         if (!memberVertices.has(pk)) { memberVertices.set(pk, { "pk": pk, "sig": pk, "action": "mem" })};
         edges.push({from: op1, to: memberVertices.get(pk)});
     }
-    new Set(edges.map(edge => edge.to)).forEach(v => console.log(JSON.stringify(v)));
     return { edges: edges, members: [...memberVertices.values()] };
 }
 
