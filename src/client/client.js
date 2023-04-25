@@ -82,6 +82,7 @@ function initialiseClient () {
     onSIGMA3 = new Map();
     acks = new Set();
     peerIgnored = new Map();
+    access.unresolvedHashes = new Map();
 
     // layout
     [...chatList.childNodes].forEach((node) => {
@@ -179,6 +180,9 @@ function connectToServer () {
                 break;
             case "getOnline":
                 onGetOnline(data.online, data.chatID);
+                break;
+            case "peerOffline":
+                offerSent.delete(data.pk);
                 break;
             default:
                 break;
@@ -383,7 +387,7 @@ function onCandidate(candidate, peerPK) {
 }
 
 function onConnectedUsers(usernames) {
-
+    
 }
 
 // Depreciated: For now
@@ -407,9 +411,7 @@ async function onCreateChat(chatID, chatName) {
         validMembers: new Set([keyPair.publicKey]),
         members: [keyPair.publicKey],
         exMembers: new Set(),
-        peerIgnored: new Map(),
         currentMember: true,
-        conc: [],
         toDispute: null
     });
     await store.setItem("joinedChats", joinedChats);
@@ -454,7 +456,6 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
             exMembers: new Set(),
             peerIgnored: new Map(),
             currentMember: false,
-            conc: [],
             toDispute: null
         });
         await store.setItem("joinedChats", joinedChats);
@@ -523,7 +524,7 @@ async function onRemove (messageData) {
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
             const ops = unionOps(chatInfo.metadata.operations, [messageData.op]);
-            if (access.verifyOperations(ops)) {
+            if (access.verifyOperations(ops, fromPK)) {
                 chatInfo.metadata.operations = ops;
             }
             await store.setItem(messageData.chatID, chatInfo);
@@ -680,13 +681,22 @@ async function onGetOnline(online, chatID) {
     if (online.length == 0) {
         resolveGetOnline.get(chatID)(false);
     }
+    online.sort((a, b) => {
+        if (!joinedChats.get(chatID).members.includes(a) && joinedChats.get(chatID).members.includes(b)) {
+            return 1
+        } else if (!joinedChats.get(chatID).members.includes(a) && joinedChats.get(chatID).members.includes(b)) {
+            return -1
+        } else {
+            return 0
+        }
+    });
     for (const peer of online) {
         if (await connectToPeer(peer)) {
-            sendOperations(chatID, peer.peerPK);
-            resolveGetOnline.get(true);
+            resolveGetOnline.get(chatID)(true);
             break;
         }
     }
+    resolveGetOnline.get(chatID)(false);
     resolveGetOnline.delete(chatID);
 }
 
@@ -797,7 +807,7 @@ async function syncOperations (ops, chatID, pk) {
     console.log(`receiving operations for chatID ${chatID} from ${keyMap.get(pk)}`);
     return new Promise(async (resolve) => {
         console.log(`ops acquired lock`);
-        if (pk === keyPair.publicKey) { return resolve("ACCEPT"); }
+        if (pk === keyPair.publicKey) { return resolve(true); }
 
         await store.getItem(chatID).then(async (chatInfo) => {
             ops.forEach(op => {
@@ -806,7 +816,7 @@ async function syncOperations (ops, chatID, pk) {
             ops = unionOps(chatInfo.metadata.operations, ops);
             var ignoredSet = chatInfo.metadata.ignored; // because the concurrent updates are not captured hhhh
 
-            if (access.verifyOperations(ops)) {
+            if (access.verifyOperations(ops, pk)) {
                 console.log(`ops verified`);
                 chatInfo.metadata.operations = ops;
                 await store.setItem(chatID, chatInfo);
@@ -837,10 +847,10 @@ async function syncOperations (ops, chatID, pk) {
                     resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
                     return;
                 } else {
-                    return memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve("ACCEPT") : resolve("REJECT");
+                    return memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
                 }
             } else {
-                return resolve("FAIL");
+                return resolve(false);
             }
         });
     });
@@ -977,6 +987,16 @@ async function receivedMessage (messageData, channel=null) {
                     updateConnectStatus(messageData.from, true);
                     await sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
+                    if (access.unresolvedHashes.size > 0) {
+                        for (const op of messageData.ops) {
+                            for (const [pk, set] of access.unresolvedHashes) {
+                                if (set.delete(access.hashOp(op)) && set.size == 0) {
+                                    connectToPeer(pk); 
+                                    access.unresolvedHashes.delete(pk);
+                                }
+                            }
+                        }
+                    }
                 } else {
                     console.log(`res fail`);
                     updateConnectStatus(messageData.from, false);
@@ -1005,6 +1025,7 @@ async function receivedMessage (messageData, channel=null) {
             break;
                 
         case "advertisement":
+            // if (messageData.online.length === 0) { getOnline(messageData.chatID); } 
             messageData.online.forEach((peer) => connectToPeer(peer));
             break;
         case "history":
@@ -1139,11 +1160,12 @@ function sendAdvertisement (chatID, pk) {
     }
 
     if (online.length > 0) {
-        console.log(`sending an advertistment to ${pk} of ${online}`)
+        console.log(`sending an advertistment of length ${online.length} to ${pk} of ${online}`)
         sendToMember(addMsgID({
             type: "advertisement",
             online: online,
-            from: keyPair.publicKey
+            from: keyPair.publicKey,
+            chatID: chatID,
         }), pk);
     }
 }
@@ -1781,7 +1803,6 @@ function mergeJoinedChats(localChats, receivedChats) {
                 exMembers: new Set(),
                 peerIgnored: new Map(),
                 currentMember: false,
-                conc: [],
                 toDispute: null
             });
             receivedChats.get(id);

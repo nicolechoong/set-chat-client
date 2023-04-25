@@ -121,8 +121,10 @@ export function generateOp (action, pk2, ops, keyPair=clientKeyPair) {
     return op;
 }
 
+export const unresolvedHashes = new Map();
+
 // takes in set of ops
-export function verifyOperations (ops) {
+export function verifyOperations (ops, pk) {
 
     // only one create
     const createOps = [];
@@ -133,17 +135,26 @@ export function verifyOperations (ops) {
     const createOp = createOps[0];
     if (!nacl.sign.detached.verify(enc.encode(concatOp(createOp)), strToArr(createOp.sig), strToArr(createOp.pk))) { console.log("op verification failed: create key verif failed"); return false; }
 
-    const hashedOps = new Set();
-    ops.forEach((op) => hashedOps.add(hashOp(op)));
+    ops.forEach((op) => {
+        hashedOps.set(hashOp(op), op);
+    });
 
+    const unresolved = new Set();
     for (const op of otherOps) {
         // valid signature
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1))) { console.log("op verification failed: key verif failed"); return false; }
 
         // non-empty deps and all hashes in deps resolve to an operation in o
         for (const dep of op.deps) {
-            if (!hashedOps.has(dep)) { console.log("op verification failed: missing dep"); return false; } // as we are transmitting the whole set
+            if (!hashedOps.has(dep)) { 
+                console.log("op verification failed: missing dep"); 
+                unresolved.add(dep);
+            } // as we are transmitting the whole set
         }
+    }
+    if (unresolved.length > 0) {
+        unresolvedHashes.set(pk, unresolved);
+        return false;
     }
 
     return true;
@@ -157,14 +168,9 @@ export function hashOpArray (ops) {
     return arrToStr(nacl.hash(enc.encode(ops.map(op => op.sig).join(""))));
 }
 
-function getOpFromHash(ops, hashedOp) {
+function getOpFromHash(hashedOp) {
     if (hashedOps.has(hashedOp)) { return hashedOps.get(hashedOp); }
-    for (const op of ops) {
-        if (hashedOp === hashOp(op)) {
-            hashedOps.set(hashedOp, op);
-            return op;
-        }
-    }
+    else { alert('missing dependency'); }
 }
 
 // takes in set of ops
@@ -179,7 +185,7 @@ function precedes (ops, op1, op2) {
             if (hashedDep === target) {
                 return true;
             } else {
-                dep = getOpFromHash(ops, hashedDep);
+                dep = getOpFromHash(hashedDep);
                 if (dep.action !== "create") {
                     toVisit.push(dep);
                 }
@@ -227,6 +233,7 @@ export function authority (ops) {
         pk = op1.action == "create" ? op1.pk : op1.pk2;
         edges.push({from: op1, to: { "member": pk, "sig": pk, "action": "mem" }});
     }
+    new Set(edges.map(edge => edge.to)).forEach(v => console.log(JSON.stringify(v)));
     return edges;
 }
 

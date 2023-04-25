@@ -249,6 +249,8 @@ function onOffer (connection, data) {
       connection.otherNames.push(receiverPK);
 
       sendTo(conn, data);
+    } else {
+      sendTo(conn, { type: "peerOffline", pk: receiverPK});
     }
   }
 }
@@ -265,6 +267,8 @@ function onAnswer (connection, data) {
       connection.otherNames.push(receiverPK);
 
       sendTo(conn, data);
+    } else {
+      sendTo(conn, { type: "peerOffline", pk: receiverPK});
     }
   }
 }
