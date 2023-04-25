@@ -82,7 +82,6 @@ function initialiseClient () {
     onSIGMA3 = new Map();
     acks = new Set();
     peerIgnored = new Map();
-    access.unresolvedHashes = new Map();
 
     // layout
     [...chatList.childNodes].forEach((node) => {
