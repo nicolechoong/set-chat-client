@@ -463,7 +463,7 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
         await store.setItem(chatID, {
             metadata: {
                 chatName: chatName,
-                operations: [],
+                operations: [msg.op],
                 ignored: ignored,
                 unresolved: new Map(),
             },
@@ -524,8 +524,7 @@ async function onRemove (messageData) {
         joinedChatInfo.currentMember = false;
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
-            const ops = unionOps(chatInfo.metadata.operations, access.verifiedOperations([messageData.op], fromPK, messageData.chatID));
-            chatInfo.metadata.operations = ops;
+            chatInfo.metadata.operations = access.verifiedOperations([messageData.op], chatInfo.metadata.operations, chatInfo.metadata.unresolved);
             await store.setItem(messageData.chatID, chatInfo);
         });
 
@@ -810,10 +809,8 @@ async function receivedOperations (ops, chatID, pk) {
 
         await store.getItem(chatID).then(async (chatInfo) => {
             
-            ops = unionOps(chatInfo.metadata.operations, access.verifyOperations(ops, chatInfo.metadata.unresolved));
             var ignoredSet = chatInfo.metadata.ignored;
-
-            chatInfo.metadata.operations = ops;
+            chatInfo.metadata.operations = access.verifiedOperations(ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved);
             await store.setItem(chatID, chatInfo);
 
             const graphInfo = access.hasCycles(ops);

@@ -47,7 +47,7 @@ export function xorArr (arr1, arr2) {
     return res;
 }
 
-function unionOps(ops1, ops2) {
+export function unionOps(ops1, ops2) {
     const sigSet = new Set(ops1.map(op => op.sig));
     const ops = [...ops1];
     for (const op of ops2) {

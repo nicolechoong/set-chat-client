@@ -1,7 +1,8 @@
 import { arrToStr, strToArr, xorArr, concatArr, unionOps } from "./utils.js";
-import { keyPair as clientKeyPair } from './client.js';
-import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-// import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+// import { keyPair as clientKeyPair } from './client.js';
+// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+const clientKeyPair = nacl.box.keyPair();
 
 export const enc = new TextEncoder();
 var hashedOps = new Map();
@@ -120,67 +121,63 @@ export function generateOp (action, pk2, ops, keyPair=clientKeyPair) {
     return op;
 }
 
-function checkUnresolvedHashes(ops, unresolved) {
+function resolvedHash(hash, unresolvedHashes) {
     const resolved = []
-    for (const op of ops) {
-        for (const unres of unresolved) {
-            if (unres.hashes.delete(hashOp(op)) && unres.hashes.size == 0) {
-                resolved.push(unres.op);
-            }
+    for (const unres of unresolvedHashes) {
+        if (unres.hashes.delete(hash) && unres.hashes.size == 0) {
+            resolved.push(unres.op);
+            unresolvedHashes.splice(unresolvedHashes.indexOf(unres), 1);
         }
     }
     return resolved
 }
 
 // takes in set of ops
-export async function verifiedOperations (ops, unresolvedHashes) {
+export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
 
-    // only one create
-    const verifiedOps = []
-    const createOps = [];
-    const otherOps = [];
-    ops.forEach((op) => { if (op.action === "create") { createOps.push(op) } else { otherOps.push(op) }} );
+    var verifiedOps = [...localOps];
+    const localSet = new Set(localOps);
 
-    ops.forEach((op) => {
-        const hash = hashOp(op);
-        hashedOps.set(hash, op);
+    // hashedOps
+    localOps.forEach((op) => {
+        hashedOps.set(hashOp(op), op);
     });
 
-    if (unresolvedHashes.size > 0) {
-        ops = unionOps(ops, checkUnresolvedHashes(ops, unresolved))
-    }
-
-    if (createOps.length == 1) {
-        const createOp = createOps[0];
-        if (nacl.sign.detached.verify(enc.encode(concatOp(createOp)), strToArr(createOp.sig), strToArr(createOp.pk))) { 
-            verifiedOps.push(createOp);
-        } else {
-            console.log("op verification failed: create key verif failed");
+    // checking received create op is the same as local
+    // assert that the local set will only ever have one create operation
+    const receivedCreateOps = receivedOps.filter((op) => op.action === "create");
+    if (receivedCreateOps.length == 1) {
+        const op = receivedCreateOps[0];
+        if (nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk))
+        && localOps.filter((op) => op.action === "create").length == 0) {
+            hashedOps.set(hashOp(op), op);
+            verifiedOps.push(op);
         }
-    } else {
-        console.log("op verification failed: not one create"); 
     }
 
-    for (const op of otherOps) {
-        // valid signature
-        if (nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1))) { 
+    // filter out all received operations with invalid signatures and create
+    receivedOps = new Set(receivedOps.filter((op) => (op.action !== "create" && nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1)))));
 
-            // non-empty deps and all hashes in deps resolve to an operation in o
-            const unresolved = new Set();
+    var change;
+    do {
+        change = false;
+        for (const op of receivedOps) {
+            if (localSet.has(op)) { receivedOps.delete(op); continue; }
+            var unresolved = new Set();
             for (const dep of op.deps) {
                 if (!hashedOps.has(dep)) { unresolved.add(dep) }
             }
-            if (unresolved.size == 0) { 
-                verifiedOps.push(op); 
+            if (unresolved.size == 0) {
+                change = true;
+                hashedOps.set(hashOp(op), op);
+                receivedOps.delete(op);
+                verifiedOps.push(op);
+                verifiedOps = verifiedOps.concat(resolvedHash(hashOp(op), unresolvedHashes));
             } else {
-                console.log("op verification failed: missing dep");
-                unresolvedHashes.set(op.sig, unresolved);
+                unresolvedHashes.push({op: op, hashes: unresolved});
             }
-
-        } else {
-            console.log("op verification failed: key verif failed"); 
         }
-    }
+    } while (change)
 
     return verifiedOps;
 }
