@@ -584,11 +584,11 @@ async function disputeRemoval(peer, chatID) {
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
         const op = access.generateOp("remove", peer.peerPK, chatInfo.metadata.operations.slice(0, end));
 
-        console.log(`${chatInfo.history.map(msg => msg.type)}`);
-        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
-        if (ignoredOpIndex > -1) {
-            chatInfo.history.splice(ignoredOpIndex);
-        }
+        // console.log(`${chatInfo.history.map(msg => msg.type)}`);
+        // const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
+        // if (ignoredOpIndex > -1) {
+        //     chatInfo.history.splice(ignoredOpIndex);
+        // }
 
         chatInfo.metadata.operations.push(op);
         chatInfo.metadata.ignored.push(ignoredOp);
@@ -792,6 +792,7 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
             joinedChats.get(chatID).exMembers.add(pk);
             store.setItem("joinedChats", joinedChats);
             updateChatInfo();
+            sel
             resolve(false);
         }
     });
@@ -815,6 +816,7 @@ async function receivedOperations (ops, chatID, pk) {
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
             console.log(`graph Info ${graphInfo.cycle}`);
             if (graphInfo.cycle) {
+                
                 if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                     console.log(`cycle detected`);
                     ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
@@ -998,8 +1000,8 @@ async function receivedMessage (messageData, channel=null) {
                 console.log(JSON.stringify(messageData.op));
                 elem.updateSelectedMembers(keyMap.get(messageData.from), messageData.op.sig);
             }
-            updateChatWindow(messageData);
             await updateChatStore(messageData);
+            refreshChatWindow (chatID)
             break;
                 
         case "advertisement":
@@ -1556,9 +1558,17 @@ async function getIgnored(cycles, chatID) {
             cycle.forEach((op) => {
                 console.log(`op ${JSON.stringify(op)}`);
                 if (!chatMessageIDs.has(op.sig)) {
+                    console.log(JSON.stringify(
+                        addMsgID({
+                            type: op.action,
+                            chatID: chatID,
+                            ...op
+                        })
+                    ));
                     updateChatWindow(addMsgID({
-                        op: op,
-                        chatID: chatID
+                        type: op.action,
+                        chatID: chatID,
+                        ...op
                     }));
                 }
             });
