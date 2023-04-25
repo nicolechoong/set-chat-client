@@ -28,8 +28,10 @@ describe('verifiedOperations', () => {
     test("fails without create operation", async () => {
 
         ops = [unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])];
-        const verifiedOps = unit.verifiedOperations(ops, [], []);
+        const unresolvedHashes = [];
+        const verifiedOps = unit.verifiedOperations(ops, [], unresolvedHashes);
         expect(verifiedOps.length).toBe(0);
+        expect(unresolvedHashes.length).toBe(0);
     });
 
     test("fails due to multiple create operation (empty local)", async () => {

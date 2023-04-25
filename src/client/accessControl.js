@@ -143,8 +143,9 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
     const receivedCreateOps = receivedOps.filter((op) => op.action === "create");
     if (receivedCreateOps.length == 1) {
         const op = receivedCreateOps[0];
+        console.log(localOps.filter((oplocal) => oplocal.action === "create").length == 0);
         if (nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk))
-        && localOps.filter((op) => op.action === "create").length == 0) {
+        && localOps.filter((oplocal) => oplocal.action === "create").length == 0) {
             hashedOps.set(hashOp(op), op);
             localSet.add(op.sig);
             verifiedOps.push(op);
