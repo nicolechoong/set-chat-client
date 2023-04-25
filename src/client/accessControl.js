@@ -143,7 +143,6 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
     const receivedCreateOps = receivedOps.filter((op) => op.action === "create");
     if (receivedCreateOps.length == 1) {
         const op = receivedCreateOps[0];
-        console.log(localOps.filter((oplocal) => oplocal.action === "create").length == 0);
         if (nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk))
         && localOps.filter((oplocal) => oplocal.action === "create").length == 0) {
             hashedOps.set(hashOp(op), op);
@@ -159,13 +158,18 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
     do {
         change = false;
         for (const op of receivedOps) {
-            if (localSet.has(op.sig)) { receivedOps.delete(op); continue; }
+            if (localSet.has(op.sig)) { 
+                console.log(`here ${op.action}`);
+                receivedOps.delete(op);
+                continue;
+            }
             var unresolved = new Set();
             for (const dep of op.deps) {
                 if (!hashedOps.has(dep)) { unresolved.add(dep) }
             }
             if (unresolved.size == 0) {
                 change = true;
+                console.log(`here ${op.action}`);
                 hashedOps.set(hashOp(op), op);
                 receivedOps.delete(op);
                 verifiedOps.push(op);
