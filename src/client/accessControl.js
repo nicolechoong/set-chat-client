@@ -1,8 +1,8 @@
-import { arrToStr, strToArr, xorArr, concatArr, unionOps } from "./utils.js";
-// import { keyPair as clientKeyPair } from './client.js';
-// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
-const clientKeyPair = nacl.box.keyPair();
+import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
+import { keyPair as clientKeyPair } from './client.js';
+import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+// import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+// const clientKeyPair = nacl.box.keyPair();
 
 export const enc = new TextEncoder();
 var hashedOps = new Map();
