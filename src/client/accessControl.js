@@ -219,6 +219,7 @@ function printEdge (op1, op2 = null) {
 
 export function authority (ops) {
     const edges = [];
+    const memberVertices = new Map();
     var pk;
     // convert pk into strings to perform comparisons
     for (const op1 of ops) {
@@ -231,7 +232,8 @@ export function authority (ops) {
         }
 
         pk = op1.action == "create" ? op1.pk : op1.pk2;
-        edges.push({from: op1, to: { "member": pk, "sig": pk, "action": "mem" }});
+        if (!memberVertices.has(pk)) { memberVertices.set(pk, { "member": pk, "sig": pk, "action": "mem" })};
+        edges.push({from: op1, to: memberVertices.get(pk)});
     }
     new Set(edges.map(edge => edge.to)).forEach(v => console.log(JSON.stringify(v)));
     return edges;
@@ -240,7 +242,7 @@ export function authority (ops) {
 function valid (ops, ignored, op, authorityGraph) {
     if (op.action === "create") { return true; }
     if (op.action !== "mem" && hasOp(ignored, op)) { return false; }
-
+    new Set(authorityGraph.map(edge => edge.to)).forEach(v => console.log(JSON.stringify(v)));
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
         return op.sig === edge.to.sig && valid(ops, ignored, edge.from, authorityGraph);
