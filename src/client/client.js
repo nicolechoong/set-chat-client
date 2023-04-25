@@ -811,6 +811,7 @@ async function receivedOperations (ops, chatID, pk) {
             
             var ignoredSet = chatInfo.metadata.ignored;
             chatInfo.metadata.operations = access.verifiedOperations(ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved);
+            console.log(chatInfo.metadata.operations.forEach((op) => { JSON.stringify(op) }));
             await store.setItem(chatID, chatInfo);
 
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);

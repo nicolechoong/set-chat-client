@@ -38,6 +38,7 @@ function findCycle (fromOp, visited, stack, cycle) {
 
 export function hasCycles (ops) {
     const edges = authority(ops).edges;
+    console.log(edges.length);
     edges.forEach(edge => printEdge(edge.from, edge.to));
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const fromOp = new Map();
@@ -130,7 +131,7 @@ function resolvedHash(hash, unresolvedHashes) {
 export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
 
     var verifiedOps = [...localOps];
-    const localSet = new Set(localOps);
+    const localSet = new Set(localOps.map((op) => {op.sig}));
 
     // hashedOps
     localOps.forEach((op) => {
@@ -156,7 +157,7 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
     do {
         change = false;
         for (const op of receivedOps) {
-            if (localSet.has(op)) { receivedOps.delete(op); continue; }
+            if (localSet.has(op.sig)) { receivedOps.delete(op); continue; }
             var unresolved = new Set();
             for (const dep of op.deps) {
                 if (!hashedOps.has(dep)) { unresolved.add(dep) }

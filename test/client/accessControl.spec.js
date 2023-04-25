@@ -19,150 +19,150 @@ beforeAll(() => {
     createOp = unit.generateCreateOp(keyPairs["a"]);
 });
 
-// describe('verifiedOperations', () => {
+describe('verifiedOperations', () => {
 
-//     beforeEach(() => {
-//         ops = [createOp];
-//     });
+    beforeEach(() => {
+        ops = [createOp];
+    });
 
-//     test("fails without create operation", async () => {
+    test("fails without create operation", async () => {
 
-//         ops = [unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])];
-//         const verifiedOps = unit.verifiedOperations(ops, [], []);
-//         expect(verifiedOps.length).toBe(0);
-//     });
+        ops = [unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])];
+        const verifiedOps = unit.verifiedOperations(ops, [], []);
+        expect(verifiedOps.length).toBe(0);
+    });
 
-//     test("fails due to multiple create operation (empty local)", async () => {
-//         const createOp = unit.generateCreateOp(keyPairs["b"]);
-//         ops.push(createOp);
-//         const addOp = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]);
-//         ops.push(addOp);
-//         const verifiedOps = unit.verifiedOperations(ops, [], []);
+    test("fails due to multiple create operation (empty local)", async () => {
+        const createOp = unit.generateCreateOp(keyPairs["b"]);
+        ops.push(createOp);
+        const addOp = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]);
+        ops.push(addOp);
+        const verifiedOps = unit.verifiedOperations(ops, [], []);
 
-//         expect(verifiedOps.length).toBe(0);
-//     });
+        expect(verifiedOps.length).toBe(0);
+    });
 
-//     test("fails due to multiple create operation (non-empty local)", async () => {
-//         const createOp = unit.generateCreateOp(keyPairs["b"]);
-//         ops.push(createOp);
-//         const addOp = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]);
-//         ops.push(addOp);
-//         const verifiedOps = unit.verifiedOperations(ops, [createOp], []);
+    test("fails due to multiple create operation (non-empty local)", async () => {
+        const createOp = unit.generateCreateOp(keyPairs["b"]);
+        ops.push(createOp);
+        const addOp = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]);
+        ops.push(addOp);
+        const verifiedOps = unit.verifiedOperations(ops, [createOp], []);
 
-//         expect(verifiedOps.length).toBe(1);
-//         expect(verifiedOps).toContain(createOp);
-//     });
+        expect(verifiedOps.length).toBe(1);
+        expect(verifiedOps).toContain(createOp);
+    });
 
-//     test("fails due to incorrect key (create)", async () => {
-//         const createOp = unit.generateCreateOp(keyPairs["a"]);
-//         ops = [createOp];
-//         createOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(createOp)), keyPairs["b"].secretKey));
-//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-//         const verifiedOps = unit.verifiedOperations(ops, [], []);
+    test("fails due to incorrect key (create)", async () => {
+        const createOp = unit.generateCreateOp(keyPairs["a"]);
+        ops = [createOp];
+        createOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(createOp)), keyPairs["b"].secretKey));
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        const verifiedOps = unit.verifiedOperations(ops, [], []);
 
-//         expect(verifiedOps.length).toBe(0);
-//     });
+        expect(verifiedOps.length).toBe(0);
+    });
 
-//     test("fails due to incorrect key (add, empty local)", async () => {
-//         const createOp = unit.generateCreateOp(keyPairs["a"]);
-//         ops = [createOp];
-//         const addOp = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
-//         ops.push(addOp);
-//         addOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(createOp)), keyPairs["c"].secretKey));
-//         const verifiedOps = unit.verifiedOperations(ops, [], []);
+    test("fails due to incorrect key (add, empty local)", async () => {
+        const createOp = unit.generateCreateOp(keyPairs["a"]);
+        ops = [createOp];
+        const addOp = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
+        ops.push(addOp);
+        addOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(createOp)), keyPairs["c"].secretKey));
+        const verifiedOps = unit.verifiedOperations(ops, [], []);
 
-//         expect(verifiedOps.length).toBe(1);
-//         expect(verifiedOps).toContain(createOp);
-//     });
+        expect(verifiedOps.length).toBe(1);
+        expect(verifiedOps).toContain(createOp);
+    });
 
-//     test("fails due to incorrect key (add, non-empty local)", async () => {
-//         const createOp = unit.generateCreateOp(keyPairs["a"]);
-//         ops = [createOp];
-//         const addOp = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
-//         ops.push(addOp);
-//         addOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(addOp)), keyPairs["c"].secretKey));
-//         const verifiedOps = unit.verifiedOperations(ops, [createOp], []);
-//         console.log(verifiedOps);
+    test("fails due to incorrect key (add, non-empty local)", async () => {
+        const createOp = unit.generateCreateOp(keyPairs["a"]);
+        ops = [createOp];
+        const addOp = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
+        ops.push(addOp);
+        addOp["sig"] = arrToStr(nacl.sign.detached(unit.enc.encode(unit.concatOp(addOp)), keyPairs["c"].secretKey));
+        const verifiedOps = unit.verifiedOperations(ops, [createOp], []);
+        console.log(verifiedOps);
 
-//         expect(verifiedOps.length).toBe(1);
-//         expect(verifiedOps).toContain(createOp);
-//     });
+        expect(verifiedOps.length).toBe(1);
+        expect(verifiedOps).toContain(createOp);
+    });
 
-//     test("fails due to missing dependency", async () => {
-//         const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])
-//         const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops.concat([addB]), keyPairs["a"]);
-//         ops.push(addC);
-//         const unresolvedHashes = [];
-//         const verifiedOps = unit.verifiedOperations(ops, [], unresolvedHashes);
+    test("fails due to missing dependency", async () => {
+        const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])
+        const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops.concat([addB]), keyPairs["a"]);
+        ops.push(addC);
+        const unresolvedHashes = [];
+        const verifiedOps = unit.verifiedOperations(ops, [], unresolvedHashes);
 
-//         expect(verifiedOps.length).toBe(1);
-//         expect(verifiedOps).toContain(ops[0]); // createOp
-//         expect(unresolvedHashes.length).toBe(1);
-//         expect(unresolvedHashes[0].op).toEqual(addC);
-//     });
+        expect(verifiedOps.length).toBe(1);
+        expect(verifiedOps).toContain(ops[0]); // createOp
+        expect(unresolvedHashes.length).toBe(1);
+        expect(unresolvedHashes[0].op).toEqual(addC);
+    });
 
-//     test("gains missing dependency (1)", async () => {
-//         const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])
-//         const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops.concat([addB]), keyPairs["a"]);
-//         ops.push(addC);
-//         const unresolvedHashes = [];
-//         const verifiedOps = unit.verifiedOperations([addB], ops, unresolvedHashes);
+    test("gains missing dependency (1)", async () => {
+        const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"])
+        const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops.concat([addB]), keyPairs["a"]);
+        ops.push(addC);
+        const unresolvedHashes = [];
+        const verifiedOps = unit.verifiedOperations([addB], ops, unresolvedHashes);
 
-//         expect(verifiedOps.length).toBe(3);
-//         expect(verifiedOps).toContain(ops[0]); // createOp
-//         expect(verifiedOps).toContain(addB);
-//         expect(verifiedOps).toContain(addC);
-//         expect(unresolvedHashes.length).toBe(0);
-//     });
+        expect(verifiedOps.length).toBe(3);
+        expect(verifiedOps).toContain(ops[0]); // createOp
+        expect(verifiedOps).toContain(addB);
+        expect(verifiedOps).toContain(addC);
+        expect(unresolvedHashes.length).toBe(0);
+    });
 
-//     test("passes (empty local 1)", async () => {
-//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-//         ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
+    test("passes (empty local 1)", async () => {
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
 
-//         const verifiedOps = unit.verifiedOperations(ops, [], []);
+        const verifiedOps = unit.verifiedOperations(ops, [], []);
 
-//         expect(verifiedOps.length).toBe(3);
-//     });
+        expect(verifiedOps.length).toBe(3);
+    });
 
-//     test("passes (non-empty local 1)", async () => {
-//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-//         ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
-//         const addOp = unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]);
+    test("passes (non-empty local 1)", async () => {
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
+        const addOp = unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]);
 
-//         const verifiedOps = unit.verifiedOperations([addOp], ops, []);
+        const verifiedOps = unit.verifiedOperations([addOp], ops, []);
 
-//         expect(verifiedOps.length).toBe(4);
-//         expect(verifiedOps).toContain(addOp);
-//     });
+        expect(verifiedOps.length).toBe(4);
+        expect(verifiedOps).toContain(addOp);
+    });
 
-//     test("passes (non-empty local 2)", async () => {
-//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-//         ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
-//         const addOp = unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]);
-//         ops.push(unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["a"]));
+    test("passes (non-empty local 2)", async () => {
+        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]));
+        const addOp = unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]);
+        ops.push(unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["a"]));
 
-//         const verifiedOps = unit.verifiedOperations([addOp], ops, []);
+        const verifiedOps = unit.verifiedOperations([addOp], ops, []);
 
-//         expect(verifiedOps.length).toBe(5);
-//         expect(verifiedOps).toContain(addOp);
-//     });
+        expect(verifiedOps.length).toBe(5);
+        expect(verifiedOps).toContain(addOp);
+    });
 
-//     test("passes (non-empty local 2)", async () => {
-//         const createOp = unit.generateCreateOp(keyPairs["a"]);
-//         ops = [createOp];
-//         const ops2 = [createOp];
-//         const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
-//         ops.push(addB);
-//         ops2.push(addB);
-//         const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]);
-//         ops2.push(addC);
+    test("passes (non-empty local 2)", async () => {
+        const createOp = unit.generateCreateOp(keyPairs["a"]);
+        ops = [createOp];
+        const ops2 = [createOp];
+        const addB = unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]);
+        ops.push(addB);
+        ops2.push(addB);
+        const addC = unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["b"]);
+        ops2.push(addC);
 
-//         const verifiedOps = unit.verifiedOperations(ops2, ops, []);
+        const verifiedOps = unit.verifiedOperations(ops2, ops, []);
 
-//         expect(verifiedOps.length).toBe(3);
-//         expect(verifiedOps).toContain(addC);
-//     });
-// });
+        expect(verifiedOps.length).toBe(3);
+        expect(verifiedOps).toContain(addC);
+    });
+});
 
 describe('hasCycles', () => {
 
