@@ -1562,7 +1562,7 @@ async function getIgnored(cycles, chatID) {
                         addMsgID({
                             type: op.action,
                             chatID: chatID,
-                            ...op
+                            op: op
                         })
                     ));
                     updateChatWindow(addMsgID({
