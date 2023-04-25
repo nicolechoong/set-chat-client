@@ -131,7 +131,7 @@ function resolvedHash(hash, unresolvedHashes) {
 export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
 
     var verifiedOps = [...localOps];
-    const localSet = new Set(localOps.map((op) => {op.sig}));
+    const localSet = new Set(localOps.map((op) => op.sig));
 
     // hashedOps
     localOps.forEach((op) => {
