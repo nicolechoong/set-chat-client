@@ -543,7 +543,7 @@ async function onRemove (messageData) {
         if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
         disableChatMods(messageData.chatID);
         
-        console.log(`you've been removed from chat ${joinedChatInfo.chatName} by ${from}`);
+        console.log(`you've been removed from chat ${joinedChatInfo.chatName} by ${await getUsername(fromPK)}`);
 
         for (const pk of joinedChatInfo.members) {
             closeConnections(pk, messageData.chatID, true);
