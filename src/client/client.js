@@ -813,7 +813,7 @@ async function receivedOperations (ops, chatID, pk) {
             chatInfo.metadata.operations = access.verifiedOperations(ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved);
             await store.setItem(chatID, chatInfo);
 
-            const graphInfo = access.hasCycles(ops);
+            const graphInfo = access.hasCycles(chatInfo.metadata.operations);
             console.log(`graph Info ${graphInfo.cycle}`);
             if (graphInfo.cycle) {
                 if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
