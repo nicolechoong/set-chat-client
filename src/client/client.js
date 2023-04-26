@@ -528,6 +528,8 @@ async function onRemove (messageData) {
         // if the removal is disputable
         if (!messageData.dispute && fromPK !== keyPair.publicKey) { 
             joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
+        } else {
+            joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk));
         }
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
