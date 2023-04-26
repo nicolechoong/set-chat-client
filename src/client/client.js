@@ -1007,6 +1007,7 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "ignored":
             const syncID = `${messageData.chatID}_${messageData.from}`;
+            console.log(`${[...resolveSyncIgnored.keys()]}`);
             if (resolveSyncIgnored.has(syncID)) {
                 console.log(`ripe ignored`);
                 receivedIgnored(messageData.ignored, messageData.chatID, messageData.from, resolveSyncIgnored.get(syncID));
