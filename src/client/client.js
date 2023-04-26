@@ -29,7 +29,6 @@ const messageInput = document.getElementById('messageInput');
 const addUserInput = document.getElementById('addUserInput');
 
 var localUsername;
-getOpconnections
 
 //////////////////////
 // GLOBAL VARIABLES //
