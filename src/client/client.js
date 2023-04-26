@@ -822,6 +822,17 @@ async function receivedOperations (ops, chatID, pk) {
                 if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                     console.log(`cycle detected`);
                     ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
+                    joinedChats.get(chatID).members.forEach((pk2) => {
+                        resolveSyncIgnored.set(`${chatID}_${pk2}`, (res) => {
+                            sendChatHistory(chatID, pk2);
+                            if (res) {
+                                console.log(`res success`);
+                                sendAdvertisement(chatID, pk2);
+                            } else {
+                                console.log(`res failed`);
+                            }
+                        });
+                    });
                 }
 
                 sendIgnored(ignoredSet, chatID, pk);
@@ -833,7 +844,7 @@ async function receivedOperations (ops, chatID, pk) {
                     joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
                     peerIgnored.delete(syncID);
                 }
-                resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
+                resolveSyncIgnored.set(`${chatID}_${pk2}`, resolve);
                 return;
             }
             
@@ -998,14 +1009,12 @@ async function receivedMessage (messageData, channel=null) {
                 console.log(`ripe ignored`);
                 receivedIgnored(messageData.ignored, messageData.chatID, messageData.from, resolveSyncIgnored.get(syncID));
                 resolveSyncIgnored.delete(syncID);
-            } else {
+            } else if (messageData.from !== keyPair.publicKey) {
                 console.log(`premature ignored`);
-                if (messageData.from !== keyPair.publicKey) {
-                    peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
-                    console.log(`${peerIgnored.size} pls ${syncID}`);
-                    joinedChats.get(messageData.chatID).peerIgnored.set(messageData.from, messageData.ignored);
-                    sendOperations(messageData.chatID, messageData.from, false);
-                }
+                peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
+                console.log(`${peerIgnored.size} pls ${syncID}`);
+                joinedChats.get(messageData.chatID).peerIgnored.set(messageData.from, messageData.ignored);
+                store.setItem("joinedChats", joinedChats.get(messageData.chatID));
             }
             break;
         case "selectedIgnored":
