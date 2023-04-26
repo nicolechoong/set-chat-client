@@ -825,7 +825,7 @@ async function receivedOperations (ops, chatID, pk) {
                 }
 
                 sendIgnored(ignoredSet, chatID, pk);
-                const queuedIgnoredSets = peerIgnored.filter((entry) => entry[0].split("_")[0] == chatID);
+                const queuedIgnoredSets = [...peerIgnored].filter((entry) => entry[0].split("_")[0] == chatID);
                 console.log([...peerIgnored.keys()]);
                 for (const [syncID, queuedIg] of queuedIgnoredSets) {
                     console.log(`${queuedIg.ignored.length}`);
