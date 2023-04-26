@@ -548,6 +548,9 @@ async function onRemove (messageData) {
         for (const pk of joinedChatInfo.members) {
             closeConnections(pk, messageData.chatID, true);
         }
+    } else if (messageData.dispute) {
+        updateChatWindow(messageData);
+        await updateChatStore(messageData);
     }
 }
 
@@ -822,6 +825,7 @@ async function receivedOperations (ops, chatID, pk) {
 
                 sendIgnored(ignoredSet, chatID, pk);
                 const queuedIgnoredSets = [...peerIgnored.keys()].filter((id) => {id.split("_")[0] == chatID});
+                console.log(queuedIgnoredSets.length);
                 for (const [syncID, queuedIg] of queuedIgnoredSets) {
                     receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
                     joinedChats.get(chatID).peerIgnored.delete(syncID);
@@ -990,7 +994,9 @@ async function receivedMessage (messageData, channel=null) {
                 resolveSyncIgnored.delete(syncID);
             } else {
                 console.log(`premature ignored`);
-                peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
+                if (messageData.from !== keyPair.publicKey) {
+                    peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
+                }
             }
             break;
         case "selectedIgnored":
@@ -1661,7 +1667,7 @@ export function updateChatInfo () {
                     if (document.getElementById(op.sig) !== null) {
                         updateChatWindow(addMsgID({
                             type: op.action,
-                            chatID: chatID,
+                            chatID: currentChatID,
                             op: op
                         }));
                     }
