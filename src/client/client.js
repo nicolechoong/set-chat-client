@@ -520,7 +520,7 @@ async function addToChat (name, pk, chatID) {
 async function onRemove (messageData) {
     const fromPK = messageData.from;
     var joinedChatInfo = joinedChats.get(messageData.chatID);
-    if (joinedChatInfo.currentMember && joinedChatInfo.members.includes(fromPK)) {
+    if (joinedChatInfo.currentMember && (joinedChatInfo.members.includes(fromPK) || (joinedChatInfo.exMembers.has(fromPK) && messageData.dispute))) {
         joinedChatInfo.currentMember = false;
         updateChatWindow(messageData);
         await updateChatStore(messageData);
@@ -1043,7 +1043,6 @@ async function receivedMessage (messageData, channel=null) {
         case "selectedIgnored":
             await updateChatStore(messageData);
             if (messageData.chatID == currentChatID) {
-                console.log(JSON.stringify(messageData.op));
                 elem.updateSelectedMembers(keyMap.get(messageData.from), messageData.op.sig);
                 refreshChatWindow(messageData.chatID);
             }
