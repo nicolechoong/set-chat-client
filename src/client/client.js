@@ -768,7 +768,7 @@ async function sendIgnored (ignored, chatID, pk) {
 
 async function receivedIgnored (ignored, chatID, pk, resolve) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
-    console.log(`ignored acquired lock`);
+    console.log(`${ignored}`);
     await store.getItem(chatID).then(async (chatInfo) => {
         if (pk === keyPair.publicKey) { resolve(true); return; }
         console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
@@ -1058,7 +1058,8 @@ async function receivedMessage (messageData, channel=null) {
     }
     sendToMember({
         type: "ack",
-        id: `${messageData.id}${keyPair.publicKey}`
+        id: `${messageData.id}${keyPair.publicKey}`,
+        from: keyPair.publicKey
     }, messageData.from, false);
 }
 
@@ -1683,12 +1684,12 @@ export function updateChatInfo () {
 
 export async function selectChat(chatID) {
     currentChatID = chatID;
-    updateChatInfo();
 
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
     await navigator.locks.request("history", async () => {
         await refreshChatWindow(currentChatID);
     });
+    updateChatInfo();
 }
 
 const chatOptions = new Set();
