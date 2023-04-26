@@ -521,28 +521,30 @@ async function onRemove (messageData) {
     const fromPK = messageData.from;
     var joinedChatInfo = joinedChats.get(messageData.chatID);
 
-    await store.getItem(messageData.chatID).then(async (chatInfo) => {
-        if (fromPK !== keyPair.publicKey) {
-            updateChatWindow(messageData);
-            await updateChatStore(messageData);
+    if (fromPK !== keyPair.publicKey) {
+        updateChatWindow(messageData);
+        await updateChatStore(messageData);
 
+        await store.getItem(messageData.chatID).then(async (chatInfo) => {
             chatInfo.metadata.operations = access.verifiedOperations([messageData.op], chatInfo.metadata.operations, chatInfo.metadata.unresolved);
             await store.setItem(messageData.chatID, chatInfo);
+        });
 
-            if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
-                joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk));
+        if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
+            joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk));
 
-            } else if (joinedChatInfo.currentMember && joinedChatInfo.members.includes(fromPK)) {
-                joinedChatInfo.currentMember = false;
+        } else if (joinedChatInfo.currentMember && joinedChatInfo.members.includes(fromPK)) {
+            joinedChatInfo.currentMember = false;
 
-                joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
+            joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
 
-                if (joinedChatInfo.members.includes(keyPair.publicKey)) {
-                    joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
-                }
-                joinedChatInfo.exMembers.add(keyPair.publicKey);
-                await store.setItem("joinedChats", joinedChats);
+            if (joinedChatInfo.members.includes(keyPair.publicKey)) {
+                joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
+            }
+            joinedChatInfo.exMembers.add(keyPair.publicKey);
+            await store.setItem("joinedChats", joinedChats);
 
+            await store.getItem(messageData.chatID).then(async (chatInfo) => {
                 for (const pk of joinedChats.get(messageData.chatID).members) {
                     if (chatInfo.historyTable.has(pk)) {
                         const interval = chatInfo.historyTable.get(pk).pop();
@@ -550,18 +552,19 @@ async function onRemove (messageData) {
                         chatInfo.historyTable.get(pk).push(interval);
                     }
                 }
+                await store.setItem(messageData.chatID, chatInfo);
+            });
 
-                if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
-                disableChatMods(messageData.chatID);
-                
-                console.log(`you've been removed from chat ${joinedChatInfo.chatName} by ${await getUsername(fromPK)}`);
+            if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
+            disableChatMods(messageData.chatID);
+            
+            console.log(`you've been removed from chat ${joinedChatInfo.chatName} by ${await getUsername(fromPK)}`);
 
-                for (const pk of joinedChatInfo.members) {
-                    closeConnections(pk, messageData.chatID, true);
-                }
+            for (const pk of joinedChatInfo.members) {
+                closeConnections(pk, messageData.chatID, true);
             }
         }
-    });
+    }
 }
 
 export async function removeFromChat (username, pk, chatID) {
