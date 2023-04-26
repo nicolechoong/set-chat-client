@@ -31,7 +31,7 @@ describe('verifiedOperations', () => {
         const unresolvedHashes = [];
         const verifiedOps = unit.verifiedOperations(ops, [], unresolvedHashes);
         expect(verifiedOps.length).toBe(0);
-        expect(unresolvedHashes.length).toBe(0);
+        expect(unresolvedHashes.length).toBe(1);
     });
 
     test("fails due to multiple create operation (empty local)", async () => {

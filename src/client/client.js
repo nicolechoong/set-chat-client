@@ -1004,6 +1004,7 @@ async function receivedMessage (messageData, channel=null) {
                     peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
                     console.log(`${peerIgnored.size} pls ${syncID}`);
                     joinedChats.get(messageData.chatID).peerIgnored.set(messageData.from, messageData.ignored);
+                    sendOperations(messageData.chatID, messageData.from, false);
                 }
             }
             break;
