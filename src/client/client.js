@@ -994,12 +994,12 @@ async function receivedMessage (messageData, channel=null) {
             }
             break;
         case "selectedIgnored":
+            await updateChatStore(messageData);
             if (messageData.chatID == currentChatID) {
                 console.log(JSON.stringify(messageData.op));
                 elem.updateSelectedMembers(keyMap.get(messageData.from), messageData.op.sig);
+                refreshChatWindow(messageData.chatID);
             }
-            await updateChatStore(messageData);
-            refreshChatWindow (chatID)
             break;
                 
         case "advertisement":
@@ -1657,12 +1657,14 @@ export function updateChatInfo () {
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 conflictCardList.appendChild(elem.generateConflictCard(cycle, currentChatID));
-                if (document.getElementById(op.sig) !== null) {
-                    updateChatWindow(addMsgID({
-                        type: op.action,
-                        chatID: chatID,
-                        op: op
-                    }));
+                for (const op of cycle) {
+                    if (document.getElementById(op.sig) !== null) {
+                        updateChatWindow(addMsgID({
+                            type: op.action,
+                            chatID: chatID,
+                            op: op
+                        }));
+                    }
                 }
             });
         };

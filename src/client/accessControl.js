@@ -38,7 +38,6 @@ function findCycle (fromOp, visited, stack, cycle) {
 
 export function hasCycles (ops) {
     const edges = authority(ops).edges;
-    edges.forEach(edge => printEdge(edge.from, edge.to));
     const start = ops.filter(op => op.action === "create")[0]; // verifyOps means that there's only one
     const fromOp = new Map();
 
