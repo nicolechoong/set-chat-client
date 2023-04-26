@@ -35,7 +35,7 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, msgQueue, serverValue, sessionKeys, acks;
+var currentChatID, connections, msgQueue, serverValue, sessionKeys, acks, peerIgnored;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 var onlineMode = false;
 export var joinedChats, keyMap, store;
