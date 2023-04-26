@@ -809,7 +809,6 @@ async function receivedOperations (ops, chatID, pk) {
         await store.getItem(chatID).then(async (chatInfo) => {
             var ignoredSet = chatInfo.metadata.ignored;
             chatInfo.metadata.operations = access.verifiedOperations(ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved);
-            console.log(chatInfo.metadata.operations.map((op) => { op.action }));
             await store.setItem(chatID, chatInfo);
 
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
@@ -1288,7 +1287,7 @@ async function refreshChatWindow (chatID) {
         chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
         await store.getItem(currentChatID).then(async (chatInfo) => {
             chatInfo.history.forEach(data => {
-                chatMessageIDs.add(data.id);
+                updateChatWindow(data);
             });
         });
     }
