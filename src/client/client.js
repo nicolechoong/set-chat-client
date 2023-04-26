@@ -844,7 +844,7 @@ async function receivedOperations (ops, chatID, pk) {
                     joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
                     peerIgnored.delete(syncID);
                 }
-                resolveSyncIgnored.set(`${chatID}_${pk2}`, resolve);
+                resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
                 return;
             }
             
