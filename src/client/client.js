@@ -792,7 +792,6 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
             joinedChats.get(chatID).exMembers.add(pk);
             store.setItem("joinedChats", joinedChats);
             updateChatInfo();
-            sel
             resolve(false);
         }
     });
@@ -972,10 +971,10 @@ async function receivedMessage (messageData, channel=null) {
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
+                await sendChatHistory(messageData.chatID, messageData.from);
                 if (res) {
                     console.log(`res success`);
                     updateConnectStatus(messageData.from, true);
-                    await sendChatHistory(messageData.chatID, messageData.from);
                     sendAdvertisement(messageData.chatID, messageData.from);
                 } else {
                     console.log(`res fail`);
@@ -1292,7 +1291,6 @@ async function refreshChatWindow (chatID) {
         await store.getItem(currentChatID).then(async (chatInfo) => {
             chatInfo.history.forEach(data => {
                 chatMessageIDs.add(data.id);
-                updateChatWindow(data);
             });
         });
     }
@@ -1329,6 +1327,7 @@ function updateChatWindow (data) {
 async function updateChatStore (messageData) {
     await store.getItem(messageData.chatID).then(async (chatInfo) => {
         chatInfo.history.push(messageData);
+        chatMessageIDs.add(data.id);
         await store.setItem(messageData.chatID, chatInfo);
     });
 }
