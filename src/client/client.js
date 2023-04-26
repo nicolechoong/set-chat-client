@@ -763,6 +763,17 @@ async function sendIgnored (ignored, chatID, pk) {
         from: keyPair.publicKey,
     });
     broadcastToMembers(ignoredMessage, chatID);
+    joinedChats.get(chatID).members.forEach((pk2) => {
+        resolveSyncIgnored.set(`${chatID}_${pk2}`, (res) => {
+            sendChatHistory(chatID, pk2);
+            if (res) {
+                console.log(`res success`);
+                sendAdvertisement(chatID, pk2);
+            } else {
+                console.log(`res failed`);
+            }
+        });
+    });
     if (!joinedChats.get(chatID).members.includes(pk)) {
         sendToMember(ignoredMessage, pk)
     }
@@ -824,17 +835,6 @@ async function receivedOperations (ops, chatID, pk) {
                 if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
                     console.log(`cycle detected`);
                     ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
-                    joinedChats.get(chatID).members.forEach((pk2) => {
-                        resolveSyncIgnored.set(`${chatID}_${pk2}`, (res) => {
-                            sendChatHistory(chatID, pk2);
-                            if (res) {
-                                console.log(`res success`);
-                                sendAdvertisement(chatID, pk2);
-                            } else {
-                                console.log(`res failed`);
-                            }
-                        });
-                    });
                 }
 
                 sendIgnored(ignoredSet, chatID, pk);
