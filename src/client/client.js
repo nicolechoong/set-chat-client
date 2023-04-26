@@ -250,7 +250,9 @@ async function onLogin (status, username, receivedChats) {
     switch (status) {
         case "SUCCESS":
             localUsername = username;
-            joinedChats = mergeJoinedChats(joinedChats, new Map());
+            if (username !== "b") {
+                joinedChats = mergeJoinedChats(joinedChats, new Map());
+            }
             store.setItem("joinedChats", joinedChats);
     
             store.getItem("keyMap").then((storedKeyMap) => {
@@ -528,6 +530,14 @@ async function onRemove (messageData) {
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
             chatInfo.metadata.operations = access.verifiedOperations([messageData.op], chatInfo.metadata.operations, chatInfo.metadata.unresolved);
             await store.setItem(messageData.chatID, chatInfo);
+
+            for (const pk of joinedChats.get(chatID).members) {
+                if (chatInfo.historyTable.has(pk)) {
+                    const interval = chatInfo.historyTable.get(pk).pop();
+                    interval[1] = interval[1] == 0 ? messageData.id : interval[1];
+                    chatInfo.historyTable.get(pk).push(interval);
+                }
+            }
         });
 
         // if the removal is disputable
@@ -790,6 +800,12 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
             console.log(`same universe naisu`);
             const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
             joinedChats.get(chatID).exMembers.delete(pk);
+            if (joinedChats.get(chatID).exMembers.delete(pk) && chatInfo.historyTable.has(pk)) {
+                const interval = chatInfo.historyTable.get(pk).pop()
+                interval[1] = 0;
+                chatInfo.historyTable.get(pk).push(interval);
+            }
+
             await store.setItem("joinedChats", joinedChats);
             if (memberSet.has(pk)) {
                 updateMembers(memberSet, chatID);
@@ -807,6 +823,12 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
                 joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
             }
             joinedChats.get(chatID).exMembers.add(pk);
+            if (!joinedChats.get(chatID).exMembers.has(pk) && chatInfo.historyTable.has(pk)) {
+                const interval = chatInfo.historyTable.get(pk).pop()
+                const choice = chatInfo.history.at(chatInfo.history.findLastIndex((msg) => msg.type === "selectedIgnored" && msg.from === keyPair.publicKey && msg.op.pk1 === pk));
+                interval[1] = choice;
+                chatInfo.historyTable.get(pk).push(interval);
+            }
             store.setItem("joinedChats", joinedChats);
             updateChatInfo();
             resolve(false);
