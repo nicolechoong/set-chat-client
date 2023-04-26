@@ -519,7 +519,7 @@ async function addToChat (name, pk, chatID) {
 async function onRemove (messageData) {
     const fromPK = messageData.from;
     var joinedChatInfo = joinedChats.get(messageData.chatID);
-    if (joinedChatInfo.currentMember) {
+    if (joinedChatInfo.currentMember && joinedChatInfo.members.includes(fromPK)) {
         joinedChatInfo.currentMember = false;
         updateChatWindow(messageData);
         await updateChatStore(messageData);
@@ -1568,7 +1568,7 @@ async function getIgnored(cycles, chatID) {
                     updateChatWindow(addMsgID({
                         type: op.action,
                         chatID: chatID,
-                        ...op
+                        op: op
                     }));
                 }
             });
