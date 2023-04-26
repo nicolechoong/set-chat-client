@@ -833,6 +833,8 @@ async function receivedOperations (ops, chatID, pk) {
                     joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
                     peerIgnored.delete(syncID);
                 }
+                resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
+                return;
             }
             
             const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
@@ -841,12 +843,13 @@ async function receivedOperations (ops, chatID, pk) {
                 updateMembers(memberSet, chatID);
             }
 
-            if (graphInfo.cycle) {
-                resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
-                return;
-            } else {
+            // if (graphInfo.cycle) {
+            //     console.log(`set resolve`);
+            //     resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
+            //     return;
+            // } else {
                 return memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
-            }
+            // }
         });
     });
 }
