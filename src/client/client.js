@@ -1325,7 +1325,6 @@ function updateChatWindow (data) {
 async function updateChatStore (messageData) {
     await store.getItem(messageData.chatID).then(async (chatInfo) => {
         chatInfo.history.push(messageData);
-        chatMessageIDs.add(data.id);
         await store.setItem(messageData.chatID, chatInfo);
     });
 }
