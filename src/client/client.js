@@ -1283,8 +1283,6 @@ async function removePeer (messageData) {
     closeConnections(pk, messageData.chatID);
 }
 
-const chatMessageIDs = new Set();
-
 async function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
@@ -1300,6 +1298,7 @@ function updateChatWindow (data) {
     // data: JSON
     if (data.chatID === currentChatID) {
         const message = document.createElement('p');
+        message.id = data.id;
         message.className = "chat-message";
         switch (data.type) {
             case "create":
@@ -1549,28 +1548,11 @@ resetStoreBtn.addEventListener("click", () => {
 
 var resolveGetIgnored = new Map();
 
-async function getIgnored(cycles, chatID) {
+async function getIgnored (cycles, chatID) {
     return new Promise(async (resolve) => { 
         resolveGetIgnored.set(chatID, [cycles, resolve]); 
 
         for (const cycle of cycles) {
-            cycle.forEach((op) => {
-                console.log(`op ${JSON.stringify(op)}`);
-                if (!chatMessageIDs.has(op.sig)) {
-                    console.log(JSON.stringify(
-                        addMsgID({
-                            type: op.action,
-                            chatID: chatID,
-                            op: op
-                        })
-                    ));
-                    updateChatWindow(addMsgID({
-                        type: op.action,
-                        chatID: chatID,
-                        op: op
-                    }));
-                }
-            });
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
             if (removeSelfIndex > -1) {
                 console.log(`automatically resolved ${cycle.at(removeSelfIndex).action} ${keyMap.get(cycle.at(removeSelfIndex).pk2)}`);
@@ -1677,6 +1659,13 @@ export function updateChatInfo () {
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 conflictCardList.appendChild(elem.generateConflictCard(cycle, currentChatID));
+                if (document.getElementById(op.sig) !== null) {
+                    updateChatWindow(addMsgID({
+                        type: op.action,
+                        chatID: chatID,
+                        op: op
+                    }));
+                }
             });
         };
     }
