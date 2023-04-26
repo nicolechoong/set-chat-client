@@ -825,8 +825,8 @@ async function receivedOperations (ops, chatID, pk) {
                 }
 
                 sendIgnored(ignoredSet, chatID, pk);
-                const queuedIgnoredSets = [...peerIgnored.keys()].filter((id) => {id.split("_")[0] === chatID});
-                console.log(queuedIgnoredSets.length);
+                const queuedIgnoredSets = [...peerIgnored.keys()].filter((id) => id.split("_")[0] == chatID);
+                console.log([...peerIgnored.keys()]);
                 for (const [syncID, queuedIg] of queuedIgnoredSets) {
                     receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
                     joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
@@ -998,7 +998,7 @@ async function receivedMessage (messageData, channel=null) {
                 console.log(`premature ignored`);
                 if (messageData.from !== keyPair.publicKey) {
                     peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
-                    console.log(`${peerIgnored.size} pls ${messageData.from}`);
+                    console.log(`${peerIgnored.size} pls ${syncID}`);
                     joinedChats.get(messageData.chatID).peerIgnored.set(messageData.from, messageData.ignored);
                 }
             }
