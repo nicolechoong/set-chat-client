@@ -250,9 +250,7 @@ async function onLogin (status, username, receivedChats) {
     switch (status) {
         case "SUCCESS":
             localUsername = username;
-            if (username !== "b") {
-                joinedChats = mergeJoinedChats(joinedChats, new Map());
-            }
+            joinedChats = mergeJoinedChats(joinedChats, new Map());
             store.setItem("joinedChats", joinedChats);
     
             store.getItem("keyMap").then((storedKeyMap) => {
@@ -531,7 +529,7 @@ async function onRemove (messageData) {
             chatInfo.metadata.operations = access.verifiedOperations([messageData.op], chatInfo.metadata.operations, chatInfo.metadata.unresolved);
             await store.setItem(messageData.chatID, chatInfo);
 
-            for (const pk of joinedChats.get(chatID).members) {
+            for (const pk of joinedChats.get(messageData.chatID).members) {
                 if (chatInfo.historyTable.has(pk)) {
                     const interval = chatInfo.historyTable.get(pk).pop();
                     interval[1] = interval[1] == 0 ? messageData.id : interval[1];
