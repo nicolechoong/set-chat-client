@@ -825,10 +825,11 @@ async function receivedOperations (ops, chatID, pk) {
                 }
 
                 sendIgnored(ignoredSet, chatID, pk);
-                const queuedIgnoredSets = [...peerIgnored.keys()].filter((id) => id.split("_")[0] == chatID);
+                const queuedIgnoredSets = peerIgnored.filter((entry) => entry[0].split("_")[0] == chatID);
                 console.log([...peerIgnored.keys()]);
                 for (const [syncID, queuedIg] of queuedIgnoredSets) {
-                    receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
+                    console.log(`${queuedIg.ignored.length}`);
+                    await receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
                     joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
                     peerIgnored.delete(syncID);
                 }
