@@ -258,15 +258,15 @@ export function authority (ops) {
 
 function valid (ops, ignored, op, authorityGraph) {
     if (op.action === "create") { return true; }
-    if (op.action !== "mem" && hasOp(ignored, op)) { return false; }
+    if (hasOp(ignored, op)) { return false; }
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
-        return op.sig === edge.to.sig && valid(ops, ignored, edge.from, authorityGraph);
+        return edge.to !== "mem" && op.sig === edge.to.sig && valid(ops, ignored, edge.from, authorityGraph);
     }).map(edge => edge.from);
     const removeIn = inSet.filter(r => (r.action === "remove"));
 
-    // ADD COMMENTS
+    // looking for adds which aren't followed by removes
     for (const opA of inSet) {
         if (opA.action === "create" || opA.action === "add") {
             if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {

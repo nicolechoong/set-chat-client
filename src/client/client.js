@@ -29,7 +29,7 @@ const messageInput = document.getElementById('messageInput');
 const addUserInput = document.getElementById('addUserInput');
 
 var localUsername;
-
+getOpconnections
 
 //////////////////////
 // GLOBAL VARIABLES //
@@ -347,7 +347,7 @@ function sendOffer(peerName, peerPK) {
 // Receiving Offer + Sending Answer to Peer
 async function onOffer(offer, peerName, peerPK) {
     // offer: JSON, peerName: String, peerPK: string
-    if (connections.has(peerPK)) { return; }
+    if (!offerSent.has(peerPK) && connections.has(peerPK)) { return; }
 
     connections.set(peerPK, { connection: initPeerConnection(), sendChannel: null, auth: false });
     const peerConnection = connections.get(peerPK);
@@ -531,7 +531,7 @@ async function onRemove (messageData) {
         });
 
         if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
-            joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk));
+            joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk, true));
 
         } else if (joinedChatInfo.currentMember && joinedChatInfo.members.includes(fromPK)) {
             joinedChatInfo.currentMember = false;
