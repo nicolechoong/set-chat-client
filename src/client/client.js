@@ -825,7 +825,8 @@ async function receivedOperations (ops, chatID, pk) {
                 }
 
                 sendIgnored(ignoredSet, chatID, pk);
-                const queuedIgnoredSets = [...peerIgnored.keys()].filter((id) => {id.split("_")[0] == chatID});
+                const queuedIgnoredSets = [...peerIgnored.keys()].filter((id) => {id.split("_")[0] === chatID});
+                console.log(queuedIgnoredSets.length);
                 for (const [syncID, queuedIg] of queuedIgnoredSets) {
                     receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
                     joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
@@ -997,7 +998,8 @@ async function receivedMessage (messageData, channel=null) {
                 console.log(`premature ignored`);
                 if (messageData.from !== keyPair.publicKey) {
                     peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
-                    joinedChats.get(messageData.chatID).peerIgnored.set(messageData.from, ignored);
+                    console.log(`${peerIgnored.size} pls ${messageData.from}`);
+                    joinedChats.get(messageData.chatID).peerIgnored.set(messageData.from, messageData.ignored);
                 }
             }
             break;
@@ -1666,7 +1668,7 @@ export function updateChatInfo () {
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 conflictCardList.appendChild(elem.generateConflictCard(cycle, currentChatID));
                 for (const op of cycle) {
-                    if (document.getElementById(op.sig) !== null) {
+                    if (document.getElementById(op.sig) == null) {
                         updateChatWindow(addMsgID({
                             type: op.action,
                             chatID: currentChatID,
