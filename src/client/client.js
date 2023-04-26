@@ -525,17 +525,17 @@ async function onRemove (messageData) {
         updateChatWindow(messageData);
         await updateChatStore(messageData);
 
+        await store.getItem(messageData.chatID).then(async (chatInfo) => {
+            chatInfo.metadata.operations = access.verifiedOperations([messageData.op], chatInfo.metadata.operations, chatInfo.metadata.unresolved);
+            await store.setItem(messageData.chatID, chatInfo);
+        });
+
         // if the removal is disputable
         if (!messageData.dispute && fromPK !== keyPair.publicKey) { 
             joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
         } else {
             joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk));
         }
-
-        await store.getItem(messageData.chatID).then(async (chatInfo) => {
-            chatInfo.metadata.operations = access.verifiedOperations([messageData.op], chatInfo.metadata.operations, chatInfo.metadata.unresolved);
-            await store.setItem(messageData.chatID, chatInfo);
-        });
 
         if (joinedChatInfo.members.includes(keyPair.publicKey)) {
             joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
@@ -1786,6 +1786,7 @@ function removeOp(ops, op) {
 }
 
 function mergeJoinedChats(localChats, receivedChats) {
+    console.log(localChats);
     const mergedChats = new Map([...localChats]);
     if (receivedChats.size === 0) { return mergedChats; }
     const localChatIDs = new Set(localChats.keys());
