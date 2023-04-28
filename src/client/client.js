@@ -1,5 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+import uuidv4 from '../../node_modules/uuid/dist/v4';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr, unionOps} from "./utils.js";
@@ -116,10 +117,10 @@ var connection;
 
 function connectToServer () {
     connection = new WebSocket('wss://35.178.80.94:3000/');
-    wifiSlash.style.display = "none";
 
     connection.onopen = function () {
         console.log("Connected to server");
+        wifiSlash.style.display = "none";
         onlineMode = true;
     };
 
@@ -160,9 +161,9 @@ function connectToServer () {
             case "leave":
                 onLeave(data.from);
                 break;
-            case "createChat":
-                onCreateChat(data.chatID, data.chatName);
-                break;
+            // case "createChat":
+            //     onCreateChat(data.chatID, data.chatName);
+            //     break;
             case "add":
                 // data.ignored.forEach(ig => unpackOp(ig));
                 onAdd(data.chatID, data.chatName, data.from, data.ignored, data);
@@ -186,6 +187,8 @@ function connectToServer () {
                 break;
         }
     };
+
+    connection.onclose = goOffline()
 }
 
 connectToServer();
@@ -267,6 +270,7 @@ async function onLogin (status, username, receivedChats) {
     
             for (const chatID of joinedChats.keys()) {
                 console.log(chatID, joinedChats.get(chatID));
+                if (joinedChats.get(chatID).members.includes(keyPair.publicKey) || joinedChats.get(chatID).validMembers.has(keyPair.publicKey) || joinedChats.get(chatID).exMembers.has(keyPair.publicKey))
                 updateChatOptions("add", chatID);
                 getOnline(chatID);
             }
@@ -305,6 +309,9 @@ async function initialiseStore(username) {
 }
 
 var offerSent = new Set()
+
+// TODO: big store readout for chat data
+// TODO: add symmetric encryption to the links nacl.box()
 
 // Sending Offer to Peer
 function sendOffer(peerName, peerPK) {
@@ -402,7 +409,9 @@ function onLeave(peerPK) {
     closeConnections(peerPK, 0, true);
 }
 
-async function onCreateChat(chatID, chatName) {
+async function createNewChat(chatName) {
+    const chatID = uuidv4();
+    console.log(chatID);
 
     joinedChats.set(chatID, {
         chatName: chatName,
@@ -437,6 +446,12 @@ async function onCreateChat(chatID, chatName) {
     }).then(async () => {
         updateChatOptions("add", chatID);
         await selectChat(chatID);
+    });
+
+    sendToServer({
+        type: "createChat",
+        chatName: chatNameInput.value,
+        from: keyPair.publicKey,
     });
 }
 
@@ -475,7 +490,7 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
     }
 
     if (connections.has(fromPK)) {
-        sendOperations(chatID, fromPK);
+        sendOperations(chatID, fromPK, true);
     } else {
         if (!(await connectToPeer({ peerName: from, peerPK: fromPK }))) {
             if (!getOnline(chatID)) {
@@ -506,6 +521,7 @@ async function addToChat (name, pk, chatID) {
         joinedChats.get(chatID).members.push(pk);
         await store.setItem("joinedChats", joinedChats);
         await store.setItem(chatID, chatInfo).then(console.log(`${name} has been added to ${chatID}`));
+        if (connections.has(pk)) { sendToMember(addMessage, pk); }
         broadcastToMembers(addMessage, chatID);
         sendToServer({
             to: pk,
@@ -846,7 +862,9 @@ async function receivedOperations (ops, chatID, pk) {
 
         await store.getItem(chatID).then(async (chatInfo) => {
             var ignoredSet = chatInfo.metadata.ignored;
-            chatInfo.metadata.operations = access.verifiedOperations(ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved);
+            const verifiedOps = [];
+            const verified = access.verifiedOperations(ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved, verifiedOps);
+            chatInfo.metadata.operations = verifiedOps;
             await store.setItem(chatID, chatInfo);
 
             const graphInfo = access.hasCycles(chatInfo.metadata.operations);
@@ -873,17 +891,10 @@ async function receivedOperations (ops, chatID, pk) {
             
             const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
             console.log(`valid?`);
-            if (memberSet.has(pk)) {
-                updateMembers(memberSet, chatID);
-            }
+            updateMembers(memberSet, chatID);
 
-            // if (graphInfo.cycle) {
-            //     console.log(`set resolve`);
-            //     resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
-            //     return;
-            // } else {
-                return memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
-            // }
+
+            return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
         });
     });
 }
@@ -1395,7 +1406,7 @@ function sendToMember (data, pk, requireAck=true) {
 
 function addMsgID (data) {
     data.sentTime = Date.now();
-    if (data.type == "create" || data.type == "add" || data.type == "remove") {
+    if (data.type == "create" || data.type == "add" || data.type == "remove" || data.type == "selectedIgnored") {
         data.id = data.op.sig;
     } else {
         data.id = arrToStr(nacl.hash(enc.encode(`${keyPair.publicKey}:${data.sentTime}`)));
@@ -1744,14 +1755,6 @@ function updateChatOptions (operation, chatID) {
     }
 }
 
-function createNewChat () {
-    sendToServer({
-        type: "createChat",
-        chatName: chatNameInput.value,
-        from: keyPair.publicKey,
-    });
-}
-
 function logout () {
     for (const chatID of joinedChats.keys()) {
         joinedChats.get(chatID).members.forEach((pk) => {
@@ -1774,10 +1777,6 @@ function goOffline () {
     console.log(`goOffline`);
     onlineMode = false;
     wifiSlash.style.display = "block";
-    connection.close();
-    for (const pk of connections.keys()) {
-        closeConnections(pk, 0);
-    }
 }
 
 

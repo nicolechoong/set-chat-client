@@ -115,20 +115,22 @@ export function generateOp (action, pk2, ops, keyPair=clientKeyPair) {
 
 function resolvedHash(hash, unresolvedHashes) {
     const resolved = []
-    for (const unres of unresolvedHashes) {
+    for (const [sig, unres] of unresolvedHashes) {
         if (unres.hashes.delete(hash) && unres.hashes.size == 0) {
             resolved.push(unres.op);
-            unresolvedHashes.splice(unresolvedHashes.indexOf(unres), 1);
+            unresolvedHashes.delete(sig);
         }
     }
     return resolved
 }
 
+// TODO: update so that verifiedOps is a parameter, and this returns true or false
 // takes in set of ops
-export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
+export function verifiedOperations (receivedOps, localOps, unresolvedHashes, verifiedOps) {
 
-    var verifiedOps = [...localOps];
+    verifiedOps.push(...localOps);
     const localSet = new Set(localOps.map((op) => op.sig));
+    var verified = true;
 
     // hashedOps
     localOps.forEach((op) => {
@@ -140,25 +142,24 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
     const receivedCreateOps = receivedOps.filter((op) => op.action === "create");
     if (receivedCreateOps.length == 1) {
         const op = receivedCreateOps[0];
-        if (nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk))
-        && localOps.filter((oplocal) => oplocal.action === "create").length == 0) {
-            hashedOps.set(hashOp(op), op);
-            localSet.add(op.sig);
-            verifiedOps.push(op);
+        if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk))
+        || localOps.filter((oplocal) => oplocal.action === "create")[0].sig !== op.sig) {
+            verified = false;
         }
+    } else {
+        verified = false;
     }
 
     // filter out all received operations with invalid signatures and create
-    receivedOps = new Set(receivedOps.filter((op) => (op.action !== "create" && nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1)))));
+    if (receivedOps.findIndex((op) => { op.action !== "create" && !nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1)); }) > -1) {
+        verified = false;
+    }
+    receivedOps = new Set(receivedOps.filter((op) => (op.action !== "create" && nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1)) && !localSet.has(op.sig))));
 
     var change;
     do {
         change = false;
         for (const op of receivedOps) {
-            if (localSet.has(op.sig)) { 
-                receivedOps.delete(op);
-                continue;
-            }
             var unresolved = new Set();
             for (const dep of op.deps) {
                 if (!hashedOps.has(dep)) { unresolved.add(dep) }
@@ -168,14 +169,15 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes) {
                 hashedOps.set(hashOp(op), op);
                 receivedOps.delete(op);
                 verifiedOps.push(op);
-                verifiedOps = verifiedOps.concat(resolvedHash(hashOp(op), unresolvedHashes));
+                verifiedOps.push(...resolvedHash(hashOp(op), unresolvedHashes));
             } else {
-                unresolvedHashes.push({op: op, hashes: unresolved});
+                unresolvedHashes.set(op.sig, {op: op, hashes: unresolved});
             }
         }
     } while (change)
+    if (receivedOps.size > 0) { verified = false; }
 
-    return verifiedOps;
+    return verified;
 }
 
 export function hashOp (op) {
@@ -256,6 +258,7 @@ export function authority (ops) {
     return { edges: edges, members: [...memberVertices.values()] };
 }
 
+// TODO: double triple cheeck that this works for member as well...
 function valid (ops, ignored, op, authorityGraph) {
     if (op.action === "create") { return true; }
     if (hasOp(ignored, op)) { return false; }

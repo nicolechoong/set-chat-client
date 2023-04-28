@@ -308,13 +308,13 @@ function onCreateChat (connection, data) {
   chats.set(chatID, {chatName: data.chatName, members: [data.from]});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
 
-  const createChatMessage = {
-    type: "createChat",
-    chatID: chatID,
-    chatName: data.chatName,
-  };
+  // const createChatMessage = {
+  //   type: "createChat",
+  //   chatID: chatID,
+  //   chatName: data.chatName,
+  // };
 
-  sendTo(connection, createChatMessage, connection.pk);
+  // sendTo(connection, createChatMessage, connection.pk);
 }
 
 function onGetPK (connection, data) {
