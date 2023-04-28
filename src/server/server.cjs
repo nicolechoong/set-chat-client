@@ -43,6 +43,11 @@ app.get('/node_modules/tweetnacl-es6/nacl-fast-es.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', '..', 'node_modules', 'tweetnacl-es6', 'nacl-fast-es.js'));
 });
 
+app.get('/node_modules/uuid/dist/v4.js', (req, res, next) => {
+  console.log(`imported nacl-fast`);
+  res.status(200).sendFile(path.join(__dirname, '..', '..', 'node_modules', 'tweetnacl-es6', 'nacl-fast-es.js'));
+});
+
 const server = https.createServer({ key, cert }, app);
 
 const port = 3000;
