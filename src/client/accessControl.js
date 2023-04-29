@@ -90,7 +90,7 @@ export function concatOp (op) {
 }
 
 export function generateChatID (op) {
-    return nacl.hash(enc.encode(`${op.action}${op.pk}${op.nonce}${op.sig}`));
+    return arrToStr(nacl.hash(enc.encode(`${op.action}${op.pk}${op.nonce}${op.sig}`)));
 }
 
 export function hasOp (ops, op) {
