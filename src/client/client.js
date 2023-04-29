@@ -1285,7 +1285,7 @@ function updateConnectStatus (pk, success) {
     }
 }
 
-async function addPeer(messageData) {
+async function addPeer (messageData) {
     const pk = messageData.op.pk2;
     const chatID = messageData.chatID;
     keyMap.set(pk, messageData.username);
@@ -1303,7 +1303,7 @@ async function addPeer(messageData) {
     updateChatInfo();
     updateChatWindow(messageData);
     if (!programStore.get(chatID).historyTable.has(pk)) {
-        programStore.get(hatID).historyTable.set(pk, []);
+        programStore.get(chatID).historyTable.set(pk, []);
     }
     programStore.get(chatID).historyTable.get(pk).push([messageData.id, 0]);
     programStore.get(chatID).history.push(messageData);
