@@ -1406,7 +1406,7 @@ function sendToMember (data, pk, requireAck=true) {
 
 function addMsgID (data) {
     data.sentTime = Date.now();
-    if (data.type == "create" || data.type == "add" || data.type == "remove" || data.type == "selectedIgnored") {
+    if (data.type == "create" || data.type == "remove" || data.type == "selectedIgnored") {
         data.id = data.op.sig;
     } else {
         data.id = arrToStr(nacl.hash(enc.encode(`${keyPair.publicKey}:${data.sentTime}`)));
