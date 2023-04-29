@@ -818,6 +818,7 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
             interval[1] = 0;
             programStore.get(chatID).historyTable.get(pk).push(interval);
         }
+        console.log(programStore.get(chatID).historyTable.get(pk));
 
         await store.setItem("joinedChats", joinedChats);
         if (memberSet.has(pk)) {
@@ -842,6 +843,7 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
             interval[1] = choice;
             programStore.get(chatID).historyTable.get(pk).push(interval);
         }
+        console.log(programStore.get(chatID).historyTable.get(pk));
         store.setItem("joinedChats", joinedChats);
         updateChatInfo();
         resolve(false);
@@ -872,9 +874,7 @@ async function receivedOperations (ops, chatID, pk) {
             
             if (access.unresolvedCycles(graphInfo.concurrent, programStore.get(chatID).metadata.ignored)) {
                 console.log(`cycle detected`);
-                console.log(programStore.get(chatID).metadata.ignored);
                 await getIgnored(graphInfo.concurrent, chatID);
-                console.log(programStore.get(chatID).metadata.ignored);
             }
 
             sendIgnored(programStore.get(chatID).metadata.ignored, chatID, pk);
@@ -890,7 +890,6 @@ async function receivedOperations (ops, chatID, pk) {
             return;
         }
         
-        console.log(programStore.get(chatID).metadata.ignored);
         const memberSet = access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored);
         console.log(`valid?`);
         updateMembers(memberSet, chatID);
@@ -1626,8 +1625,8 @@ export async function selectIgnored(ignoredOp, chatID) {
 
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
-        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex).filter(msg => ignoredOp.pk1 == msg.from);
-        programStore.get(chatID).history.splice(ignoredOpIndex);
+        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => ignoredOp.pk1 == msg.from);
+        programStore.get(chatID).history.splice(ignoredOpIndex+1);
         programStore.get(chatID).history.push(...filteredHistory);
 
         if (programStore.get(chatID).historyTable.has(ignoredOp.pk2)) {
