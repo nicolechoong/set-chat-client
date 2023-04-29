@@ -596,6 +596,7 @@ export async function removeFromChat (username, pk, chatID) {
         const removeMessage = addMsgID({
             type: "remove",
             op: op,
+            ops: ops,
             username: username,
             from: keyPair.publicKey,
             chatID: chatID,
