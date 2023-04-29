@@ -1287,31 +1287,33 @@ function updateConnectStatus (pk, success) {
 
 async function addPeer(messageData) {
     const pk = messageData.op.pk2;
+    const chatID = messageData.chatID;
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
 
-    if (!joinedChats.get(messageData.chatID).members.includes(pk)) {
-        joinedChats.get(messageData.chatID).members.push(pk);
+    if (!joinedChats.get(chatID).members.includes(pk)) {
+        joinedChats.get(chatID).members.push(pk);
     }
-    if (!joinedChats.get(messageData.chatID).validMembers.has(pk)) {
-        joinedChats.get(messageData.chatID).validMembers.add(pk);
+    if (!joinedChats.get(chatID).validMembers.has(pk)) {
+        joinedChats.get(chatID).validMembers.add(pk);
     }
-    joinedChats.get(messageData.chatID).exMembers.delete(pk);
+    joinedChats.get(chatID).exMembers.delete(pk);
     store.setItem("joinedChats", joinedChats);
 
     updateChatInfo();
     updateChatWindow(messageData);
-    if (!programStore.get(messageData.chatID).historyTable.has(pk)) {
-        programStore.get(messageData.chatID).historyTable.set(pk, []);
+    if (!programStore.get(chatID).historyTable.has(pk)) {
+        programStore.get(hatID).historyTable.set(pk, []);
     }
-    programStore.get(messageData.chatID).historyTable.get(pk).push([messageData.id, 0]);
-    programStore.get(messageData.chatID).history.push(messageData);
-    await store.setItem(messageData.chatID, programStore.get(messageData.chatID));
-    console.log(`history for ${pk}: ${programStore.get(messageData.chatID).historyTable.get(pk)}`);
+    programStore.get(chatID).historyTable.get(pk).push([messageData.id, 0]);
+    programStore.get(chatID).history.push(messageData);
+    await store.setItem(chatID, programStore.get(chatID));
+    console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
 }
 
 async function removePeer (messageData) {
     const pk = messageData.op.pk2;
+    const chatID = messageData.chatID;
 
     if (programStore.get(chatID).historyTable.has(pk)) {
         const interval = programStore.get(chatID).historyTable.get(pk).pop();
@@ -1323,17 +1325,17 @@ async function removePeer (messageData) {
     await store.setItem(messageData.chatID, programStore.get(chatID));
     console.log(`added removal message data to chat history`);
 
-    if (joinedChats.get(messageData.chatID).members.includes(pk)) {
-        joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
+    if (joinedChats.get(chatID).members.includes(pk)) {
+        joinedChats.get(chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
     }
-    joinedChats.get(messageData.chatID).validMembers.delete(pk);
+    joinedChats.get(chatID).validMembers.delete(pk);
     
-    joinedChats.get(messageData.chatID).exMembers.add(pk);
+    joinedChats.get(chatID).exMembers.add(pk);
     await store.setItem("joinedChats", joinedChats);
 
     updateChatInfo();
     updateChatWindow(messageData);
-    closeConnections(pk, messageData.chatID);
+    closeConnections(pk, chatID);
 }
 
 function refreshChatWindow (chatID) {
@@ -1421,8 +1423,7 @@ function sendChatMessage (messageInput) {
         type: "text",
         from: keyPair.publicKey,
         message: messageInput,
-        chatID: currentChatID,
-        deps: access.getDeps(programStore.get(chatID).metadata.operations)
+        chatID: currentChatID
     });
 
     broadcastToMembers(data, currentChatID);
