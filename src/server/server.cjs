@@ -294,10 +294,10 @@ function onLeave (connection, data) {
 
 function onCreateChat (connection, data) {
   // data = {type: 'createChat', chatName: chat title, members: [list of users]}
-  
+
   // add to list of chats
   chats.set(data.chatID, {chatName: data.chatName, members: [data.from]});
-  console.log(`created chat ${data.chatName} with id ${chatID}`);
+  console.log(`created chat ${data.chatName} with id ${data.chatID}`);
 }
 
 function onGetPK (connection, data) {
