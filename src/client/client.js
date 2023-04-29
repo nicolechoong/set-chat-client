@@ -611,13 +611,14 @@ export async function removeFromChat (username, pk, chatID) {
     });
 }
 
-async function disputeRemoval(peer, chatID) {
+async function disputeRemoval (peer, chatID) {
     await store.getItem(chatID).then(async (chatInfo) => {
         const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
         console.log(end);
         const ignoredOp = chatInfo.metadata.operations.at(end);
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-        const op = access.generateOp("remove", peer.peerPK, ignoredOp.deps);
+        const op = access.generateOp("remove", peer.peerPK, chatInfo.metadata.operations);
+        op.deps = ignoredOp.deps;
 
         // console.log(`${chatInfo.history.map(msg => msg.type)}`);
         // const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
