@@ -509,7 +509,8 @@ async function addToChat (name, pk, chatID) {
 
     const addMessage = addMsgID({
         type: "add",
-        op: programStore.get(chatID).metadata.operations,
+        id: op.sig,
+        ops: programStore.get(chatID).metadata.operations,
         ignored: programStore.get(chatID).metadata.ignored,
         from: keyPair.publicKey,
         username: name,
@@ -864,6 +865,7 @@ async function receivedOperations (ops, chatID, pk) {
 
         var ignoredSet = programStore.get(chatID).metadata.ignored;
         const verifiedOps = [];
+        console.log(programStore.get(chatID).metadata.operations);
         const verified = access.verifiedOperations(ops, programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.unresolved, verifiedOps);
         programStore.get(chatID).metadata.operations = verifiedOps;
         await store.setItem(chatID, programStore.get(chatID));
@@ -1303,15 +1305,13 @@ async function addPeer(messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-    await store.getItem(messageData.chatID).then((chatInfo) => {
-        if (!chatInfo.historyTable.has(pk)) {
-            chatInfo.historyTable.set(pk, []);
-        }
-        chatInfo.historyTable.get(pk).push([messageData.id, 0]);
-        chatInfo.history.push(messageData);
-        store.setItem(messageData.chatID, chatInfo);
-        console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
-    }).then(() => console.log(`added message data to chat history`));
+    if (!programStore.chatID(messageData.chatID).historyTable.has(pk)) {
+        programStore.chatID(messageData.chatID).historyTable.set(pk, []);
+    }
+    programStore.chatID(messageData.chatID).historyTable.get(pk).push([messageData.id, 0]);
+    programStore.chatID(messageData.chatID).history.push(messageData);
+    await store.setItem(messageData.chatID, programStore.chatID(messageData.chatID));
+    console.log(`history for ${pk}: ${programStore.chatID(messageData.chatID).historyTable.get(pk)}`);
 }
 
 async function removePeer (messageData) {
