@@ -553,7 +553,7 @@ async function onRemove (messageData) {
 
             await store.getItem(messageData.chatID).then(async (chatInfo) => {
                 const verifiedOps = [];
-                const verified = access.verifiedOperations(messageData.ops, chatInfo.metadata.operations. chatInfo.metadata.unresolved, verifiedOps);
+                const verified = access.verifiedOperations(messageData.ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved, verifiedOps);
                 if (verified) {
                     await store.setItem(messageData.chatID, chatInfo);
                 } else {
