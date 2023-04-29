@@ -896,9 +896,6 @@ async function receivedOperations (ops, chatID, pk) {
         console.log(`valid?`);
         updateMembers(memberSet, chatID);
 
-        if (!verified) {
-            await sendChatHistory(messageData.chatID, messageData.from, false);
-        }
         return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
     });
 }
@@ -1029,6 +1026,7 @@ async function receivedMessage (messageData, channel=null) {
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
+                await sendChatHistory(messageData.chatID, messageData.from);
                 if (res) {
                     console.log(`res success`);
                     updateConnectStatus(messageData.from, true);
