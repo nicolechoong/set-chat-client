@@ -1070,7 +1070,7 @@ async function receivedMessage (messageData, channel=null) {
             await mergeChatHistory(messageData.chatID, messageData.from, messageData.history);
             break;
         case "remove":
-            await receivedOperations([messageData.op], messageData.chatID, messageData.from).then(async (res) => {
+            await receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                 if (res) { 
                     if (messageData.op.pk2 === keyPair.publicKey) {
                         updateChatWindow(messageData);
@@ -1088,7 +1088,7 @@ async function receivedMessage (messageData, channel=null) {
             if (messageData.op.pk2 === keyPair.publicKey) {
                 onAdd(messageData.chatID, messageData.chatName, messageData.from, messageData.ignored, messageData);
             } else {
-                await receivedOperations([messageData.op], messageData.chatID, messageData.from).then(async (res) => {
+                await receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                     if (res) { addPeer(messageData); }
                 });
             }
