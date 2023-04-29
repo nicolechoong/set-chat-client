@@ -857,7 +857,6 @@ async function receivedOperations (ops, chatID, pk) {
         console.log(`ops acquired lock`);
         if (pk === keyPair.publicKey) { return resolve(true); }
 
-        var ignoredSet = programStore.get(chatID).metadata.ignored;
         const verifiedOps = [];
         console.log(`received`);
         console.log(ops);
@@ -873,10 +872,11 @@ async function receivedOperations (ops, chatID, pk) {
             
             if (access.unresolvedCycles(graphInfo.concurrent, programStore.get(chatID).metadata.ignored)) {
                 console.log(`cycle detected`);
-                ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
+                console.log(programStore.get(chatID).metadata.ignored);
+                await getIgnored(graphInfo.concurrent, chatID);
             }
 
-            sendIgnored(ignoredSet, chatID, pk);
+            sendIgnored(programStore.get(chatID).metadata.ignored, chatID, pk);
             const queuedIgnoredSets = [...peerIgnored].filter((entry) => entry[0].split("_")[0] == chatID);
             console.log([...peerIgnored.keys()]);
             for (const [syncID, queuedIg] of queuedIgnoredSets) {
@@ -889,7 +889,8 @@ async function receivedOperations (ops, chatID, pk) {
             return;
         }
         
-        const memberSet = await access.members(programStore.get(chatID).metadata.operations, ignoredSet);
+        console.log(programStore.get(chatID).metadata.ignored);
+        const memberSet = access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored);
         console.log(`valid?`);
         updateMembers(memberSet, chatID);
 

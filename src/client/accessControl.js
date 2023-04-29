@@ -94,6 +94,7 @@ export function generateChatID (op) {
 }
 
 export function hasOp (ops, op) {
+    console.log(`has ignored? ${JSON.stringify(ops)},    ${op}`);
     for (const curOp of ops) {
         if (curOp.sig === op.sig) { return true; }
     }
