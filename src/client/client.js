@@ -879,7 +879,6 @@ async function receivedOperations (ops, chatID, pk) {
 
             sendIgnored(programStore.get(chatID).metadata.ignored, chatID, pk);
             const queuedIgnoredSets = [...peerIgnored].filter((entry) => entry[0].split("_")[0] == chatID);
-            console.log([...peerIgnored.keys()]);
             for (const [syncID, queuedIg] of queuedIgnoredSets) {
                 console.log(`${queuedIg.ignored.length}`);
                 await receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
@@ -1052,6 +1051,9 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "selectedIgnored":
             await updateChatStore(messageData);
+            if (!resolveSyncIgnored.has(`${messageData.chatID}_${messageData.from}`) && !peerIgnored.has(`${messageData.chatID}_${messageData.from}`)) {
+                sendOperations(messageData.chatID, messageData.from, true);
+            }
             if (messageData.chatID == currentChatID) {
                 elem.updateSelectedMembers(keyMap.get(messageData.from), messageData.op.sig);
                 refreshChatWindow(messageData.chatID);
