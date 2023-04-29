@@ -659,6 +659,7 @@ async function disputeRemoval (peer, chatID) {
         const oldMembers = [...joinedChats.get(chatID).members];
         console.log(joinedChats.get(chatID).members);
         await updateMembers(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
+        console.log(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
         for (const mem of oldMembers) {
             connectToPeer({ peerName: await getUsername(mem), peerPK: mem });
         }
@@ -1638,49 +1639,50 @@ async function getIgnored (cycles, chatID) {
 }
 
 export async function selectIgnored(ignoredOp, chatID) {
-    await store.getItem(chatID).then(async (chatInfo) => {
-        // unwinding chat history
-        const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
+    // unwinding chat history
+    const ignoredOpIndex = programStore.get(chatID).history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
 
-        if (ignoredOpIndex > -1) {
-            console.log(`found ignored op`);
-            chatInfo.history.splice(ignoredOpIndex);
+    if (ignoredOpIndex > -1) {
+        console.log(`found ignored op`);
+        const members = access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored);
+        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex).filter(msg => members.has(msg.from));
+        programStore.get(chatID).history.splice(ignoredOpIndex);
+        programStore.get(chatID).history.push(...filteredHistory);
 
-            if (chatInfo.historyTable.has(ignoredOp.pk2)) {
-                const interval = chatInfo.historyTable.get(ignoredOp.pk2).pop();
-                if (ignoredOp.action == "remove") {
-                    interval[1] = 0;
-                    chatInfo.historyTable.get(ignoredOp.pk2).push(interval);
-                }
+        if (programStore.get(chatID).historyTable.has(ignoredOp.pk2)) {
+            const interval = programStore.get(chatID).historyTable.get(ignoredOp.pk2).pop();
+            if (ignoredOp.action == "remove") {
+                interval[1] = 0;
+                programStore.get(chatID).historyTable.get(ignoredOp.pk2).push(interval);
             }
         }
+    }
 
-        // writing to storage
-        chatInfo.metadata.ignored.push(ignoredOp);
-        // removeOp(chatInfo.metadata.operations, ignoredOp);
-        await store.setItem(chatID, chatInfo);
-        refreshChatWindow(chatID);
+    // writing to storage
+    programStore.get(chatID).metadata.ignored.push(ignoredOp);
+    // removeOp(chatInfo.metadata.operations, ignoredOp);
+    await store.setItem(chatID, programStore.get(chatID));
+    refreshChatWindow(chatID);
 
-        // sending to others
-        if (ignoredOp.pk2 !== keyPair.publicKey) {
-            const msg = addMsgID({
-                type: "selectedIgnored",
-                op: ignoredOp,
-                chatID: chatID,
-                from: keyPair.publicKey,
-            });
-            broadcastToMembers(msg, chatID);
-        }
+    // sending to others
+    if (ignoredOp.pk2 !== keyPair.publicKey) {
+        const msg = addMsgID({
+            type: "selectedIgnored",
+            op: ignoredOp,
+            chatID: chatID,
+            from: keyPair.publicKey,
+        });
+        broadcastToMembers(msg, chatID);
+    }
 
-        resolveGetIgnored.get(chatID)[0].splice(resolveGetIgnored.get(chatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
-    
-        if (resolveGetIgnored.get(chatID)[0].length == 0) {
-            resolveGetIgnored.get(chatID)[1](chatInfo.metadata.ignored);
-            resolveGetIgnored.delete(chatID);
-            chatBox.className = "chat-panel col-8";
-            enableChatMods(chatID);
-        }
-    });
+    resolveGetIgnored.get(chatID)[0].splice(resolveGetIgnored.get(chatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
+
+    if (resolveGetIgnored.get(chatID)[0].length == 0) {
+        resolveGetIgnored.get(chatID)[1](programStore.get(chatID).metadata.ignored);
+        resolveGetIgnored.delete(chatID);
+        chatBox.className = "chat-panel col-8";
+        enableChatMods(chatID);
+    }
 }
 
 function getChatNames() {

@@ -305,7 +305,7 @@ function valid (ops, ignored, op, authorityGraph) {
     return false;
 }
 
-export async function members (ops, ignored) {
+export function members (ops, ignored) {
     // assert that there are no cycles
     const pks = new Set();
     const authorityGraph = authority(ops);
