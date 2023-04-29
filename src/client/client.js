@@ -552,8 +552,13 @@ async function onRemove (messageData) {
             joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
 
             await store.getItem(messageData.chatID).then(async (chatInfo) => {
-                chatInfo.metadata.operations.push(messageData.op);
-                await store.setItem(messageData.chatID, chatInfo);
+                const verifiedOps = [];
+                const verified = access.verifiedOperations(messageData.ops, chatInfo.metadata.operations. chatInfo.metadata.unresolved, verifiedOps);
+                if (verified) {
+                    await store.setItem(messageData.chatID, chatInfo);
+                } else {
+                    return;
+                }
             });
 
             if (joinedChatInfo.members.includes(keyPair.publicKey)) {
@@ -617,8 +622,7 @@ async function disputeRemoval (peer, chatID) {
         console.log(end);
         const ignoredOp = chatInfo.metadata.operations.at(end);
         console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-        const op = access.generateOp("remove", peer.peerPK, chatInfo.metadata.operations);
-        op.deps = ignoredOp.deps;
+        const op = access.generateDisputeOp("remove", peer.peerPK, ignoredOp.deps);
 
         // console.log(`${chatInfo.history.map(msg => msg.type)}`);
         // const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);

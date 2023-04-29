@@ -122,6 +122,18 @@ export function generateOp (action, pk2, ops, keyPair=clientKeyPair) {
     return op;
 }
 
+export function generateDisputeOp (action, pk2, deps, keyPair=clientKeyPair) {
+    // action: String, chatID: String, pk2: string, ops: Array of Object
+    const op = {
+        action: action,
+        pk1: keyPair.publicKey,
+        pk2: pk2,
+        deps: deps
+    };
+    op["sig"] = arrToStr(nacl.sign.detached(enc.encode(concatOp(op)), keyPair.secretKey));
+    return op;
+}
+
 function resolvedHash(hash, unresolvedHashes) {
     const resolved = []
     for (const [sig, unres] of unresolvedHashes) {
