@@ -1309,13 +1309,13 @@ async function addPeer(messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-    if (!programStore.chatID(messageData.chatID).historyTable.has(pk)) {
-        programStore.chatID(messageData.chatID).historyTable.set(pk, []);
+    if (!programStore.get(messageData.chatID).historyTable.has(pk)) {
+        programStore.get(messageData.chatID).historyTable.set(pk, []);
     }
-    programStore.chatID(messageData.chatID).historyTable.get(pk).push([messageData.id, 0]);
-    programStore.chatID(messageData.chatID).history.push(messageData);
-    await store.setItem(messageData.chatID, programStore.chatID(messageData.chatID));
-    console.log(`history for ${pk}: ${programStore.chatID(messageData.chatID).historyTable.get(pk)}`);
+    programStore.get(messageData.chatID).historyTable.get(pk).push([messageData.id, 0]);
+    programStore.get(messageData.chatID).history.push(messageData);
+    await store.setItem(messageData.chatID, programStore.get(messageData.chatID));
+    console.log(`history for ${pk}: ${programStore.get(messageData.chatID).historyTable.get(pk)}`);
 }
 
 async function removePeer (messageData) {
