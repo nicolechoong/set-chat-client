@@ -1231,7 +1231,7 @@ async function sendChatHistory (chatID, pk) {
     for (const interval of intervals) {
         start = programStore.get(chatID).history.findIndex(msg => { return msg.id === interval[0]; });
         end = programStore.get(chatID).history.findIndex(msg => { return msg.id === interval[1]; });
-        end = (interval[1] == 0 ? chatInfo.history.length : end) + 1;
+        end = (interval[1] == 0 ? programStore.get(chatID).history.length : end) + 1;
         
         peerHistory.push(...programStore.get(chatID).history.slice(start, end));
     }
