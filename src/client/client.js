@@ -544,13 +544,7 @@ async function onRemove (messageData) {
         await updateChatStore(messageData);
 
         await store.getItem(messageData.chatID).then(async (chatInfo) => {
-            const verifiedOps = []
-            const verified = access.verifiedOperations([messageData.op], chatInfo.metadata.operations, chatInfo.metadata.unresolved, verifiedOps);
-            if (verified) {
-                chatInfo.metadata.operations = verifiedOps;
-            } else {
-                return;
-            }
+            chatInfo.metadata.operations.push(messageData.op);
             await store.setItem(messageData.chatID, chatInfo);
         });
 
@@ -871,7 +865,7 @@ async function receivedOperations (ops, chatID, pk) {
 
         var ignoredSet = programStore.get(chatID).metadata.ignored;
         const verifiedOps = [];
-        console.log(programStore.get(chatID).metadata.operations);
+        console.log(ops);
         const verified = access.verifiedOperations(ops, programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.unresolved, verifiedOps);
         programStore.get(chatID).metadata.operations = verifiedOps;
         await store.setItem(chatID, programStore.get(chatID));
