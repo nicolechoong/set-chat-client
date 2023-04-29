@@ -400,21 +400,12 @@ function onConnectedUsers(usernames) {
     
 }
 
-// Depreciated: For now
-function onJoin(usernames) {
-    for (peerName of usernames) {
-        if (!connections.has(peerName) && peerName !== localUsername) {
-            sendOffer(peerName);
-        }
-    }
-}
-
-function onLeave(peerPK) {
+function onLeave (peerPK) {
     // peerPK : string
     closeConnections(peerPK, 0, true);
 }
 
-async function createNewChat(chatName) {
+async function createNewChat (chatName) {
     const createOp = access.generateCreateOp();
     const chatID = access.generateChatID(createOp);
 
@@ -1532,7 +1523,7 @@ sendMessageBtn.addEventListener("click", function () {
 })
 
 newChatBtn.addEventListener("click", () => {
-    createNewChat();
+    createNewChat(chatNameInput.value);
     elem.closePopup();
     chatNameInput.value = "";
 });
