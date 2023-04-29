@@ -477,7 +477,7 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
         const chatInfo = {
             metadata: {
                 chatName: chatName,
-                operations: [msg.op],
+                operations: msg.ops,
                 ignored: ignored,
                 unresolved: [],
             },
@@ -509,13 +509,15 @@ async function addToChat (name, pk, chatID) {
 
     const addMessage = addMsgID({
         type: "add",
-        op: op,
+        op: programStore.get(chatID).metadata.operations,
         ignored: programStore.get(chatID).metadata.ignored,
         from: keyPair.publicKey,
         username: name,
         chatID: chatID,
         chatName: programStore.get(chatID).metadata.chatName
     });
+
+    console.log(JSON.stringify(addMessage));
 
     joinedChats.get(chatID).validMembers.add(pk);
     joinedChats.get(chatID).members.push(pk);
@@ -860,42 +862,40 @@ async function receivedOperations (ops, chatID, pk) {
         console.log(`ops acquired lock`);
         if (pk === keyPair.publicKey) { return resolve(true); }
 
-        await store.getItem(chatID).then(async (chatInfo) => {
-            var ignoredSet = chatInfo.metadata.ignored;
-            const verifiedOps = [];
-            const verified = access.verifiedOperations(ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved, verifiedOps);
-            chatInfo.metadata.operations = verifiedOps;
-            await store.setItem(chatID, chatInfo);
+        var ignoredSet = programStore.get(chatID).metadata.ignored;
+        const verifiedOps = [];
+        const verified = access.verifiedOperations(ops, programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.unresolved, verifiedOps);
+        programStore.get(chatID).metadata.operations = verifiedOps;
+        await store.setItem(chatID, programStore.get(chatID));
 
-            const graphInfo = access.hasCycles(chatInfo.metadata.operations);
-            console.log(`graph Info ${graphInfo.cycle}`);
-            if (graphInfo.cycle) {
-                
-                if (access.unresolvedCycles(graphInfo.concurrent, chatInfo.metadata.ignored)) {
-                    console.log(`cycle detected`);
-                    ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
-                }
-
-                sendIgnored(ignoredSet, chatID, pk);
-                const queuedIgnoredSets = [...peerIgnored].filter((entry) => entry[0].split("_")[0] == chatID);
-                console.log([...peerIgnored.keys()]);
-                for (const [syncID, queuedIg] of queuedIgnoredSets) {
-                    console.log(`${queuedIg.ignored.length}`);
-                    await receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
-                    joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
-                    peerIgnored.delete(syncID);
-                }
-                resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
-                return;
-            }
+        const graphInfo = access.hasCycles(programStore.get(chatID).metadata.operations);
+        console.log(`graph Info ${graphInfo.cycle}`);
+        if (graphInfo.cycle) {
             
-            const memberSet = await access.members(chatInfo.metadata.operations, ignoredSet);
-            console.log(`valid?`);
-            updateMembers(memberSet, chatID);
+            if (access.unresolvedCycles(graphInfo.concurrent, programStore.get(chatID).metadata.ignored)) {
+                console.log(`cycle detected`);
+                ignoredSet = await getIgnored(graphInfo.concurrent, chatID);
+            }
+
+            sendIgnored(ignoredSet, chatID, pk);
+            const queuedIgnoredSets = [...peerIgnored].filter((entry) => entry[0].split("_")[0] == chatID);
+            console.log([...peerIgnored.keys()]);
+            for (const [syncID, queuedIg] of queuedIgnoredSets) {
+                console.log(`${queuedIg.ignored.length}`);
+                await receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
+                joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
+                peerIgnored.delete(syncID);
+            }
+            resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
+            return;
+        }
+        
+        const memberSet = await access.members(programStore.get(chatID).metadata.operations, ignoredSet);
+        console.log(`valid?`);
+        updateMembers(memberSet, chatID);
 
 
-            return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
-        });
+        return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
     });
 }
 
