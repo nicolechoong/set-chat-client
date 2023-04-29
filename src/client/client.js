@@ -547,19 +547,17 @@ async function onRemove (messageData) {
             joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk, true));
 
         } else if (joinedChatInfo.currentMember && joinedChatInfo.members.includes(fromPK)) {
+            const verifiedOps = [];
+            const verified = access.verifiedOperations(messageData.ops, programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.unresolved, verifiedOps);
+            if (verified) {
+                programStore.get(chatID).metadata.operations = verifiedOps;
+            } else {
+                return;
+            }
+
             joinedChatInfo.currentMember = false;
 
             joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
-
-            await store.getItem(messageData.chatID).then(async (chatInfo) => {
-                const verifiedOps = [];
-                const verified = access.verifiedOperations(messageData.ops, chatInfo.metadata.operations, chatInfo.metadata.unresolved, verifiedOps);
-                if (verified) {
-                    await store.setItem(messageData.chatID, chatInfo);
-                } else {
-                    return;
-                }
-            });
 
             if (joinedChatInfo.members.includes(keyPair.publicKey)) {
                 joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
@@ -567,16 +565,14 @@ async function onRemove (messageData) {
             joinedChatInfo.exMembers.add(keyPair.publicKey);
             await store.setItem("joinedChats", joinedChats);
 
-            await store.getItem(messageData.chatID).then(async (chatInfo) => {
-                for (const pk of joinedChats.get(messageData.chatID).members) {
-                    if (chatInfo.historyTable.has(pk)) {
-                        const interval = chatInfo.historyTable.get(pk).pop();
-                        interval[1] = interval[1] == 0 ? messageData.id : interval[1];
-                        chatInfo.historyTable.get(pk).push(interval);
-                    }
+            for (const pk of joinedChats.get(messageData.chatID).members) {
+                if (programStore.get(chatID).historyTable.has(pk)) {
+                    const interval = programStore.get(chatID).historyTable.get(pk).pop();
+                    interval[1] = interval[1] == 0 ? messageData.id : interval[1];
+                    programStore.get(chatID).historyTable.get(pk).push(interval);
                 }
-                await store.setItem(messageData.chatID, chatInfo);
-            });
+            }
+            await store.setItem(messageData.chatID, programStore.get(chatID));
 
             if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
             disableChatMods(messageData.chatID);
@@ -592,78 +588,72 @@ async function onRemove (messageData) {
 
 export async function removeFromChat (username, pk, chatID) {
     // username : string, public key : string, chatID : string
-    store.getItem(chatID).then(async (chatInfo) => {
-        console.log(`we are now removing ${username} and the ops are ${chatInfo.metadata.operations.map(op => op.action)}`);
-        const op = access.generateOp("remove", pk, chatInfo.metadata.operations);
-        chatInfo.metadata.operations.push(op);
-        await store.setItem(chatID, chatInfo).then(console.log(`${username} has been removed from ${chatID}`));
+    console.log(`we are now removing ${username} and the ops are ${programStore.get(chatID).metadata.operations.map(op => op.action)}`);
+    const op = access.generateOp("remove", pk, programStore.get(chatID).metadata.operations);
+    programStore.get(chatID).metadata.operations.push(op);
+    await store.setItem(chatID, programStore.get(chatID)).then(console.log(`${username} has been removed from ${chatID}`));
 
-        const removeMessage = addMsgID({
-            type: "remove",
-            op: op,
-            ops: chatInfo.metadata.operations,
-            username: username,
-            from: keyPair.publicKey,
-            chatID: chatID,
-            dispute: false
-        });
-        broadcastToMembers(removeMessage, chatID);
-        sendToServer({
-            to: pk,
-            type: "remove",
-            msg: removeMessage
-        });
+    const removeMessage = addMsgID({
+        type: "remove",
+        op: op,
+        ops: programStore.get(chatID).metadata.operations,
+        username: username,
+        from: keyPair.publicKey,
+        chatID: chatID,
+        dispute: false
+    });
+    broadcastToMembers(removeMessage, chatID);
+    sendToServer({
+        to: pk,
+        type: "remove",
+        msg: removeMessage
     });
 }
 
 async function disputeRemoval (peer, chatID) {
-    await store.getItem(chatID).then(async (chatInfo) => {
-        const end = chatInfo.metadata.operations.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
-        console.log(end);
-        const ignoredOp = chatInfo.metadata.operations.at(end);
-        console.log(`we are now disputing ${peer.peerName} and the ops are ${chatInfo.metadata.operations.slice(0, end).map(op => op.action)}`);
-        const op = access.generateDisputeOp("remove", peer.peerPK, ignoredOp.deps);
+    joinedChats.get(chatID).currentMember = true;
+    
+    // generating operation
+    const end = programStore.get(chatID).metadata.operations.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
+    console.log(end);
+    const ignoredOp = programStore.get(chatID).metadata.operations.at(end);
+    console.log(`we are now disputing ${peer.peerName} and the ops are ${programStore.get(chatID).metadata.operations.slice(0, end).map(op => op.action)}`);
+    const op = access.generateDisputeOp("remove", peer.peerPK, ignoredOp.deps);
 
-        // console.log(`${chatInfo.history.map(msg => msg.type)}`);
-        // const ignoredOpIndex = chatInfo.history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
-        // if (ignoredOpIndex > -1) {
-        //     chatInfo.history.splice(ignoredOpIndex);
-        // }
+    programStore.get(chatID).metadata.operations.push(op);
+    programStore.get(chatID).metadata.ignored.push(ignoredOp);
+    await store.setItem(chatID, programStore.get(chatID));
+    refreshChatWindow(chatID);
 
-        chatInfo.metadata.operations.push(op);
-        chatInfo.metadata.ignored.push(ignoredOp);
-        await store.setItem(chatID, chatInfo);
-        await refreshChatWindow(chatID);
-
-        chatInfo.metadata.operations.forEach(op => {
-            console.log(`${op.action} ${keyMap.get(op.pk2)}`);
-        });
-
-        const removeMessage = addMsgID({
-            type: "remove",
-            op: op,
-            username: peer.peerName,
-            from: keyPair.publicKey,
-            chatID: chatID,
-            dispute: true,
-        });
-
-        sendToMember(removeMessage, keyPair.publicKey, false);
-        // broadcastToMembers(removeMessage, chatID);
-        sendToServer({
-            to: peer.peerPK,
-            type: "remove",
-            msg: removeMessage
-        });
-        
-        const oldMembers = [...joinedChats.get(chatID).members];
-        console.log(joinedChats.get(chatID).members);
-        await updateMembers(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
-        console.log(await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored), chatID);
-        for (const mem of oldMembers) {
-            connectToPeer({ peerName: await getUsername(mem), peerPK: mem });
-        }
+    programStore.get(chatID).metadata.operations.forEach(op => {
+        console.log(`${op.action} ${keyMap.get(op.pk2)}`);
     });
+
+    // sending message
+    const removeMessage = addMsgID({
+        type: "remove",
+        op: op,
+        username: peer.peerName,
+        from: keyPair.publicKey,
+        chatID: chatID,
+        dispute: true,
+    });
+    sendToMember(removeMessage, keyPair.publicKey, false);
+    // broadcastToMembers(removeMessage, chatID);
+    sendToServer({
+        to: peer.peerPK,
+        type: "remove",
+        msg: removeMessage
+    });
+    
+    // updating member set
+    const oldMembers = [...joinedChats.get(chatID).members];
+    console.log(joinedChats.get(chatID).members);
+    await updateMembers(access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored), chatID);
+    console.log(access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored), chatID);
+    for (const mem of oldMembers) {
+        connectToPeer({ peerName: await getUsername(mem), peerPK: mem });
+    }
 }
 
 var resolveGetUsername = new Map();
@@ -778,15 +768,13 @@ function getPK(username) {
 async function sendOperations(chatID, pk, ack=false) {
     // chatID : String, pk : String
     console.log(`sending operations to ${keyMap.get(pk)}`);
-    store.getItem(chatID).then((chatInfo) => {
-        sendToMember(addMsgID({
-            type: "ops",
-            ops: chatInfo.metadata.operations,
-            chatID: chatID,
-            from: keyPair.publicKey,
-            sigmaAck: ack
-        }), pk);
-    });
+    sendToMember(addMsgID({
+        type: "ops",
+        ops: programStore.get(chatID).metadata.operations,
+        chatID: chatID,
+        from: keyPair.publicKey,
+        sigmaAck: ack
+    }), pk);
 }
 
 async function sendIgnored (ignored, chatID, pk) {
@@ -817,48 +805,46 @@ async function sendIgnored (ignored, chatID, pk) {
 async function receivedIgnored (ignored, chatID, pk, resolve) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`${ignored}`);
-    await store.getItem(chatID).then(async (chatInfo) => {
-        if (pk === keyPair.publicKey) { resolve(true); return; }
-        console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
+    if (pk === keyPair.publicKey) { resolve(true); return; }
+    console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
 
-        if (opsArrEqual(chatInfo.metadata.ignored, ignored)) {
-            console.log(`same universe naisu`);
-            const memberSet = await access.members(chatInfo.metadata.operations, chatInfo.metadata.ignored);
-            joinedChats.get(chatID).exMembers.delete(pk);
-            if (joinedChats.get(chatID).exMembers.delete(pk) && chatInfo.historyTable.has(pk)) {
-                const interval = chatInfo.historyTable.get(pk).pop()
-                interval[1] = 0;
-                chatInfo.historyTable.get(pk).push(interval);
-            }
+    if (opsArrEqual(programStore.get(chatID).metadata.ignored, ignored)) {
+        console.log(`same universe naisu`);
+        const memberSet = access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored);
+        joinedChats.get(chatID).exMembers.delete(pk);
+        if (joinedChats.get(chatID).exMembers.delete(pk) && programStore.get(chatID).historyTable.has(pk)) {
+            const interval = programStore.get(chatID).historyTable.get(pk).pop()
+            interval[1] = 0;
+            programStore.get(chatID).historyTable.get(pk).push(interval);
+        }
 
-            await store.setItem("joinedChats", joinedChats);
-            if (memberSet.has(pk)) {
-                updateMembers(memberSet, chatID);
-            }
+        await store.setItem("joinedChats", joinedChats);
+        if (memberSet.has(pk)) {
+            updateMembers(memberSet, chatID);
+        }
 
-            if (memberSet.has(keyPair.publicKey)) {
-                resolve(true);
-            } else {
-                resolve(false);
-            }
-
+        if (memberSet.has(keyPair.publicKey)) {
+            resolve(true);
         } else {
-            console.log(`different universe from ${keyMap.get(pk)}`);
-            if (joinedChats.get(chatID).members.includes(pk)) {
-                joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
-            }
-            joinedChats.get(chatID).exMembers.add(pk);
-            if (!joinedChats.get(chatID).exMembers.has(pk) && chatInfo.historyTable.has(pk)) {
-                const interval = chatInfo.historyTable.get(pk).pop()
-                const choice = chatInfo.history.at(chatInfo.history.findLastIndex((msg) => msg.type === "selectedIgnored" && msg.from === keyPair.publicKey && msg.op.pk1 === pk));
-                interval[1] = choice;
-                chatInfo.historyTable.get(pk).push(interval);
-            }
-            store.setItem("joinedChats", joinedChats);
-            updateChatInfo();
             resolve(false);
         }
-    });
+
+    } else {
+        console.log(`different universe from ${keyMap.get(pk)}`);
+        if (joinedChats.get(chatID).members.includes(pk)) {
+            joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
+        }
+        joinedChats.get(chatID).exMembers.add(pk);
+        if (!joinedChats.get(chatID).exMembers.has(pk) && programStore.get(chatID).historyTable.has(pk)) {
+            const interval = programStore.get(chatID).historyTable.get(pk).pop()
+            const choice = programStore.get(chatID).history.at(programStore.get(chatID).history.findLastIndex((msg) => msg.type === "selectedIgnored" && msg.from === keyPair.publicKey && msg.op.pk1 === pk));
+            interval[1] = choice;
+            programStore.get(chatID).historyTable.get(pk).push(interval);
+        }
+        store.setItem("joinedChats", joinedChats);
+        updateChatInfo();
+        resolve(false);
+    }
 }
 
 const resolveSyncIgnored = new Map();
@@ -1254,17 +1240,15 @@ async function sendChatHistory (chatID, pk) {
     }), pk);
 }
 
-function initChatHistoryTable (chatID, msgID) {
+async function initChatHistoryTable (chatID, msgID) {
     console.log(`initialised chat history`);
-    store.getItem(chatID).then(async (chatInfo) => {
-        for (const pk of joinedChats.get(chatID).members) {
-            if (!chatInfo.historyTable.has(pk)) {
-                chatInfo.historyTable.set(pk, []);
-            }
-            chatInfo.historyTable.get(pk).push([msgID, 0]);
+    for (const pk of joinedChats.get(chatID).members) {
+        if (!programStore.get(chatID).historyTable.has(pk)) {
+            programStore.get(chatID).historyTable.set(pk, []);
         }
-        await store.setItem(chatID, chatInfo);
-    });
+        programStore.get(chatID).historyTable.get(pk).push([msgID, 0]);
+    }
+    await store.setItem(chatID, programStore.get(chatID));
 } 
 
 var resolveConnectToPeer = new Map();
@@ -1329,16 +1313,15 @@ async function addPeer(messageData) {
 async function removePeer (messageData) {
     const pk = messageData.op.pk2;
 
-    await store.getItem(messageData.chatID).then(async (chatInfo) => {
-        if (chatInfo.historyTable.has(pk)) {
-            const interval = chatInfo.historyTable.get(pk).pop();
-            interval[1] = messageData.id;
-            chatInfo.historyTable.get(pk).push(interval);
-        }
-        chatInfo.history.push(messageData);
-        console.log(`history for ${pk}: ${chatInfo.historyTable.get(pk)}`);
-        await store.setItem(messageData.chatID, chatInfo);
-    }).then(() => console.log(`added removal message data to chat history`));
+    if (programStore.get(chatID).historyTable.has(pk)) {
+        const interval = programStore.get(chatID).historyTable.get(pk).pop();
+        interval[1] = messageData.id;
+        programStore.get(chatID).historyTable.get(pk).push(interval);
+    }
+    programStore.get(chatID).history.push(messageData);
+    console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
+    await store.setItem(messageData.chatID, programStore.get(chatID));
+    console.log(`added removal message data to chat history`);
 
     if (joinedChats.get(messageData.chatID).members.includes(pk)) {
         joinedChats.get(messageData.chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
@@ -1353,13 +1336,11 @@ async function removePeer (messageData) {
     closeConnections(pk, messageData.chatID);
 }
 
-async function refreshChatWindow (chatID) {
+function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
-        await store.getItem(currentChatID).then(async (chatInfo) => {
-            chatInfo.history.forEach(data => {
+        programStore.get(chatID).history.forEach(data => {
                 updateChatWindow(data);
-            });
         });
     }
 }
@@ -1394,10 +1375,8 @@ function updateChatWindow (data) {
 }
 
 async function updateChatStore (messageData) {
-    await store.getItem(messageData.chatID).then(async (chatInfo) => {
-        chatInfo.history.push(messageData);
-        await store.setItem(messageData.chatID, chatInfo);
-    });
+    programStore.get(messageData.chatID).history.push(messageData);
+    await store.setItem(messageData.chatID, programStore.get(messageData.chatID));
 }
 
 function sendToMember (data, pk, requireAck=true) {
@@ -1845,68 +1824,66 @@ function mergeJoinedChats(localChats, receivedChats) {
 
 async function mergeChatHistory (chatID, pk, receivedMsgs) {
     await navigator.locks.request("history", async () => {
-        await store.getItem(chatID).then(async (chatInfo) => {
-            const localMsgs = chatInfo.history;
-            console.log(`local length ${localMsgs.length}`);
-            console.log(`received length ${receivedMsgs.length}`);
-            var newMessage = false;
+        const localMsgs = programStore.get(chatID).history;
+        console.log(`local length ${localMsgs.length}`);
+        console.log(`received length ${receivedMsgs.length}`);
+        var newMessage = false;
 
-            if (receivedMsgs.length > 0) {
-                const mergedChatHistory = [...localMsgs];
-                const modifiedHistoryTable = new Set();
-                var pk2;
-                
-                const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
-                for (const msg of receivedMsgs) {
-                    if (!localMsgIDs.has(msg.id)) { // if we don't have this message
-                        mergedChatHistory.push(msg);
-                        newMessage = true;
+        if (receivedMsgs.length > 0) {
+            const mergedChatHistory = [...localMsgs];
+            const modifiedHistoryTable = new Set();
+            var pk2;
+            
+            const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
+            for (const msg of receivedMsgs) {
+                if (!localMsgIDs.has(msg.id)) { // if we don't have this message
+                    mergedChatHistory.push(msg);
+                    newMessage = true;
 
-                        if (msg.type === "text") { continue; }
+                    if (msg.type === "text") { continue; }
 
-                        // rolling forward changes to history table
-                        if (msg.op.pk2 !== keyPair.publicKey) {
-                            pk2 = msg.op.pk2;
-                            if (msg.type === "add") {
-                                if (!chatInfo.historyTable.has(pk2)) {
-                                    chatInfo.historyTable.set(pk2, []);
-                                }
-                                modifiedHistoryTable.add(pk2);
-                                chatInfo.historyTable.get(pk2).push([msg.id, 0]);
-
-                            } else if (msg.type === "remove") {
-                                modifiedHistoryTable.add(pk2);
-                                if (!chatInfo.historyTable.has(pk2)) {
-                                    chatInfo.historyTable.set(pk2, [[localMsgs[0].id, 0]]);
-                                }
-                                const interval = chatInfo.historyTable.get(pk2).pop();
-                                interval[1] = msg.id;
-                                chatInfo.historyTable.get(pk2).push(interval);
+                    // rolling forward changes to history table
+                    if (msg.op.pk2 !== keyPair.publicKey) {
+                        pk2 = msg.op.pk2;
+                        if (msg.type === "add") {
+                            if (!programStore.get(chatID).historyTable.has(pk2)) {
+                                programStore.get(chatID).historyTable.set(pk2, []);
                             }
+                            modifiedHistoryTable.add(pk2);
+                            programStore.get(chatID).historyTable.get(pk2).push([msg.id, 0]);
+
+                        } else if (msg.type === "remove") {
+                            modifiedHistoryTable.add(pk2);
+                            if (!programStore.get(chatID).historyTable.has(pk2)) {
+                                programStore.get(chatID).historyTable.set(pk2, [[localMsgs[0].id, 0]]);
+                            }
+                            const interval = programStore.get(chatID).historyTable.get(pk2).pop();
+                            interval[1] = msg.id;
+                            programStore.get(chatID).historyTable.get(pk2).push(interval);
                         }
                     }
                 }
-
-                // sorting intervals for each set of intervals
-                for (pk of modifiedHistoryTable) {
-                    chatInfo.historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
-                }
-
-                mergedChatHistory.sort((a, b) => {
-                    if (a.sentTime > b.sentTime) { return 1; }
-                    if (a.sentTime < b.sentTime) { return -1; }
-                    if (a.username > b.username) { return 1; }
-                    else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
-                });
-                chatInfo.history = mergedChatHistory;
-
-                await store.setItem(chatID, chatInfo);
-                await refreshChatWindow(chatID);
-                if (newMessage && chatID !== currentChatID && document.getElementById(`chatCard${chatID}`) !== null) { 
-                    document.getElementById(`chatCard${chatID}`).className = "card card-chat notif";
-                }
             }
-        });
+
+            // sorting intervals for each set of intervals
+            for (pk of modifiedHistoryTable) {
+                programStore.get(chatID).historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
+            }
+
+            mergedChatHistory.sort((a, b) => {
+                if (a.sentTime > b.sentTime) { return 1; }
+                if (a.sentTime < b.sentTime) { return -1; }
+                if (a.username > b.username) { return 1; }
+                else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
+            });
+            programStore.get(chatID).history = mergedChatHistory;
+
+            await store.setItem(chatID, programStore.get(chatID));
+            await refreshChatWindow(chatID);
+            if (newMessage && chatID !== currentChatID && document.getElementById(`chatCard${chatID}`) !== null) { 
+                document.getElementById(`chatCard${chatID}`).className = "card card-chat notif";
+            }
+        }
     });
 }
 
