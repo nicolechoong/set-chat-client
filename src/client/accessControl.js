@@ -101,9 +101,12 @@ export function hasOp (ops, op) {
 }
 
 export function validHasOp (ops, op) {
-    console.log(`has ignored? ${JSON.stringify(ops)},    ${op}`);
+    console.log(`has ignored? ${JSON.stringify(ops)},    ${JSON.stringify(op)}`);
     for (const curOp of ops) {
-        if (curOp.sig === op.sig) { return true; }
+        if (curOp.sig === op.sig) { 
+            console.log(true);
+            return true; 
+        }
     }
     return false;
 }

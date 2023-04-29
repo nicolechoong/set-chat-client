@@ -874,6 +874,7 @@ async function receivedOperations (ops, chatID, pk) {
                 console.log(`cycle detected`);
                 console.log(programStore.get(chatID).metadata.ignored);
                 await getIgnored(graphInfo.concurrent, chatID);
+                console.log(programStore.get(chatID).metadata.ignored);
             }
 
             sendIgnored(programStore.get(chatID).metadata.ignored, chatID, pk);
@@ -1038,7 +1039,6 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "ignored":
             const syncID = `${messageData.chatID}_${messageData.from}`;
-            console.log(`${[...resolveSyncIgnored.keys()]}`);
             if (resolveSyncIgnored.has(syncID)) {
                 console.log(`ripe ignored`);
                 receivedIgnored(messageData.ignored, messageData.chatID, messageData.from, resolveSyncIgnored.get(syncID));
