@@ -543,11 +543,6 @@ async function onRemove (messageData) {
         updateChatWindow(messageData);
         await updateChatStore(messageData);
 
-        await store.getItem(messageData.chatID).then(async (chatInfo) => {
-            chatInfo.metadata.operations.push(messageData.op);
-            await store.setItem(messageData.chatID, chatInfo);
-        });
-
         if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
             joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk, true));
 
@@ -555,6 +550,11 @@ async function onRemove (messageData) {
             joinedChatInfo.currentMember = false;
 
             joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
+
+            await store.getItem(messageData.chatID).then(async (chatInfo) => {
+                chatInfo.metadata.operations.push(messageData.op);
+                await store.setItem(messageData.chatID, chatInfo);
+            });
 
             if (joinedChatInfo.members.includes(keyPair.publicKey)) {
                 joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
