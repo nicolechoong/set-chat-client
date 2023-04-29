@@ -94,6 +94,13 @@ export function generateChatID (op) {
 }
 
 export function hasOp (ops, op) {
+    for (const curOp of ops) {
+        if (curOp.sig === op.sig) { return true; }
+    }
+    return false;
+}
+
+export function validHasOp (ops, op) {
     console.log(`has ignored? ${JSON.stringify(ops)},    ${op}`);
     for (const curOp of ops) {
         if (curOp.sig === op.sig) { return true; }
@@ -287,7 +294,7 @@ export function authority (ops) {
 // TODO: double triple cheeck that this works for member as well...
 function valid (ops, ignored, op, authorityGraph) {
     if (op.action === "create") { return true; }
-    if (hasOp(ignored, op)) { return false; }
+    if (validHasOp(ignored, op)) { return false; }
 
     // all the valid operations before op2
     const inSet = authorityGraph.filter((edge) => {
