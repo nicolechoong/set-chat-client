@@ -537,14 +537,15 @@ async function addToChat (name, pk, chatID) {
 
 async function onRemove (messageData) {
     const fromPK = messageData.from;
-    var joinedChatInfo = joinedChats.get(messageData.chatID);
+    const chatID = messageData.chatID;
+    var joinedChatInfo = joinedChats.get(chatID);
 
     if (fromPK !== keyPair.publicKey) {
         updateChatWindow(messageData);
         await updateChatStore(messageData);
 
         if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
-            joinedChatInfo.members.forEach((pk) => sendOperations(messageData.chatID, pk, true));
+            joinedChatInfo.members.forEach((pk) => sendOperations(chatID, pk, true));
 
         } else if (joinedChatInfo.currentMember && joinedChatInfo.members.includes(fromPK)) {
             const verifiedOps = [];
@@ -565,22 +566,22 @@ async function onRemove (messageData) {
             joinedChatInfo.exMembers.add(keyPair.publicKey);
             await store.setItem("joinedChats", joinedChats);
 
-            for (const pk of joinedChats.get(messageData.chatID).members) {
+            for (const pk of joinedChats.get(chatID).members) {
                 if (programStore.get(chatID).historyTable.has(pk)) {
                     const interval = programStore.get(chatID).historyTable.get(pk).pop();
                     interval[1] = interval[1] == 0 ? messageData.id : interval[1];
                     programStore.get(chatID).historyTable.get(pk).push(interval);
                 }
             }
-            await store.setItem(messageData.chatID, programStore.get(chatID));
+            await store.setItem(chatID, programStore.get(chatID));
 
             if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
-            disableChatMods(messageData.chatID);
+            disableChatMods(chatID);
             
             console.log(`you've been removed from chat ${joinedChatInfo.chatName} by ${await getUsername(fromPK)}`);
 
             for (const pk of joinedChatInfo.members) {
-                closeConnections(pk, messageData.chatID, true);
+                closeConnections(pk, chatID, true);
             }
         }
     }
