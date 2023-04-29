@@ -1051,7 +1051,7 @@ async function receivedMessage (messageData, channel=null) {
             break;
         case "selectedIgnored":
             await updateChatStore(messageData);
-            if (!resolveSyncIgnored.has(`${messageData.chatID}_${messageData.from}`) && !peerIgnored.has(`${messageData.chatID}_${messageData.from}`)) {
+            if (!resolveSyncIgnored.has(`${messageData.chatID}_${messageData.from}`)) {
                 sendOperations(messageData.chatID, messageData.from, true);
             }
             if (messageData.chatID == currentChatID) {
