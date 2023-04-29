@@ -896,7 +896,9 @@ async function receivedOperations (ops, chatID, pk) {
         console.log(`valid?`);
         updateMembers(memberSet, chatID);
 
-
+        if (!verified) {
+            await sendChatHistory(messageData.chatID, messageData.from, false);
+        }
         return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
     });
 }
@@ -1027,7 +1029,6 @@ async function receivedMessage (messageData, channel=null) {
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
-                await sendChatHistory(messageData.chatID, messageData.from);
                 if (res) {
                     console.log(`res success`);
                     updateConnectStatus(messageData.from, true);
@@ -1218,28 +1219,31 @@ function isPeerConnected (chatID) {
 async function sendChatHistory (chatID, pk) {
     console.log(`sending chat history to ${pk}`);
     console.log(`is pk string ${typeof pk}`);
-    await store.getItem(chatID).then(async (chatInfo) => {
-        var peerHistory = [];
-        if (!chatInfo.historyTable.has(pk)) {
-            chatInfo.historyTable.set(pk, [[chatInfo.history[0].id, 0]]);
-            await store.setItem(chatID, chatInfo);
-        }
-        const intervals = chatInfo.historyTable.get(pk);
-        var start, end;
-        for (const interval of intervals) {
-            start = chatInfo.history.findIndex(msg => { return msg.id === interval[0]; });
-            end = chatInfo.history.findIndex(msg => { return msg.id === interval[1]; });
-            end = (interval[1] == 0 ? chatInfo.history.length : end) + 1;
-            peerHistory = peerHistory.concat(chatInfo.history.slice(start, end));
-        }
+    
+    const sigSet = new Set(programStore.get(chatID).metadata.operations.filter((op) => (op.action === "create" ? op.pk : op.pk2) === pk).map(op => op.sig));
+
+    const peerHistory = [];
+    if (!programStore.get(chatID).historyTable.has(pk)) {
+        programStore.get(chatID).historyTable.set(pk, [[programStore.get(chatID).history[0].id, 0]]);
+        await store.setItem(chatID, programStore.get(chatID));
+    }
+    const intervals = programStore.get(chatID).historyTable.get(pk);
+    var start, end;
+    
+    for (const interval of intervals) {
+        start = programStore.get(chatID).history.findIndex(msg => { return msg.id === interval[0]; });
+        end = programStore.get(chatID).history.findIndex(msg => { return msg.id === interval[1]; });
+        end = (interval[1] == 0 ? chatInfo.history.length : end) + 1;
         
-        sendToMember(addMsgID({
-            type: "history",
-            history: peerHistory,
-            chatID: chatID,
-            from: keyPair.publicKey
-        }), pk);
-    });
+        peerHistory.push(...programStore.get(chatID).history.slice(start, end));
+    }
+    
+    sendToMember(addMsgID({
+        type: "history",
+        history: peerHistory,
+        chatID: chatID,
+        from: keyPair.publicKey
+    }), pk);
 }
 
 function initChatHistoryTable (chatID, msgID) {
@@ -1360,7 +1364,7 @@ function updateChatWindow (data) {
         message.className = "chat-message";
         switch (data.type) {
             case "create":
-                message.innerHTML = `[${formatDate(data.sentTime)}] chat created by ${keyMap.get(data.from)}`;
+                message.innerHTML = `[${formatDate(data.sentTime)}] chat created by ${keyMap.get(data.op.pk)}`;
                 break;
             case "text":
                 message.innerHTML = `[${formatDate(data.sentTime)}] ${keyMap.get(data.from)}: ${data.message}`;
@@ -1431,7 +1435,7 @@ function sendChatMessage (messageInput) {
         from: keyPair.publicKey,
         message: messageInput,
         chatID: currentChatID,
-        deps: access.getDeps()
+        deps: access.getDeps(programStore.get(chatID).metadata.operations)
     });
 
     broadcastToMembers(data, currentChatID);
@@ -1646,7 +1650,7 @@ export async function selectIgnored(ignoredOp, chatID) {
 
         // writing to storage
         chatInfo.metadata.ignored.push(ignoredOp);
-        removeOp(chatInfo.metadata.operations, ignoredOp);
+        // removeOp(chatInfo.metadata.operations, ignoredOp);
         await store.setItem(chatID, chatInfo);
         refreshChatWindow(chatID);
 

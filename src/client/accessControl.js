@@ -134,7 +134,7 @@ function resolvedHash(hash, unresolvedHashes) {
 }
 
 export function verifiedOperations (receivedOps, localOps, unresolvedHashes, verifiedOps) {
-    hashedOps = new Map();
+    // hashedOps = new Map();
 
     verifiedOps.push(...localOps);
     const localSet = new Set(localOps.map((op) => op.sig));
@@ -168,7 +168,6 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes, ver
     }
     
     receivedOps = new Set(receivedOps.filter((op) => (op.action !== "create" && nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1)) && !localSet.has(op.sig))));
-    console.log(receivedOps.size);
 
     var change;
     do {

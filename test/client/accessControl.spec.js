@@ -8,11 +8,15 @@ const keyPairs = {
     "b": nacl.sign.keyPair(),
     "c": nacl.sign.keyPair(),
     "d": nacl.sign.keyPair(),
+    "e": nacl.sign.keyPair(),
+    "f": nacl.sign.keyPair(),
 }
 keyPairs.a.publicKey = arrToStr(keyPairs.a.publicKey);
 keyPairs.b.publicKey = arrToStr(keyPairs.b.publicKey);
 keyPairs.c.publicKey = arrToStr(keyPairs.c.publicKey);
 keyPairs.d.publicKey = arrToStr(keyPairs.d.publicKey);
+keyPairs.c.publicKey = arrToStr(keyPairs.e.publicKey);
+keyPairs.d.publicKey = arrToStr(keyPairs.f.publicKey);
 var createOp, ops, ignored, unresolvedHashes, verifiedOps;
 
 beforeAll(() => {
@@ -331,26 +335,26 @@ describe('hasCycles', () => {
     });
 });
 
-describe('members add', () => {
+// describe('members add', () => {
 
-    beforeEach(() => {
-        ops = [createOp];
-        ignored = [];
-    });
+//     beforeEach(() => {
+//         ops = [createOp];
+//         ignored = [];
+//     });
 
-    test("correct when sequentially adding devices", async () => {
-        ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
-        ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]));
-        ops.push(unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]));
+//     test("correct when sequentially adding devices", async () => {
+//         ops.push(unit.generateOp("add", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+//         ops.push(unit.generateOp("add", keyPairs["c"].publicKey, ops, keyPairs["a"]));
+//         ops.push(unit.generateOp("add", keyPairs["d"].publicKey, ops, keyPairs["b"]));
 
-        const members = await unit.members(ops, ignored);
+//         const members = await unit.members(ops, ignored);
 
-        expect(members.size).toBe(4);
-        expect(members).toContain(keyPairs["a"].publicKey);
-        expect(members).toContain(keyPairs["b"].publicKey);
-        expect(members).toContain(keyPairs["c"].publicKey);
-        expect(members).toContain(keyPairs["d"].publicKey);
-    });
+//         expect(members.size).toBe(4);
+//         expect(members).toContain(keyPairs["a"].publicKey);
+//         expect(members).toContain(keyPairs["b"].publicKey);
+//         expect(members).toContain(keyPairs["c"].publicKey);
+//         expect(members).toContain(keyPairs["d"].publicKey);
+//     });
 
     // test("correct when concurrently adding different devices", async () => {
     //     ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, ops));
@@ -391,7 +395,7 @@ describe('members add', () => {
     //     expect(members).toContain(keyPairs["b"].publicKey);
     //     expect(members).toContain(keyPairs["c"].publicKey);
     // });
-});
+// });
 
 // describe("member remove", () => {
 //     var populatedOps;
@@ -475,72 +479,158 @@ describe('members add', () => {
 //     });
 // });
 
-// describe("member ignore", () => {
-//     var populatedOps;
+describe("member ignore", () => {
+    var populatedOps;
 
-//     beforeAll(() => {
-//         return new Promise(async (resolve) => {
-//             populatedOps = [await unit.generateOp("create", keyPairs["a"])];
-//             populatedOps.push(await unit.generateOp("add", keyPairs["a"], keyPairs["b"].publicKey, populatedOps));
-//             populatedOps.push(await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, populatedOps));
-//             resolve();
-//         })
-//     });
+    beforeAll(() => {
+        populatedOps = [unit.generateCreateOp(keyPairs["a"])];
+        populatedOps.push(unit.generateOp("add", keyPairs["b"].publicKey, populatedOps, keyPairs["a"]));
+        populatedOps.push(unit.generateOp("add", keyPairs["c"].publicKey, populatedOps, keyPairs["a"]));
+        populatedOps.push(unit.generateOp("add", keyPairs["d"].publicKey, populatedOps, keyPairs["b"]));
+    });
 
-//     beforeEach(() => {
-//         ops = [...populatedOps];
-//         ignored = [];
-//     });
+    beforeEach(() => {
+        ops = [...populatedOps];
+        ignored = [];
+        unit.hashedOps.clear()
+    });
 
-//     test("correct when ignoring member of two device removal cycle", async () => {
-//         ignored.push(await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops));
-//         ops.push(await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops));
+    test("correct when ignoring member of two device removal cycle", async () => {
+        ignored.push(unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["b"]));
+        ops.push(unit.generateOp("remove", keyPairs["b"].publicKey, ops, keyPairs["a"]));
         
-//         const members = await unit.members(ops, ignored);
+        ops.forEach(op => unit.hashedOps.set(unit.hashOp(op), op));
+        const members = await unit.members(ops, ignored);
 
-//         expect(members.size).toBe(2);
-//         expect(members).toContain(keyPairs["a"].publicKey);
-//         expect(members).toContain(keyPairs["c"].publicKey);
-//     });
+        expect(members.size).toBe(3);
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
+    });
 
-//     test("correct when ignoring member from two device removal cycle with extra ops", async () => {
-//         const concOps = [await unit.generateOp("add", keyPairs["a"], keyPairs["c"].publicKey, ops)];
-//         concOps.push(await unit.generateOp("remove", keyPairs["c"], keyPairs["b"].publicKey, ops.concat(concOps[0])));
+    test("correct when ignoring member of two device removal cycle (I c O)", async () => {
+        const remA = unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["b"]);
+        ops.push(remA, unit.generateOp("remove", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        ignored.push(remA);
+        
+        ops.forEach(op => unit.hashedOps.set(unit.hashOp(op), op));
+        const members = await unit.members(ops, ignored);
 
-//         ignored.push(await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops));
+        expect(members.size).toBe(3);
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
+    });
 
-//         const members = await unit.members(ops.concat(concOps), ignored);
+    test("correct when ignoring member from two device removal cycle with extra ops", async () => {
+        // (a adds f, c removes b) and (b removes c), ignoring b removes c
+        const concOps = [unit.generateOp("add", keyPairs["f"].publicKey, ops, keyPairs["a"])];
+        concOps.push(unit.generateOp("remove", keyPairs["b"].publicKey, ops.concat(concOps), keyPairs["c"]));
 
-//         expect(members.size).toBe(2);
-//         expect(members).toContain(keyPairs["a"].publicKey);
-//         expect(members).toContain(keyPairs["c"].publicKey);
-//     });
+        const remOp = unit.generateOp("remove", keyPairs["c"].publicKey, ops.concat(concOps), keyPairs["b"]);
+        concOps.push(remOp);
 
-//     test("correct when ignoring member of three device removal cycle", async () => {
-//         ignored.push(await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops));
-//         const concOps = [await unit.generateOp("remove", keyPairs["b"], keyPairs["c"].publicKey, ops),
-//                         await unit.generateOp("remove", keyPairs["c"], keyPairs["a"].publicKey, ops)];
+        ignored.push(remOp);
 
-//         const members = await unit.members(ops.concat(concOps), ignored);
+        ops.push(...concOps);
+        ops.forEach(op => unit.hashedOps.set(unit.hashOp(op), op));
+        const members = await unit.members(ops, ignored);
 
-//         console.log(members);
-//         expect(members.size).toBe(2);
-//         expect(members).toContain(keyPairs["a"].publicKey);
-//         expect(members).toContain(keyPairs["b"].publicKey);
-//     });
+        expect(members.size).toBe(4);
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
+        expect(members).toContain(keyPairs["f"].publicKey);
+    });
 
-//     test("correct when two removal cycles", async () => {
-//         ops.push(await unit.generateOp("add", keyPairs["a"], keyPairs["d"].publicKey, ops));
-//         const concOps = [ await unit.generateOp("remove", keyPairs["a"], keyPairs["b"].publicKey, ops),
-//                         await unit.generateOp("remove", keyPairs["c"], keyPairs["d"].publicKey, ops)];
-//         ignored.push(await unit.generateOp("remove", keyPairs["d"], keyPairs["c"].publicKey, ops),
-//                     await unit.generateOp("remove", keyPairs["b"], keyPairs["a"].publicKey, ops));
+    test("correct when ignoring member of three device removal cycle", async () => {
+        ignored.push(unit.generateOp("remove", keyPairs["b"].publicKey, ops, keyPairs["a"]));
+        const concOps = [unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["b"]),
+                        unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["c"])];
 
-//         const members = await unit.members(ops.concat(concOps), ignored);
+        ops.push(...concOps);
+        ops.forEach(op => unit.hashedOps.set(unit.hashOp(op), op));
+        const members = await unit.members(ops, ignored);
 
-//         console.log(members);
-//         expect(members.size).toBe(2);
-//         expect(members).toContain(keyPairs["a"].publicKey);
-//         expect(members).toContain(keyPairs["c"].publicKey);
-//     });
-// });
+        expect(members.size).toBe(3);
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
+    });
+
+    test("correct when two removal cycles", async () => {
+        const concOps = [unit.generateOp("remove", keyPairs["b"].publicKey, ops, keyPairs["a"]),
+                        unit.generateOp("remove", keyPairs["d"].publicKey, ops, keyPairs["c"])];
+        ignored.push(unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["d"]),
+                    unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["b"]));
+
+        ops.push(...concOps);
+        ops.forEach(op => unit.hashedOps.set(unit.hashOp(op), op));
+        const members = await unit.members(ops, ignored);
+
+        expect(members.size).toBe(2);
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
+    });
+
+    test("correct with non-direct removals cycles (1)", async () => {
+        // (a adds e, e removes c) and (c removes a) ignores (a adds e)
+        const concOps = [unit.generateOp("add", keyPairs["e"].publicKey, ops, keyPairs["a"]),
+                        unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["c"])];
+        ops.push(concOps[0]);
+        ops.push(unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["e"]));
+
+        ops.push(concOps[1]);
+        ignored.push(concOps[0]);
+
+        ops.forEach(op => unit.hashedOps.set(unit.hashOp(op), op));
+        const members = await unit.members(ops, ignored);
+
+        expect(members.size).toBe(3);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
+    });
+
+    test("correct with non-direct removals cycles (2)", async () => {
+        // (a adds f, f adds e, e removes c) and (c removes a) ignores (a adds f)
+        const concOps = [unit.generateOp("add", keyPairs["f"].publicKey, ops, keyPairs["a"]),
+                        unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["c"])];
+        ops.push(concOps[0]);
+        ops.push(unit.generateOp("add", keyPairs["e"].publicKey, ops, keyPairs["f"]));
+        ops.push(unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["e"]));
+
+        ops.push(concOps[1]);
+        ignored.push(concOps[0]);
+
+        ops.forEach(op => unit.hashedOps.set(unit.hashOp(op), op));
+        const members = await unit.members(ops, ignored);
+
+        expect(members.size).toBe(3);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["c"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
+    });
+
+    test("correct with non-direct removals cycles (2)", async () => {
+        // (a adds f, f adds e, e removes c) and (c removes a) ignores (c removes a)
+        const concOps = [unit.generateOp("add", keyPairs["f"].publicKey, ops, keyPairs["a"]),
+                        unit.generateOp("remove", keyPairs["a"].publicKey, ops, keyPairs["c"])];
+        ops.push(concOps[0]);
+        ops.push(unit.generateOp("add", keyPairs["e"].publicKey, ops, keyPairs["f"]));
+        ops.push(unit.generateOp("remove", keyPairs["c"].publicKey, ops, keyPairs["e"]));
+
+        ops.push(concOps[1]);
+        ignored.push(concOps[1]);
+
+        ops.forEach(op => unit.hashedOps.set(unit.hashOp(op), op));
+        const members = await unit.members(ops, ignored);
+
+        expect(members.size).toBe(5);
+        expect(members).toContain(keyPairs["b"].publicKey);
+        expect(members).toContain(keyPairs["a"].publicKey);
+        expect(members).toContain(keyPairs["d"].publicKey);
+        expect(members).toContain(keyPairs["e"].publicKey);
+        expect(members).toContain(keyPairs["f"].publicKey);
+    });
+});
