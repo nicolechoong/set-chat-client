@@ -1691,7 +1691,7 @@ function getChatID(chatName) {
 
 
 export function updateChatInfo () {
-    if (currentChatID > 0) {
+    if (currentChatID !== 0) {
         document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
 
         memberList.innerHTML = "";
@@ -1733,7 +1733,7 @@ export function updateChatInfo () {
 
 export async function selectChat(chatID) {
     currentChatID = chatID;
-
+    console.log(currentChatID);
     document.getElementById(`chatCard${chatID}`).className = "card card-chat";
     await navigator.locks.request("history", async () => {
         await refreshChatWindow(currentChatID);
