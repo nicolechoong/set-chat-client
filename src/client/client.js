@@ -1626,8 +1626,7 @@ export async function selectIgnored(ignoredOp, chatID) {
 
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
-        const members = access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored);
-        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex).filter(msg => members.has(msg.from));
+        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex).filter(msg => ignoredOp.pk1 == msg.from);
         programStore.get(chatID).history.splice(ignoredOpIndex);
         programStore.get(chatID).history.push(...filteredHistory);
 
