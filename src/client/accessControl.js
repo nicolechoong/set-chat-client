@@ -1,8 +1,8 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
-import { keyPair as clientKeyPair } from './client.js';
-import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-// import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
-// const clientKeyPair = nacl.box.keyPair();
+// import { keyPair as clientKeyPair } from './client.js';
+// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+const clientKeyPair = nacl.box.keyPair();
 
 export const enc = new TextEncoder();
 export var hashedOps = new Map();
@@ -68,12 +68,17 @@ export function hasCycles (ops) {
     return { cycle: true, concurrent: cycles };
 }
 
-function getDeps (operations) {
+export function getDeps (operations) {
     // operations : Array of Object
     var deps = [];
+    const seenDeps = new Set();
+    for (const op of operations) {
+        if (op.action === "create") { continue; }
+        op.deps.forEach(dep => seenDeps.add(dep));
+    }
     for (const op of operations) {
         const hashedOp = hashOp(op);
-        if (op.action === "create" || (op.action !== "create" && !op.deps.includes(hashedOp))) {
+        if (!seenDeps.has(hashedOp)) {
             deps.push(hashedOp);
         }
     }
@@ -82,6 +87,10 @@ function getDeps (operations) {
 
 export function concatOp (op) {
     return op.action === "create" ? `${op.action}${op.pk}${op.nonce}` : `${op.action}${op.pk1}${op.pk2}${op.deps}`;
+}
+
+export function generateChatID (op) {
+    return nacl.hash(enc.encode(`${op.action}${op.pk}${op.nonce}${op.sig}`));
 }
 
 export function hasOp (ops, op) {
@@ -124,9 +133,8 @@ function resolvedHash(hash, unresolvedHashes) {
     return resolved
 }
 
-// TODO: update so that verifiedOps is a parameter, and this returns true or false
-// takes in set of ops
 export function verifiedOperations (receivedOps, localOps, unresolvedHashes, verifiedOps) {
+    hashedOps = new Map();
 
     verifiedOps.push(...localOps);
     const localSet = new Set(localOps.map((op) => op.sig));
@@ -144,17 +152,23 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes, ver
         const op = receivedCreateOps[0];
         if (!nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk))
         || localOps.filter((oplocal) => oplocal.action === "create")[0].sig !== op.sig) {
+            console.log(`verif failed: create op sig invalid`);
             verified = false;
         }
     } else {
+        console.log(`verif failed: not one create op`);
         verified = false;
     }
 
     // filter out all received operations with invalid signatures and create
-    if (receivedOps.findIndex((op) => { op.action !== "create" && !nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1)); }) > -1) {
+    
+    if (receivedOps.findIndex((op) => op.action !== "create" && !nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1))) > -1) {
+        console.log(`verif failed: invalid sig`);
         verified = false;
     }
+    
     receivedOps = new Set(receivedOps.filter((op) => (op.action !== "create" && nacl.sign.detached.verify(enc.encode(concatOp(op)), strToArr(op.sig), strToArr(op.pk1)) && !localSet.has(op.sig))));
+    console.log(receivedOps.size);
 
     var change;
     do {
@@ -175,13 +189,13 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes, ver
             }
         }
     } while (change)
-    if (receivedOps.size > 0) { verified = false; }
+    if (receivedOps.size > 0) { verified = false; console.log(`verif failed: unresolved deps`); }
 
     return verified;
 }
 
 export function hashOp (op) {
-    return arrToStr(nacl.hash(enc.encode(concatOp(op))));
+    return arrToStr(nacl.hash(enc.encode(op.action === "create" ? `${op.action}${op.pk}${op.nonce}${op.sig}` : `${op.action}${op.pk1}${op.pk2}${op.deps}${op.sig}`)));
 }
 
 export function hashOpArray (ops) {

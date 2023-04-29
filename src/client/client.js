@@ -1,6 +1,5 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@9.0.0/+esm'
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr} from "./utils.js";
@@ -38,7 +37,7 @@ var localUsername;
 var currentChatID, connections, msgQueue, serverValue, sessionKeys, acks, peerIgnored;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 var onlineMode = false;
-export var joinedChats, keyMap, store;
+export var joinedChats, keyMap, store, programStore;
 
 const enc = new TextEncoder();
 
@@ -263,6 +262,12 @@ async function onLogin (status, username, receivedChats) {
             store.getItem("msgQueue").then((storedMsgQueue) => {
                 msgQueue = storedMsgQueue === null ? [] : storedMsgQueue;
             });
+
+            for (const chatID of joinedChats.keys()) {
+                await store.getItem(chatID).then((chatInfo) => {
+                    programStore.set(chatID, chatInfo);
+                });
+            }
     
             loginPopup.style.display = "none";
             dim.style.display = "none";
@@ -310,7 +315,6 @@ async function initialiseStore(username) {
 
 var offerSent = new Set()
 
-// TODO: big store readout for chat data
 // TODO: add symmetric encryption to the links nacl.box()
 
 // Sending Offer to Peer
@@ -410,8 +414,8 @@ function onLeave(peerPK) {
 }
 
 async function createNewChat(chatName) {
-    const chatID = uuidv4();
-    console.log(chatID);
+    const createOp = access.generateCreateOp();
+    const chatID = access.generateChatID(createOp);
 
     joinedChats.set(chatID, {
         chatName: chatName,
@@ -424,7 +428,6 @@ async function createNewChat(chatName) {
     });
     await store.setItem("joinedChats", joinedChats);
 
-    const createOp = access.generateCreateOp();
     const operations = [createOp];
 
     const createMsg = addMsgID({
@@ -434,7 +437,7 @@ async function createNewChat(chatName) {
         chatID: chatID,
     });
 
-    await store.setItem(chatID, {
+    const chatInfo = {
         metadata: {
             chatName: chatName,
             operations: operations,
@@ -443,14 +446,18 @@ async function createNewChat(chatName) {
         },
         history: [createMsg],
         historyTable: new Map(),
-    }).then(async () => {
+    };
+
+    programStore.set(chatID, chatInfo);
+    await store.setItem(chatID, chatInfo).then(async () => {
         updateChatOptions("add", chatID);
         await selectChat(chatID);
     });
 
     sendToServer({
         type: "createChat",
-        chatName: chatNameInput.value,
+        chatID: chatID,
+        chatName: chatName,
         from: keyPair.publicKey,
     });
 }
@@ -475,7 +482,7 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
         });
         await store.setItem("joinedChats", joinedChats);
 
-        await store.setItem(chatID, {
+        const chatInfo = {
             metadata: {
                 chatName: chatName,
                 operations: [msg.op],
@@ -484,7 +491,9 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
             },
             history: [msg],
             historyTable: new Map(),
-        });
+        };
+        programStore.set(chatID, chatInfo);
+        await store.setItem(chatID, chatInfo);
 
         initChatHistoryTable(chatID, msg.id);
     }
@@ -502,32 +511,31 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
 
 async function addToChat (name, pk, chatID) {
     // members is the list: username: string, pk: string
-    store.getItem(chatID).then(async (chatInfo) => {
-        console.log(`we are now adding ${name} who has pk ${pk} and the ops are ${chatInfo.metadata.operations}`);
-        const op = access.generateOp("add", pk, chatInfo.metadata.operations);
-        chatInfo.metadata.operations.push(op);
+    console.log(`we are now adding ${name} who has pk ${pk} and the ops are ${programStore.get(chatID).metadata.operations}`);
+    const op = access.generateOp("add", pk, programStore.get(chatID).metadata.operations);
+    programStore.get(chatID).metadata.operations.push(op);
 
-        const addMessage = addMsgID({
-            type: "add",
-            op: op,
-            ignored: chatInfo.metadata.ignored,
-            from: keyPair.publicKey,
-            username: name,
-            chatID: chatID,
-            chatName: chatInfo.metadata.chatName
-        });
+    const addMessage = addMsgID({
+        type: "add",
+        op: op,
+        ignored: programStore.get(chatID).metadata.ignored,
+        from: keyPair.publicKey,
+        username: name,
+        chatID: chatID,
+        chatName: programStore.get(chatID).metadata.chatName
+    });
 
-        joinedChats.get(chatID).validMembers.add(pk);
-        joinedChats.get(chatID).members.push(pk);
-        await store.setItem("joinedChats", joinedChats);
-        await store.setItem(chatID, chatInfo).then(console.log(`${name} has been added to ${chatID}`));
-        if (connections.has(pk)) { sendToMember(addMessage, pk); }
-        broadcastToMembers(addMessage, chatID);
-        sendToServer({
-            to: pk,
-            type: "add",
-            msg: addMessage
-        });
+    joinedChats.get(chatID).validMembers.add(pk);
+    joinedChats.get(chatID).members.push(pk);
+    await store.setItem("joinedChats", joinedChats);
+
+    await store.setItem(chatID, programStore.get(chatID)).then(console.log(`${name} has been added to ${chatID}`));
+    if (connections.has(pk)) { sendToMember(addMessage, pk); }
+    broadcastToMembers(addMessage, chatID);
+    sendToServer({
+        to: pk,
+        type: "add",
+        msg: addMessage
     });
 }
 
@@ -1430,7 +1438,8 @@ function sendChatMessage (messageInput) {
         type: "text",
         from: keyPair.publicKey,
         message: messageInput,
-        chatID: currentChatID
+        chatID: currentChatID,
+        deps: access.getDeps()
     });
 
     broadcastToMembers(data, currentChatID);

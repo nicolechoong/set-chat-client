@@ -43,11 +43,6 @@ app.get('/node_modules/tweetnacl-es6/nacl-fast-es.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', '..', 'node_modules', 'tweetnacl-es6', 'nacl-fast-es.js'));
 });
 
-app.get('/node_modules/uuid/dist/v4.js', (req, res, next) => {
-  console.log(`imported nacl-fast`);
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'node_modules', 'uuid', 'dist', 'v4.js'));
-});
-
 const server = https.createServer({ key, cert }, app);
 
 const port = 3000;
@@ -297,29 +292,12 @@ function onLeave (connection, data) {
   initSIGMA(connection);
 }
 
-function generateUID () {
-  let id;
-  do {
-    id = Math.floor((Math.random() * 1000) + 1).toString();
-  } while (chats.has(id));
-  return id;
-}
-
 function onCreateChat (connection, data) {
   // data = {type: 'createChat', chatName: chat title, members: [list of users]}
-  const chatID = generateUID();
-
+  
   // add to list of chats
-  chats.set(chatID, {chatName: data.chatName, members: [data.from]});
+  chats.set(data.chatID, {chatName: data.chatName, members: [data.from]});
   console.log(`created chat ${data.chatName} with id ${chatID}`);
-
-  // const createChatMessage = {
-  //   type: "createChat",
-  //   chatID: chatID,
-  //   chatName: data.chatName,
-  // };
-
-  // sendTo(connection, createChatMessage, connection.pk);
 }
 
 function onGetPK (connection, data) {
