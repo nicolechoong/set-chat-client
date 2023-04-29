@@ -81,6 +81,7 @@ function initialiseClient () {
     onSIGMA3 = new Map();
     acks = new Set();
     peerIgnored = new Map();
+    programStore = new Map();
 
     // layout
     [...chatList.childNodes].forEach((node) => {
