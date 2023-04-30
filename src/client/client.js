@@ -373,6 +373,7 @@ async function onOffer(offer, peerName, peerPK) {
 
     connections.set(peerPK, { connection: initPeerConnection(), sendChannel: null, auth: false });
     const peerConnection = connections.get(peerPK);
+    connectionNames.set(connection, peerPK);
 
     keyMap.set(peerPK, peerName);
     store.setItem("keyMap", keyMap);
