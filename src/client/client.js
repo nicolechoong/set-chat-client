@@ -879,8 +879,9 @@ async function receivedOperations (ops, chatID, pk) {
 
             sendIgnored(programStore.get(chatID).metadata.ignored, chatID, pk);
             const queuedIgnoredSets = [...peerIgnored].filter((entry) => entry[0].split("_")[0] == chatID);
+            console.log(`${queuedIgnoredSets.length}`);
+            console.log(`${[...queuedIgnoredSets.keys()].map(key => keyMap(key.split("_")[1]))}`);
             for (const [syncID, queuedIg] of queuedIgnoredSets) {
-                console.log(`${queuedIg.ignored.length}`);
                 await receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
                 joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
                 peerIgnored.delete(syncID);
@@ -1627,7 +1628,7 @@ export async function selectIgnored(ignoredOp, chatID) {
 
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
-        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => ignoredOp.pk1 == msg.from);
+        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => msg.type !== "selectedIgnored" && ignoredOp.pk1 !== msg.from);
         programStore.get(chatID).history.splice(ignoredOpIndex+1);
         programStore.get(chatID).history.push(...filteredHistory);
 
