@@ -874,7 +874,7 @@ async function receivedOperations (ops, chatID, pk) {
             
             if (access.unresolvedCycles(graphInfo.concurrent, programStore.get(chatID).metadata.ignored)) {
                 console.log(`cycle detected`);
-                await getIgnored(graphInfo.concurrent, chatID);
+                await getIgnored(graphInfo.concurrent, chatID, pk);
             }
 
             sendIgnored(programStore.get(chatID).metadata.ignored, chatID, pk);
