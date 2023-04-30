@@ -798,8 +798,8 @@ async function sendIgnored (ignored, chatID, pk) {
             }
         });
     });
-    if (!joinedChats.get(chatID).members.includes(pk)) {
-        sendToMember(ignoredMessage, pk)
+    if (!joinedChats.get(chatID).members.includes(ignored)) {
+        sendToMember(ignoredMessage, pk);
     }
 }
 
@@ -1602,9 +1602,11 @@ resetStoreBtn.addEventListener("click", () => {
 
 var resolveGetIgnored = new Map();
 
-async function getIgnored (cycles, chatID) {
+async function getIgnored (cycles, chatID, pk) {
     return new Promise(async (resolve) => { 
-        resolveGetIgnored.set(chatID, [cycles, resolve]); 
+        if (!resolveGetIgnored.has(chatID)) { resolveGetIgnored.set(chatID, [cycles, new Map()]); }
+        resolveGetIgnored.get(chatID)[0] = cycles;
+        resolveGetIgnored.get(chatID)[1].set(pk, resolve);
 
         for (const cycle of cycles) {
             const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
@@ -1656,12 +1658,18 @@ export async function selectIgnored(ignoredOp, chatID) {
             from: keyPair.publicKey,
         });
         broadcastToMembers(msg, chatID);
+        if (!joinedChats.get(chatID).members.includes(ignoredOp.pk1)) {
+            sendToMember(msg, ignoredOp.pk1);
+        }
+        if (!joinedChats.get(chatID).members.includes(ignoredOp.pk2)) {
+            sendToMember(msg, ignoredOp.pk2);
+        }
     }
 
     resolveGetIgnored.get(chatID)[0].splice(resolveGetIgnored.get(chatID)[0].findIndex((cycle) => access.hasOp(cycle, ignoredOp)), 1);
 
     if (resolveGetIgnored.get(chatID)[0].length == 0) {
-        resolveGetIgnored.get(chatID)[1](programStore.get(chatID).metadata.ignored);
+        [...resolveGetIgnored.get(chatID)[1].values()].forEach((res) => res(programStore.get(chatID).metadata.ignored));
         resolveGetIgnored.delete(chatID);
         chatBox.className = "chat-panel col-8";
         enableChatMods(chatID);
