@@ -34,7 +34,7 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, msgQueue, serverValue, sessionKeys, acks, peerIgnored;
+var currentChatID, connections, msgQueue, serverValue, sessionKeys, acks, peerIgnored, reconnect;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 var onlineMode = false;
 export var joinedChats, keyMap, store, programStore;
@@ -135,6 +135,9 @@ function connectToServer () {
 
         switch (data.type) {
             case "SIGMA1":
+                if (reconnect) {
+                    login(localUsername);
+                }
                 serverValue = strToArr(data.value);
                 break;
             case "SIGMA3":
@@ -964,7 +967,7 @@ function initPeerConnection() {
                 console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
                 connection.restartIce();
             } else if (connection.connectionState === "disconnected") {
-                console.log(`peer disconnected`);
+                console.log(`peer disconnected ${connectionNames.get(connection)}`);
                 closeConnections(connectionNames.get(connection), 0);
             }
         }
@@ -1615,10 +1618,12 @@ async function getIgnored (cycles, chatID, pk) {
         console.log([...resolveGetIgnored]);
 
         for (const cycle of cycles) {
-            const removeSelfIndex = cycle.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
-            if (removeSelfIndex > -1) {
-                console.log(`automatically resolved ${cycle.at(removeSelfIndex).action} ${keyMap.get(cycle.at(removeSelfIndex).pk2)}`);
-                await selectIgnored(cycle.at(removeSelfIndex), chatID);
+            const issuedOp = cycle.find((op) => op.pk1 === keyPair.publicKey);
+
+            if (issuedOp) {
+                const selected = access.earliestSubset(cycle).find((op) => op.sig === issuedOp.sig || access.precedes(cycle, op, issuedOp));
+                console.log(`automatically resolved ${selected.action} ${keyMap.get(selected.pk2)}`);
+                await selectIgnored(selected, chatID);
                 continue;
             }
         }
@@ -1726,7 +1731,8 @@ export function updateChatInfo () {
             chatBox.className = "chat-panel col-8 conflict";
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
-                conflictCardList.appendChild(elem.generateConflictCard(cycle, currentChatID));
+                const options = access.earliestSubset(cycle);
+                conflictCardList.appendChild(elem.generateConflictCard(options, currentChatID));
                 for (const op of cycle) {
                     if (document.getElementById(op.sig) == null) {
                         updateChatWindow(addMsgID({
@@ -1781,7 +1787,10 @@ function logout () {
 
 connectBtn.addEventListener("click", () => {
     if (onlineMode) { goOffline(false); }
-    else { connectToServer(); }
+    else { 
+        reconnect = true;
+        connectToServer();
+    }
 });
 
 function goOffline (event) {

@@ -1,8 +1,8 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
-import { keyPair as clientKeyPair } from './client.js';
-import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-// import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
-// const clientKeyPair = nacl.box.keyPair();
+// import { keyPair as clientKeyPair } from './client.js';
+// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+const clientKeyPair = nacl.box.keyPair();
 
 export const enc = new TextEncoder();
 export var hashedOps = new Map();
@@ -63,11 +63,24 @@ export function hasCycles (ops) {
                 toOp.set(edge.to.sig, toOp.get(edge.to.sig)+1);
             }
         }
-        cycles[i] = cycles[i].filter((op) => toOp.get(op.sig) >= 2);
+        // cycles[i] = cycles[i].filter((op) => toOp.get(op.sig) >= 2);
     }
     return { cycle: true, concurrent: cycles };
 }
 
+export function earliestSubset (ops) {
+    const hashedSubset = new Set(ops.map(op => hashOp(op)));
+    const subset = [];
+
+    for (const op of ops) {
+        for (const dep of op.deps) {
+            if (!hashedSubset.has(dep)) {
+                subset.push(op);
+            }
+        }
+    }
+    return subset;
+}
 export function getDeps (operations) {
     // operations : Array of Object
     var deps = [];
@@ -219,7 +232,7 @@ function getOpFromHash(hashedOp) {
 }
 
 // takes in set of ops
-function precedes (ops, op1, op2) {
+export function precedes (ops, op1, op2) {
     if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; }
     const toVisit = [op2];
     const target = hashOp(op1);
