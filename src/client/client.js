@@ -135,10 +135,18 @@ function connectToServer () {
 
         switch (data.type) {
             case "SIGMA1":
-                if (reconnect) {
-                    login(localUsername);
-                }
                 serverValue = strToArr(data.value);
+                if (reconnect) {
+                    if (!await onSIGMA1(serverValue, connection)) {
+                        alert("failed to authenticate connection");
+                        return;
+                    }
+                    console.log(`sending login`);
+                    sendToServer({
+                        type: "login",
+                        name: localUsername,
+                    });
+                }
                 break;
             case "SIGMA3":
                 onSIGMA3.get(connection)(data);
@@ -1493,7 +1501,6 @@ async function login (username) {
         sendToServer({
             type: "login",
             name: username,
-            sig: arrToStr(nacl.sign.detached(enc.encode(username), keyPair.secretKey)),
         });
     }
 }

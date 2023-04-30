@@ -102,7 +102,7 @@ wsServer.on('connection', function(connection) {
         onClientDH.get(connection)(data);
         break;
       case "login":
-        onLogin(connection, data.name, strToArr(data.sig));
+        onLogin(connection, data.name);
         break;     
       case "offer":
         onOffer(connection, data);
@@ -209,14 +209,13 @@ async function initSIGMA (connection) {
   }
 }
 
-function onLogin (connection, name, sig) {
+function onLogin (connection, name) {
   // connection: websocket, name: string, sig: Uint8Array
   console.log(`User [${name}] online`);
   var status = "SUCCESS";
 
   const pubKey = connection.pk;
-  if (!nacl.sign.detached.verify(enc.encode(name), sig, strToArr(pubKey))) { status = "VERIF_FAILED"; }
-  else if (usernameToPK.has(name) && usernameToPK.get(name) !== pubKey) { status = "NAME_TAKEN"; }
+  if (usernameToPK.has(name) && usernameToPK.get(name) !== pubKey) { status = "NAME_TAKEN"; }
   else {
       if (allUsers.has(pubKey)) {
         onReconnect(connection, name, pubKey);
