@@ -188,7 +188,7 @@ function connectToServer () {
         }
     };
 
-    connection.onclose = goOffline()
+    connection.onclose = goOffline(true);
 }
 
 connectToServer();
@@ -935,6 +935,10 @@ function initPeerConnection() {
             console.log(`received onclose`);
             closeConnections(connectionNames.get(connection), 0);
         };
+        connection.on = function (event) {
+            console.log(`received onclose`);
+            closeConnections(connectionNames.get(connection), 0);
+        };
         connection.onicecandidate = function (event) {
             console.log("New candidate");
             if (event.candidate) {
@@ -959,6 +963,9 @@ function initPeerConnection() {
                 connections.delete(connectionNames.get(connection));
                 console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
                 connection.restartIce();
+            } else if (connection.connectionState === "disconnected") {
+                console.log(`peer disconnected`);
+                closeConnections(connectionNames.get(connection), 0);
             }
         }
         // connection.onnegotiationneeded = function (event) {
@@ -1773,14 +1780,16 @@ function logout () {
 }
 
 connectBtn.addEventListener("click", () => {
-    if (onlineMode) { goOffline(); }
+    if (onlineMode) { goOffline(false); }
     else { connectToServer(); }
 });
 
-function goOffline () {
+function goOffline (event) {
     console.log(`goOffline`);
     onlineMode = false;
     wifiSlash.style.display = "block";
+    [...connections.keys()].forEach((pk) => closeConnections(pk, 0));
+    if (!event) { connection.close(); }
 }
 
 
