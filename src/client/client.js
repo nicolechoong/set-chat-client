@@ -1871,6 +1871,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                 if (!localMsgIDs.has(msg.id)) { // if we don't have this message
                     
                     if (programStore.get(chatID).historyTable.get(msg.from).at(-1)[1] > msg.sentTime) {
+                        console.log(`don't display`);
                         continue;
                     }
 
@@ -1888,7 +1889,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                             } else {
                                 const interval = programStore.get(chatID).historyTable.get(pk2).pop();
                                 if (start === null || interval[0].sentTime > msg.sentTime) {
-                                    interval[0] = msg.id;
+                                    interval[0] = msg.sentTime;
                                 }
                                 programStore.get(chatID).historyTable.get(pk2).push(interval);
                             }
@@ -1899,7 +1900,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                             if (programStore.get(chatID).historyTable.has(pk2)) {
                                 const interval = programStore.get(chatID).historyTable.get(pk2).pop();
                                 if (interval[1] > msg.sentTime) {
-                                    interval[1] = msg.id;
+                                    interval[1] = msg.sentTime;
                                 }
                                 programStore.get(chatID).historyTable.get(pk2).push(interval);
                             } 
