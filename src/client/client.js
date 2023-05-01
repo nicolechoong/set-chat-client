@@ -1889,6 +1889,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     } else if (msg.type === "remove") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "text") {
+                        localIndex -= 1;
                         continue;
                     }
                     mergedChatHistory.unshift(msg);
@@ -1906,6 +1907,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     } else if (msg.type === "remove") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "text") {
+                        receivedIndex -= 1;
                         continue;
                     }
                     mergedChatHistory.unshift(msg);
