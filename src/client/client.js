@@ -1887,7 +1887,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             const mergedChatHistory = [];
             var localIndex = 0
             var receivedIndex = 0;
-            const authorisedSet = new Set(access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored));
+            var authorisedSet = new Set(...programStore.get(chatID).members);
             console.log(authorisedSet);
 
             var msg;
