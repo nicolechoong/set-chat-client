@@ -881,6 +881,7 @@ async function receivedOperations (ops, chatID, pk) {
             console.log(`valid?`);
             updateMembers(memberSet, chatID);
 
+            console.log(`${verified}   ${memberSet.has(pk)}   ${memberSet.has(keyPair.publicKey)}`);
             return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
         });
     });
@@ -1826,6 +1827,7 @@ async function sendChatHistory (chatID, pk) {
     await navigator.locks.request("history", async () => {
         var authorised = joinedChats.get(chatID).members.has(pk);
         console.log(authorised);
+        console.log(programStore.get(chatID).history);
         var msg;
         const peerHistory = [];
         for (let index = programStore.get(chatID).history.length; index-- ; index >= 0) {
