@@ -1364,7 +1364,7 @@ function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
         programStore.get(chatID).history.forEach(data => {
-                updateChatWindow(data);
+            updateChatWindow(data);
         });
     }
 }
@@ -1706,23 +1706,6 @@ export async function selectIgnored(ignoredOp, chatID, cycle) {
     }
 }
 
-function getChatNames() {
-    var chatnames = [];
-    for (const chatID of joinedChats.keys()) {
-        chatnames.push(joinedChats.get(chatID).chatName);
-    }
-    return chatnames;
-}
-
-function getChatID(chatName) {
-    for (const chatID of joinedChats.keys()) {
-        if (chatName === joinedChats.get(chatID).chatName) {
-            return chatID;
-        }
-    }
-    return -1;
-}
-
 
 export function updateChatInfo () {
     if (currentChatID !== 0) {
@@ -1855,7 +1838,7 @@ function mergeJoinedChats(localChats, receivedChats) {
             mergedChats.set(id, {
                 chatName: chatName,
                 validMembers: new Set([fromPK]),
-                members: receivedChats.get(id),
+                members: new Set([fromPK]),
                 exMembers: new Set(),
                 peerIgnored: new Map(),
                 currentMember: false,
@@ -1918,6 +1901,8 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                             } 
                         }
                     }
+                } else {
+                    console.log('rejected')
                 }
             }
 
