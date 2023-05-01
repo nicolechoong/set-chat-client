@@ -1880,7 +1880,6 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     receivedIndex -= 1;
                 }
                 
-                console.log(msg.type);
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
                         authorisedSet.add(msg.op.pk2);
