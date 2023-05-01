@@ -545,6 +545,7 @@ async function onRemove (messageData) {
     const fromPK = messageData.from;
     const chatID = messageData.chatID;
     var joinedChatInfo = joinedChats.get(chatID);
+    console.log(`onremove`);
 
     if (fromPK !== keyPair.publicKey) {
         updateChatWindow(messageData);
@@ -553,7 +554,7 @@ async function onRemove (messageData) {
         if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
             [...joinedChatInfo.members].forEach((pk) => sendOperations(chatID, pk, true));
 
-        } else if (joinedChatInfo.currentMember && joinedChatInfo.members.has(fromPK)) {
+        } else if (joinedChatInfo.members.has(fromPK)) {
             const verifiedOps = [];
             const verified = access.verifiedOperations(messageData.ops, programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.unresolved, verifiedOps);
             if (verified) {
@@ -1075,6 +1076,7 @@ async function receivedMessage (messageData, channel=null) {
         case "remove":
             await receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                 if (res) { 
+                    console.log(`success`);
                     if (messageData.op.pk2 === keyPair.publicKey) {
                         onRemove(messageData);
                     } else {
