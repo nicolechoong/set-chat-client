@@ -1854,10 +1854,12 @@ function mergeJoinedChats(localChats, receivedChats) {
 async function sendChatHistory (chatID, pk) {
     await navigator.locks.request("history", async () => {
         var authorised = joinedChats.get(chatID).members.has(pk);
+        console.log(authorised);
         var msg;
         const peerHistory = [];
         for (let index = programStore.get(chatID).history.length; index-- ; index == 0) {
             msg = programStore.get(chatID).history.at(index);
+            console.log(`${msg.type}`);
             if (msg.type === "add" && msg.op.pk2 === pk) {
                 authorised = false;
             } else if (msg.type === "remove" && msg.op.pk2 === pk) {
