@@ -287,7 +287,7 @@ async function onLogin (status, username, receivedChats) {
     
             for (const chatID of joinedChats.keys()) {
                 console.log(chatID, joinedChats.get(chatID));
-                if (joinedChats.get(chatID).members.includes(keyPair.publicKey) || joinedChats.get(chatID).validMembers.has(keyPair.publicKey) || joinedChats.get(chatID).exMembers.has(keyPair.publicKey))
+                if (joinedChats.get(chatID).members.has(keyPair.publicKey) || joinedChats.get(chatID).validMembers.has(keyPair.publicKey) || joinedChats.get(chatID).exMembers.has(keyPair.publicKey))
                 updateChatOptions("add", chatID);
                 getOnline(chatID);
             }
@@ -1332,8 +1332,9 @@ async function removePeer (messageData) {
 
     if (programStore.get(chatID).historyTable.has(pk)) {
         const interval = programStore.get(chatID).historyTable.get(pk).pop();
+        console.log(interval);
         const endTime = programStore.get(chatID).history.find((msg) => msg.id === interval[1]);
-        if (endTime.sentTime > messageData.id) {
+        if (endTime.sentTime > messageData.sentTime) {
             interval[1] = messageData.id;
         }
         programStore.get(chatID).historyTable.get(pk).push(interval);
