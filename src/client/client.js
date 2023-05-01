@@ -1081,7 +1081,7 @@ async function receivedMessage (messageData, channel=null) {
             messageData.online.forEach((peer) => connectToPeer(peer));
             break;
         case "history":
-            await mergeChatHistory(messageData.chatID, messageData.from, messageData.history);
+            await mergeChatHistory(messageData.chatID, messageData.history);
             break;
         case "remove":
             await receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
@@ -1854,7 +1854,7 @@ function mergeJoinedChats(localChats, receivedChats) {
 }
 
 
-async function mergeChatHistory (chatID, pk, receivedMsgs) {
+async function mergeChatHistory (chatID, receivedMsgs) {
     await navigator.locks.request("history", async () => {
         const localMsgs = programStore.get(chatID).history;
         console.log(`local length ${localMsgs.length}`);
@@ -1862,66 +1862,93 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
         var newMessage = false;
 
         if (receivedMsgs.length > 0) {
-            const mergedChatHistory = [...localMsgs];
-            const modifiedHistoryTable = new Set();
-            var pk2;
-            
-            const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
-            for (const msg of receivedMsgs) {
-                if (!localMsgIDs.has(msg.id)) { // if we don't have this message
-                    
-                    if (programStore.get(chatID).historyTable.get(msg.from).at(-1)[1] > msg.sentTime) {
-                        console.log(`don't display`);
-                        continue;
-                    }
+            const mergedChatHistory = [];
+            const localIndex = 0
+            const receivedIndex = 0;
+            const authorisedSet = new Set(programStore.get(chatID).members);
 
-                    mergedChatHistory.push(msg);
-                    newMessage = true;
-
-                    if (msg.type === "text") { continue; }
-
-                    // rolling forward changes to history table
-                    if (msg.op.pk2 !== keyPair.publicKey) {
-                        pk2 = msg.op.pk2;
-                        if (msg.type === "add") {
-                            if (!programStore.get(chatID).historyTable.has(pk2)) {
-                                programStore.get(chatID).historyTable.set(pk2, [[msg.sentTime, 0]]);
-                            } else {
-                                const interval = programStore.get(chatID).historyTable.get(pk2).pop();
-                                if (start === null || interval[0].sentTime > msg.sentTime) {
-                                    interval[0] = msg.sentTime;
-                                }
-                                programStore.get(chatID).historyTable.get(pk2).push(interval);
-                            }
-                            modifiedHistoryTable.add(pk2);
-
-                        } else if (msg.type === "remove") {
-                            modifiedHistoryTable.add(pk2);
-                            if (programStore.get(chatID).historyTable.has(pk2)) {
-                                const interval = programStore.get(chatID).historyTable.get(pk2).pop();
-                                if (interval[1] > msg.sentTime) {
-                                    interval[1] = msg.sentTime;
-                                }
-                                programStore.get(chatID).historyTable.get(pk2).push(interval);
-                            } 
-                        }
-                    }
+            var msg;
+            while (localIndex < localMsgs && receivedIndex < receivedMsgs) {
+                if (localMsgs.at(localIndex).id == receivedMsgs.at(receivedIndex).id) {
+                    msg = localMsgs[localIndex];
+                    localIndex += 1;
+                    receivedIndex += 1;
+                } else if (localMsgs.at(localIndex).sentTime < receivedMsgs.at(receivedIndex).sentTime) {
+                    msg = localMsgs[localIndex];
+                    localIndex += 1;
                 } else {
-                    console.log(`rejected ${mergedChatHistory.length}`);
+                    msg = receivedMsgs[receivedIndex];
+                    receivedIndex += 1;
                 }
+                
+                if (msg.type === "add") {
+                    authorisedSet.add(msg);
+                } else if (msg.type === "remove") {
+                    authorisedSet.remove(msg);
+                } else if (msg.type === "text" && !authorisedSet.has(msg.from)) {
+                    continue;
+                }
+                mergedChatHistory.push(msg);
             }
 
-            // sorting intervals for each set of intervals
-            for (pk of modifiedHistoryTable) {
-                programStore.get(chatID).historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
-            }
+            // const mergedChatHistory = localMsgs.concat(receivedMsgs);
+            // sortChatHistory(mergeChatHistory);
 
-            mergedChatHistory.sort((a, b) => {
-                if (a.sentTime > b.sentTime) { return 1; }
-                if (a.sentTime < b.sentTime) { return -1; }
-                if (a.username > b.username) { return 1; }
-                else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
-            });
+            // const modifiedHistoryTable = new Set();
+            // var pk2;
+            
+            // const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
+            
+            // for (const msg of mergedChatHistory) {
+
+            //     if (!localMsgIDs.has(msg.id)) { // if we don't have this message
+                    
+            //         if (programStore.get(chatID).historyTable.get(msg.from).at(-1)[1] > msg.sentTime) {
+            //             console.log(`don't display`);
+            //             continue;
+            //         }
+
+            //         mergedChatHistory.push(msg);
+            //         newMessage = true;
+
+            //         if (msg.type === "text") { continue; }
+
+            //         // rolling forward changes to history table
+            //         if (msg.op.pk2 !== keyPair.publicKey) {
+            //             pk2 = msg.op.pk2;
+            //             if (msg.type === "add") {
+            //                 if (!programStore.get(chatID).historyTable.has(pk2)) {
+            //                     programStore.get(chatID).historyTable.set(pk2, [[msg.sentTime, 0]]);
+            //                 } else {
+            //                     const interval = programStore.get(chatID).historyTable.get(pk2).pop();
+            //                     if (start === null || interval[0].sentTime > msg.sentTime) {
+            //                         interval[0] = msg.sentTime;
+            //                     }
+            //                     programStore.get(chatID).historyTable.get(pk2).push(interval);
+            //                 }
+            //                 modifiedHistoryTable.add(pk2);
+
+            //             } else if (msg.type === "remove") {
+            //                 modifiedHistoryTable.add(pk2);
+            //                 if (programStore.get(chatID).historyTable.has(pk2)) {
+            //                     const interval = programStore.get(chatID).historyTable.get(pk2).pop();
+            //                     if (interval[1] > msg.sentTime) {
+            //                         interval[1] = msg.sentTime;
+            //                     }
+            //                     programStore.get(chatID).historyTable.get(pk2).push(interval);
+            //                 } 
+            //             }
+            //         }
+            //     } else {
+            //         console.log(`rejected ${mergedChatHistory.length}`);
+            //     }
+            // }
+
+            // // sorting intervals for each set of intervals
+            // for (pk of modifiedHistoryTable) {
+            //     programStore.get(chatID).historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
+            // }
+
             programStore.get(chatID).history = mergedChatHistory;
             await store.setItem(chatID, programStore.get(chatID));
             refreshChatWindow(chatID);
@@ -1929,6 +1956,15 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                 document.getElementById(`chatCard${chatID}`).className = "card card-chat notif";
             }
         }
+    });
+}
+
+function sortChatHistory (history) {
+    history.sort((a, b) => {
+        if (a.sentTime > b.sentTime) { return 1; }
+        if (a.sentTime < b.sentTime) { return -1; }
+        if (a.username > b.username) { return 1; }
+        else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
     });
 }
 
