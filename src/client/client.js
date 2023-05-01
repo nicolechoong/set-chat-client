@@ -1328,21 +1328,22 @@ async function removePeer (messageData) {
     const chatID = messageData.chatID;
 
     if (programStore.get(chatID).historyTable.has(pk)) {
-        console.log(programStore.get(chatID).historyTable.get(pk));
         const interval = programStore.get(chatID).historyTable.get(pk).pop();
-        console.log(interval);
-        if (interval[1] > messageData.sentTime) {
-            interval[1] = messageData.id;
-        }
+        interval[1] = interval[1] > messageData.sentTime ? messageData.id : interval[1];
         programStore.get(chatID).historyTable.get(pk).push(interval);
     }
 
     // inserting message + rollback
     // const endIndex = programStore.get(chatID).history.findIndex((msg) => (messageData.sentTime < msg.sentTime && (msg.action === "add" || msg.op.pk2 === pk)));
     const locationIndex = programStore.get(chatID).history.findIndex((msg) => (msg.sentTime > messageData.sentTime));
-    console.log(programStore.get(chatID).history.slice(locationIndex).filter((msg) => msg.pk1 !== pk));
-    programStore.get(chatID).history.splice(locationIndex, 0, messageData);
-    programStore.get(chatID).history.push(...programStore.get(chatID).history.slice(locationIndex).filter((msg) => msg.pk1 !== pk));
+    if (locationIndex == -1) {
+        programStore.push(messageData);
+    } else {
+        console.log(locationIndex);
+        console.log(programStore.get(chatID).history.slice(locationIndex+1).filter((msg) => msg.pk1 !== pk));
+        programStore.get(chatID).history.splice(locationIndex+1, 0, messageData);
+        programStore.get(chatID).history.push(...programStore.get(chatID).history.slice(locationIndex+1).filter((msg) => msg.pk1 !== pk));
+    }
 
     console.log(`history ${programStore.get(chatID).history}`);
     console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
@@ -1868,13 +1869,15 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
             const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
             for (const msg of receivedMsgs) {
                 if (!localMsgIDs.has(msg.id)) { // if we don't have this message
+                    
+                    if (programStore.get(chatID).historyTable.get(msg.from).at(-1)[1] > msg.sentTime) {
+                        continue;
+                    }
+
                     mergedChatHistory.push(msg);
                     newMessage = true;
 
-                    if (msg.type === "text") { 
-                        if (programStore.get(chatID).historyTable.get(msg.from).at(-1))
-                        continue; 
-                    }
+                    if (msg.type === "text") { continue; }
 
                     // rolling forward changes to history table
                     if (msg.op.pk2 !== keyPair.publicKey) {
