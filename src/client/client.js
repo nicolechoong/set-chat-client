@@ -894,7 +894,7 @@ async function updateMembers (memberSet, chatID) {
         joinedChats.get(chatID).currentMember = true;
         joinedChats.get(chatID).exMembers.delete(keyPair.publicKey);
     } else {
-
+        joinedChats.get(chatID).currentMember = false;
     }
 
     // add all the users which are no longer valid to exMembers
@@ -1016,9 +1016,9 @@ async function receivedMessage (messageData, channel=null) {
             onSIGMA3.get(channel)(messageData);
             return;
         case "ops":
-            await sendChatHistory(messageData.chatID, messageData.from);
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
+                await sendChatHistory(messageData.chatID, messageData.from);
                 if (res) {
                     console.log(`res success`);
                     updateConnectStatus(messageData.from, true);
