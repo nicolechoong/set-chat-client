@@ -1025,6 +1025,7 @@ async function receivedMessage (messageData, channel=null) {
             await sendChatHistory(messageData.chatID, messageData.from);
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
+                console.log(resolveMergeHistory.get(syncID));
                 await mergeChatHistory(messageData.chatID, resolveMergeHistory.get(syncID));
                 if (res) {
                     console.log(`res success`);
