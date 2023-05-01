@@ -1342,6 +1342,7 @@ async function removePeer (messageData) {
     // inserting message + rollback
     const locationIndex = programStore.get(chatID).history.findIndex((msg) => (msg.sentTime > messageData.sentTime));
     // const endIndex = programStore.get(chatID).history.findIndex((msg) => (messageData.sentTime < msg.sentTime && (msg.action === "add" || msg.op.pk2 === pk)));
+    console.log(programStore.get(chatID).history.slice(locationIndex).filter((msg) => msg.pk1 !== pk));
     programStore.get(chatID).history.push(location, 0, messageData, ...programStore.get(chatID).history.slice(locationIndex).filter((msg) => msg.pk1 !== pk));
 
     console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
