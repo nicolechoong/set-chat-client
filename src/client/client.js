@@ -881,7 +881,7 @@ async function receivedOperations (ops, chatID, pk) {
         updateMembers(memberSet, chatID);
 
         console.log(`${verified}   ${memberSet.has(pk)}   ${memberSet.has(keyPair.publicKey)}`);
-        return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
+        return verified && memberSet.has(pk) ? resolve(true) : resolve(false);
     });
 }
 
@@ -1839,13 +1839,13 @@ async function sendChatHistory (chatID, pk) {
             console.log(`${msg.type}`);
             if (msg.type === "add" && msg.op.pk2 === pk) {
                 if (!authorised) {
-                    peerHistory.splice(0, findIndex((msg) => msg.type === "add"));
+                    peerHistory.splice(0, peerHistory.findIndex((msg) => msg.type === "add"));
                 }
                 authorised = false;
                 peerHistory.unshift(msg);
             } else if (msg.type === "remove" && msg.op.pk2 === pk) {
                 if (authorised) {
-                    peerHistory.splice(0, findIndex((msg) => msg.type === "remove"));
+                    peerHistory.splice(0, peerHistory.findIndex((msg) => msg.type === "remove"));
                 }
                 authorised = true;
             }
