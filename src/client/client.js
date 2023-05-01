@@ -494,12 +494,10 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
                 unresolved: [],
             },
             history: [msg],
-            historyTable: new Map(),
+            historyTable: new Map()
         };
         programStore.set(chatID, chatInfo);
         await store.setItem(chatID, chatInfo);
-
-        initChatHistoryTable(chatID, msg.sentTime);
     }
 
     if (connections.has(fromPK)) {
@@ -1223,46 +1221,46 @@ function sendAdvertisement (chatID, pk) {
     }
 }
 
-async function sendChatHistory (chatID, pk) {
-    console.log(`sending chat history to ${pk}`);
-    console.log(`is pk string ${typeof pk}`);
+// async function sendChatHistory (chatID, pk) {
+//     console.log(`sending chat history to ${pk}`);
+//     console.log(`is pk string ${typeof pk}`);
     
-    const sigSet = new Set(programStore.get(chatID).metadata.operations.filter((op) => (op.action === "create" ? op.pk : op.pk2) === pk).map(op => op.sig));
+//     const sigSet = new Set(programStore.get(chatID).metadata.operations.filter((op) => (op.action === "create" ? op.pk : op.pk2) === pk).map(op => op.sig));
 
-    const peerHistory = [];
-    if (!programStore.get(chatID).historyTable.has(pk)) {
-        programStore.get(chatID).historyTable.set(pk, [[programStore.get(chatID).history[0].sentTime, 0]]);
-        await store.setItem(chatID, programStore.get(chatID));
-    }
-    const intervals = programStore.get(chatID).historyTable.get(pk);
-    var start, end;
+//     const peerHistory = [];
+//     if (!programStore.get(chatID).historyTable.has(pk)) {
+//         programStore.get(chatID).historyTable.set(pk, [[programStore.get(chatID).history[0].sentTime, 0]]);
+//         await store.setItem(chatID, programStore.get(chatID));
+//     }
+//     const intervals = programStore.get(chatID).historyTable.get(pk);
+//     var start, end;
     
-    for (const interval of intervals) {
-        start = programStore.get(chatID).history.findIndex(msg => { return msg.sentTime === interval[0]; });
-        end = programStore.get(chatID).history.findIndex(msg => { return msg.sentTime === interval[1]; });
-        end = (interval[1] == 0 ? programStore.get(chatID).history.length : end) + 1;
+//     for (const interval of intervals) {
+//         start = programStore.get(chatID).history.findIndex(msg => { return msg.sentTime === interval[0]; });
+//         end = programStore.get(chatID).history.findIndex(msg => { return msg.sentTime === interval[1]; });
+//         end = (interval[1] == 0 ? programStore.get(chatID).history.length : end) + 1;
         
-        peerHistory.push(...programStore.get(chatID).history.slice(start, end));
-    }
-    console.log(peerHistory.map(msg => msg.type));
-    sendToMember(addMsgID({
-        type: "history",
-        history: peerHistory,
-        chatID: chatID,
-        from: keyPair.publicKey
-    }), pk);
-}
+//         peerHistory.push(...programStore.get(chatID).history.slice(start, end));
+//     }
+//     console.log(peerHistory.map(msg => msg.type));
+//     sendToMember(addMsgID({
+//         type: "history",
+//         history: peerHistory,
+//         chatID: chatID,
+//         from: keyPair.publicKey
+//     }), pk);
+// }
 
-async function initChatHistoryTable (chatID, msgID) {
-    console.log(`initialised chat history`);
-    for (const pk of joinedChats.get(chatID).members) {
-        if (!programStore.get(chatID).historyTable.has(pk)) {
-            programStore.get(chatID).historyTable.set(pk, []);
-        }
-        programStore.get(chatID).historyTable.get(pk).push([msgID, 0]);
-    }
-    await store.setItem(chatID, programStore.get(chatID));
-} 
+// async function initChatHistoryTable (chatID, msgID) {
+//     console.log(`initialised chat history`);
+//     for (const pk of joinedChats.get(chatID).members) {
+//         if (!programStore.get(chatID).historyTable.has(pk)) {
+//             programStore.get(chatID).historyTable.set(pk, []);
+//         }
+//         programStore.get(chatID).historyTable.get(pk).push([msgID, 0]);
+//     }
+//     await store.setItem(chatID, programStore.get(chatID));
+// } 
 
 var resolveConnectToPeer = new Map();
 
@@ -1853,6 +1851,30 @@ function mergeJoinedChats(localChats, receivedChats) {
     return mergedChats;
 }
 
+function sendChatHistory (chatID, pk) {
+    var authorised = false;
+    const peerHistory = [];
+    for (const msg of programStore.get(chatID).history) {
+        if (msg.type === "add" && msg.op.pk2 === pk) {
+            authorised = true;
+        } else if (msg.type === "remove" && msg.op.pk2 === pk) {
+            authorised = false;
+            peerHistory.push(msg);
+            continue;
+        }
+
+        if (authorised || msg.type === "selectIgnored") {
+            peerHistory.push(msg);
+        }
+    }
+
+    sendToMember(addMsgID({
+        type: "history",
+        history: peerHistory,
+        chatID: chatID,
+        from: keyPair.publicKey
+    }), pk);
+}
 
 async function mergeChatHistory (chatID, receivedMsgs) {
     await navigator.locks.request("history", async () => {
@@ -1883,9 +1905,9 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 
                 if (authorisedSet.has(msg.from)) {
                     if (msg.type === "add") {
-                        authorisedSet.add(msg.pk2);
+                        authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "remove") {
-                        authorisedSet.delete(msg.pk2);
+                        authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "text") {
                         continue;
                     }
@@ -1897,9 +1919,9 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 msg = localMsgs[localIndex];
                 if (authorisedSet.has(msg.from)) {
                     if (msg.type === "add") {
-                        authorisedSet.add(msg.pk2);
+                        authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "remove") {
-                        authorisedSet.delete(msg.pk2);
+                        authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "text") {
                         continue;
                     }
@@ -1912,9 +1934,9 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 msg = receivedMsgs[receivedIndex];
                 if (authorisedSet.has(msg.from)) {
                     if (msg.type === "add") {
-                        authorisedSet.add(msg.pk2);
+                        authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "remove") {
-                        authorisedSet.delete(msg.pk2);
+                        authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "text") {
                         continue;
                     }
@@ -1922,66 +1944,6 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 }
                 receivedIndex += 1;
             }
-
-
-
-            // const mergedChatHistory = localMsgs.concat(receivedMsgs);
-            // sortChatHistory(mergeChatHistory);
-
-            // const modifiedHistoryTable = new Set();
-            // var pk2;
-            
-            // const localMsgIDs = new Set(localMsgs.map(msg => msg.id));
-            
-            // for (const msg of mergedChatHistory) {
-
-            //     if (!localMsgIDs.has(msg.id)) { // if we don't have this message
-                    
-            //         if (programStore.get(chatID).historyTable.get(msg.from).at(-1)[1] > msg.sentTime) {
-            //             console.log(`don't display`);
-            //             continue;
-            //         }
-
-            //         mergedChatHistory.push(msg);
-            //         newMessage = true;
-
-            //         if (msg.type === "text") { continue; }
-
-            //         // rolling forward changes to history table
-            //         if (msg.op.pk2 !== keyPair.publicKey) {
-            //             pk2 = msg.op.pk2;
-            //             if (msg.type === "add") {
-            //                 if (!programStore.get(chatID).historyTable.has(pk2)) {
-            //                     programStore.get(chatID).historyTable.set(pk2, [[msg.sentTime, 0]]);
-            //                 } else {
-            //                     const interval = programStore.get(chatID).historyTable.get(pk2).pop();
-            //                     if (start === null || interval[0].sentTime > msg.sentTime) {
-            //                         interval[0] = msg.sentTime;
-            //                     }
-            //                     programStore.get(chatID).historyTable.get(pk2).push(interval);
-            //                 }
-            //                 modifiedHistoryTable.add(pk2);
-
-            //             } else if (msg.type === "remove") {
-            //                 modifiedHistoryTable.add(pk2);
-            //                 if (programStore.get(chatID).historyTable.has(pk2)) {
-            //                     const interval = programStore.get(chatID).historyTable.get(pk2).pop();
-            //                     if (interval[1] > msg.sentTime) {
-            //                         interval[1] = msg.sentTime;
-            //                     }
-            //                     programStore.get(chatID).historyTable.get(pk2).push(interval);
-            //                 } 
-            //             }
-            //         }
-            //     } else {
-            //         console.log(`rejected ${mergedChatHistory.length}`);
-            //     }
-            // }
-
-            // // sorting intervals for each set of intervals
-            // for (pk of modifiedHistoryTable) {
-            //     programStore.get(chatID).historyTable.get(pk).sort((a, b) => { a[0] - b[0] });
-            // }
 
             programStore.get(chatID).history = mergedChatHistory;
             await store.setItem(chatID, programStore.get(chatID));
