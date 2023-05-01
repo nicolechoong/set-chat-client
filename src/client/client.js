@@ -1354,7 +1354,15 @@ function updateChatWindow (data) {
 }
 
 async function updateChatStore (messageData) {
-    programStore.get(messageData.chatID).history.push(messageData);
+    const locationIndex = programStore.get(messageData.chatID).history.findIndex((msg) => (msg.sentTime >= messageData.sentTime));
+    if (locationIndex < 0) {
+        programStore.get(messageData.chatID).history.push(messageData);
+    } else {
+        if (programStore.get(messageData.chatID).at(locationIndex).id !== messageData.id) {
+            programStore.get(chatID).history.splice(locationIndex+1, 0, messageData);
+            programStore.get(chatID).history.push(...programStore.get(chatID).history.slice(locationIndex+1).filter((msg) => msg.pk1 !== pk));
+        }
+    }
     await store.setItem(messageData.chatID, programStore.get(messageData.chatID));
 }
 
