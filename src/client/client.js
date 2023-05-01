@@ -1361,7 +1361,7 @@ async function updateChatStore (messageData) {
     if (locationIndex < 0) {
         programStore.get(chatID).history.push(messageData);
     } else {
-        if (programStore.get(chatID).at(locationIndex).id !== messageData.id) {
+        if (programStore.get(chatID).history.at(locationIndex).id !== messageData.id) {
             programStore.get(chatID).history.splice(locationIndex+1, 0, messageData);
             programStore.get(chatID).history.push(...programStore.get(chatID).history.slice(locationIndex+1).filter((msg) => msg.pk1 !== pk));
         }
