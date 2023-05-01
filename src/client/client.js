@@ -843,44 +843,46 @@ const resolveSyncIgnored = new Map();
 async function receivedOperations (ops, chatID, pk) {
     // ops: Array of Object, chatID: String, pk: stringify(public key of sender)
     console.log(`receiving operations for chatID ${chatID} from ${keyMap.get(pk)}`);
-    return new Promise(async (resolve) => {
-        console.log(`ops acquired lock`);
-        if (pk === keyPair.publicKey) { return resolve(true); }
+    await navigator.locks.request("history", async () => {
+        return new Promise(async (resolve) => {
+            console.log(`ops acquired lock`);
+            if (pk === keyPair.publicKey) { return resolve(true); }
 
-        const verifiedOps = [];
-        console.log(`received`);
-        console.log(ops);
-        console.log(`self`);
-        console.log(programStore.get(chatID).metadata.operations);
-        const verified = access.verifiedOperations(ops, programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.unresolved, verifiedOps);
-        programStore.get(chatID).metadata.operations = verifiedOps;
-        await store.setItem(chatID, programStore.get(chatID));
+            const verifiedOps = [];
+            console.log(`received`);
+            console.log(ops);
+            console.log(`self`);
+            console.log(programStore.get(chatID).metadata.operations);
+            const verified = access.verifiedOperations(ops, programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.unresolved, verifiedOps);
+            programStore.get(chatID).metadata.operations = verifiedOps;
+            await store.setItem(chatID, programStore.get(chatID));
 
-        const graphInfo = access.hasCycles(programStore.get(chatID).metadata.operations);
-        console.log(`graph Info ${graphInfo.cycle}`);
-        if (graphInfo.cycle) {
+            const graphInfo = access.hasCycles(programStore.get(chatID).metadata.operations);
+            console.log(`graph Info ${graphInfo.cycle}`);
+            if (graphInfo.cycle) {
+                
+                if (access.unresolvedCycles(graphInfo.concurrent, programStore.get(chatID).metadata.ignored)) {
+                    console.log(`cycle detected`);
+                    await getIgnored(graphInfo.concurrent, chatID, pk);
+                }
+
+                sendIgnored(programStore.get(chatID).metadata.ignored, chatID, pk);
+                const queuedIgnoredSets = [...peerIgnored].filter((entry) => entry[0].split("_")[0] == chatID);
+                for (const [syncID, queuedIg] of queuedIgnoredSets) {
+                    await receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
+                    joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
+                    peerIgnored.delete(syncID);
+                }
+                resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
+                return;
+            }
             
-            if (access.unresolvedCycles(graphInfo.concurrent, programStore.get(chatID).metadata.ignored)) {
-                console.log(`cycle detected`);
-                await getIgnored(graphInfo.concurrent, chatID, pk);
-            }
+            const memberSet = access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored);
+            console.log(`valid?`);
+            updateMembers(memberSet, chatID);
 
-            sendIgnored(programStore.get(chatID).metadata.ignored, chatID, pk);
-            const queuedIgnoredSets = [...peerIgnored].filter((entry) => entry[0].split("_")[0] == chatID);
-            for (const [syncID, queuedIg] of queuedIgnoredSets) {
-                await receivedIgnored(queuedIg.ignored, chatID, queuedIg.pk, resolve);
-                joinedChats.get(chatID).peerIgnored.delete(queuedIg.pk);
-                peerIgnored.delete(syncID);
-            }
-            resolveSyncIgnored.set(`${chatID}_${pk}`, resolve);
-            return;
-        }
-        
-        const memberSet = access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored);
-        console.log(`valid?`);
-        updateMembers(memberSet, chatID);
-
-        return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
+            return verified && memberSet.has(pk) && memberSet.has(keyPair.publicKey) ? resolve(true) : resolve(false);
+        });
     });
 }
 
@@ -995,12 +997,16 @@ function initChannel(channel) {
     channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data), event.target) }
 }
 
+resolveMergeHistory = new Map();
+
 async function receivedMessage (messageData, channel=null) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(messageData.from)}`);
     if (messageData.chatID !== currentChatID && (messageData.type === "text" || messageData.type === "add" || messageData.type === "remove")
     && document.getElementById(`chatCard${messageData.chatID}`) !== null) {
         document.getElementById(`chatCard${messageData.chatID}`).className = "card card-chat notif";
     }
+
+    const syncID = `${messageData.chatID}_${messageData.from}`;
     switch (messageData.type) {
         case "ack":
             console.log(`ack received ${messageData.id}`);
@@ -1016,9 +1022,10 @@ async function receivedMessage (messageData, channel=null) {
             onSIGMA3.get(channel)(messageData);
             return;
         case "ops":
+            await sendChatHistory(messageData.chatID, messageData.from);
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
-                await sendChatHistory(messageData.chatID, messageData.from);
+                await mergeChatHistory(messageData.chatID, resolveMergeHistory.get(syncID));
                 if (res) {
                     console.log(`res success`);
                     updateConnectStatus(messageData.from, true);
@@ -1031,7 +1038,6 @@ async function receivedMessage (messageData, channel=null) {
             });
             break;
         case "ignored":
-            const syncID = `${messageData.chatID}_${messageData.from}`;
             if (resolveSyncIgnored.has(syncID)) {
                 console.log(`ripe ignored`);
                 receivedIgnored(messageData.ignored, messageData.chatID, messageData.from, resolveSyncIgnored.get(syncID));
@@ -1059,7 +1065,7 @@ async function receivedMessage (messageData, channel=null) {
             messageData.online.forEach((peer) => connectToPeer(peer));
             break;
         case "history":
-            await mergeChatHistory(messageData.chatID, messageData.history);
+            resolveMergeHistory.set(syncID, messageData.history);
             break;
         case "remove":
             await receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
@@ -1852,7 +1858,7 @@ async function sendChatHistory (chatID, pk) {
     });
 }
 
-async function mergeChatHistory (chatID, receivedMsgs) {
+async function mergeChatHistory (chatID, receivedMsgs=[]) {
     await navigator.locks.request("history", async () => {
         const localMsgs = programStore.get(chatID).history;
         console.log(`local length ${localMsgs.length}`);
