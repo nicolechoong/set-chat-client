@@ -1859,7 +1859,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     msg = localMsgs[localIndex];
                     localIndex -= 1;
                     receivedIndex -= 1;
-                } else if (localMsgs.at(localIndex).sentTime < receivedMsgs.at(receivedIndex).sentTime) {
+                } else if (localMsgs.at(localIndex).sentTime > receivedMsgs.at(receivedIndex).sentTime) {
                     msg = localMsgs[localIndex];
                     localIndex -= 1;
                 } else {
