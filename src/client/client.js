@@ -1904,7 +1904,9 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     receivedIndex += 1;
                 }
                 
+                console.log(msg.type);
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
+                    console.log("pass");
                     if (msg.type === "add") {
                         authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "remove") {
