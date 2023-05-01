@@ -499,7 +499,7 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
         programStore.set(chatID, chatInfo);
         await store.setItem(chatID, chatInfo);
 
-        initChatHistoryTable(chatID, msg.id);
+        initChatHistoryTable(chatID, msg.sentTime);
     }
 
     if (connections.has(fromPK)) {
@@ -579,7 +579,7 @@ async function onRemove (messageData) {
             for (const pk of joinedChats.get(chatID).members) {
                 if (programStore.get(chatID).historyTable.has(pk)) {
                     const interval = programStore.get(chatID).historyTable.get(pk).pop();
-                    interval[1] = interval[1] == 0 ? messageData.id : interval[1];
+                    interval[1] = interval[1] == 0 ? messageData.sentTime : interval[1];
                     programStore.get(chatID).historyTable.get(pk).push(interval);
                 }
             }
@@ -848,7 +848,7 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
         if (!joinedChats.get(chatID).exMembers.has(pk) && programStore.get(chatID).historyTable.has(pk)) {
             const interval = programStore.get(chatID).historyTable.get(pk).pop()
             const choice = programStore.get(chatID).history.at(programStore.get(chatID).history.findLastIndex((msg) => msg.type === "selectedIgnored" && msg.from === keyPair.publicKey && msg.op.pk1 === pk));
-            interval[1] = choice;
+            interval[1] = choice.sentTime;
             programStore.get(chatID).historyTable.get(pk).push(interval);
         }
         console.log(programStore.get(chatID).historyTable.get(pk));
@@ -1231,7 +1231,7 @@ async function sendChatHistory (chatID, pk) {
 
     const peerHistory = [];
     if (!programStore.get(chatID).historyTable.has(pk)) {
-        programStore.get(chatID).historyTable.set(pk, [[programStore.get(chatID).history[0].id, 0]]);
+        programStore.get(chatID).historyTable.set(pk, [[programStore.get(chatID).history[0].sentTime, 0]]);
         await store.setItem(chatID, programStore.get(chatID));
     }
     const intervals = programStore.get(chatID).historyTable.get(pk);
@@ -1312,11 +1312,10 @@ async function addPeer (messageData) {
     updateChatInfo();
     updateChatWindow(messageData);
     if (!programStore.get(chatID).historyTable.has(pk)) {
-        programStore.get(chatID).historyTable.set(pk, [[messageData.id, 0]]);
+        programStore.get(chatID).historyTable.set(pk, [[messageData.sentTime, 0]]);
     } else if (programStore.get(chatID).at(-1)[1] == 0) {
-        const startTimeStamp = programStore.get(chatID).history.find((msg) => msg.id === programStore.get(chatID).at(-1)[0]);
-        if (startTimeStamp.sentTime > msg.sentTime) { // replace with earlier
-            programStore.get(chatID).at(-1)[0] = msg.id;
+        if (programStore.get(chatID).at(-1)[0] > msg.sentTime) { // replace with earlier
+            programStore.get(chatID).at(-1)[0] = msg.sentTime;
         }
     }
     programStore.get(chatID).history.push(messageData);
@@ -1332,8 +1331,7 @@ async function removePeer (messageData) {
         console.log(programStore.get(chatID).historyTable.get(pk));
         const interval = programStore.get(chatID).historyTable.get(pk).pop();
         console.log(interval);
-        const endIndex = programStore.get(chatID).history.findIndex((msg) => msg.id === interval[1]);
-        if (programStore.get(chatID).history.at(endIndex).sentTime > messageData.sentTime) {
+        if (interval[1] > messageData.sentTime) {
             interval[1] = messageData.id;
         }
         programStore.get(chatID).historyTable.get(pk).push(interval);
@@ -1873,18 +1871,20 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                     mergedChatHistory.push(msg);
                     newMessage = true;
 
-                    if (msg.type === "text") { continue; }
+                    if (msg.type === "text") { 
+                        if (programStore.get(chatID).historyTable.get(msg.from).at(-1))
+                        continue; 
+                    }
 
                     // rolling forward changes to history table
                     if (msg.op.pk2 !== keyPair.publicKey) {
                         pk2 = msg.op.pk2;
                         if (msg.type === "add") {
                             if (!programStore.get(chatID).historyTable.has(pk2)) {
-                                programStore.get(chatID).historyTable.set(pk2, [[msg.id, 0]]);
+                                programStore.get(chatID).historyTable.set(pk2, [[msg.sentTime, 0]]);
                             } else {
                                 const interval = programStore.get(chatID).historyTable.get(pk2).pop();
-                                const start = programStore.get(chatID).history.find((msg) => msg.id === interval[0].id);
-                                if (start.sentTime > msg.sentTime) {
+                                if (start === null || interval[0].sentTime > msg.sentTime) {
                                     interval[0] = msg.id;
                                 }
                                 programStore.get(chatID).historyTable.get(pk2).push(interval);
@@ -1895,8 +1895,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                             modifiedHistoryTable.add(pk2);
                             if (programStore.get(chatID).historyTable.has(pk2)) {
                                 const interval = programStore.get(chatID).historyTable.get(pk2).pop();
-                                const end = programStore.get(chatID).history.find((msg) => msg.id === interval[1].id);
-                                if (end.sentTime > msg.sentTime) {
+                                if (interval[1] > msg.sentTime) {
                                     interval[1] = msg.id;
                                 }
                                 programStore.get(chatID).historyTable.get(pk2).push(interval);
