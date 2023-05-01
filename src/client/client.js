@@ -1312,7 +1312,7 @@ async function addPeer (messageData) {
     updateChatInfo();
     updateChatWindow(messageData);
     if (!programStore.get(chatID).historyTable.has(pk)) {
-        programStore.get(chatID).historyTable.set(pk, [messageData.id, 0]);
+        programStore.get(chatID).historyTable.set(pk, [[messageData.id, 0]]);
     } else if (programStore.get(chatID).at(-1)[1] == 0) {
         const startTimeStamp = programStore.get(chatID).history.find((msg) => msg.id === programStore.get(chatID).at(-1)[0]);
         if (startTimeStamp.sentTime > msg.sentTime) { // replace with earlier
@@ -1894,7 +1894,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                         pk2 = msg.op.pk2;
                         if (msg.type === "add") {
                             if (!programStore.get(chatID).historyTable.has(pk2)) {
-                                programStore.get(chatID).historyTable.set(pk2, [msg.id, 0]);
+                                programStore.get(chatID).historyTable.set(pk2, [[msg.id, 0]]);
                             } else {
                                 const interval = programStore.get(chatID).historyTable.get(pk2).pop();
                                 const start = programStore.get(chatID).history.find((msg) => msg.id === interval[0].id);
