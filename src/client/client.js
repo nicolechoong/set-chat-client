@@ -1821,14 +1821,20 @@ async function sendChatHistory (chatID, pk) {
         console.log(authorised);
         var msg;
         const peerHistory = [];
-        for (let index = programStore.get(chatID).history.length; index-- ; index == 0) {
+        for (let index = programStore.get(chatID).history.length; index-- ; index >= 0) {
             msg = programStore.get(chatID).history.at(index);
             console.log(`${msg.type}`);
             if (msg.type === "add" && msg.op.pk2 === pk) {
+                if (!authorised) {
+                    peerHistory.splice(0, findIndex((msg) => msg.type === "add"));
+                }
                 authorised = false;
-            } else if (msg.type === "remove" && msg.op.pk2 === pk) {
-                authorised = true;
                 peerHistory.unshift(msg);
+            } else if (msg.type === "remove" && msg.op.pk2 === pk) {
+                if (authorised) {
+                    peerHistory.splice(0, findIndex((msg) => msg.type === "remove"));
+                }
+                authorised = true;
             }
 
             if (authorised || msg.type === "selectIgnored") {
