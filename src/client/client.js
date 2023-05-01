@@ -1854,7 +1854,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
 
             var msg;
             while (localIndex >= 0 && receivedIndex >= 0) {
-                console.log(localIndex >= 0 && receivedIndex >= 0);
+                console.log(`${localMsgs.at(localIndex).type}  ${receivedMsgs.at(receivedIndex).type}`);
                 if (localMsgs.at(localIndex).id == receivedMsgs.at(receivedIndex).id) {
                     msg = localMsgs[localIndex];
                     localIndex -= 1;
@@ -1873,8 +1873,6 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
-                    } else if (msg.type === "text") {
-                        continue;
                     }
                     mergedChatHistory.unshift(msg);
                 }
@@ -1890,9 +1888,6 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
-                    } else if (msg.type === "text") {
-                        localIndex -= 1;
-                        continue;
                     }
                     mergedChatHistory.unshift(msg);
                 }
@@ -1908,9 +1903,6 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
-                    } else if (msg.type === "text") {
-                        receivedIndex -= 1;
-                        continue;
                     }
                     mergedChatHistory.unshift(msg);
                 }
