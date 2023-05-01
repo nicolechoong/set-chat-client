@@ -1244,7 +1244,7 @@ async function sendChatHistory (chatID, pk) {
         
         peerHistory.push(...programStore.get(chatID).history.slice(start, end));
     }
-    
+    console.log(peerHistory.map(msg => msg.type));
     sendToMember(addMsgID({
         type: "history",
         history: peerHistory,
