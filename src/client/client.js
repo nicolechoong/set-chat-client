@@ -1876,6 +1876,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     receivedIndex -= 1;
                 }
                 
+                console.log(mergedChatHistory.map(msg => msg.type));
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
                         authorisedSet.delete(msg.op.pk2);
@@ -1885,7 +1886,6 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     mergedChatHistory.unshift(msg);
                 }
             }
-            console.log(mergedChatHistory.map(msg => msg.type));
             console.log(`exit`);
 
             while (localIndex >= 0) {
