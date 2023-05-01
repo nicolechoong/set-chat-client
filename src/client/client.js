@@ -1069,7 +1069,7 @@ async function receivedMessage (messageData, channel=null) {
         case "history":
             resolveMergeHistory.set(syncID, messageData.history);
             const disputeCheck = (messageData.history.findLastIndex((msg) => msg.type === "remove" && msg.op.pk2 === keyPair.publicKey && !msg.dispute));
-            if (disputeCheck > -1) {
+            if (disputeCheck > -1 && programStore.get(messageData.chatID).history.findLastIndex((msg) => msg.id === messageData.history.at(disputeCheck)) < 0) {
                 onRemove(messageData.history.at(disputeCheck));
             }
             break;
