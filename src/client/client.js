@@ -1864,12 +1864,12 @@ async function sendChatHistory (chatID, pk) {
                 authorised = false;
             } else if (msg.type === "remove" && msg.op.pk2 === pk) {
                 authorised = true;
-                peerHistory.shift(msg);
+                peerHistory.unshift(msg);
                 continue;
             }
 
             if (authorised || msg.type === "selectIgnored") {
-                peerHistory.shift(msg);
+                peerHistory.unshift(msg);
             }
         }
         console.log(peerHistory);
