@@ -1856,7 +1856,7 @@ async function sendChatHistory (chatID, pk) {
         var authorised = joinedChats.get(chatID).members.has(pk);
         var msg;
         const peerHistory = [];
-        for (let index = programStore.get(chatID).history.length; i-- ; i == 0) {
+        for (let index = programStore.get(chatID).history.length; index-- ; index == 0) {
             msg = programStore.get(chatID).history.at(index);
             if (msg.type === "add" && msg.op.pk2 === pk) {
                 authorised = false;
