@@ -1318,8 +1318,6 @@ async function addPeer (messageData) {
         if (startTimeStamp.sentTime > msg.sentTime) { // replace with earlier
             programStore.get(chatID).at(-1)[0] = msg.id;
         }
-    } else {
-        programStore.get(chatID).historyTable.get(pk).push([messageData.id, 0]);
     }
     programStore.get(chatID).history.push(messageData);
     await store.setItem(chatID, programStore.get(chatID));
@@ -1331,6 +1329,7 @@ async function removePeer (messageData) {
     const chatID = messageData.chatID;
 
     if (programStore.get(chatID).historyTable.has(pk)) {
+        console.log(programStore.get(chatID).historyTable.get(pk));
         const interval = programStore.get(chatID).historyTable.get(pk).pop();
         console.log(interval);
         const endTime = programStore.get(chatID).history.find((msg) => msg.id === interval[1]);
