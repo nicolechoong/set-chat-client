@@ -997,7 +997,7 @@ function initChannel(channel) {
     channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data), event.target) }
 }
 
-resolveMergeHistory = new Map();
+const resolveMergeHistory = new Map();
 
 async function receivedMessage (messageData, channel=null) {
     console.log(`received a message from the channel of type ${messageData.type} from ${keyMap.get(messageData.from)}`);
