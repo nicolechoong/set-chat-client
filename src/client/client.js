@@ -1897,7 +1897,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             }
 
             while (receivedIndex >= 0) {
-                console.log(`receivedLoop`);
+                console.log(`receivedLoop ${receivedIndex}`);
                 msg = receivedMsgs[receivedIndex];
                 newMessage = true;
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
