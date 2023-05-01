@@ -424,7 +424,7 @@ async function createNewChat (chatName) {
     joinedChats.set(chatID, {
         chatName: chatName,
         validMembers: new Set([keyPair.publicKey]),
-        members: [keyPair.publicKey],
+        members: new Set([keyPair.publicKey]),
         exMembers: new Set(),
         peerIgnored: new Map(),
         currentMember: true,
@@ -478,7 +478,7 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
         joinedChats.set(chatID, {
             chatName: chatName,
             validMembers: new Set([fromPK]),
-            members: [fromPK],
+            members: new Set([fromPK]),
             exMembers: new Set(),
             peerIgnored: new Map(),
             currentMember: false,
@@ -533,7 +533,7 @@ async function addToChat (name, pk, chatID) {
     console.log(JSON.stringify(addMessage));
 
     joinedChats.get(chatID).validMembers.add(pk);
-    joinedChats.get(chatID).members.push(pk);
+    joinedChats.get(chatID).members.add(pk);
     await store.setItem("joinedChats", joinedChats);
 
     await store.setItem(chatID, programStore.get(chatID)).then(console.log(`${name} has been added to ${chatID}`));
@@ -557,9 +557,9 @@ async function onRemove (messageData) {
         await updateChatStore(messageData);
 
         if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
-            joinedChatInfo.members.forEach((pk) => sendOperations(chatID, pk, true));
+            [...joinedChatInfo.members].forEach((pk) => sendOperations(chatID, pk, true));
 
-        } else if (joinedChatInfo.currentMember && joinedChatInfo.members.includes(fromPK)) {
+        } else if (joinedChatInfo.currentMember && joinedChatInfo.members.has(fromPK)) {
             const verifiedOps = [];
             const verified = access.verifiedOperations(messageData.ops, programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.unresolved, verifiedOps);
             if (verified) {
@@ -572,9 +572,7 @@ async function onRemove (messageData) {
 
             joinedChatInfo.toDispute = { peerName: await getUsername(fromPK), peerPK: fromPK };
 
-            if (joinedChatInfo.members.includes(keyPair.publicKey)) {
-                joinedChatInfo.members.splice(joinedChatInfo.members.indexOf(keyPair.publicKey), 1);
-            }
+            joinedChatInfo.members.delete(keyPair.publicKey, 1);
             joinedChatInfo.exMembers.add(keyPair.publicKey);
             await store.setItem("joinedChats", joinedChats);
 
@@ -723,9 +721,9 @@ async function onGetOnline(online, chatID) {
         resolveGetOnline.get(chatID)(false);
     }
     online.sort((a, b) => {
-        if (!joinedChats.get(chatID).members.includes(a) && joinedChats.get(chatID).members.includes(b)) {
+        if (!joinedChats.get(chatID).members.has(a) && joinedChats.get(chatID).members.has(b)) {
             return 1
-        } else if (!joinedChats.get(chatID).members.includes(a) && joinedChats.get(chatID).members.includes(b)) {
+        } else if (!joinedChats.get(chatID).members.has(a) && joinedChats.get(chatID).members.has(b)) {
             return -1
         } else {
             return 0
@@ -799,7 +797,7 @@ async function sendIgnored (ignored, chatID, pk) {
         from: keyPair.publicKey,
     });
     broadcastToMembers(ignoredMessage, chatID);
-    joinedChats.get(chatID).members.forEach((pk2) => {
+    [...joinedChats.get(chatID).members].forEach((pk2) => {
         resolveSyncIgnored.set(`${chatID}_${pk2}`, (res) => {
             sendChatHistory(chatID, pk2);
             if (res) {
@@ -810,7 +808,7 @@ async function sendIgnored (ignored, chatID, pk) {
             }
         });
     });
-    if (!joinedChats.get(chatID).members.includes(ignored)) {
+    if (!joinedChats.get(chatID).members.has(ignored)) {
         sendToMember(ignoredMessage, pk);
     }
 }
@@ -845,9 +843,7 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
 
     } else {
         console.log(`different universe from ${keyMap.get(pk)}`);
-        if (joinedChats.get(chatID).members.includes(pk)) {
-            joinedChats.get(chatID).members.splice(joinedChats.get(chatID).members.indexOf(pk), 1);
-        }
+        joinedChats.get(chatID).members.delete(pk);
         joinedChats.get(chatID).exMembers.add(pk);
         if (!joinedChats.get(chatID).exMembers.has(pk) && programStore.get(chatID).historyTable.has(pk)) {
             const interval = programStore.get(chatID).historyTable.get(pk).pop()
@@ -917,6 +913,8 @@ async function updateMembers (memberSet, chatID) {
         updateChatOptions("add", chatID);
         joinedChats.get(chatID).currentMember = true;
         joinedChats.get(chatID).exMembers.delete(keyPair.publicKey);
+    } else {
+
     }
 
     // add all the users which are no longer valid to exMembers
@@ -926,11 +924,11 @@ async function updateMembers (memberSet, chatID) {
         }
     });
     joinedChats.get(chatID).validMembers = memberSet;
-    joinedChats.get(chatID).members = [...joinedChats.get(chatID).validMembers].filter(pk => !joinedChats.get(chatID).exMembers.has(pk));
+    joinedChats.get(chatID).members = new Set([...joinedChats.get(chatID).validMembers].filter(pk => !joinedChats.get(chatID).exMembers.has(pk)));
     await store.setItem("joinedChats", joinedChats);
     updateChatInfo();
     console.log(`all valid members ${chatID} ${[...joinedChats.get(chatID).validMembers].map(pk => keyMap.get(pk))}`);
-    console.log(`current universe members ${chatID} ${joinedChats.get(chatID).members.map(pk => keyMap.get(pk))}`);
+    console.log(`current universe members ${chatID} ${[...joinedChats.get(chatID).members].map(pk => keyMap.get(pk))}`);
     console.log(`current exmembers ${chatID} ${[...joinedChats.get(chatID).exMembers].map(pk => keyMap.get(pk))}`);
 }
 
@@ -1110,7 +1108,7 @@ async function receivedMessage (messageData, channel=null) {
             }
             break;
         case "text":
-            if (joinedChats.get(messageData.chatID).members.includes(messageData.from)) {
+            if (joinedChats.get(messageData.chatID).members.has(messageData.from)) {
                 updateChatWindow(messageData);
                 await updateChatStore(messageData);
             }
@@ -1187,7 +1185,7 @@ async function onChannelOpen(event) {
     if (resolveConnectToPeer.has(peerPK)) {
         if (await initSIGMA(event.target)) {
             for (const chatID of joinedChats.keys()) {
-                if (joinedChats.get(chatID).members.includes(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
+                if (joinedChats.get(chatID).members.has(peerPK) || joinedChats.get(chatID).exMembers.has(peerPK)) {
                     sendOperations(chatID, peerPK, true);
                 }
             }
@@ -1223,12 +1221,6 @@ function sendAdvertisement (chatID, pk) {
             chatID: chatID,
         }), pk);
     }
-}
-
-function isPeerConnected (chatID) {
-    const connectedpks = new Set(connections.keys());
-    console.log(connectedpks);
-    return joinedChats.get(chatID).members.findIndex((pk) => {connectedpks.has(pk)}) > -1;
 }
 
 async function sendChatHistory (chatID, pk) {
@@ -1312,21 +1304,23 @@ async function addPeer (messageData) {
     keyMap.set(pk, messageData.username);
     store.setItem("keyMap", keyMap);
 
-    if (!joinedChats.get(chatID).members.includes(pk)) {
-        joinedChats.get(chatID).members.push(pk);
-    }
-    if (!joinedChats.get(chatID).validMembers.has(pk)) {
-        joinedChats.get(chatID).validMembers.add(pk);
-    }
+    joinedChats.get(chatID).members.add(pk);
+    joinedChats.get(chatID).validMembers.add(pk);
     joinedChats.get(chatID).exMembers.delete(pk);
     store.setItem("joinedChats", joinedChats);
 
     updateChatInfo();
     updateChatWindow(messageData);
     if (!programStore.get(chatID).historyTable.has(pk)) {
-        programStore.get(chatID).historyTable.set(pk, []);
+        programStore.get(chatID).historyTable.set(pk, [messageData.id, 0]);
+    } else if (programStore.get(chatID).at(-1)[1] == 0) {
+        const startTimeStamp = programStore.get(chatID).history.find((msg) => msg.id === programStore.get(chatID).at(-1)[0]);
+        if (startTimeStamp.sentTime > msg.sentTime) { // replace with earlier
+            programStore.get(chatID).at(-1)[0] = msg.id;
+        }
+    } else {
+        programStore.get(chatID).historyTable.get(pk).push([messageData.id, 0]);
     }
-    programStore.get(chatID).historyTable.get(pk).push([messageData.id, 0]);
     programStore.get(chatID).history.push(messageData);
     await store.setItem(chatID, programStore.get(chatID));
     console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
@@ -1338,17 +1332,23 @@ async function removePeer (messageData) {
 
     if (programStore.get(chatID).historyTable.has(pk)) {
         const interval = programStore.get(chatID).historyTable.get(pk).pop();
-        interval[1] = messageData.id;
+        const endTime = programStore.get(chatID).history.find((msg) => msg.id === interval[1]);
+        if (endTime.sentTime > messageData.id) {
+            interval[1] = messageData.id;
+        }
         programStore.get(chatID).historyTable.get(pk).push(interval);
     }
-    programStore.get(chatID).history.push(messageData);
+
+    // inserting message + rollback
+    const locationIndex = programStore.get(chatID).history.findIndex((msg) => (msg.sentTime > messageData.sentTime));
+    // const endIndex = programStore.get(chatID).history.findIndex((msg) => (messageData.sentTime < msg.sentTime && (msg.action === "add" || msg.op.pk2 === pk)));
+    programStore.get(chatID).history.push(location, 0, messageData, ...programStore.get(chatID).history.slice(locationIndex).filter((msg) => msg.pk1 !== pk));
+
     console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
     await store.setItem(messageData.chatID, programStore.get(chatID));
     console.log(`added removal message data to chat history`);
 
-    if (joinedChats.get(chatID).members.includes(pk)) {
-        joinedChats.get(chatID).members.splice(joinedChats.get(messageData.chatID).members.indexOf(pk), 1);
-    }
+    joinedChats.get(chatID).members.delete(pk);
     joinedChats.get(chatID).validMembers.delete(pk);
     
     joinedChats.get(chatID).exMembers.add(pk);
@@ -1629,9 +1629,12 @@ async function getIgnored (cycles, chatID, pk) {
             const issuedOp = cycle.find((op) => op.pk1 === keyPair.publicKey);
 
             if (issuedOp) {
-                const selected = access.earliestSubset(cycle).find((op) => op.sig === issuedOp.sig || access.precedes(cycle, op, issuedOp));
+                const sources = access.earliestSubset(cycle);
+                const dependentIndex = sources.findIndex((op) => op.sig == issuedOp.sig || access.precedes(cycle, op, issuedOp));
+                const ignore = sources.at(dependentIndex-1);
+                await selectIgnored(ignore, chatID, cycle);
+
                 console.log(`automatically resolved ${selected.action} ${keyMap.get(selected.pk2)}`);
-                await selectIgnored(selected, chatID);
                 continue;
             }
         }
@@ -1643,17 +1646,24 @@ async function getIgnored (cycles, chatID, pk) {
     });
 }
 
-export async function selectIgnored(ignoredOp, chatID) {
+export async function selectIgnored(ignoredOp, chatID, cycle) {
     // unwinding chat history
     const ignoredOpIndex = programStore.get(chatID).history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
 
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
-        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => msg.type === "selectedIgnored" || ignoredOp.pk1 !== msg.from);
-        programStore.get(chatID).history.splice(ignoredOpIndex+1);
-        programStore.get(chatID).history.push(...filteredHistory);
+        const sources = access.earliestSubset(cycle);
+        const index = cycle.findIndex((op) => ignoredOp.sig === op.sig);
+        const ignoreFrom = new Set();
+        do {
+            ignoreFrom.add(cycle.at(index).pk1);
+            index += 1;
+        } while (!hasOp(sources, cycle.at(index)));
+        const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => msg.type === "selectedIgnored" || ignoreFrom.has(msg.from));
 
-        if (programStore.get(chatID).historyTable.has(ignoredOp.pk2)) {
+        programStore.get(chatID).history.splice(ignoredOpIndex+1, Infinity, ...filteredHistory);
+
+        if (programStore.get(chatID).historyTable.has(ignoredOp.pk2)) { 
             const interval = programStore.get(chatID).historyTable.get(ignoredOp.pk2).pop();
             if (ignoredOp.action == "remove") {
                 interval[1] = 0;
@@ -1677,10 +1687,10 @@ export async function selectIgnored(ignoredOp, chatID) {
             from: keyPair.publicKey,
         });
         broadcastToMembers(msg, chatID);
-        if (!joinedChats.get(chatID).members.includes(ignoredOp.pk1)) {
+        if (!joinedChats.get(chatID).members.has(ignoredOp.pk1)) {
             sendToMember(msg, ignoredOp.pk1);
         }
-        if (!joinedChats.get(chatID).members.includes(ignoredOp.pk2)) {
+        if (!joinedChats.get(chatID).members.has(ignoredOp.pk2)) {
             sendToMember(msg, ignoredOp.pk2);
         }
     }
@@ -1718,7 +1728,7 @@ export function updateChatInfo () {
         document.getElementById('chatTitle').innerHTML = joinedChats.get(currentChatID).chatName;
 
         memberList.innerHTML = "";
-        joinedChats.get(currentChatID).members.forEach((pk) => {
+        [...joinedChats.get(currentChatID).members].forEach((pk) => {
             if (pk === keyPair.publicKey) {
                 const card = elem.generateUserCard(pk, keyMap.get(pk), currentChatID);
                 card.className = `card self`;
@@ -1740,7 +1750,7 @@ export function updateChatInfo () {
             conflictCardList.innerHTML = "";
             resolveGetIgnored.get(currentChatID)[0].forEach((cycle) => {
                 const options = access.earliestSubset(cycle);
-                conflictCardList.appendChild(elem.generateConflictCard(options, currentChatID));
+                conflictCardList.appendChild(elem.generateConflictCard(options, currentChatID, cycle));
                 for (const op of cycle) {
                     if (document.getElementById(op.sig) == null) {
                         updateChatWindow(addMsgID({
@@ -1782,7 +1792,7 @@ function updateChatOptions (operation, chatID) {
 
 function logout () {
     for (const chatID of joinedChats.keys()) {
-        joinedChats.get(chatID).members.forEach((pk) => {
+        [...joinedChats.get(chatID).members].forEach((pk) => {
             closeConnections(pk, chatID);
         });
     }
@@ -1884,19 +1894,27 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                         pk2 = msg.op.pk2;
                         if (msg.type === "add") {
                             if (!programStore.get(chatID).historyTable.has(pk2)) {
-                                programStore.get(chatID).historyTable.set(pk2, []);
+                                programStore.get(chatID).historyTable.set(pk2, [msg.id, 0]);
+                            } else {
+                                const interval = programStore.get(chatID).historyTable.get(pk2).pop();
+                                const start = programStore.get(chatID).history.find((msg) => msg.id === interval[0].id);
+                                if (start.sentTime > msg.sentTime) {
+                                    interval[0] = msg.id;
+                                }
+                                programStore.get(chatID).historyTable.get(pk2).push(interval);
                             }
                             modifiedHistoryTable.add(pk2);
-                            programStore.get(chatID).historyTable.get(pk2).push([msg.id, 0]);
 
                         } else if (msg.type === "remove") {
                             modifiedHistoryTable.add(pk2);
-                            if (!programStore.get(chatID).historyTable.has(pk2)) {
-                                programStore.get(chatID).historyTable.set(pk2, [[localMsgs[0].id, 0]]);
-                            }
-                            const interval = programStore.get(chatID).historyTable.get(pk2).pop();
-                            interval[1] = msg.id;
-                            programStore.get(chatID).historyTable.get(pk2).push(interval);
+                            if (programStore.get(chatID).historyTable.has(pk2)) {
+                                const interval = programStore.get(chatID).historyTable.get(pk2).pop();
+                                const end = programStore.get(chatID).history.find((msg) => msg.id === interval[1].id);
+                                if (end.sentTime > msg.sentTime) {
+                                    interval[1] = msg.id;
+                                }
+                                programStore.get(chatID).historyTable.get(pk2).push(interval);
+                            } 
                         }
                     }
                 }
@@ -1914,9 +1932,8 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                 else { return -1; } // (a[1].username <= b[1].username) but we know it can't be == and from the same timestamp
             });
             programStore.get(chatID).history = mergedChatHistory;
-
             await store.setItem(chatID, programStore.get(chatID));
-            await refreshChatWindow(chatID);
+            refreshChatWindow(chatID);
             if (newMessage && chatID !== currentChatID && document.getElementById(`chatCard${chatID}`) !== null) { 
                 document.getElementById(`chatCard${chatID}`).className = "card card-chat notif";
             }
@@ -1927,7 +1944,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
 function closeConnections (pk, chatID=0) {
     if (chatID !== 0) {
         for (const id of joinedChats.keys()) {
-            if (chatID !== id && joinedChats.get(id).members.includes(pk)) {
+            if (chatID !== id && joinedChats.get(id).members.has(pk)) {
                 return;
             }
         }

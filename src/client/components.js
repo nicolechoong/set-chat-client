@@ -47,7 +47,7 @@ export function generateUserCard (pk, username, chatID) {
     return card;
 }
 
-export function generateConflictCard (ops, chatID) {
+export function generateConflictCard (ops, chatID, cycle) {
     // op.sig mapped to op: Object of Arr, mem mapped to String of joined members
     var option, button;
     var card = conflictCardTemplate.cloneNode(true);
@@ -72,7 +72,7 @@ export function generateConflictCard (ops, chatID) {
 
         button = option.getElementsByTagName("button")[0];
         button.addEventListener("click", async () => { 
-            await selectIgnored(op, chatID);
+            await selectIgnored(op, chatID, cycle);
             card.parentNode.removeChild(card);
         });
         card.appendChild(option);
