@@ -1037,7 +1037,7 @@ async function receivedMessage (messageData, channel=null) {
         case "ops":
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
-                await sendChatHistory(messageData.chatID, messageData.from);
+                sendChatHistory(messageData.chatID, messageData.from);
                 if (res) {
                     console.log(`res success`);
                     updateConnectStatus(messageData.from, true);
@@ -1887,7 +1887,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             const mergedChatHistory = [];
             var localIndex = 0
             var receivedIndex = 0;
-            const authorisedSet = new Set(programStore.get(chatID).members);
+            const authorisedSet = new Set(access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored));
             console.log(authorisedSet);
 
             var msg;
