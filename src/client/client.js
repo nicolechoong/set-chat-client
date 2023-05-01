@@ -1867,7 +1867,7 @@ function sendChatHistory (chatID, pk) {
             peerHistory.push(msg);
         }
     }
-
+    console.log(peerHistory);
     sendToMember(addMsgID({
         type: "history",
         history: peerHistory,
@@ -1888,6 +1888,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             var localIndex = 0
             var receivedIndex = 0;
             const authorisedSet = new Set(programStore.get(chatID).members);
+            console.log(authorisedSet);
 
             var msg;
             while (localIndex < localMsgs.length && receivedIndex < receivedMsgs.length) {
