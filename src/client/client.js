@@ -1902,7 +1902,7 @@ async function mergeChatHistory (chatID, pk, receivedMsgs) {
                         }
                     }
                 } else {
-                    console.log('rejected')
+                    console.log(`rejected ${mergedChatHistory.length}`);
                 }
             }
 
