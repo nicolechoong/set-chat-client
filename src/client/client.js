@@ -1824,7 +1824,7 @@ function mergeJoinedChats(localChats, receivedChats) {
 }
 
 async function sendChatHistory (chatID, pk) {
-    await navigator.locks.request(`history${pk}`, async () => {
+    await navigator.locks.request(`history${keyPair.publicKey}`, async () => {
         var authorised = joinedChats.get(chatID).members.has(pk);
         console.log(authorised);
         console.log(programStore.get(chatID).history);
@@ -1862,7 +1862,7 @@ async function sendChatHistory (chatID, pk) {
 }
 
 async function mergeChatHistory (chatID, receivedMsgs=[]) {
-    await navigator.locks.request(`history${pk}`, async () => {
+    await navigator.locks.request(`history${keyPair.publicKey}`, async () => {
         const localMsgs = programStore.get(chatID).history;
         console.log(`local length ${localMsgs.length}`);
         console.log(`received length ${receivedMsgs.length}`);
