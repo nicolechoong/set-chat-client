@@ -1340,13 +1340,13 @@ async function removePeer (messageData) {
     }
 
     // inserting message + rollback
-    const locationIndex = programStore.get(chatID).history.findIndex((msg) => (msg.sentTime > messageData.sentTime));
+    const locationIndex = programStore.get(chatID).history.findIndex((msg) => (msg.sentTime > messageData.sentTime))+1;
     // const endIndex = programStore.get(chatID).history.findIndex((msg) => (messageData.sentTime < msg.sentTime && (msg.action === "add" || msg.op.pk2 === pk)));
     console.log(programStore.get(chatID).history.slice(locationIndex).filter((msg) => msg.pk1 !== pk));
-    programStore.get(chatID).history.push(location, 0, messageData, ...programStore.get(chatID).history.slice(locationIndex).filter((msg) => msg.pk1 !== pk));
+    programStore.get(chatID).history.splice(locationIndex, 0, messageData, ...programStore.get(chatID).history.slice(locationIndex).filter((msg) => msg.pk1 !== pk));
 
     console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
-    await store.setItem(messageData.chatID, programStore.get(chatID));
+    await store.setItem(chatID, programStore.get(chatID));
     console.log(`added removal message data to chat history`);
 
     joinedChats.get(chatID).members.delete(pk);
