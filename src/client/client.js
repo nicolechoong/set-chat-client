@@ -1820,7 +1820,6 @@ async function sendChatHistory (chatID, pk) {
             } else if (msg.type === "remove" && msg.op.pk2 === pk) {
                 authorised = true;
                 peerHistory.unshift(msg);
-                continue;
             }
 
             if (authorised || msg.type === "selectIgnored") {
@@ -1878,6 +1877,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     mergedChatHistory.unshift(msg);
                 }
             }
+            console.log(mergedChatHistory.map(msg => msg.type));
             console.log(`exit`);
 
             while (localIndex >= 0) {
