@@ -1868,7 +1868,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             const authorisedSet = new Set(programStore.get(chatID).members);
 
             var msg;
-            while (localIndex < localMsgs && receivedIndex < receivedMsgs) {
+            while (localIndex < localMsgs.length && receivedIndex < receivedMsgs.length) {
                 if (localMsgs.at(localIndex).id == receivedMsgs.at(receivedIndex).id) {
                     msg = localMsgs[localIndex];
                     localIndex += 1;
@@ -1890,6 +1890,30 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 }
                 mergedChatHistory.push(msg);
             }
+
+            while (localIndex < localMsgs.length) {
+                if (msg.type === "add") {
+                    authorisedSet.add(msg);
+                } else if (msg.type === "remove") {
+                    authorisedSet.remove(msg);
+                } else if (msg.type === "text" && !authorisedSet.has(msg.from)) {
+                    continue;
+                }
+                mergedChatHistory.push(msg);
+            }
+
+            while (receivedIndex < receivedMsgs.length) {
+                if (msg.type === "add") {
+                    authorisedSet.add(msg);
+                } else if (msg.type === "remove") {
+                    authorisedSet.remove(msg);
+                } else if (msg.type === "text" && !authorisedSet.has(msg.from)) {
+                    continue;
+                }
+                mergedChatHistory.push(msg);
+            }
+
+
 
             // const mergedChatHistory = localMsgs.concat(receivedMsgs);
             // sortChatHistory(mergeChatHistory);
