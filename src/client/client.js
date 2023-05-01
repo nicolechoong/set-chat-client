@@ -1317,6 +1317,7 @@ async function removePeer (messageData) {
 function refreshChatWindow (chatID) {
     if (chatID === currentChatID) {
         chatWindow.innerHTML = '<div id="anchor" style="overflow-anchor: auto; height: 1px" ></div>';
+        sortChatHistory(programStore.get(chatID).history);
         programStore.get(chatID).history.forEach(data => {
             updateChatWindow(data);
         });
@@ -1827,6 +1828,7 @@ async function sendChatHistory (chatID, pk) {
             }
         }
         console.log(peerHistory);
+        sortChatHistory(peerHistory);
         sendToMember(addMsgID({
             type: "history",
             history: peerHistory,
@@ -1868,9 +1870,9 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
-                        authorisedSet.add(msg.op.pk2);
-                    } else if (msg.type === "remove") {
                         authorisedSet.delete(msg.op.pk2);
+                    } else if (msg.type === "remove") {
+                        authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "text") {
                         continue;
                     }
@@ -1885,9 +1887,9 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 msg = localMsgs[localIndex];
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
-                        authorisedSet.add(msg.op.pk2);
-                    } else if (msg.type === "remove") {
                         authorisedSet.delete(msg.op.pk2);
+                    } else if (msg.type === "remove") {
+                        authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "text") {
                         localIndex -= 1;
                         continue;
@@ -1903,9 +1905,9 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 newMessage = true;
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
-                        authorisedSet.add(msg.op.pk2);
-                    } else if (msg.type === "remove") {
                         authorisedSet.delete(msg.op.pk2);
+                    } else if (msg.type === "remove") {
+                        authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "text") {
                         receivedIndex -= 1;
                         continue;
@@ -1915,6 +1917,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                 receivedIndex -= 1;
             }
 
+            sortChatHistory(mergedChatHistory);
             programStore.get(chatID).history = mergedChatHistory;
             await store.setItem(chatID, programStore.get(chatID));
             refreshChatWindow(chatID);
