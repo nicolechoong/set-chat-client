@@ -1278,13 +1278,6 @@ async function addPeer (messageData) {
 
     updateChatInfo();
     updateChatWindow(messageData);
-    if (!programStore.get(chatID).historyTable.has(pk)) {
-        programStore.get(chatID).historyTable.set(pk, [[messageData.sentTime, 0]]);
-    } else if (programStore.get(chatID).at(-1)[1] == 0) {
-        if (programStore.get(chatID).at(-1)[0] > msg.sentTime) { // replace with earlier
-            programStore.get(chatID).at(-1)[0] = msg.sentTime;
-        }
-    }
     programStore.get(chatID).history.push(messageData);
     await store.setItem(chatID, programStore.get(chatID));
     console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
@@ -1293,12 +1286,6 @@ async function addPeer (messageData) {
 async function removePeer (messageData) {
     const pk = messageData.op.pk2;
     const chatID = messageData.chatID;
-
-    if (programStore.get(chatID).historyTable.has(pk)) {
-        const interval = programStore.get(chatID).historyTable.get(pk).pop();
-        interval[1] = interval[1] > messageData.sentTime ? messageData.id : interval[1];
-        programStore.get(chatID).historyTable.get(pk).push(interval);
-    }
 
     // inserting message + rollback
     // const endIndex = programStore.get(chatID).history.findIndex((msg) => (messageData.sentTime < msg.sentTime && (msg.action === "add" || msg.op.pk2 === pk)));
@@ -1313,7 +1300,6 @@ async function removePeer (messageData) {
     }
 
     console.log(`history ${programStore.get(chatID).history}`);
-    console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
     await store.setItem(chatID, programStore.get(chatID));
     console.log(`added removal message data to chat history`);
 
