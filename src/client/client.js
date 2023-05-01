@@ -1035,9 +1035,9 @@ async function receivedMessage (messageData, channel=null) {
             onSIGMA3.get(channel)(messageData);
             return;
         case "ops":
+            await sendChatHistory(messageData.chatID, messageData.from);
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
-                sendChatHistory(messageData.chatID, messageData.from);
                 if (res) {
                     console.log(`res success`);
                     updateConnectStatus(messageData.from, true);
@@ -1851,29 +1851,33 @@ function mergeJoinedChats(localChats, receivedChats) {
     return mergedChats;
 }
 
-function sendChatHistory (chatID, pk) {
-    var authorised = false;
-    const peerHistory = [];
-    for (const msg of programStore.get(chatID).history) {
-        if (msg.type === "add" && msg.op.pk2 === pk) {
-            authorised = true;
-        } else if (msg.type === "remove" && msg.op.pk2 === pk) {
-            authorised = false;
-            peerHistory.push(msg);
-            continue;
-        }
+async function sendChatHistory (chatID, pk) {
+    await navigator.locks.request("history", async () => {
+        var authorised = joinedChats.get(chatID).members.has(pk);
+        var msg;
+        const peerHistory = [];
+        for (let index = programStore.get(chatID).history.length; i-- ; i == 0) {
+            msg = programStore.get(chatID).history.at(index);
+            if (msg.type === "add" && msg.op.pk2 === pk) {
+                authorised = false;
+            } else if (msg.type === "remove" && msg.op.pk2 === pk) {
+                authorised = true;
+                peerHistory.shift(msg);
+                continue;
+            }
 
-        if (authorised || msg.type === "selectIgnored") {
-            peerHistory.push(msg);
+            if (authorised || msg.type === "selectIgnored") {
+                peerHistory.shift(msg);
+            }
         }
-    }
-    console.log(peerHistory);
-    sendToMember(addMsgID({
-        type: "history",
-        history: peerHistory,
-        chatID: chatID,
-        from: keyPair.publicKey
-    }), pk);
+        console.log(peerHistory);
+        sendToMember(addMsgID({
+            type: "history",
+            history: peerHistory,
+            chatID: chatID,
+            from: keyPair.publicKey
+        }), pk);
+    });
 }
 
 async function mergeChatHistory (chatID, receivedMsgs) {
