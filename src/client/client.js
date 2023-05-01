@@ -1881,36 +1881,46 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     receivedIndex += 1;
                 }
                 
-                if (msg.type === "add") {
-                    authorisedSet.add(msg);
-                } else if (msg.type === "remove") {
-                    authorisedSet.remove(msg);
-                } else if (msg.type === "text" && !authorisedSet.has(msg.from)) {
-                    continue;
+                if (authorisedSet.has(msg.from)) {
+                    if (msg.type === "add") {
+                        authorisedSet.add(msg.pk2);
+                    } else if (msg.type === "remove") {
+                        authorisedSet.delete(msg.pk2);
+                    } else if (msg.type === "text") {
+                        continue;
+                    }
+                    mergedChatHistory.push(msg);
                 }
-                mergedChatHistory.push(msg);
             }
 
             while (localIndex < localMsgs.length) {
-                if (msg.type === "add") {
-                    authorisedSet.add(msg);
-                } else if (msg.type === "remove") {
-                    authorisedSet.remove(msg);
-                } else if (msg.type === "text" && !authorisedSet.has(msg.from)) {
-                    continue;
+                msg = localMsgs[localIndex];
+                if (authorisedSet.has(msg.from)) {
+                    if (msg.type === "add") {
+                        authorisedSet.add(msg.pk2);
+                    } else if (msg.type === "remove") {
+                        authorisedSet.delete(msg.pk2);
+                    } else if (msg.type === "text") {
+                        continue;
+                    }
+                    mergedChatHistory.push(msg);
                 }
-                mergedChatHistory.push(msg);
+                localIndex += 1;
             }
 
             while (receivedIndex < receivedMsgs.length) {
-                if (msg.type === "add") {
-                    authorisedSet.add(msg);
-                } else if (msg.type === "remove") {
-                    authorisedSet.remove(msg);
-                } else if (msg.type === "text" && !authorisedSet.has(msg.from)) {
-                    continue;
+                msg = receivedMsgs[receivedIndex];
+                if (authorisedSet.has(msg.from)) {
+                    if (msg.type === "add") {
+                        authorisedSet.add(msg.pk2);
+                    } else if (msg.type === "remove") {
+                        authorisedSet.delete(msg.pk2);
+                    } else if (msg.type === "text") {
+                        continue;
+                    }
+                    mergedChatHistory.push(msg);
                 }
-                mergedChatHistory.push(msg);
+                receivedIndex += 1;
             }
 
 
