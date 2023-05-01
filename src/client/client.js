@@ -1332,8 +1332,8 @@ async function removePeer (messageData) {
         console.log(programStore.get(chatID).historyTable.get(pk));
         const interval = programStore.get(chatID).historyTable.get(pk).pop();
         console.log(interval);
-        const endTime = programStore.get(chatID).history.find((msg) => msg.id === interval[1]);
-        if (endTime == null || endTime.sentTime > messageData.sentTime) {
+        const endIndex = programStore.get(chatID).history.findIndex((msg) => msg.id === interval[1]);
+        if (programStore.get(chatID).history.at(endIndex).sentTime > messageData.sentTime) {
             interval[1] = messageData.id;
         }
         programStore.get(chatID).historyTable.get(pk).push(interval);
