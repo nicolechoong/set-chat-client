@@ -1076,8 +1076,6 @@ async function receivedMessage (messageData, channel=null) {
             await receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                 if (res) { 
                     if (messageData.op.pk2 === keyPair.publicKey) {
-                        updateChatWindow(messageData);
-                        await updateChatStore(messageData);
                         onRemove(messageData);
                     } else {
                         removePeer(messageData); 
@@ -1301,15 +1299,7 @@ async function removePeer (messageData) {
 
     // inserting message + rollback
     // const endIndex = programStore.get(chatID).history.findIndex((msg) => (messageData.sentTime < msg.sentTime && (msg.action === "add" || msg.op.pk2 === pk)));
-    const locationIndex = programStore.get(chatID).history.findIndex((msg) => (msg.sentTime > messageData.sentTime));
-    if (locationIndex == -1) {
-        programStore.get(chatID).history.push(messageData);
-    } else {
-        console.log(locationIndex);
-        console.log(programStore.get(chatID).history.slice(locationIndex+1).filter((msg) => msg.pk1 !== pk));
-        programStore.get(chatID).history.splice(locationIndex+1, 0, messageData);
-        programStore.get(chatID).history.push(...programStore.get(chatID).history.slice(locationIndex+1).filter((msg) => msg.pk1 !== pk));
-    }
+    await updateChatStore(messageData);
 
     console.log(`history ${programStore.get(chatID).history}`);
     await store.setItem(chatID, programStore.get(chatID));
@@ -1366,16 +1356,17 @@ function updateChatWindow (data) {
 }
 
 async function updateChatStore (messageData) {
-    const locationIndex = programStore.get(messageData.chatID).history.findIndex((msg) => (msg.sentTime >= messageData.sentTime));
+    const chatID = messageData.chatID;
+    const locationIndex = programStore.get(chatID).history.findIndex((msg) => (msg.sentTime >= messageData.sentTime));
     if (locationIndex < 0) {
-        programStore.get(messageData.chatID).history.push(messageData);
+        programStore.get(chatID).history.push(messageData);
     } else {
-        if (programStore.get(messageData.chatID).at(locationIndex).id !== messageData.id) {
-            programStore.get(messageData.chatID).history.splice(locationIndex+1, 0, messageData);
-            programStore.get(messageData.chatID).history.push(...programStore.get(messageData.chatID).history.slice(locationIndex+1).filter((msg) => msg.pk1 !== pk));
+        if (programStore.get(chatID).at(locationIndex).id !== messageData.id) {
+            programStore.get(chatID).history.splice(locationIndex+1, 0, messageData);
+            programStore.get(chatID).history.push(...programStore.get(chatID).history.slice(locationIndex+1).filter((msg) => msg.pk1 !== pk));
         }
     }
-    await store.setItem(messageData.chatID, programStore.get(messageData.chatID));
+    await store.setItem(chatID, programStore.get(chatID));
 }
 
 function sendToMember (data, pk, requireAck=true) {
