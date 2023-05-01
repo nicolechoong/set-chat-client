@@ -1863,7 +1863,7 @@ function sendChatHistory (chatID, pk) {
             continue;
         }
 
-        if (authorised || msg.type === "selectIgnored") {
+        if (authorised || msg.type === "selectIgnored" || msg.from === keyPair.publicKey) {
             peerHistory.push(msg);
         }
     }
@@ -1904,7 +1904,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     receivedIndex += 1;
                 }
                 
-                if (authorisedSet.has(msg.from)) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
                         authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "remove") {
@@ -1918,7 +1918,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
 
             while (localIndex < localMsgs.length) {
                 msg = localMsgs[localIndex];
-                if (authorisedSet.has(msg.from)) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
                         authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "remove") {
@@ -1933,7 +1933,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
 
             while (receivedIndex < receivedMsgs.length) {
                 msg = receivedMsgs[receivedIndex];
-                if (authorisedSet.has(msg.from)) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
                         authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "remove") {
