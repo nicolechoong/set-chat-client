@@ -281,7 +281,7 @@ async function onLogin (status, username, receivedChats) {
     
             loginPopup.style.display = "none";
             dim.style.display = "none";
-            document.getElementById('heading').innerHTML = `I know this is ugly, but Welcome ${localUsername}`;
+            document.getElementById('heading').innerHTML = `Welcome ${localUsername}`;
     
             for (const chatID of joinedChats.keys()) {
                 console.log(chatID, joinedChats.get(chatID));
