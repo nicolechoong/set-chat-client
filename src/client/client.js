@@ -1866,7 +1866,8 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             console.log(authorisedSet);
 
             var msg;
-            while (localIndex >= 0 || receivedIndex >= 0) {
+            while (localIndex >= 0 && receivedIndex >= 0) {
+                console.log(localIndex >= 0 && receivedIndex >= 0);
                 if (localMsgs.at(localIndex).id == receivedMsgs.at(receivedIndex).id) {
                     msg = localMsgs[localIndex];
                     localIndex -= 1;
