@@ -141,7 +141,6 @@ function connectToServer () {
                         alert("failed to authenticate connection");
                         return;
                     }
-                    console.log(`sending login`);
                     sendToServer({
                         type: "login",
                         name: localUsername,
@@ -224,7 +223,6 @@ async function onSIGMA1 (peerValue, connection) {
         const sessionKey = nacl.box.before(peerValue, localKeyPair.secretKey);
         const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
 
-        console.log(`confused ${connection instanceof RTCDataChannel}`);
         connection.send(JSON.stringify({
             type: "SIGMA2",
             value: arrToStr(localValue), // Uint8Array
@@ -528,8 +526,6 @@ async function addToChat (name, pk, chatID) {
         chatName: programStore.get(chatID).metadata.chatName
     });
 
-    console.log(JSON.stringify(addMessage));
-
     joinedChats.get(chatID).validMembers.add(pk);
     joinedChats.get(chatID).members.add(pk);
     await store.setItem("joinedChats", joinedChats);
@@ -624,7 +620,6 @@ async function disputeRemoval (peer, chatID) {
     
     // generating operation
     const end = programStore.get(chatID).metadata.operations.findLastIndex((op) => op.action === "remove" && op.pk2 === keyPair.publicKey);
-    console.log(end);
     const ignoredOp = programStore.get(chatID).metadata.operations.at(end);
     console.log(`we are now disputing ${peer.peerName} and the ops are ${programStore.get(chatID).metadata.operations.slice(0, end).map(op => op.action)}`);
     const op = access.generateDisputeOp("remove", peer.peerPK, ignoredOp.deps);
@@ -813,7 +808,6 @@ async function sendIgnored (ignored, chatID, pk) {
 
 async function receivedIgnored (ignored, chatID, pk, resolve) {
     // ignored: Array of Object, chatID: String, pk: stringify(public key of sender)
-    console.log(`${ignored}`);
     if (pk === keyPair.publicKey) { resolve(true); return; }
     console.log(`receiving ignored ${ignored.length} for chatID ${chatID} from ${keyMap.get(pk)}`);
 
@@ -821,12 +815,6 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
         console.log(`same universe naisu`);
         const memberSet = access.members(programStore.get(chatID).metadata.operations, programStore.get(chatID).metadata.ignored);
         joinedChats.get(chatID).exMembers.delete(pk);
-        if (joinedChats.get(chatID).exMembers.delete(pk) && programStore.get(chatID).historyTable.has(pk)) {
-            const interval = programStore.get(chatID).historyTable.get(pk).pop()
-            interval[1] = 0;
-            programStore.get(chatID).historyTable.get(pk).push(interval);
-        }
-        console.log(programStore.get(chatID).historyTable.get(pk));
 
         await store.setItem("joinedChats", joinedChats);
         if (memberSet.has(pk)) {
@@ -843,12 +831,6 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
         console.log(`different universe from ${keyMap.get(pk)}`);
         joinedChats.get(chatID).members.delete(pk);
         joinedChats.get(chatID).exMembers.add(pk);
-        if (!joinedChats.get(chatID).exMembers.has(pk) && programStore.get(chatID).historyTable.has(pk)) {
-            const interval = programStore.get(chatID).historyTable.get(pk).pop()
-            const choice = programStore.get(chatID).history.at(programStore.get(chatID).history.findLastIndex((msg) => msg.type === "selectedIgnored" && msg.from === keyPair.publicKey && msg.op.pk1 === pk));
-            interval[1] = choice.sentTime;
-            programStore.get(chatID).historyTable.get(pk).push(interval);
-        }
         console.log(programStore.get(chatID).historyTable.get(pk));
         store.setItem("joinedChats", joinedChats);
         updateChatInfo();
@@ -1026,7 +1008,6 @@ async function receivedMessage (messageData, channel=null) {
             return;
         case "SIGMA1":
             onSIGMA1(strToArr(messageData.value), channel);
-            console.log(`confused ${channel.label}`);
             return;
         case "SIGMA2":
             onSIGMA2.get(channel)(messageData);
@@ -1058,7 +1039,6 @@ async function receivedMessage (messageData, channel=null) {
             } else if (messageData.from !== keyPair.publicKey) {
                 console.log(`premature ignored`);
                 peerIgnored.set(syncID, { pk: messageData.from, ignored: messageData.ignored });
-                console.log(`${peerIgnored.size} pls ${syncID}`);
                 joinedChats.get(messageData.chatID).peerIgnored.set(messageData.from, messageData.ignored);
                 store.setItem("joinedChats", joinedChats);
             }
@@ -1250,17 +1230,6 @@ function sendAdvertisement (chatID, pk) {
 //         from: keyPair.publicKey
 //     }), pk);
 // }
-
-// async function initChatHistoryTable (chatID, msgID) {
-//     console.log(`initialised chat history`);
-//     for (const pk of joinedChats.get(chatID).members) {
-//         if (!programStore.get(chatID).historyTable.has(pk)) {
-//             programStore.get(chatID).historyTable.set(pk, []);
-//         }
-//         programStore.get(chatID).historyTable.get(pk).push([msgID, 0]);
-//     }
-//     await store.setItem(chatID, programStore.get(chatID));
-// } 
 
 var resolveConnectToPeer = new Map();
 
@@ -1897,7 +1866,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             console.log(authorisedSet);
 
             var msg;
-            while (localIndex >= 0 && receivedIndex >= 0) {
+            while (localIndex >= 0 || receivedIndex >= 0) {
                 if (localMsgs.at(localIndex).id == receivedMsgs.at(receivedIndex).id) {
                     msg = localMsgs[localIndex];
                     localIndex -= 1;
@@ -1923,8 +1892,10 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     mergedChatHistory.unshift(msg);
                 }
             }
+            console.log(`exit`);
 
             while (localIndex >= 0) {
+                console.log(`localLoop`);
                 msg = localMsgs[localIndex];
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
@@ -1940,6 +1911,7 @@ async function mergeChatHistory (chatID, receivedMsgs) {
             }
 
             while (receivedIndex >= 0) {
+                console.log(`receivedLoop`);
                 msg = receivedMsgs[receivedIndex];
                 newMessage = true;
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
