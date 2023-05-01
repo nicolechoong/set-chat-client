@@ -1863,7 +1863,7 @@ function sendChatHistory (chatID, pk) {
             continue;
         }
 
-        if (authorised || msg.type === "selectIgnored" || msg.from === keyPair.publicKey) {
+        if (authorised || msg.type === "selectIgnored") {
             peerHistory.push(msg);
         }
     }
