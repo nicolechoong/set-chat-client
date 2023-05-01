@@ -1891,28 +1891,28 @@ async function mergeChatHistory (chatID, receivedMsgs) {
 
         if (receivedMsgs.length > 0) {
             const mergedChatHistory = [];
-            var localIndex = 0
-            var receivedIndex = 0;
+            var localIndex = localMsgs.length-1;
+            var receivedIndex = receivedMsgs.length-1;
             var authorisedSet = new Set(joinedChats.get(chatID).members);
             console.log(authorisedSet);
 
             var msg;
-            while (localIndex < localMsgs.length && receivedIndex < receivedMsgs.length) {
+            while (localIndex >= 0 && receivedIndex >= 0) {
                 if (localMsgs.at(localIndex).id == receivedMsgs.at(receivedIndex).id) {
                     msg = localMsgs[localIndex];
-                    localIndex += 1;
-                    receivedIndex += 1;
+                    localIndex -= 1;
+                    receivedIndex -= 1;
                 } else if (localMsgs.at(localIndex).sentTime < receivedMsgs.at(receivedIndex).sentTime) {
                     msg = localMsgs[localIndex];
-                    localIndex += 1;
+                    localIndex -= 1;
                 } else {
+                    newMessage = true;
                     msg = receivedMsgs[receivedIndex];
-                    receivedIndex += 1;
+                    receivedIndex -= 1;
                 }
                 
                 console.log(msg.type);
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
-                    console.log("pass");
                     if (msg.type === "add") {
                         authorisedSet.add(msg.op.pk2);
                     } else if (msg.type === "remove") {
@@ -1920,11 +1920,11 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     } else if (msg.type === "text") {
                         continue;
                     }
-                    mergedChatHistory.push(msg);
+                    mergedChatHistory.unshift(msg);
                 }
             }
 
-            while (localIndex < localMsgs.length) {
+            while (localIndex >= 0) {
                 msg = localMsgs[localIndex];
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
@@ -1934,13 +1934,14 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     } else if (msg.type === "text") {
                         continue;
                     }
-                    mergedChatHistory.push(msg);
+                    mergedChatHistory.unshift(msg);
                 }
-                localIndex += 1;
+                localIndex -= 1;
             }
 
-            while (receivedIndex < receivedMsgs.length) {
+            while (receivedIndex >= 0) {
                 msg = receivedMsgs[receivedIndex];
+                newMessage = true;
                 if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
                     if (msg.type === "add") {
                         authorisedSet.add(msg.op.pk2);
@@ -1949,9 +1950,9 @@ async function mergeChatHistory (chatID, receivedMsgs) {
                     } else if (msg.type === "text") {
                         continue;
                     }
-                    mergedChatHistory.push(msg);
+                    mergedChatHistory.unshift(msg);
                 }
-                receivedIndex += 1;
+                receivedIndex -= 1;
             }
 
             programStore.get(chatID).history = mergedChatHistory;
