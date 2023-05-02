@@ -1358,7 +1358,7 @@ function sendToMember (data, pk, requireAck=true) {
     console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
     if (connections.has(pk) && onlineMode) {
         try {
-            if (sessionKeys.has(connections.get(pk).sendChannel)) {
+            if (data.type === "ack" || data.type === "SIGMA1" || data.type === "SIGMA2" || data.type === "SIGMA3") {
                 const stringData = JSON.stringify(data);
                 const nonce = nacl.randomBytes(24);
 
