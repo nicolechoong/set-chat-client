@@ -249,6 +249,8 @@ async function onSIGMA1 (peerValueS, peerValueM, connection) {
                     if (connections.has(res.pk)) {
                         connections.get(res.pk).auth = true;
                     }
+                } else {
+                    console.log(`${nacl.sign.detached.verify(concatArr(localValueS, peerValueS), strToArr(res.sig), peerPK)}  ${nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))}`);
                 }
                 break;
             case "PK_IN_USE":
@@ -1153,7 +1155,7 @@ async function initSIGMA (channel) {
         channel.send(JSON.stringify({
             type: "SIGMA1",
             valueS: arrToStr(dhS.publicKey),
-            valueM: arrToStr(dhM.publicKey)
+            valueM: arrToStr(dhM.publicKey),
         }));
     
         const res = await new Promise((res) => { onSIGMA2.set(channel, res); });
