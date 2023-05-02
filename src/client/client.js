@@ -996,7 +996,7 @@ function initChannel(channel) {
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = async (event) => { 
         const receivedData = JSON.parse(event.data);
-        console.log(receivedData.type);
+        console.log(receivedData);
         if (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3") {
             await receivedMessage(JSON.parse(event.data), event.target);
         } else if (receivedData.encrypted) {
@@ -1361,6 +1361,9 @@ function sendToMember (data, pk, requireAck=true) {
     if (connections.has(pk) && onlineMode) {
         try {
             if (data.type === "ack" || data.type === "SIGMA1" || data.type === "SIGMA2" || data.type === "SIGMA3") {
+                data.encrypted = false;
+                connections.get(pk).sendChannel.send(JSON.stringify(data));
+            } else {
                 const stringData = JSON.stringify(data);
                 const nonce = nacl.randomBytes(24);
 
@@ -1371,9 +1374,6 @@ function sendToMember (data, pk, requireAck=true) {
                     data: arrToStr(nacl.box.after(ASCIIToArr(stringData), nonce, sessionKeys.get(connections.get(pk).sendChannel).s))
                 }
                 connections.get(pk).sendChannel.send(JSON.stringify(encryptedData));
-            } else {
-                data.encrypted = false;
-                connections.get(pk).sendChannel.send(JSON.stringify(data));
             }
             if (requireAck && pk !== keyPair.publicKey) { acks.add(`${data.id}${pk}`); }
         } catch (err) {
