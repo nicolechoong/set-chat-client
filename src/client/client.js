@@ -1180,7 +1180,7 @@ async function initSIGMA (channel) {
             sessionKeys.set(channel, { s: sessionKey, m: macKey});
             console.log(sessionKeys);
             sendToMember({
-                success: true,
+                status: "SUCCESS",
                 type: "SIGMA3",
                 pk: keyPair.publicKey,
                 sig: arrToStr(nacl.sign.detached(concatArr(peerValueS, localValueS), keyPair.secretKey)),
@@ -1190,7 +1190,7 @@ async function initSIGMA (channel) {
 
         } else {
             sendToMember({
-                success: false
+                status: "VERIF_FAILED"
             }, res.pk, false);
             resolve(false);
         }
