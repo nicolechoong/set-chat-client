@@ -1023,7 +1023,7 @@ async function receivedMessage (messageData, channel=null) {
             acks.delete(messageData.id);
             return;
         case "SIGMA1":
-            onSIGMA1(strToArr(messageData.value), channel);
+            onSIGMA1(strToArr(messageData.valueS), strToArr(messageData.valueM), channel);
             return;
         case "SIGMA2":
             onSIGMA2.get(channel)(messageData);
