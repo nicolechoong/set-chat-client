@@ -999,6 +999,7 @@ function initChannel(channel) {
         if (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3") {
             await receivedMessage(JSON.parse(event.data), event.target);
         } else if (receivedData.encrypted) {
+            console.log([...sessionKeys]);
             const data = arrToASCII(nacl.box.open.after(strToArr(receivedData.data), strToArr(receivedData.nonce), sessionKeys.get(event.target).s));
             if (nacl.verify(strToArr(receivedData.mac), access.hmac512(sessionKeys.get(event.target).m, data))) {
                 await receivedMessage(JSON.parse(data), event.target);
