@@ -240,6 +240,7 @@ async function onSIGMA1 (peerValueS, peerValueM, connection) {
                     sessionKeys.set(connection, { s: sessionKey, m: macKey});
                     console.log(sessionKeys);
 
+                    console.log(`resolving?`);
                     if (resolveAuth.has(connection)) {
                         console.log(`resolving`);
                         resolveAuth.get(connection).forEach((con) => con());
