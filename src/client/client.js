@@ -997,7 +997,7 @@ function initChannel(channel) {
     channel.onmessage = async (event) => { 
         const receivedData = JSON.parse(event.data);
         if (receivedData.encrypted) {
-            const data = arrToASCII(nacl.box.open.after(receivedData.data, receivedData.nonce, sessionKeys.get(event.target).s));
+            const data = arrToASCII(nacl.box.open.after(strToArr(receivedData.data), strToArr(receivedData.nonce), sessionKeys.get(event.target).s));
             if (nacl.verify(strToArr(receivedData.mac), access.hmac512(sessionKeys.get(event.target).m, data))) {
                 await receivedMessage(JSON.parse(data), event.target);
             }
@@ -1360,11 +1360,13 @@ function sendToMember (data, pk, requireAck=true) {
         try {
             if (sessionKeys.has(connections.get(pk).sendChannel)) {
                 const stringData = JSON.stringify(data);
+                const nonce = nacl.randomBytes(64);
+
                 const encryptedData = {
                     encrypted: true,
-                    mac: access.hmac512(sessionKeys.get(connections.get(pk).sendChannel).m, enc.encode(stringData)),
-                    nonce: arrToStr(nacl.randomBytes(64)),
-                    data: nacl.box.after(ASCIIToArr(stringData))
+                    mac: arrToStr(access.hmac512(sessionKeys.get(connections.get(pk).sendChannel).m, enc.encode(stringData))),
+                    nonce: arrToStr(nonce),
+                    data: arrToStr(nacl.box.after(ASCIIToArr(stringData), nonce, sessionKeys.get(connections.get(pk).sendChannel).s))
                 }
                 connections.get(pk).sendChannel.send(JSON.stringify(encryptedData));
             } else {
