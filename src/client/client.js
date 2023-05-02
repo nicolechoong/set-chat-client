@@ -1010,7 +1010,8 @@ function initChannel(channel) {
         const receivedData = JSON.parse(event.data);
         console.log(receivedData);
         if (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3") {
-            await receivedMessage(JSON.parse(event.data), event.target);
+            await receivedMessage(receivedData, event.target);
+
         } else if (receivedData.encrypted) {
             if (!sessionKeys.has(event.target)) {
                 console.log(`queue waiting`);
@@ -1049,6 +1050,7 @@ async function receivedMessage (messageData, channel=null) {
             onSIGMA2.get(channel)(messageData);
             return;
         case "SIGMA3":
+            console.log(`here`);
             onSIGMA3.get(channel)(messageData);
             return;
         case "ops":
