@@ -2,7 +2,7 @@ import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js"
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
-import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr} from "./utils.js";
+import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr, ASCIIToArr, arrToASCII} from "./utils.js";
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -34,7 +34,7 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, msgQueue, serverValue, sessionKeys, acks, peerIgnored, reconnect;
+var currentChatID, connections, msgQueue, serverValues, sessionKeys, acks, peerIgnored, reconnect;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 var onlineMode = false;
 export var joinedChats, keyMap, store, programStore;
@@ -135,9 +135,9 @@ function connectToServer () {
 
         switch (data.type) {
             case "SIGMA1":
-                serverValue = strToArr(data.value);
+                serverValues = { s: strToArr(data.valueS), m: strToArr(data.valueM) };
                 if (reconnect) {
-                    if (!await onSIGMA1(serverValue, connection)) {
+                    if (!await onSIGMA1(serverValues.s, serverValues.m, connection)) {
                         alert("failed to authenticate connection");
                         return;
                     }
@@ -212,22 +212,21 @@ function sendToServer(message) {
     }
 };
 
-// unique application identifier ('set-chat-client')
-const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
-
-async function onSIGMA1 (peerValue, connection) {
+async function onSIGMA1 (peerValueS, peerValueM, connection) {
     // peerValue: Uint8Array
     return new Promise(async (resolve) => {
-        const localKeyPair = nacl.box.keyPair();
-        const localValue = localKeyPair.publicKey;
-        const sessionKey = nacl.box.before(peerValue, localKeyPair.secretKey);
-        const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+        const localKeyPairS = nacl.box.keyPair();
+        const localKeyPairM = nacl.box.keyPair();
+        const localValueS = localKeyPairS.publicKey;
+        const sessionKey = nacl.box.before(peerValueS, localKeyPairS.secretKey);
+        const macKey = nacl.box.before(peerValueM, localKeyPairM.secretKey);
 
         connection.send(JSON.stringify({
             type: "SIGMA2",
-            value: arrToStr(localValue), // Uint8Array
+            valueS: arrToStr(localValueS), // Uint8Array
+            valueM: arrToStr(localKeyPairM.publicKey),
             pk: keyPair.publicKey, // string
-            sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)), // verifying secret key possession 
+            sig: arrToStr(nacl.sign.detached(concatArr(peerValueS, localValueS), keyPair.secretKey)), // verifying secret key possession 
             mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))) // verifying identity
         }));
 
@@ -235,11 +234,12 @@ async function onSIGMA1 (peerValue, connection) {
         switch (res.status) {
             case "SUCCESS":
                 const peerPK = strToArr(res.pk);
-                if (nacl.sign.detached.verify(concatArr(localValue, peerValue), strToArr(res.sig), peerPK)
+                if (nacl.sign.detached.verify(concatArr(localValueS, peerValueS), strToArr(res.sig), peerPK)
                 && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
                     resolve(true);
                     if (connections.has(res.pk)) {
                         connections.get(res.pk).auth = true;
+                        sessionKeys.set(connection, { s: sessionKey, m: macKey});
                     }
                 }
                 break;
@@ -994,7 +994,17 @@ function initPeerConnection() {
 function initChannel(channel) {
     channel.onopen = (event) => { onChannelOpen(event); }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
-    channel.onmessage = async (event) => { await receivedMessage(JSON.parse(event.data), event.target) }
+    channel.onmessage = async (event) => { 
+        const receivedData = JSON.parse(event.data);
+        if (receivedData.encrypted) {
+            const data = arrToASCII(nacl.box.open.after(receivedData.data, receivedData.nonce, sessionKeys.get(event.target).s));
+            if (nacl.verify(strToArr(receivedData.mac), access.hmac512(sessionKeys.get(event.target).m, data))) {
+                await receivedMessage(JSON.parse(data), event.target);
+            }
+        } else if (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3") {
+            await receivedMessage(JSON.parse(event.data), event.target);
+        }
+    }
 }
 
 const resolveMergeHistory = new Map();
@@ -1119,28 +1129,25 @@ async function receivedMessage (messageData, channel=null) {
 async function initSIGMA (channel) {
     // only used for p2p connections
     return new Promise(async (resolve) => {
-        const dh = nacl.box.keyPair();
+        const dhS = nacl.box.keyPair();
+        const dhM = nacl.box.keyPair();
 
         channel.send(JSON.stringify({
             type: "SIGMA1",
-            value: arrToStr(dh.publicKey),
+            valueS: arrToStr(dhS.publicKey),
+            valueM: arrToStr(dhM.publicKey)
         }));
     
         const res = await new Promise((res) => { onSIGMA2.set(channel, res); });
     
-        const localValue = dh.publicKey;
-        const peerValue = strToArr(res.value);
+        const localValueS = dhS.publicKey;
+        const peerValueS = strToArr(res.valueS);
+        const peerValueM = strToArr(res.valueM);
         const peerPK = strToArr(res.pk);
-        const sessionKey = nacl.box.before(peerValue, dh.secretKey);
-        const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+        const sessionKey = nacl.box.before(peerValueS, dhS.secretKey);
+        const macKey = nacl.box.before(peerValueM, dhM.secretKey);
     
-        sessionKeys.set(channel, {
-            dh: dh,
-            session: sessionKey,
-            mac: macKey,
-        });
-    
-        const receivedValues = concatArr(localValue, peerValue);
+        const receivedValues = concatArr(localValueS, peerValueS);
     
         if (nacl.sign.detached.verify(receivedValues, strToArr(res.sig), peerPK) 
         && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
@@ -1148,11 +1155,12 @@ async function initSIGMA (channel) {
                 connections.get(res.pk).auth = true;
             }
 
+            sessionKeys.set(channel, { s: sessionKey, m: macKey});
             sendToMember({
                 success: true,
                 type: "SIGMA3",
                 pk: keyPair.publicKey,
-                sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)),
+                sig: arrToStr(nacl.sign.detached(concatArr(peerValueS, localValueS), keyPair.secretKey)),
                 mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))),
             }, res.pk, false);
             resolve(true);
@@ -1211,36 +1219,6 @@ function sendAdvertisement (chatID, pk) {
         }), pk);
     }
 }
-
-// async function sendChatHistory (chatID, pk) {
-//     console.log(`sending chat history to ${pk}`);
-//     console.log(`is pk string ${typeof pk}`);
-    
-//     const sigSet = new Set(programStore.get(chatID).metadata.operations.filter((op) => (op.action === "create" ? op.pk : op.pk2) === pk).map(op => op.sig));
-
-//     const peerHistory = [];
-//     if (!programStore.get(chatID).historyTable.has(pk)) {
-//         programStore.get(chatID).historyTable.set(pk, [[programStore.get(chatID).history[0].sentTime, 0]]);
-//         await store.setItem(chatID, programStore.get(chatID));
-//     }
-//     const intervals = programStore.get(chatID).historyTable.get(pk);
-//     var start, end;
-    
-//     for (const interval of intervals) {
-//         start = programStore.get(chatID).history.findIndex(msg => { return msg.sentTime === interval[0]; });
-//         end = programStore.get(chatID).history.findIndex(msg => { return msg.sentTime === interval[1]; });
-//         end = (interval[1] == 0 ? programStore.get(chatID).history.length : end) + 1;
-        
-//         peerHistory.push(...programStore.get(chatID).history.slice(start, end));
-//     }
-//     console.log(peerHistory.map(msg => msg.type));
-//     sendToMember(addMsgID({
-//         type: "history",
-//         history: peerHistory,
-//         chatID: chatID,
-//         from: keyPair.publicKey
-//     }), pk);
-// }
 
 var resolveConnectToPeer = new Map();
 
@@ -1380,7 +1358,19 @@ function sendToMember (data, pk, requireAck=true) {
     console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
     if (connections.has(pk) && onlineMode) {
         try {
-            connections.get(pk).sendChannel.send(JSON.stringify(data));
+            if (sessionKeys.has(connections.get(pk).sendChannel)) {
+                const stringData = JSON.stringify(data);
+                const encryptedData = {
+                    encrypted: true,
+                    mac: access.hmac512(sessionKeys.get(connections.get(pk).sendChannel).m, enc.encode(stringData)),
+                    nonce: arrToStr(nacl.randomBytes(64)),
+                    data: nacl.box.after(ASCIIToArr(stringData))
+                }
+                connections.get(pk).sendChannel.send(JSON.stringify(encryptedData));
+            } else {
+                data.encrypted = false;
+                connections.get(pk).sendChannel.send(JSON.stringify(data));
+            }
             if (requireAck && pk !== keyPair.publicKey) { acks.add(`${data.id}${pk}`); }
         } catch (err) {
             console.log(`failed to send ${data.type}`);
@@ -1465,7 +1455,7 @@ async function login (username) {
                 }
             });
 
-            if (!await onSIGMA1(serverValue, connection)) {
+            if (!await onSIGMA1(serverValues.s, serverValues.m, connection)) {
                 alert("failed to authenticate connection");
                 return;
             }

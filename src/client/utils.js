@@ -2,6 +2,14 @@ export function strToArr (str) {
     return Uint8Array.from(str.match(/.{1,2}/g).map(s => parseInt(s, 16)));
 }
 
+export function ASCIIToArr(str) {
+    return Uint8Array.from(Buffer.from(str, 'utf8'));
+}
+
+export function arrToASCII(arr) {
+    return Buffer.toString(arr.buffer);
+}
+
 export function arrToStr (arr) {
     return Array.from(arr).map(n => {
         return n.toString(16).padStart(2, '0');

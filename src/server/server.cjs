@@ -159,25 +159,26 @@ wsServer.on('connection', function(connection) {
 })
 
 async function initSIGMA (connection) {
-  const dh = nacl.box.keyPair();
+  const dhS = nacl.box.keyPair();
+  const dhM = nacl.box.keyPair();
 
   sendTo(connection, {
     type: "SIGMA1",
-    value: arrToStr(dh.publicKey),
+    valueS: arrToStr(dhS.publicKey),
+    valueM: arrToStr(dhM.publicKey)
   });
 
   const res = await new Promise((res) => { onClientDH.set(connection, res); });
 
-  const serverValue = dh.publicKey;
-  const clientValue = strToArr(res.value);
-  const sessionKey = nacl.box.before(clientValue, dh.secretKey);
-  const macKey = nacl.hash(concatArr(setAppIdentifier, sessionKey));
+  const serverValue = dhS.publicKey;
+  const clientValue = strToArr(res.valueS);
+  const sessionKey = nacl.box.before(clientValue, dhS.secretKey);
+  const macKey = nacl.box.before(strToArr(res.valueM), dhM.secretKey);
   console.log(JSON.stringify(sessionKey));
 
   sessionKeys.set(connection, {
-    dh: dh,
-    session: sessionKey,
-    mac: macKey,
+    s: sessionKey,
+    m: macKey,
   });
 
   if (connectedUsers.has(res.pk)) {
