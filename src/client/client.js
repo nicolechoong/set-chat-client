@@ -1009,7 +1009,7 @@ function initChannel(channel) {
     channel.onmessage = async (event) => { 
         const receivedData = JSON.parse(event.data);
         console.log(receivedData);
-        if (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3") {
+        if (!receivedData.encrypted && (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3")) {
             await receivedMessage(receivedData, event.target);
 
         } else if (receivedData.encrypted) {
