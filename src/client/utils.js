@@ -2,12 +2,15 @@ export function strToArr (str) {
     return Uint8Array.from(str.match(/.{1,2}/g).map(s => parseInt(s, 16)));
 }
 
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
 export function ASCIIToArr(str) {
-    return Uint8Array.from(Buffer.from(str, 'utf8'));
+    return encoder.encode(str);
 }
 
 export function arrToASCII(arr) {
-    return Buffer.toString(arr.buffer);
+    return decoder.decode(arr);
 }
 
 export function arrToStr (arr) {
