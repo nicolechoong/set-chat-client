@@ -241,6 +241,7 @@ async function onSIGMA1 (peerValueS, peerValueM, connection) {
                     console.log(sessionKeys);
 
                     if (resolveAuth.has(connection)) {
+                        console.log(`resolving`);
                         resolveAuth.get(connection).forEach((con) => con());
                     }
 
@@ -1009,6 +1010,7 @@ function initChannel(channel) {
             await receivedMessage(JSON.parse(event.data), event.target);
         } else if (receivedData.encrypted) {
             if (!sessionKeys.has(event.target)) {
+                console.log(`queue waiting`);
                 await new Promise((res) => {
                     if (!resolveAuth.has(event.target)) { resolveAuth.set(event.target, [])}
                     resolveAuth.get(event.target).push(res);
