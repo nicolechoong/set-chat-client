@@ -1021,11 +1021,11 @@ function initChannel(channel) {
                 });
             }
             console.log(`hello`);
-            const data = arrToASCII(nacl.box.open.after(strToArr(receivedData.data), strToArr(receivedData.nonce), sessionKeys.get(event.target).s));
+            const data = nacl.box.open.after(strToArr(receivedData.data), strToArr(receivedData.nonce), sessionKeys.get(event.target).s);
             console.log(data);
             console.log(nacl.verify(strToArr(receivedData.mac), access.hmac512(sessionKeys.get(event.target).m, data)));
             if (nacl.verify(strToArr(receivedData.mac), access.hmac512(sessionKeys.get(event.target).m, data))) {
-                await receivedMessage(JSON.parse(data), event.target);
+                await receivedMessage(JSON.parse(arrToASCII(data)), event.target);
             }
         }
     }
