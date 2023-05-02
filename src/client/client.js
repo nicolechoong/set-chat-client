@@ -239,6 +239,11 @@ async function onSIGMA1 (peerValueS, peerValueM, connection) {
                     resolve(true);
                     sessionKeys.set(connection, { s: sessionKey, m: macKey});
                     console.log(sessionKeys);
+
+                    if (resolveAuth.has(connection)) {
+                        resolveAuth.get(connection).forEach((con) => con());
+                    }
+
                     if (connections.has(res.pk)) {
                         connections.get(res.pk).auth = true;
                     }
@@ -1003,7 +1008,12 @@ function initChannel(channel) {
         if (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3") {
             await receivedMessage(JSON.parse(event.data), event.target);
         } else if (receivedData.encrypted) {
-            console.log([...sessionKeys]);
+            if (!sessionKeys.has(event.target)) {
+                await new Promise((res) => {
+                    if (!resolveAuth.has(event.target)) { resolveAuth.set(event.target, [])}
+                    resolveAuth.get(event.target).push(res);
+                });
+            }
             const data = arrToASCII(nacl.box.open.after(strToArr(receivedData.data), strToArr(receivedData.nonce), sessionKeys.get(event.target).s));
             if (nacl.verify(strToArr(receivedData.mac), access.hmac512(sessionKeys.get(event.target).m, data))) {
                 await receivedMessage(JSON.parse(data), event.target);
