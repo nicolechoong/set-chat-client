@@ -237,9 +237,10 @@ async function onSIGMA1 (peerValueS, peerValueM, connection) {
                 if (nacl.sign.detached.verify(concatArr(localValueS, peerValueS), strToArr(res.sig), peerPK)
                 && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
                     resolve(true);
+                    sessionKeys.set(connection, { s: sessionKey, m: macKey});
+                    console.log(sessionKeys);
                     if (connections.has(res.pk)) {
                         connections.get(res.pk).auth = true;
-                        sessionKeys.set(connection, { s: sessionKey, m: macKey});
                     }
                 }
                 break;
@@ -991,6 +992,8 @@ function initPeerConnection() {
     }
 }
 
+resolveAuth = new Map();
+
 function initChannel(channel) {
     channel.onopen = (event) => { onChannelOpen(event); }
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
@@ -1158,6 +1161,7 @@ async function initSIGMA (channel) {
             }
 
             sessionKeys.set(channel, { s: sessionKey, m: macKey});
+            console.log(sessionKeys);
             sendToMember({
                 success: true,
                 type: "SIGMA3",
