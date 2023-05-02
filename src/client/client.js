@@ -996,6 +996,7 @@ function initChannel(channel) {
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = async (event) => { 
         const receivedData = JSON.parse(event.data);
+        console.log(receivedData.type);
         if (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3") {
             await receivedMessage(JSON.parse(event.data), event.target);
         } else if (receivedData.encrypted) {
