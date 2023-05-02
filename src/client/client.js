@@ -1360,7 +1360,7 @@ function sendToMember (data, pk, requireAck=true) {
         try {
             if (sessionKeys.has(connections.get(pk).sendChannel)) {
                 const stringData = JSON.stringify(data);
-                const nonce = nacl.randomBytes(32);
+                const nonce = nacl.randomBytes(16);
 
                 const encryptedData = {
                     encrypted: true,
