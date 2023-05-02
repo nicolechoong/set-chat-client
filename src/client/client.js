@@ -992,7 +992,7 @@ function initPeerConnection() {
     }
 }
 
-resolveAuth = new Map();
+const resolveAuth = new Map();
 
 function initChannel(channel) {
     channel.onopen = (event) => { onChannelOpen(event); }
