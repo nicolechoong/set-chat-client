@@ -1,7 +1,7 @@
-import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-import * as access from "./accessControl.js";
-import * as elem from "./components.js";
-import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "./utils.js";
+import nacl from 'tweetnacl-es6';
+import * as access from "../client/accessControl.js";
+import * as elem from "../client/components.js";
+import {strToArr, objToArr, formatDate, arrEqual, isAlphanumeric} from "../client/utils.js";
 
 const loginBtn = document.getElementById('loginBtn');
 const sendMessageBtn = document.getElementById('sendMessageBtn');

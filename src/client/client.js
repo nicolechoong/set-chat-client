@@ -937,10 +937,6 @@ function initPeerConnection() {
             console.log(`received onclose`);
             closeConnections(connectionNames.get(connection), 0);
         };
-        connection.on = function (event) {
-            console.log(`received onclose`);
-            closeConnections(connectionNames.get(connection), 0);
-        };
         connection.onicecandidate = function (event) {
             console.log("New candidate");
             if (event.candidate) {
@@ -952,9 +948,8 @@ function initPeerConnection() {
                 });
             }
         };
-        connection.oniceconnectionstatechange = function (event) {
+        connection.oniceconnectionstatechange = function () {
             if (connection.iceConnectionState === "failed") {
-                connections.delete(connectionNames.get(connection));
                 console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
                 connection.restartIce();
             }
@@ -962,7 +957,6 @@ function initPeerConnection() {
         connection.onconnectionstatechange = function (event) {
             console.log(event);
             if (connection.connectionState === "failed") {
-                connections.delete(connectionNames.get(connection));
                 console.log(`Restarting ICE because ${connectionNames.get(connection)} failed`);
                 connection.restartIce();
             } else if (connection.connectionState === "disconnected") {

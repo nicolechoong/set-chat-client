@@ -1,8 +1,8 @@
 import { arrToStr, strToArr, xorArr, concatArr } from "./utils.js";
-import { keyPair as clientKeyPair } from './client.js';
-import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-// import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
-// const clientKeyPair = nacl.box.keyPair();
+// import { keyPair as clientKeyPair } from './client.js';
+// import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
+import nacl from '../../node_modules/tweetnacl/nacl-fast.js';
+const clientKeyPair = nacl.box.keyPair();
 
 export const enc = new TextEncoder();
 export var hashedOps = new Map();
@@ -206,8 +206,7 @@ export function verifiedOperations (receivedOps, localOps, unresolvedHashes, ver
                 change = true;
                 hashedOps.set(hashOp(op), op);
                 receivedOps.delete(op);
-                verifiedOps.push(op);
-                verifiedOps.push(...resolvedHash(hashOp(op), unresolvedHashes));
+                verifiedOps.push(op, ...resolvedHash(hashOp(op), unresolvedHashes));
             } else {
                 unresolvedHashes.set(op.sig, {op: op, hashes: unresolved});
             }
@@ -231,30 +230,89 @@ function getOpFromHash(hashedOp) {
     else { alert('missing dependency'); }
 }
 
+export const seenPrecedes = new Map();
+export const seenNotPrecedes = new Map();
+
 // takes in set of ops
 export function precedes (ops, op1, op2) {
+    if (seenPrecedes.has(op1.sig) && seenPrecedes.get(op1.sig).has(op2.sig)) { return true; }
+    if ((seenNotPrecedes.has(op1.sig) && seenNotPrecedes.get(op1.sig).has(op2.sig)) || (seenPrecedes.has(op2.sig) && seenPrecedes.get(op2.sig).has(op1.sig))) { return false; }
     if (!hasOp(ops, op2) || !hasOp(ops, op1)) { return false; }
     const toVisit = [op2];
     const target = hashOp(op1);
-    var curOp, dep;
+    let curOp, dep;
     while (toVisit.length > 0) {
-        curOp = toVisit.shift();
+        curOp = toVisit.pop();
         for (const hashedDep of curOp.deps) {
             if (hashedDep === target) {
+                if (!seenPrecedes.has(op1.sig)) {
+                    seenPrecedes.set(op1.sig, new Set());
+                }
+                seenPrecedes.get(op1.sig).add(op2.sig);
                 return true;
             } else {
                 dep = getOpFromHash(hashedDep);
+                if (!seenPrecedes.has(dep.sig)) {
+                    seenPrecedes.set(dep.sig, new Set());
+                }
+                seenPrecedes.get(dep.sig).add(curOp.sig);
                 if (dep.action !== "create") {
                     toVisit.push(dep);
                 }
             }
         }
     }
+    if (!seenNotPrecedes.has(op1.sig)) {
+        seenNotPrecedes.set(op1.sig, new Set());
+    }
+    seenNotPrecedes.get(op1.sig).add(op2.sig);
     return false;
 }
 
 function concurrent (ops, op1, op2) {
-    if (hasOp(ops, op1) && hasOp(ops, op2) && op1.sig !== op2.sig && !precedes(ops, op1, op2) && !precedes(ops, op2, op1)) { return true; }
+    if (op1.sig !== op2.sig && !precedes(ops, op1, op2) && !precedes(ops, op2, op1) && hasOp(ops, op1) && hasOp(ops, op2)) { return true; }
+    return false;
+}
+
+export function precedesS (opSig, op1, op2) {
+    if (seenPrecedes.has(op1.sig) && seenPrecedes.get(op1.sig).has(op2.sig)) { return true; }
+    if ((seenNotPrecedes.has(op1.sig) && seenNotPrecedes.get(op1.sig).has(op2.sig)) || (seenPrecedes.has(op2.sig) && seenPrecedes.get(op2.sig).has(op1.sig))) { return false; }
+    if (!opSig.has(op2.sig) || !opSig.has(op1.sig)) { return false; }
+    const toVisit = [op2];
+    const target = hashOp(op1);
+    let curOp, dep;
+    while (toVisit.length > 0) {
+        curOp = toVisit.pop();
+        for (const hashedDep of curOp.deps) {
+            if (hashedDep === target) {
+                if (!seenPrecedes.has(op1.sig)) {
+                    seenPrecedes.set(op1.sig, new Set());
+                }
+                seenPrecedes.get(op1.sig).add(op2.sig);
+                return true;
+            } else {
+                dep = getOpFromHash(hashedDep);
+                if (dep.action !== "create") {
+                    if (dep.pk2 === op2.pk1) {
+                        if (!seenPrecedes.has(dep.sig)) {
+                            seenPrecedes.set(dep.sig, new Set());
+                        }
+                        seenPrecedes.get(dep.sig).add(op2.sig);
+                    }
+                    toVisit.push(dep);
+                }
+            }
+        }
+    }
+    if (!seenNotPrecedes.has(op1.sig)) {
+        seenNotPrecedes.set(op1.sig, new Set());
+    }
+    seenNotPrecedes.get(op1.sig).add(op2.sig);
+    return false;
+}
+
+function concurrentS (opSig, op1, op2) {
+    if (op1.sig !== op2.sig && opSig.has(op1.sig) && opSig.has(op2.sig) && !precedesS(opSig, op2, op1)) { return true; }
     return false;
 }
 
@@ -278,13 +336,14 @@ function printEdge (op1, op2 = null) {
 export function authority (ops) {
     const edges = [];
     const memberVertices = new Map();
+    const opSigs = new Set(ops.map(op => op.sig));
     var pk;
     // convert pk into strings to perform comparisons
     for (const op1 of ops) {
         for (const op2 of ops) {
             if (op2.action === "create") { continue; }
-            if ((((op1.action === "create" && op1.pk === op2.pk1) || (op1.action === "add" && op1.pk2 === op2.pk1)) && precedes(ops, op1, op2))
-                || ((op1.action === "remove" && op1.pk2 === op2.pk1) && (precedes(ops, op1, op2) || concurrent(ops, op1, op2)))) {
+            if ((((op1.action === "create" && op1.pk === op2.pk1) || (op1.action === "add" && op1.pk2 === op2.pk1)) && precedesS(opSigs, op1, op2))
+                || ((op1.action === "remove" && op1.pk2 === op2.pk1) && (precedesS(opSigs, op1, op2) || concurrentS(opSigs, op1, op2)))) {
                 edges.push({from: op1, to: op2});
             }
         }
@@ -296,7 +355,6 @@ export function authority (ops) {
     return { edges: edges, members: [...memberVertices.values()] };
 }
 
-// TODO: double triple cheeck that this works for member as well...
 function valid (ops, ignored, op, authorityGraph) {
     if (op.action === "create") { return true; }
     if (hasOp(ignored, op)) { return false; }
@@ -305,15 +363,24 @@ function valid (ops, ignored, op, authorityGraph) {
     const inSet = authorityGraph.filter((edge) => {
         return edge.to !== "mem" && op.sig === edge.to.sig && valid(ops, ignored, edge.from, authorityGraph);
     }).map(edge => edge.from);
-    const removeIn = inSet.filter(r => (r.action === "remove"));
+
+    const removeIn = [];
+    const addIn = [];
+
+    inSet.forEach(op => { if (op.action == "remove") { removeIn.push(op) } else { addIn.push(op) }});
+    addIn.reverse();
+    removeIn.reverse();
 
     // looking for adds which aren't followed by removes
-    for (const opA of inSet) {
-        if (opA.action === "create" || opA.action === "add") {
-            if (removeIn.filter(opR => precedes(ops, opA, opR)).length === 0) {
-                return true;
+    addLoop:
+    for (const opA of addIn) {
+        for (const opR of removeIn) {
+            if (precedes(ops, opA, opR)) {
+                continue addLoop;
             }
         }
+        return true;
+        // if (removeIn.filter((opR) => precedes(ops, opA, opR)).length == 0) { return true; }
     }
     return false;
 }
@@ -327,7 +394,7 @@ export function members (ops, ignored) {
             pks.add(memVertex.pk);
         }
     }
-    console.log(`calculated member set ${[...pks]}      number of members ${pks.size}}`);
+    // console.log(`calculated member set ${[...pks]}      number of members ${pks.size}}`);
     return pks;
 }
 
