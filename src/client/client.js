@@ -457,7 +457,6 @@ async function createNewChat (chatName) {
             unresolved: [],
         },
         history: [createMsg],
-        historyTable: new Map(),
     };
 
     programStore.set(chatID, chatInfo);
@@ -502,7 +501,6 @@ async function onAdd(chatID, chatName, fromPK, ignored, msg) {
                 unresolved: [],
             },
             history: [msg],
-            historyTable: new Map()
         };
         programStore.set(chatID, chatInfo);
         await store.setItem(chatID, chatInfo);
@@ -580,14 +578,6 @@ async function onRemove (messageData) {
             joinedChatInfo.members.delete(keyPair.publicKey, 1);
             joinedChatInfo.exMembers.add(keyPair.publicKey);
             await store.setItem("joinedChats", joinedChats);
-
-            for (const pk of joinedChats.get(chatID).members) {
-                if (programStore.get(chatID).historyTable.has(pk)) {
-                    const interval = programStore.get(chatID).historyTable.get(pk).pop();
-                    interval[1] = interval[1] == 0 ? messageData.sentTime : interval[1];
-                    programStore.get(chatID).historyTable.get(pk).push(interval);
-                }
-            }
             await store.setItem(chatID, programStore.get(chatID));
 
             if (document.getElementById(`userCard${localUsername}`)) { document.getElementById(`userCard${localUsername}`).remove(); }
@@ -842,7 +832,6 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
         console.log(`different universe from ${keyMap.get(pk)}`);
         joinedChats.get(chatID).members.delete(pk);
         joinedChats.get(chatID).exMembers.add(pk);
-        console.log(programStore.get(chatID).historyTable.get(pk));
         store.setItem("joinedChats", joinedChats);
         updateChatInfo();
         resolve(false);
@@ -1290,7 +1279,6 @@ async function addPeer (messageData) {
     await updateChatStore(messageData);
     console.log(programStore.get(chatID).history);
     await store.setItem(chatID, programStore.get(chatID));
-    console.log(`history for ${pk}: ${programStore.get(chatID).historyTable.get(pk)}`);
 }
 
 async function removePeer (messageData) {
@@ -1646,14 +1634,6 @@ export async function selectIgnored(ignoredOp, chatID, cycle) {
         const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => msg.type === "selectedIgnored" || ignoreFrom.has(msg.from));
 
         programStore.get(chatID).history.splice(ignoredOpIndex+1, Infinity, ...filteredHistory);
-
-        if (programStore.get(chatID).historyTable.has(ignoredOp.pk2)) { 
-            const interval = programStore.get(chatID).historyTable.get(ignoredOp.pk2).pop();
-            if (ignoredOp.action == "remove") {
-                interval[1] = 0;
-                programStore.get(chatID).historyTable.get(ignoredOp.pk2).push(interval);
-            }
-        }
     }
 
     // writing to storage
