@@ -26,16 +26,16 @@ app.get('/src/client/utils.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'utils.js'));
 });
 
-app.get('/src/client/chatroom.css', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'chatroom.css'));
+app.get('/src/client/assets/chatroom.css', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'assets','chatroom.css'));
 });
 
 app.get('/src/client/components.js', (req, res, next) => {
   res.status(200).sendFile(path.join(__dirname, '..', 'client', 'components.js'));
 });
 
-app.get('/assets/fonts/SpaceGrotesk-Regular.woff', (req, res, next) => {
-  res.status(200).sendFile(path.join(__dirname, '..', '..', 'assets', 'fonts', 'SpaceGrotesk-Regular.woff'));
+app.get('/src/client/assets/fonts/SpaceGrotesk-Regular.woff', (req, res, next) => {
+  res.status(200).sendFile(path.join(__dirname, '..', 'client', 'assets', 'fonts', 'SpaceGrotesk-Regular.woff'));
 });
 
 app.get('/node_modules/tweetnacl-es6/nacl-fast-es.js', (req, res, next) => {
