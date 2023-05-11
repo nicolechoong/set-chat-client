@@ -1851,7 +1851,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
 
             var msg;
             while (localIndex >= 0 && receivedIndex >= 0) {
-                if (localMsgs.at(localIndex).id == receivedMsgs.at(receivedIndex).id) {
+                if (localMsgs.at(localIndex).id === receivedMsgs.at(receivedIndex).id) {
                     msg = localMsgs[localIndex];
                     localIndex -= 1;
                     receivedIndex -= 1;
@@ -1873,6 +1873,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                     mergedChatHistory.push(msg);
                 }
             }
+            console.log(mergeChatHistory.map(msg => msg.type));
             console.log(`exit`);
 
             while (localIndex >= 0) {
@@ -1893,7 +1894,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                 console.log(`receivedLoop ${receivedIndex}`);
                 msg = receivedMsgs[receivedIndex];
                 newMessage = true;
-                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type == "selectIgnored" || (msg.type == "remove" && msg.dispute)) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type === "selectIgnored" || (msg.type == "remove" && msg.dispute)) {
                     if (msg.type === "add") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
