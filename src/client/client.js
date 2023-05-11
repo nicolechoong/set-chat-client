@@ -220,15 +220,15 @@ async function onSIGMA1 (peerValue, connection) {
         const dh = nacl.box.keyPair();
         const localValue = dh.publicKey;
         const derivedKey = nacl.box.before(peerValue, dh.secretKey);
-        const sessionKey = strToArr(CryptoJS.SHA256(`${derivedKey}session-key`).toString(CryptoJS.enc.Hex));
-        const macKey = strToArr(CryptoJS.SHA256(`${derivedKey}mac-key`).toString(CryptoJS.enc.Hex));
+        const sessionKey = nacl.hash(concatArr(derivedKey, sessionTag)).slice(0, 32);
+        const macKey = nacl.hash(concatArr(derivedKey, macTag));
 
         connection.send(JSON.stringify({
             type: "SIGMA2",
             value: arrToStr(localValue), // Uint8Array
             pk: keyPair.publicKey, // string
             sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)), // verifying secret key possession 
-            mac: arrToStr(access.hmac256(macKey, strToArr(keyPair.publicKey))) // verifying identity
+            mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))) // verifying identity
         }));
 
         const res = await new Promise((res2) => { onSIGMA3.set(connection, res2); });
@@ -236,7 +236,7 @@ async function onSIGMA1 (peerValue, connection) {
             case "SUCCESS":
                 const peerPK = strToArr(res.pk);
                 if (nacl.sign.detached.verify(concatArr(localValue, peerValue), strToArr(res.sig), peerPK)
-                && nacl.verify(strToArr(res.mac), access.hmac256(macKey, peerPK))) {
+                && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
                     resolve(true);
                     sessionKeys.set(connection, sessionKey);
 
@@ -1138,13 +1138,13 @@ async function initSIGMA (channel) {
         const peerPK = strToArr(res.pk);
         
         const derivedKey = nacl.box.before(peerValue, dh.secretKey);
-        const sessionKey = strToArr(CryptoJS.SHA256(`${derivedKey}session-key`).toString(CryptoJS.enc.Hex));
-        const macKey = strToArr(CryptoJS.SHA256(`${derivedKey}mac-key`).toString(CryptoJS.enc.Hex));
+        const sessionKey = nacl.hash(concatArr(derivedKey, sessionTag)).slice(0, 32);
+        const macKey = nacl.hash(concatArr(derivedKey, macTag));
     
         const receivedValues = concatArr(localValue, peerValue);
     
         if (nacl.sign.detached.verify(receivedValues, strToArr(res.sig), peerPK) 
-        && nacl.verify(strToArr(res.mac), access.hmac256(macKey, peerPK))) {
+        && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
             if (connections.has(res.pk)) {
                 connections.get(res.pk).auth = true;
             }
@@ -1155,7 +1155,7 @@ async function initSIGMA (channel) {
                 type: "SIGMA3",
                 pk: keyPair.publicKey,
                 sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)),
-                mac: arrToStr(access.hmac256(macKey, strToArr(keyPair.publicKey))),
+                mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))),
             }, res.pk, false);
             resolve(true);
 
