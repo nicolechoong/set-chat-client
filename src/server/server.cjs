@@ -65,17 +65,12 @@ const connectedUsers = new Map();
 // (chatID: String, {chatName: String, members: Array of String})
 const chats = new Map();
 
-const sessionKeys = new Map();
 const onClientDH = new Map();
 
 const keyPair = nacl.sign.keyPair();
 keyPair.publicKey = arrToStr(keyPair.publicKey);
 
 var wsServer = new WebSocketServer({server});
-
-// unique application identifier ('set-chat-client')
-const setAppIdentifier = new Uint8Array([115, 101, 116, 45, 99, 104, 97, 116, 45, 99, 108, 105, 101, 110, 116]);
-const enc = new TextEncoder();
 
 if (!wsServer) {
   log("ERROR: Unable to create WebSocket server");
@@ -158,28 +153,22 @@ wsServer.on('connection', function(connection) {
     };
 })
 
+const macTag = Uint8Array.from(["6d", "61", "63", "5f", "6b", "65", "79"]);
+
 async function initSIGMA (connection) {
-  const dhS = nacl.box.keyPair();
-  const dhM = nacl.box.keyPair();
+  const dh = nacl.box.keyPair();
 
   sendTo(connection, {
     type: "SIGMA1",
-    valueS: arrToStr(dhS.publicKey),
-    valueM: arrToStr(dhM.publicKey)
+    value: arrToStr(dh.publicKey),
   });
 
   const res = await new Promise((res) => { onClientDH.set(connection, res); });
 
-  const serverValue = dhS.publicKey;
-  const clientValue = strToArr(res.valueS);
-  const sessionKey = nacl.box.before(clientValue, dhS.secretKey);
-  const macKey = nacl.box.before(strToArr(res.valueM), dhM.secretKey);
-  console.log(JSON.stringify(sessionKey));
-
-  sessionKeys.set(connection, {
-    s: sessionKey,
-    m: macKey,
-  });
+  const serverValue = dh.publicKey;
+  const clientValue = strToArr(res.value);
+  const derivedKey = nacl.box.before(clientValue, dh.secretKey);
+  const macKey = nacl.hash(concatArr(derivedKey, macTag));
 
   if (connectedUsers.has(res.pk)) {
     sendTo(connection, {
@@ -187,7 +176,7 @@ async function initSIGMA (connection) {
       status: "PK_IN_USE",
     });
     initSIGMA(connection);
-    return
+    return;
   }
 
   if (nacl.sign.detached.verify(concatArr(serverValue, clientValue), strToArr(res.sig), strToArr(res.pk)) 

@@ -34,12 +34,14 @@ var localUsername;
 // GLOBAL VARIABLES //
 //////////////////////
 
-var currentChatID, connections, msgQueue, serverValues, sessionKeys, acks, peerIgnored, reconnect;
+var currentChatID, connections, msgQueue, serverValue, sessionKeys, acks, peerIgnored, reconnect;
 var onSIGMA2, onSIGMA3; // for SIGMA protocol
 var onlineMode = false;
 export var joinedChats, keyMap, store, programStore;
 
 const enc = new TextEncoder();
+const sessionTag = Uint8Array.from(["73", "65", "73", "73", "69", "6f", "6e", "5f", "6b", "65", "79"]);
+const macTag = Uint8Array.from(["6d", "61", "63", "5f", "6b", "65", "79"]);
 
 // private keypair for the client
 export var keyPair;
@@ -135,9 +137,9 @@ function connectToServer () {
 
         switch (data.type) {
             case "SIGMA1":
-                serverValues = { s: strToArr(data.valueS), m: strToArr(data.valueM) };
+                serverValue = strToArr(data.value);
                 if (reconnect) {
-                    if (!await onSIGMA1(serverValues.s, serverValues.m, connection)) {
+                    if (!await onSIGMA1(serverValue, connection)) {
                         alert("failed to authenticate connection");
                         return;
                     }
@@ -212,21 +214,20 @@ function sendToServer(message) {
     }
 };
 
-async function onSIGMA1 (peerValueS, peerValueM, connection) {
+async function onSIGMA1 (peerValue, connection) {
     // peerValue: Uint8Array
     return new Promise(async (resolve) => {
-        const localKeyPairS = nacl.box.keyPair();
-        const localKeyPairM = nacl.box.keyPair();
-        const localValueS = localKeyPairS.publicKey;
-        const sessionKey = nacl.box.before(peerValueS, localKeyPairS.secretKey);
-        const macKey = nacl.box.before(peerValueM, localKeyPairM.secretKey);
+        const dh = nacl.box.keyPair();
+        const localValue = dh.publicKey;
+        const derivedKey = nacl.box.before(peerValue, dh.secretKey);
+        const sessionKey = nacl.hash(concatArr(derivedKey, sessionTag));
+        const macKey = nacl.hash(concatArr(derivedKey, macTag));
 
         connection.send(JSON.stringify({
             type: "SIGMA2",
-            valueS: arrToStr(localValueS), // Uint8Array
-            valueM: arrToStr(localKeyPairM.publicKey),
+            value: arrToStr(localValue), // Uint8Array
             pk: keyPair.publicKey, // string
-            sig: arrToStr(nacl.sign.detached(concatArr(peerValueS, localValueS), keyPair.secretKey)), // verifying secret key possession 
+            sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)), // verifying secret key possession 
             mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))) // verifying identity
         }));
 
@@ -234,23 +235,18 @@ async function onSIGMA1 (peerValueS, peerValueM, connection) {
         switch (res.status) {
             case "SUCCESS":
                 const peerPK = strToArr(res.pk);
-                if (nacl.sign.detached.verify(concatArr(localValueS, peerValueS), strToArr(res.sig), peerPK)
+                if (nacl.sign.detached.verify(concatArr(localValue, peerValue), strToArr(res.sig), peerPK)
                 && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
                     resolve(true);
-                    sessionKeys.set(connection, { s: sessionKey, m: macKey});
-                    console.log(sessionKeys);
+                    sessionKeys.set(connection, sessionKey);
 
-                    console.log(`resolving?`);
                     if (resolveAuth.has(connection)) {
-                        console.log(`resolving`);
                         resolveAuth.get(connection).forEach((con) => con());
                     }
 
                     if (connections.has(res.pk)) {
                         connections.get(res.pk).auth = true;
                     }
-                } else {
-                    console.log(`${nacl.sign.detached.verify(concatArr(localValueS, peerValueS), strToArr(res.sig), peerPK)}  ${nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))}`);
                 }
                 break;
             case "PK_IN_USE":
@@ -306,9 +302,6 @@ async function onLogin (status, username, receivedChats) {
             return;
         case "NAME_TAKEN":
             alert("This username is associated with another device. Please try a different username.");
-            return;
-        case "VERIF_FAILED":
-            alert("Failed to verify identity. Please try a different username.");
             return;
     }
 };
@@ -992,10 +985,10 @@ function initChannel(channel) {
     channel.onmessage = async (event) => { 
         const receivedData = JSON.parse(event.data);
         console.log(receivedData);
-        if (!receivedData.encrypted && (receivedData.type === "ack" || receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3")) {
+        if (!receivedData.encrypted && (receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3")) {
             await receivedMessage(receivedData, event.target);
 
-        } else if (receivedData.encrypted) {
+        } else {
             if (!sessionKeys.has(event.target)) {
                 console.log(`queue waiting`);
                 await new Promise((res) => {
@@ -1003,11 +996,8 @@ function initChannel(channel) {
                     resolveAuth.get(event.target).push(res);
                 });
             }
-            console.log(`hello`);
-            const data = nacl.box.open.after(strToArr(receivedData.data), strToArr(receivedData.nonce), sessionKeys.get(event.target).s);
-            console.log(data);
-            console.log(nacl.verify(strToArr(receivedData.mac), access.hmac512(sessionKeys.get(event.target).m, data)));
-            if (nacl.verify(strToArr(receivedData.mac), access.hmac512(sessionKeys.get(event.target).m, data))) {
+            const data = nacl.secretbox.open(strToArr(receivedData.data), strToArr(receivedData.nonce), sessionKeys.get(event.target));
+            if (data) {
                 await receivedMessage(JSON.parse(arrToASCII(data)), event.target);
             }
         }
@@ -1030,7 +1020,7 @@ async function receivedMessage (messageData, channel=null) {
             acks.delete(messageData.id);
             return;
         case "SIGMA1":
-            onSIGMA1(strToArr(messageData.valueS), strToArr(messageData.valueM), channel);
+            onSIGMA1(strToArr(messageData.value), channel);
             return;
         case "SIGMA2":
             onSIGMA2.get(channel)(messageData);
@@ -1137,25 +1127,21 @@ async function receivedMessage (messageData, channel=null) {
 async function initSIGMA (channel) {
     // only used for p2p connections
     return new Promise(async (resolve) => {
-        const dhS = nacl.box.keyPair();
-        const dhM = nacl.box.keyPair();
+        const dh = nacl.box.keyPair();
 
         channel.send(JSON.stringify({
             type: "SIGMA1",
-            valueS: arrToStr(dhS.publicKey),
-            valueM: arrToStr(dhM.publicKey),
+            value: arrToStr(dh.publicKey)
         }));
     
         const res = await new Promise((res) => { onSIGMA2.set(channel, res); });
     
-        const localValueS = dhS.publicKey;
-        const peerValueS = strToArr(res.valueS);
-        const peerValueM = strToArr(res.valueM);
-        const peerPK = strToArr(res.pk);
-        const sessionKey = nacl.box.before(peerValueS, dhS.secretKey);
-        const macKey = nacl.box.before(peerValueM, dhM.secretKey);
+        const localValue = dh.publicKey;
+        const derivedKey = nacl.box.before(peerValue, dh.secretKey);
+        const sessionKey = nacl.hash(concatArr(derivedKey, sessionTag));
+        const macKey = nacl.hash(concatArr(derivedKey, macTag));
     
-        const receivedValues = concatArr(localValueS, peerValueS);
+        const receivedValues = concatArr(localValue, peerValue);
     
         if (nacl.sign.detached.verify(receivedValues, strToArr(res.sig), peerPK) 
         && nacl.verify(strToArr(res.mac), access.hmac512(macKey, peerPK))) {
@@ -1163,13 +1149,12 @@ async function initSIGMA (channel) {
                 connections.get(res.pk).auth = true;
             }
 
-            sessionKeys.set(channel, { s: sessionKey, m: macKey});
-            console.log(sessionKeys);
+            sessionKeys.set(channel, sessionKey);
             sendToMember({
                 status: "SUCCESS",
                 type: "SIGMA3",
                 pk: keyPair.publicKey,
-                sig: arrToStr(nacl.sign.detached(concatArr(peerValueS, localValueS), keyPair.secretKey)),
+                sig: arrToStr(nacl.sign.detached(concatArr(peerValue, localValue), keyPair.secretKey)),
                 mac: arrToStr(access.hmac512(macKey, strToArr(keyPair.publicKey))),
             }, res.pk, false);
             resolve(true);
@@ -1366,18 +1351,14 @@ function sendToMember (data, pk, requireAck=true) {
     console.log(`sending ${data.type} to ${keyMap.get(pk)}`);
     if (connections.has(pk) && onlineMode) {
         try {
-            if (data.type === "ack" || data.type === "SIGMA1" || data.type === "SIGMA2" || data.type === "SIGMA3") {
+            if (data.type === "SIGMA1" || data.type === "SIGMA2" || data.type === "SIGMA3") {
                 data.encrypted = false;
                 connections.get(pk).sendChannel.send(JSON.stringify(data));
             } else {
-                const stringData = JSON.stringify(data);
                 const nonce = nacl.randomBytes(24);
-
                 const encryptedData = {
-                    encrypted: true,
-                    mac: arrToStr(access.hmac512(sessionKeys.get(connections.get(pk).sendChannel).m, enc.encode(stringData))),
                     nonce: arrToStr(nonce),
-                    data: arrToStr(nacl.box.after(ASCIIToArr(stringData), nonce, sessionKeys.get(connections.get(pk).sendChannel).s))
+                    data: nacl.secretbox(ASCIIToArr(JSON.stringify(data)), arrToStr(nonce), sessionKeys.get(connections.get(pk).sendChannel)),
                 }
                 connections.get(pk).sendChannel.send(JSON.stringify(encryptedData));
             }
@@ -1465,7 +1446,7 @@ async function login (username) {
                 }
             });
 
-            if (!await onSIGMA1(serverValues.s, serverValues.m, connection)) {
+            if (!await onSIGMA1(serverValue, connection)) {
                 alert("failed to authenticate connection");
                 return;
             }
@@ -1601,8 +1582,9 @@ async function getIgnored (cycles, chatID, pk) {
             const issuedOp = cycle.find((op) => op.pk1 === keyPair.publicKey);
 
             if (issuedOp) {
+                console.log(issuedOp.action);
                 const sources = access.earliestSubset(cycle);
-                const dependentIndex = sources.findIndex((op) => op.sig == issuedOp.sig || access.precedes(cycle, op, issuedOp));
+                const dependentIndex = sources.findIndex((op) => op.sig === issuedOp.sig || access.precedes(cycle, op, issuedOp));
                 const ignore = sources.at(dependentIndex-1);
                 await selectIgnored(ignore, chatID, cycle);
 
