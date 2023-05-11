@@ -1,6 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-import SHA256 from '../../node_modules/crypto-js/sha256';
+import SHA256 from '../../node_modules/crypto-js/sha256.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr, ASCIIToArr, arrToASCII} from "./utils.js";
