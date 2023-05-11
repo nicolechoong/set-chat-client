@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const nacl = require('tweetnacl');
 var sha256 = require("crypto-js/sha256");
+var encHex = require("crypto-js/enc-hex");
 
 const express = require('express');
 const app = express();
@@ -172,7 +173,7 @@ async function initSIGMA (connection) {
   const serverValue = dh.publicKey;
   const clientValue = strToArr(res.value);
   const derivedKey = nacl.box.before(clientValue, dh.secretKey);
-  const macKey = strToArr(sha256(`${derivedKey}mac-key`).toString(CryptoJS.enc.Hex));
+  const macKey = strToArr(sha256(`${derivedKey}mac-key`).toString(encHex));
 
   if (connectedUsers.has(res.pk)) {
     sendTo(connection, {
