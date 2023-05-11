@@ -550,7 +550,7 @@ async function onRemove (messageData) {
 
     if (fromPK !== keyPair.publicKey) {
         await updateChatStore(messageData);
-        updateChatWindow(messageData);
+        refreshChatWindow(messageData);
 
         if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
             [...joinedChatInfo.members].forEach((pk) => sendOperations(chatID, pk, true));
@@ -1607,7 +1607,7 @@ export async function selectIgnored(ignoredOp, chatID, cycle) {
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
         const sources = access.earliestSubset(cycle);
-        const index = cycle.findIndex((op) => ignoredOp.sig === op.sig);
+        let index = cycle.findIndex((op) => ignoredOp.sig === op.sig);
         const ignoreFrom = new Set();
         do {
             ignoreFrom.add(cycle.at(index).pk1);
