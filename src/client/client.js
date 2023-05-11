@@ -220,8 +220,8 @@ async function onSIGMA1 (peerValue, connection) {
         const dh = nacl.box.keyPair();
         const localValue = dh.publicKey;
         const derivedKey = nacl.box.before(peerValue, dh.secretKey);
-        const sessionKey = strToArr(CryptoJS.SHA256(`${derivedKey}session-key`));
-        const macKey = strToArr(CryptoJS.SHA256(`${derivedKey}mac-key`));
+        const sessionKey = strToArr(CryptoJS.SHA256(`${derivedKey}session-key`).toString(CryptoJS.enc.Hex));
+        const macKey = strToArr(CryptoJS.SHA256(`${derivedKey}mac-key`).toString(CryptoJS.enc.Hex));
 
         connection.send(JSON.stringify({
             type: "SIGMA2",
@@ -1141,8 +1141,8 @@ async function initSIGMA (channel) {
         const peerPK = strToArr(res.pk);
         
         const derivedKey = nacl.box.before(peerValue, dh.secretKey);
-        const sessionKey = strToArr(CryptoJS.SHA256(`${derivedKey}session-key`));
-        const macKey = strToArr(CryptoJS.SHA256(`${derivedKey}mac-key`));
+        const sessionKey = strToArr(CryptoJS.SHA256(`${derivedKey}session-key`).toString(CryptoJS.enc.Hex));
+        const macKey = strToArr(CryptoJS.SHA256(`${derivedKey}mac-key`).toString(CryptoJS.enc.Hex));
     
         const receivedValues = concatArr(localValue, peerValue);
     

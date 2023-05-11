@@ -172,7 +172,7 @@ async function initSIGMA (connection) {
   const serverValue = dh.publicKey;
   const clientValue = strToArr(res.value);
   const derivedKey = nacl.box.before(clientValue, dh.secretKey);
-  const macKey = strToArr(sha256(`${derivedKey}mac-key`));
+  const macKey = strToArr(sha256(`${derivedKey}mac-key`).toString(CryptoJS.enc.Hex));
 
   if (connectedUsers.has(res.pk)) {
     sendTo(connection, {
