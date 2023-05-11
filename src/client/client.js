@@ -984,13 +984,11 @@ function initChannel(channel) {
     channel.onclose = (event) => { console.log(`Channel ${event.target.label} closed`); }
     channel.onmessage = async (event) => { 
         const receivedData = JSON.parse(event.data);
-        console.log(receivedData);
         if (!receivedData.encrypted && (receivedData.type === "SIGMA1" || receivedData.type === "SIGMA2" || receivedData.type === "SIGMA3")) {
             await receivedMessage(receivedData, event.target);
 
         } else {
             if (!sessionKeys.has(event.target)) {
-                console.log(`queue waiting`);
                 await new Promise((res) => {
                     if (!resolveAuth.has(event.target)) { resolveAuth.set(event.target, [])}
                     resolveAuth.get(event.target).push(res);
@@ -1034,7 +1032,6 @@ async function receivedMessage (messageData, channel=null) {
             if (messageData.sigmaAck) { sendOperations(messageData.chatID, messageData.from); }
             receivedOperations(messageData.ops, messageData.chatID, messageData.from).then(async (res) => {
                 console.log(res);
-                console.log(resolveMergeHistory.get(syncID));
                 await mergeChatHistory(messageData.chatID, resolveMergeHistory.get(syncID));
                 if (res) {
                     console.log(`res success`);
@@ -1869,13 +1866,13 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                 }
                 
                 console.log(mergedChatHistory.map(msg => msg.type));
-                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type == "selectIgnored") {
                     if (msg.type === "add") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
                     }
-                    mergedChatHistory.unshift(msg);
+                    mergedChatHistory.add(msg);
                 }
             }
             console.log(`exit`);
@@ -1883,13 +1880,13 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
             while (localIndex >= 0) {
                 console.log(`localLoop`);
                 msg = localMsgs[localIndex];
-                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type == "selectIgnored") {
                     if (msg.type === "add") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
                     }
-                    mergedChatHistory.unshift(msg);
+                    mergedChatHistory.add(msg);
                 }
                 localIndex -= 1;
             }
@@ -1898,17 +1895,18 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                 console.log(`receivedLoop ${receivedIndex}`);
                 msg = receivedMsgs[receivedIndex];
                 newMessage = true;
-                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type == "selectIgnored") {
                     if (msg.type === "add") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
                     }
-                    mergedChatHistory.unshift(msg);
+                    mergedChatHistory.add(msg);
                 }
                 receivedIndex -= 1;
             }
 
+            mergedChatHistory.reverse();
             sortChatHistory(mergedChatHistory);
             programStore.get(chatID).history = mergedChatHistory;
             await store.setItem(chatID, programStore.get(chatID));
