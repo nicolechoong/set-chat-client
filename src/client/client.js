@@ -1360,7 +1360,7 @@ function sendToMember (data, pk, requireAck=true) {
                 const nonce = nacl.randomBytes(24);
                 const encryptedData = {
                     nonce: arrToStr(nonce),
-                    data: nacl.secretbox(ASCIIToArr(JSON.stringify(data)), arrToStr(nonce), sessionKeys.get(connections.get(pk).sendChannel)),
+                    data: nacl.secretbox(ASCIIToArr(JSON.stringify(data)), nonce, sessionKeys.get(connections.get(pk).sendChannel)),
                 }
                 connections.get(pk).sendChannel.send(JSON.stringify(encryptedData));
             }
