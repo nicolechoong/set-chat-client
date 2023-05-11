@@ -1872,7 +1872,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
                     }
-                    mergedChatHistory.add(msg);
+                    mergedChatHistory.push(msg);
                 }
             }
             console.log(`exit`);
@@ -1886,7 +1886,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
                     }
-                    mergedChatHistory.add(msg);
+                    mergedChatHistory.push(msg);
                 }
                 localIndex -= 1;
             }
@@ -1901,7 +1901,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                     } else if (msg.type === "remove") {
                         authorisedSet.add(msg.op.pk2);
                     }
-                    mergedChatHistory.add(msg);
+                    mergedChatHistory.push(msg);
                 }
                 receivedIndex -= 1;
             }
