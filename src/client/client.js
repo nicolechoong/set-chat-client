@@ -1,6 +1,6 @@
 import localforage from "https://unpkg.com/localforage@1.9.0/src/localforage.js";
 import nacl from '../../node_modules/tweetnacl-es6/nacl-fast-es.js';
-import { SHA256 } from '../../node_modules/crypto-js/sha256.js';
+import CryptoJS from 'https://unpkg.com/crypto-js@3.1.9-1/crypto-js.js';
 import * as access from "./accessControl.js";
 import * as elem from "./components.js";
 import {strToArr, concatArr, formatDate, isAlphanumeric, arrToStr, ASCIIToArr, arrToASCII} from "./utils.js";
@@ -221,8 +221,8 @@ async function onSIGMA1 (peerValue, connection) {
         const dh = nacl.box.keyPair();
         const localValue = dh.publicKey;
         const derivedKey = nacl.box.before(peerValue, dh.secretKey);
-        const sessionKey = strToArr(SHA256(`${derivedKey}session-key`));
-        const macKey = strToArr(SHA256(`${derivedKey}mac-key`));
+        const sessionKey = strToArr(CryptoJS.SHA256(`${derivedKey}session-key`));
+        const macKey = strToArr(CryptoJS.SHA256(`${derivedKey}mac-key`));
 
         connection.send(JSON.stringify({
             type: "SIGMA2",
@@ -1142,8 +1142,8 @@ async function initSIGMA (channel) {
         const peerPK = strToArr(res.pk);
         
         const derivedKey = nacl.box.before(peerValue, dh.secretKey);
-        const sessionKey = strToArr(SHA256(`${derivedKey}session-key`));
-        const macKey = strToArr(SHA256(`${derivedKey}mac-key`));
+        const sessionKey = strToArr(CryptoJS.SHA256(`${derivedKey}session-key`));
+        const macKey = strToArr(CryptoJS.SHA256(`${derivedKey}mac-key`));
     
         const receivedValues = concatArr(localValue, peerValue);
     
