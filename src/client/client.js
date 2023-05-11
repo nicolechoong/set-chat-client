@@ -1873,7 +1873,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                     mergedChatHistory.push(msg);
                 }
             }
-            console.log(mergeChatHistory.map(msg => msg.type));
+            console.log([...mergedChatHistory].map(msg => msg.type));
             console.log(`exit`);
 
             while (localIndex >= 0) {
