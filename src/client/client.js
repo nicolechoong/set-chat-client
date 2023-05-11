@@ -1137,6 +1137,7 @@ async function initSIGMA (channel) {
         const res = await new Promise((res) => { onSIGMA2.set(channel, res); });
     
         const localValue = dh.publicKey;
+        const peerValue = res.value;
         const derivedKey = nacl.box.before(peerValue, dh.secretKey);
         const sessionKey = nacl.hash(concatArr(derivedKey, sessionTag));
         const macKey = nacl.hash(concatArr(derivedKey, macTag));
