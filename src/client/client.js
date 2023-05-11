@@ -1586,7 +1586,7 @@ async function getIgnored (cycles, chatID, pk) {
                 const sources = access.earliestSubset(cycle);
                 const dependentIndex = sources.findIndex((op) => op.sig === issuedOp.sig || access.precedes(cycle, op, issuedOp));
                 const ignore = sources.at(dependentIndex-1);
-                await selectIgnored(ignore, chatID, cycle);
+                await selectIgnored(ignore, chatID, cycle, true);
 
                 console.log(`automatically resolved ${ignore.action} ${keyMap.get(ignore.pk2)}`);
                 continue;
@@ -1600,7 +1600,7 @@ async function getIgnored (cycles, chatID, pk) {
     });
 }
 
-export async function selectIgnored(ignoredOp, chatID, cycle) {
+export async function selectIgnored(ignoredOp, chatID, cycle, automatic=false) {
     // unwinding chat history
     const ignoredOpIndex = programStore.get(chatID).history.findIndex(msg => msg.type == ignoredOp.action && msg.op.sig === ignoredOp.sig);
 
@@ -1609,10 +1609,12 @@ export async function selectIgnored(ignoredOp, chatID, cycle) {
         const sources = access.earliestSubset(cycle);
         let index = cycle.findIndex((op) => ignoredOp.sig === op.sig); // finding the ignoredOp in the cycle
         const ignoreFrom = new Set(); // finding the users who will be in other universes
-        do {
+        index += 1;
+        while (!access.hasOp(sources, cycle.at(index%cycle.length))) {
             ignoreFrom.add(cycle.at(index).pk1);
             index += 1;
-        } while (!access.hasOp(sources, cycle.at(index%cycle.length)));
+        }
+        console.log([...ignoreFrom]);
         const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => msg.type === "selectedIgnored" || ignoreFrom.has(msg.from));
 
         programStore.get(chatID).history.splice(ignoredOpIndex+1, Infinity, ...filteredHistory);
@@ -1625,7 +1627,7 @@ export async function selectIgnored(ignoredOp, chatID, cycle) {
     refreshChatWindow(chatID);
 
     // sending to others
-    if (ignoredOp.pk2 !== keyPair.publicKey) {
+    if (!automatic) {
         const msg = addMsgID({
             type: "selectedIgnored",
             op: ignoredOp,
