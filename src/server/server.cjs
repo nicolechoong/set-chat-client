@@ -3,6 +3,7 @@ const WebSocketServer = require('ws').Server;
 const fs = require('fs');
 const path = require('path');
 const nacl = require('tweetnacl');
+var sha256 = require("crypto-js/sha256");
 
 const express = require('express');
 const app = express();
@@ -153,8 +154,6 @@ wsServer.on('connection', function(connection) {
     };
 })
 
-const macTag = Uint8Array.from(["6d", "61", "63", "5f", "6b", "65", "79"]);
-
 async function initSIGMA (connection) {
   const dh = nacl.box.keyPair();
 
@@ -168,7 +167,7 @@ async function initSIGMA (connection) {
   const serverValue = dh.publicKey;
   const clientValue = strToArr(res.value);
   const derivedKey = nacl.box.before(clientValue, dh.secretKey);
-  const macKey = nacl.hash(concatArr(derivedKey, macTag));
+  const macKey = strToArr(sha256(`${derivedKey}mac-key`));
 
   if (connectedUsers.has(res.pk)) {
     sendTo(connection, {
@@ -180,7 +179,7 @@ async function initSIGMA (connection) {
   }
 
   if (nacl.sign.detached.verify(concatArr(serverValue, clientValue), strToArr(res.sig), strToArr(res.pk)) 
-  && nacl.verify(strToArr(res.mac), hmac512(macKey, strToArr(res.pk)))) {
+  && nacl.verify(strToArr(res.mac), hmac256(macKey, strToArr(res.pk)))) {
 
     connection.pk = res.pk;
     sendTo(connection, {
@@ -188,7 +187,7 @@ async function initSIGMA (connection) {
       type: "SIGMA3",
       pk: keyPair.publicKey,
       sig: arrToStr(nacl.sign.detached(concatArr(clientValue, serverValue), keyPair.secretKey)),
-      mac: arrToStr(hmac512(macKey, strToArr(keyPair.publicKey))),
+      mac: arrToStr(hmac256(macKey, strToArr(keyPair.publicKey))),
     });
 
   } else {
@@ -512,4 +511,13 @@ function hmac512 (k, m) {
   const kp = new Uint8Array(128);
   kp.set(k);
   return nacl.hash(concatArr(xorArr(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
+}
+
+const ipad256 = new Uint8Array(Array(64).fill(54));
+const opad256 = new Uint8Array(Array(64).fill(92));
+
+export function hmac256 (k, m) {
+    const kp = new Uint8Array(64);
+    kp.set(k);
+    return nacl.hash(concatArr(xorArr(kp, opad256), nacl.hash(concatArr(xorArr(kp, ipad256), m))));
 }

@@ -407,3 +407,12 @@ export function hmac512 (k, m) {
     kp.set(k);
     return nacl.hash(concatArr(xorArr(kp, opad), nacl.hash(concatArr(xorArr(kp, ipad), m))));
 }
+
+const ipad256 = new Uint8Array(Array(64).fill(54));
+const opad256 = new Uint8Array(Array(64).fill(92));
+
+export function hmac256 (k, m) {
+    const kp = new Uint8Array(64);
+    kp.set(k);
+    return nacl.hash(concatArr(xorArr(kp, opad256), nacl.hash(concatArr(xorArr(kp, ipad256), m))));
+}
