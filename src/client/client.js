@@ -1588,7 +1588,7 @@ async function getIgnored (cycles, chatID, pk) {
                 const ignore = sources.at(dependentIndex-1);
                 await selectIgnored(ignore, chatID, cycle);
 
-                console.log(`automatically resolved ${selected.action} ${keyMap.get(selected.pk2)}`);
+                console.log(`automatically resolved ${ignore.action} ${keyMap.get(ignore.pk2)}`);
                 continue;
             }
         }
