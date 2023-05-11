@@ -1820,7 +1820,7 @@ async function sendChatHistory (chatID, pk) {
                 authorised = true;
             }
 
-            if (authorised || msg.type === "selectIgnored" || (msg.type === "remove" && msg.dispute)) {
+            if (authorised || msg.type === "selectedIgnored" || (msg.type === "remove" && msg.dispute)) {
                 peerHistory.unshift(msg);
             }
         }
@@ -1864,7 +1864,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                     receivedIndex -= 1;
                 }
                 
-                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type === "selectIgnored" || (msg.type === "remove" && msg.dispute)) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type === "selectedIgnored" || (msg.type === "remove" && msg.dispute)) {
                     if (msg.type === "add") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
@@ -1879,7 +1879,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
             while (localIndex >= 0) {
                 console.log(`localLoop`);
                 msg = localMsgs[localIndex];
-                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type === "selectIgnored" || (msg.type === "remove" && msg.dispute)) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type === "selectedIgnored" || (msg.type === "remove" && msg.dispute)) {
                     if (msg.type === "add") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
@@ -1894,7 +1894,7 @@ async function mergeChatHistory (chatID, receivedMsgs=[]) {
                 console.log(`receivedLoop ${receivedIndex}`);
                 msg = receivedMsgs[receivedIndex];
                 newMessage = true;
-                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type === "selectIgnored" || (msg.type == "remove" && msg.dispute)) {
+                if (authorisedSet.has(msg.from) || msg.from === keyPair.publicKey || msg.type === "selectedIgnored" || (msg.type == "remove" && msg.dispute)) {
                     if (msg.type === "add") {
                         authorisedSet.delete(msg.op.pk2);
                     } else if (msg.type === "remove") {
