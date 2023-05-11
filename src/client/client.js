@@ -1607,12 +1607,12 @@ export async function selectIgnored(ignoredOp, chatID, cycle) {
     if (ignoredOpIndex > -1) {
         console.log(`found ignored op`);
         const sources = access.earliestSubset(cycle);
-        let index = cycle.findIndex((op) => ignoredOp.sig === op.sig);
-        const ignoreFrom = new Set();
+        let index = cycle.findIndex((op) => ignoredOp.sig === op.sig); // finding the ignoredOp in the cycle
+        const ignoreFrom = new Set(); // finding the users who will be in other universes
         do {
             ignoreFrom.add(cycle.at(index).pk1);
             index += 1;
-        } while (!access.hasOp(sources, cycle.at(index)));
+        } while (!access.hasOp(sources, cycle.at(index%cycle.length)));
         const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => msg.type === "selectedIgnored" || ignoreFrom.has(msg.from));
 
         programStore.get(chatID).history.splice(ignoredOpIndex+1, Infinity, ...filteredHistory);
