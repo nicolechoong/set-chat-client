@@ -822,12 +822,12 @@ async function receivedIgnored (ignored, chatID, pk, resolve) {
         }
 
     } else {
+        resolve(false);
         console.log(`different universe from ${keyMap.get(pk)}`);
         joinedChats.get(chatID).members.delete(pk);
         joinedChats.get(chatID).exMembers.add(pk);
         store.setItem("joinedChats", joinedChats);
         updateChatInfo();
-        resolve(false);
     }
 }
 
@@ -1203,8 +1203,8 @@ function sendAdvertisement (chatID, pk) {
         }
     }
 
-    if (online.length > 0) {
-        console.log(`sending an advertistment of length ${online.length} to ${pk} of ${online}`)
+    if (online.length > 0 && joinedChats.get(chatID).members.has(pk)) {
+        console.log(`sending an advertistment of length ${online.length} to ${keyMap.get(pk)} of ${online}`)
         sendToMember(addMsgID({
             type: "advertisement",
             online: online,
@@ -1330,8 +1330,10 @@ function updateChatWindow (data) {
 
 async function updateChatStore (messageData) {
     const chatID = messageData.chatID;
+    console.log(messageData.type);
     const locationIndex = programStore.get(chatID).history.findIndex((msg) => (msg.sentTime >= messageData.sentTime));
     if (locationIndex < 0) {
+        console.log(`hi${messageData.type}`);
         programStore.get(chatID).history.push(messageData);
     } else {
         if (programStore.get(chatID).history.at(locationIndex).id !== messageData.id) {
@@ -1429,12 +1431,11 @@ async function login (username) {
             await store.config({
                 storeName: arrToStr(nacl.hash(enc.encode(username)))
             });
-            store.getItem("keyPair").then((kp) => console.log(kp.publicKey));
+            store.getItem("keyPair");
         } else {
             await initialiseStore(username);
             await store.getItem("keyPair").then((kp) => {
                 if (kp) {
-                    console.log(`keypair ${JSON.stringify(kp)}`);
                     keyPair = kp;
                 } else {
                     keyPair = nacl.sign.keyPair();
@@ -1576,7 +1577,6 @@ async function getIgnored (cycles, chatID, pk) {
         if (!resolveGetIgnored.has(chatID)) { resolveGetIgnored.set(chatID, [cycles, new Map()]); }
         resolveGetIgnored.get(chatID)[0] = cycles;
         resolveGetIgnored.get(chatID)[1].set(pk, resolve);
-        console.log([...resolveGetIgnored]);
 
         for (const cycle of cycles) {
             const issuedOp = cycle.find((op) => op.pk1 === keyPair.publicKey);
@@ -1820,7 +1820,7 @@ async function sendChatHistory (chatID, pk) {
                 authorised = true;
             }
 
-            if (authorised || msg.type === "selectIgnored") {
+            if (authorised || msg.type === "selectIgnored" || (msg.type === "remove" && msg.dispute)) {
                 peerHistory.unshift(msg);
             }
         }
