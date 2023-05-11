@@ -550,7 +550,7 @@ async function onRemove (messageData) {
 
     if (fromPK !== keyPair.publicKey) {
         await updateChatStore(messageData);
-        refreshChatWindow(messageData);
+        refreshChatWindow(chatID);
 
         if (messageData.dispute && joinedChatInfo.exMembers.has(fromPK)) {
             [...joinedChatInfo.members].forEach((pk) => sendOperations(chatID, pk, true));
@@ -1612,7 +1612,7 @@ export async function selectIgnored(ignoredOp, chatID, cycle) {
         do {
             ignoreFrom.add(cycle.at(index).pk1);
             index += 1;
-        } while (!hasOp(sources, cycle.at(index)));
+        } while (!access.hasOp(sources, cycle.at(index)));
         const filteredHistory = programStore.get(chatID).history.slice(ignoredOpIndex+1).filter(msg => msg.type === "selectedIgnored" || ignoreFrom.has(msg.from));
 
         programStore.get(chatID).history.splice(ignoredOpIndex+1, Infinity, ...filteredHistory);
