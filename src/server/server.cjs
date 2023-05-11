@@ -475,10 +475,6 @@ function onReconnect (connection, name, pk) {
   broadcastActiveUsernames();
 }
 
-function objToStr (obj) {
-  return JSON.stringify(Uint8Array.from(Object.values(obj)))
-}
-
 function xorArr (arr1, arr2) {
   if (arr1.length != arr2.length) { return false; }
 
@@ -487,10 +483,6 @@ function xorArr (arr1, arr2) {
       res[i] = arr1[i] ^ arr2[i];
   }
   return res;
-}
-
-function objToArr (obj) {
-  return Uint8Array.from(Object.values(obj));
 }
 
 function strToArr (str) {
